@@ -1,0 +1,225 @@
+@import "tailwindcss";
+
+/* KeepGoing Design System — Pop Ballet Studio Theme */
+@theme {
+    --color-peach-100: #FFF5F0;
+    --color-peach-200: #FFE5D9;
+    --color-peach-300: #FFD5C8;
+    --color-mint-100: #E8F8F0;
+    --color-mint-200: #D4F0E7;
+    --color-mint-300: #B8E6D4;
+    --color-teal-500: #2BBAA0;
+    --color-teal-600: #24A08A;
+    --color-teal-700: #1D8675;
+    --color-dark: #2D3436;
+    --color-gray-500: #8395A7;
+    --color-gray-300: #B2BEC3;
+    --color-gray-100: #F0F3F5;
+
+    --font-heading: 'Outfit', sans-serif;
+    --font-body: 'Noto Sans JP', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+:root {
+    /* Morning Theme (Default) */
+    --theme-bg-1: var(--color-peach-200);
+    --theme-bg-2: var(--color-peach-100);
+    --theme-bg-3: var(--color-mint-100);
+    --theme-bg-4: var(--color-mint-200);
+}
+
+[data-theme="day"] {
+    --theme-bg-1: #D4F0E7;
+    /* Mint */
+    --theme-bg-2: #E8F8F0;
+    --theme-bg-3: #E1F2FB;
+    /* Light Blue */
+    --theme-bg-4: #DDEBE8;
+}
+
+[data-theme="evening"] {
+    --theme-bg-1: #F9E0FF;
+    /* Soft Lavender */
+    --theme-bg-2: #F0E6FF;
+    --theme-bg-3: #FFF0F5;
+    /* Soft Pink */
+    --theme-bg-4: #FFEAE6;
+}
+
+/* Base reset */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes zen-breath {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+html,
+body,
+#root {
+    width: 100%;
+    height: 100%;
+    height: 100dvh;
+    overflow: hidden;
+    font-family: var(--font-body);
+    color: var(--color-dark);
+    line-height: 1.6;
+    letter-spacing: 0.02em;
+    background: linear-gradient(-45deg, var(--theme-bg-1), var(--theme-bg-2), var(--theme-bg-3), var(--theme-bg-4));
+    background-size: 400% 400%;
+    animation: zen-breath 20s ease infinite;
+}
+
+/* Smooth scrolling, no overscroll */
+body {
+    overscroll-behavior: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* App container — full-width on mobile, centered on larger screens */
+.app-container {
+    width: 100%;
+    height: 100%;
+    max-width: 430px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+}
+
+/* On wide screens, add subtle border for visual separation */
+@media (min-width: 431px) {
+    .app-container {
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.08);
+        border-radius: 0;
+    }
+}
+
+/* Page content areas — safe area aware */
+.page-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: calc(env(safe-area-inset-top, 8px) + 16px) 16px calc(env(safe-area-inset-bottom, 24px) + 90px) 16px;
+    gap: 16px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Card styles for reusability */
+.card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+    padding: 20px;
+}
+
+.card-sm {
+    border-radius: 16px;
+    padding: 16px;
+}
+
+/* FAB styles */
+.fab {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-teal-500), var(--color-teal-600));
+    box-shadow: 0 6px 20px rgba(43, 186, 160, 0.4), 0 2px 8px rgba(43, 186, 160, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    position: relative;
+    top: -20px;
+}
+
+.fab:active {
+    transform: scale(0.92);
+    box-shadow: 0 3px 12px rgba(43, 186, 160, 0.3);
+}
+
+/* Stretch session (full-screen overlay) */
+.stretch-session {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: linear-gradient(165deg, var(--color-peach-300) 0%, var(--color-mint-300) 100%);
+}
+
+/* Progress ring */
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+.progress-ring__circle {
+    transition: stroke-dashoffset 0.35s ease;
+}
+
+/* ─── Responsive Utilities ──────────────── */
+
+/* Smooth momentum scrolling for all scrollable areas */
+[style*="overflow-y: auto"],
+[style*="overflowY: auto"] {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+/* Prevent text selection on interactive elements (mobile) */
+button,
+nav,
+.fab {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Touch targets: ensure minimum 44px hit area */
+button {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* Small buttons (expand arrows, etc.) can be 32px */
+button[style*="width: 32px"] {
+    min-height: 32px;
+    min-width: 32px;
+}
+
+/* Prevent pull-to-refresh on mobile browsers */
+html {
+    overscroll-behavior-y: contain;
+}
+
+/* ─── Safe Area Footer Fix ──────────────── */
+.footer-nav {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ─── Landscape mode ──────────────── */
+@media (orientation: landscape) and (max-height: 500px) {
+    .stretch-session {
+        flex-direction: row;
+    }
+}
