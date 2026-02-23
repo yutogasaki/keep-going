@@ -22,8 +22,9 @@ export const StretchSession: React.FC = () => {
         const loadSession = async () => {
             if (!sessionExerciseIds) {
                 const todaySessions = await getSessionsByDate(getTodayKey());
-                const todaySkippedIds = todaySessions.flatMap(s => s.skippedIds);
-                setSessionExercises(generateSession(classLevel, todaySkippedIds));
+                // Exclude exercises that were completely done or skipped today
+                const todayExcludedIds = todaySessions.flatMap(s => [...s.exerciseIds, ...s.skippedIds]);
+                setSessionExercises(generateSession(classLevel, todayExcludedIds));
                 setIsLoading(false);
                 return;
             }
@@ -240,12 +241,12 @@ export const StretchSession: React.FC = () => {
             if (document.visibilityState === 'hidden') {
                 setIsPlaying(false);
             } else if (document.visibilityState === 'visible') {
-                // Restart from beginning with countdown (spec §3.8)
-                if (currentExercise) {
-                    setTimeLeft(currentExercise.sec);
+                // Resume with countdown
+                if (currentExercise && isPlaying) {
+                    // Only speak and trigger countdown if we were actually playing before
                     setIsCounting(true);
                     setIsTransitioning(false);
-                    audio.speak(`再開します。${currentExercise.name}`);
+                    audio.speak(`再開します。`);
                 }
             }
         };
