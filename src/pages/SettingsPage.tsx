@@ -985,7 +985,7 @@ export const SettingsPage: React.FC = () => {
                                     style={{ padding: 4, borderRadius: 4, flex: 1, border: '1px solid #ccc' }}
                                 >
                                     <option value="">(デフォルト)</option>
-                                    {[0, 1, 2, 3, 4, 5].map(v => <option key={v} value={v}>タイプ {v}</option>)}
+                                    {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(v => <option key={v} value={v}>タイプ {v}</option>)}
                                 </select>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

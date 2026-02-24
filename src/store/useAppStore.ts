@@ -141,7 +141,7 @@ export const useAppStore = create<AppState>()(
             setRequiredExercises: (ids) => set({ requiredExercises: ids }),
 
             fuwafuwaBirthDate: new Date().toISOString().split('T')[0], // Default to today
-            fuwafuwaType: Math.floor(Math.random() * 6), // Initial random type 0-5
+            fuwafuwaType: Math.floor(Math.random() * 9), // Initial random type 0-8
             fuwafuwaCycleCount: 1,
             fuwafuwaName: null,
             pastFuwafuwas: [],

@@ -284,7 +284,7 @@ export const Onboarding: React.FC = () => {
                             textAlign: 'center',
                             marginTop: 16
                         }}>
-                            <p>さあ、今日も1日頑張ろう！</p>
+                            <p>下のスタートボタンを押したら はじまるよ！</p>
                         </div>
 
                         <button
