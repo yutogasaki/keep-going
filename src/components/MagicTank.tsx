@@ -3,21 +3,15 @@ import { motion } from 'framer-motion';
 import { Sparkles } from 'lucide-react';
 
 interface MagicTankProps {
-    count: number;
-    maxCount?: number;
+    currentSeconds: number;
+    maxSeconds: number;
+    onReset?: () => void; // Optional callback for when the tank is full and tapped
 }
 
-export const MagicTank: React.FC<MagicTankProps> = ({ count, maxCount = 3 }) => {
-    // Calculate how full the tank is
-    let currentLevel = count % maxCount;
-    // If it's a multiple of maxCount and not 0, it means we just filled it
-    if (currentLevel === 0 && count > 0) {
-        currentLevel = maxCount;
-    }
-
-    // Smooth fill percentage (0 to 100)
-    const fillPercentage = (currentLevel / maxCount) * 100;
-    const isFull = currentLevel === maxCount;
+export const MagicTank: React.FC<MagicTankProps> = ({ currentSeconds, maxSeconds, onReset }) => {
+    // Fill percentage capped at 100%
+    const fillPercentage = Math.min((currentSeconds / maxSeconds) * 100, 100);
+    const isFull = currentSeconds >= maxSeconds;
 
     return (
         <div style={{
@@ -27,21 +21,26 @@ export const MagicTank: React.FC<MagicTankProps> = ({ count, maxCount = 3 }) => 
             gap: 12,
             marginTop: 16,
         }}>
-            <div style={{
-                position: 'relative',
-                width: 60,
-                height: 70,
-                // Crystal bottle shape
-                borderRadius: '30px 30px 16px 16px',
-                background: 'rgba(255, 255, 255, 0.4)',
-                border: '3px solid rgba(255, 255, 255, 0.8)',
-                boxShadow: '0 8px 32px rgba(43, 186, 160, 0.15), inset 0 2px 10px rgba(255, 255, 255, 1)',
-                overflow: 'hidden',
-                backdropFilter: 'blur(8px)',
-                display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'center'
-            }}>
+            <div
+                onClick={isFull && onReset ? onReset : undefined}
+                style={{
+                    position: 'relative',
+                    width: 60,
+                    height: 70,
+                    // Crystal bottle shape
+                    borderRadius: '30px 30px 16px 16px',
+                    background: 'rgba(255, 255, 255, 0.4)',
+                    border: '3px solid rgba(255, 255, 255, 0.8)',
+                    boxShadow: '0 8px 32px rgba(43, 186, 160, 0.15), inset 0 2px 10px rgba(255, 255, 255, 1)',
+                    overflow: 'hidden',
+                    backdropFilter: 'blur(8px)',
+                    display: 'flex',
+                    alignItems: 'flex-end',
+                    justifyContent: 'center',
+                    cursor: isFull && onReset ? 'pointer' : 'default', // indicate it can be tapped
+                    transform: isFull ? 'scale(1.05)' : 'scale(1)',
+                    transition: 'transform 0.3s ease',
+                }}>
                 {/* Bottle Neck overlay */}
                 <div style={{
                     position: 'absolute',
@@ -110,8 +109,6 @@ export const MagicTank: React.FC<MagicTankProps> = ({ count, maxCount = 3 }) => 
                         <Sparkles size={24} fill="white" />
                     </motion.div>
                 )}
-
-                {/* Floating bubbles logic could go here */}
             </div>
 
             {/* Status text */}
@@ -128,12 +125,19 @@ export const MagicTank: React.FC<MagicTankProps> = ({ count, maxCount = 3 }) => 
                     padding: '4px 16px',
                     borderRadius: 20,
                     boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 4
                 }}
             >
                 {isFull ? (
-                    'まほうのチカラがいっぱい！✨'
+                    <>
+                        <span>まほうがいっぱい！✨</span>
+                        {onReset && <span style={{ fontSize: 10, color: '#E67E22', opacity: 0.8 }}>タップしてふわふわに送る</span>}
+                    </>
                 ) : (
-                    `まほうのチカラ: ${currentLevel} / ${maxCount}`
+                    `きょうの目標まで: ${Math.ceil((maxSeconds - currentSeconds) / 60)}分`
                 )}
             </motion.div>
         </div>

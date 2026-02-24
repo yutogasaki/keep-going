@@ -9,11 +9,56 @@ import { calculateFuwafuwaStatus } from '../lib/fuwafuwa';
 export const HomeScreen: React.FC = () => {
     const [allSessions, setAllSessions] = useState<SessionRecord[]>([]);
 
+    const fuwafuwaType = useAppStore(s => s.fuwafuwaType);
     const fuwafuwaBirthDate = useAppStore(s => s.fuwafuwaBirthDate);
     const notifiedFuwafuwaStages = useAppStore(s => s.notifiedFuwafuwaStages);
     const addNotifiedFuwafuwaStage = useAppStore(s => s.addNotifiedFuwafuwaStage);
     const activeMilestoneModal = useAppStore(s => s.activeMilestoneModal);
     const setActiveMilestoneModal = useAppStore(s => s.setActiveMilestoneModal);
+
+    const status = calculateFuwafuwaStatus(fuwafuwaBirthDate, allSessions);
+
+    // Calculate today's total trained seconds for the Magic Tank
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todaySessions = allSessions.filter(s => s.date === todayStr);
+    const todaySeconds = todaySessions.reduce((acc, curr) => acc + curr.totalSeconds, 0);
+    const dailyTargetMinutes = useAppStore(s => s.dailyTargetMinutes);
+    const targetSeconds = dailyTargetMinutes * 60;
+
+    // Confetti logic for Magic Tank reset
+    const handleTankReset = () => {
+        import('canvas-confetti').then((confetti) => {
+            const duration = 3000;
+            const end = Date.now() + duration;
+
+            const frame = () => {
+                confetti.default({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'] // matches tank colors
+                });
+                confetti.default({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            };
+            frame();
+        });
+
+        // Let's also play a happy sound
+        import('../lib/audio').then(({ audio }) => {
+            audio.playSuccess();
+        });
+    };
 
     useEffect(() => {
         const load = () => {
@@ -63,18 +108,17 @@ export const HomeScreen: React.FC = () => {
                         position: 'fixed',
                         inset: 0,
                         backgroundColor: 'rgba(0,0,0,0.5)',
-                        backdropFilter: 'blur(4px)',
-                        zIndex: 1000,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        zIndex: 100,
                         padding: 24
                     }}>
                         <motion.div
-                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            className="card"
+                            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                             style={{
                                 width: '100%',
                                 maxWidth: 320,
@@ -141,12 +185,12 @@ export const HomeScreen: React.FC = () => {
             {/* Floating Orbs in Background */}
             <motion.div
                 animate={{ y: [0, -20, 0], x: [0, 10, 0], opacity: [0.3, 0.6, 0.3] }}
-                transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
                 style={{
-                    position: 'absolute', top: '15%', left: '10%',
-                    width: 120, height: 120, borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(167, 243, 208, 0.4) 0%, transparent 70%)',
-                    zIndex: 0, filter: 'blur(10px)'
+                    position: 'absolute', top: '10%', left: '15%',
+                    width: 250, height: 250, borderRadius: '50%',
+                    background: 'radial-gradient(circle, rgba(168, 230, 207, 0.3) 0%, transparent 70%)',
+                    zIndex: 0, filter: 'blur(20px)'
                 }}
             />
             <motion.div
@@ -179,7 +223,11 @@ export const HomeScreen: React.FC = () => {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.3 }}
                     >
-                        <MagicTank count={allSessions.length} maxCount={3} />
+                        <MagicTank
+                            currentSeconds={todaySeconds}
+                            maxSeconds={targetSeconds}
+                            onReset={handleTankReset}
+                        />
                     </motion.div>
                 </div>
 
@@ -212,7 +260,7 @@ export const HomeScreen: React.FC = () => {
                         borderRadius: 20,
                     }}
                 >
-                    ✨ ふわふわに まほうを おくろう ✨
+                    つんつん してみてね
                 </motion.div>
             </div>
         </div>
