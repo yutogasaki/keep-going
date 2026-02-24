@@ -146,7 +146,7 @@ export const useAppStore = create<AppState>()(
             hasSeenMenuTip: false,
             setHasSeenMenuTip: (seen) => set({ hasSeenMenuTip: seen }),
 
-            soundVolume: 0.5,
+            soundVolume: 1.0,
             setSoundVolume: (vol) => set({ soundVolume: vol }),
             ttsEnabled: true,
             setTtsEnabled: (enabled) => set({ ttsEnabled: enabled }),

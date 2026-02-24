@@ -572,7 +572,7 @@ export const StretchSession: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#2D3436',
+                    color: '#2D4741',
                 }}
             >
                 <X size={20} />
@@ -668,7 +668,7 @@ export const StretchSession: React.FC = () => {
                                         letterSpacing: 4,
                                         fontSize: 20,
                                         fontWeight: 700,
-                                        color: '#2D3436',
+                                        color: '#2D4741',
                                         marginBottom: 16,
                                     }}>
                                         PAUSED
@@ -709,7 +709,7 @@ export const StretchSession: React.FC = () => {
                                 fontFamily: "'Noto Sans JP', sans-serif",
                                 fontSize: 28,
                                 fontWeight: 700,
-                                color: '#2D3436',
+                                color: '#2D4741',
                             }}>
                                 {currentExercise.name}
                             </h2>
@@ -788,7 +788,7 @@ export const StretchSession: React.FC = () => {
                                     fontFamily: "'JetBrains Mono', monospace",
                                     fontSize: 48,
                                     fontWeight: 700,
-                                    color: '#2D3436',
+                                    color: '#2D4741',
                                     lineHeight: 1,
                                 }}>
                                     {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
@@ -860,7 +860,7 @@ export const StretchSession: React.FC = () => {
                                 fontFamily: "'Noto Sans JP', sans-serif",
                                 fontSize: 28,
                                 fontWeight: 700,
-                                color: '#2D3436',
+                                color: '#2D4741',
                             }}>
                                 {sessionExercises[(currentIndex + 1) % sessionExercises.length].name}
                             </h2>
