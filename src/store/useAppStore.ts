@@ -48,6 +48,12 @@ interface AppState {
     setExcludedExercises: (ids: string[]) => void;
     requiredExercises: string[];
     setRequiredExercises: (ids: string[]) => void;
+
+    // Fuwafuwa State (persisted)
+    fuwafuwaBirthDate: string | null;
+    fuwafuwaType: number;
+    fuwafuwaCycleCount: number;
+    setFuwafuwaState: (state: Partial<{ fuwafuwaBirthDate: string | null; fuwafuwaType: number; fuwafuwaCycleCount: number }>) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -105,6 +111,11 @@ export const useAppStore = create<AppState>()(
             setExcludedExercises: (ids) => set({ excludedExercises: ids }),
             requiredExercises: ['S01', 'S02', 'S07'], // Make Splits, Forward Fold & Point & Flex default MUST-DOs
             setRequiredExercises: (ids) => set({ requiredExercises: ids }),
+
+            fuwafuwaBirthDate: null,
+            fuwafuwaType: Math.floor(Math.random() * 6),
+            fuwafuwaCycleCount: 1,
+            setFuwafuwaState: (newState) => set((state) => ({ ...state, ...newState })),
         }),
         {
             name: 'keepgoing-app-state',
@@ -135,6 +146,9 @@ export const useAppStore = create<AppState>()(
                 dailyTargetMinutes: state.dailyTargetMinutes,
                 excludedExercises: state.excludedExercises,
                 requiredExercises: state.requiredExercises,
+                fuwafuwaBirthDate: state.fuwafuwaBirthDate,
+                fuwafuwaType: state.fuwafuwaType,
+                fuwafuwaCycleCount: state.fuwafuwaCycleCount,
             }),
         }
     )

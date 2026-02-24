@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, Trash2, Volume2, Mic, Bell, Clock, X, HelpCircle, Music, Smartphone, RotateCcw, RefreshCw } from 'lucide-react';
-import { clearAllData } from '../lib/db';
+import { ChevronRight, ChevronDown, Trash2, Volume2, Mic, Bell, Clock, X, HelpCircle, Music, Smartphone, RotateCcw, RefreshCw, Bug } from 'lucide-react';
+import { clearAllData, getDateKeyOffset } from '../lib/db';
 import { useAppStore } from '../store/useAppStore';
 import { audio } from '../lib/audio';
 import type { ClassLevel } from '../data/exercises';
@@ -341,6 +341,7 @@ export const SettingsPage: React.FC = () => {
     const [showConfirmReset, setShowConfirmReset] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
     const [openHelpItems, setOpenHelpItems] = useState<Set<string>>(new Set());
+    const [showDeveloperDebug, setShowDeveloperDebug] = useState(false);
 
     const handleClassChange = (level: ClassLevel) => {
         setClassLevel(level);
@@ -895,6 +896,78 @@ export const SettingsPage: React.FC = () => {
                 <Trash2 size={16} />
                 <span>データをリセット</span>
             </div>
+
+            {/* Developer Mode Entry */}
+            {!showDeveloperDebug && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+                    <button
+                        onClick={() => {
+                            const pwd = prompt('パスワードを入力してください:');
+                            if (pwd === '0320') {
+                                setShowDeveloperDebug(true);
+                            } else if (pwd !== null) {
+                                alert('パスワードが違います');
+                            }
+                        }}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#B2BEC3',
+                            fontSize: 11,
+                            cursor: 'pointer',
+                            padding: '8px 16px',
+                            fontFamily: "'Noto Sans JP', sans-serif"
+                        }}
+                    >
+                        開発者モード
+                    </button>
+                </div>
+            )}
+
+            {/* --- DEVELOPER / DEBUG --- */}
+            {showDeveloperDebug && (
+                <div className="card card-sm" style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12,
+                    marginTop: 24,
+                    border: '1px dashed #E17055'
+                }}>
+                    <div style={{
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: '#E17055',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8
+                    }}>
+                        <Bug size={16} />
+                        デバッグ機能 (開発専用)
+                    </div>
+                    <p style={{ fontSize: 11, color: '#8395A7', margin: 0 }}>
+                        ふわふわの年齢を偽装します (リロードするとHomeに反映)
+                    </p>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <button onClick={() => { useAppStore.getState().setFuwafuwaState({ fuwafuwaBirthDate: getDateKeyOffset(-4) }); alert('Day 5 にしました'); }}
+                            style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
+                            Day 5 (たまご)
+                        </button>
+                        <button onClick={() => { useAppStore.getState().setFuwafuwaState({ fuwafuwaBirthDate: getDateKeyOffset(-14) }); alert('Day 15 にしました。※見た目は今の頑張り度に依存'); }}
+                            style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
+                            Day 15 (妖精)
+                        </button>
+                        <button onClick={() => { useAppStore.getState().setFuwafuwaState({ fuwafuwaBirthDate: getDateKeyOffset(-25) }); alert('Day 26 にしました'); }}
+                            style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
+                            Day 26 (成体)
+                        </button>
+                        <button onClick={() => { useAppStore.getState().setFuwafuwaState({ fuwafuwaBirthDate: getDateKeyOffset(-29) }); alert('Day 30 にしました'); }}
+                            style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
+                            Day 30 (お別れ)
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Confirm reset dialog */}
             {showConfirmReset && (
