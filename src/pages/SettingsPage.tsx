@@ -815,7 +815,7 @@ export const SettingsPage: React.FC = () => {
                     fontSize: 13,
                 }}>
                     <span style={{ color: '#8395A7' }}>KeepGoing</span>
-                    <span style={{ color: '#B2BEC3', fontSize: 11 }}>がんばらなくていい。ただ、開くだけ。</span>
+                    <span style={{ color: '#B2BEC3', fontSize: 11 }}>今日のちょっとが、未来のちからに。</span>
                 </div>
             </div>
 

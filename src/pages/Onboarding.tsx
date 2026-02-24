@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BalletShoeIcon } from '../components/BalletShoeIcon';
 import { useAppStore } from '../store/useAppStore';
 import type { ClassLevel } from '../data/exercises';
 
@@ -61,17 +60,16 @@ export const Onboarding: React.FC = () => {
                             animate={{ rotate: [0, -5, 5, -3, 0] }}
                             transition={{ duration: 2.5, repeat: Infinity, repeatDelay: 1 }}
                         >
-                            <div style={{
-                                width: 120,
-                                height: 120,
-                                borderRadius: 40,
-                                background: 'rgba(43, 186, 160, 0.12)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}>
-                                <BalletShoeIcon size={64} color="#2BBAA0" />
-                            </div>
+                            <img
+                                src="/icon.png"
+                                alt="KeepGoing"
+                                style={{
+                                    width: 120,
+                                    height: 120,
+                                    borderRadius: 40,
+                                    objectFit: 'cover',
+                                }}
+                            />
                         </motion.div>
 
                         <h1 style={{
@@ -88,8 +86,7 @@ export const Onboarding: React.FC = () => {
                             color: '#8395A7',
                             lineHeight: 1.8,
                         }}>
-                            今日やること、もう迷わない。<br />
-                            がんばらなくていい。ただ、開くだけ。
+                            今日のちょっとが、未来のちからに。
                         </p>
 
                         <button
