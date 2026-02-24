@@ -13,8 +13,17 @@ import { saveSession, getTodayKey, getSessionsByDate, getCustomExercises, type S
 
 export const StretchSession: React.FC = () => {
     const endSession = useAppStore((state) => state.endSession);
-    const classLevel = useAppStore((state) => state.classLevel);
+    const users = useAppStore((state) => state.users);
+    const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const sessionExerciseIds = useAppStore((state) => state.sessionExerciseIds);
+
+    const currentUsers = users.filter(u => sessionUserIds.includes(u.id));
+    const classLevel = currentUsers.length > 0
+        ? currentUsers.reduce((min, u) => {
+            const weights: Record<'プレ' | '初級' | '中級' | '上級', number> = { 'プレ': 0, '初級': 1, '中級': 2, '上級': 3 };
+            return weights[u.classLevel] < weights[min] ? u.classLevel : min;
+        }, currentUsers[0].classLevel)
+        : '初級';
 
     const dailyTargetMinutes = useAppStore((state) => state.dailyTargetMinutes);
     const globalExcludedIds = useAppStore((state) => state.excludedExercises);
@@ -194,11 +203,12 @@ export const StretchSession: React.FC = () => {
                 totalSeconds: totalRunningTime,
                 exerciseIds: completedIds,
                 skippedIds,
+                userIds: sessionUserIds,
             };
             await saveSession(record);
         }
         endSession();
-    }, [completedIds, skippedIds, totalRunningTime, startedAt, endSession]);
+    }, [completedIds, skippedIds, totalRunningTime, startedAt, endSession, sessionUserIds]);
 
     // Main playback timer
     useEffect(() => {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, Trash2, Volume2, Mic, Bell, Clock, X, HelpCircle, Music, Smartphone, RotateCcw, RefreshCw, Bug } from 'lucide-react';
+import { ChevronRight, ChevronDown, Trash2, Volume2, Mic, Bell, Clock, X, HelpCircle, Music, Smartphone, RotateCcw, RefreshCw, Bug, Users, UserPlus, Edit2, CheckCircle2, Circle } from 'lucide-react';
 import { clearAllData, getDateKeyOffset } from '../lib/db';
 import { useAppStore } from '../store/useAppStore';
 import { audio } from '../lib/audio';
@@ -319,8 +319,12 @@ const ToggleButton: React.FC<{
 // ─── Main Component ─────────────────────────────────
 
 export const SettingsPage: React.FC = () => {
-    const classLevel = useAppStore(s => s.classLevel);
-    const setClassLevel = useAppStore(s => s.setClassLevel);
+    const users = useAppStore(s => s.users);
+    const activeUserIds = useAppStore(s => s.activeUserIds);
+    const addUser = useAppStore(s => s.addUser);
+    const updateUser = useAppStore(s => s.updateUser);
+    const deleteUser = useAppStore(s => s.deleteUser);
+    const setActiveUserIds = useAppStore(s => s.setActiveUserIds);
 
     // Settings state
     const soundVolume = useAppStore(s => s.soundVolume);
@@ -337,17 +341,17 @@ export const SettingsPage: React.FC = () => {
     const setNotificationTime = useAppStore(s => s.setNotificationTime);
     const setOnboardingCompleted = useAppStore(s => s.setOnboardingCompleted);
 
-    const [showClassPicker, setShowClassPicker] = useState(false);
+    const [showUserManage, setShowUserManage] = useState(false);
+    const [editingUserId, setEditingUserId] = useState<string | null>(null);
+    const [editName, setEditName] = useState('');
+    const [editClass, setEditClass] = useState<ClassLevel>('初級');
     const [showConfirmReset, setShowConfirmReset] = useState(false);
     const [showConfirmRedo, setShowConfirmRedo] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
     const [openHelpItems, setOpenHelpItems] = useState<Set<string>>(new Set());
     const [showDeveloperDebug, setShowDeveloperDebug] = useState(false);
 
-    const handleClassChange = (level: ClassLevel) => {
-        setClassLevel(level);
-        setShowClassPicker(false);
-    };
+
 
     const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = parseFloat(e.target.value);
@@ -400,7 +404,7 @@ export const SettingsPage: React.FC = () => {
         });
     };
 
-    const currentClass = CLASS_LEVELS.find(c => c.id === classLevel);
+
 
     return (
         <div style={{
@@ -460,10 +464,10 @@ export const SettingsPage: React.FC = () => {
                 </button>
             </div>
 
-            {/* Class level setting */}
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            {/* User Management */}
+            <div className="card" style={{ padding: 0, overflow: 'hidden', flexShrink: 0 }}>
                 <div
-                    onClick={() => setShowClassPicker(!showClassPicker)}
+                    onClick={() => setShowUserManage(!showUserManage)}
                     style={{
                         width: '100%',
                         display: 'flex',
@@ -481,10 +485,9 @@ export const SettingsPage: React.FC = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: 20,
                         flexShrink: 0,
                     }}>
-                        {currentClass?.emoji || '🌱'}
+                        <Users size={20} color="#2BBAA0" />
                     </div>
                     <div style={{ flex: 1 }}>
                         <div style={{
@@ -492,49 +495,186 @@ export const SettingsPage: React.FC = () => {
                             fontSize: 14,
                             fontWeight: 700,
                             color: '#2D3436',
-                        }}>クラス</div>
+                        }}>ユーザー・クラス設定</div>
                         <div style={{
                             fontFamily: "'Noto Sans JP', sans-serif",
                             fontSize: 12,
                             color: '#8395A7',
-                        }}>{currentClass?.label || '初級'}</div>
+                        }}>{users?.length || 0}人のユーザー ({activeUserIds?.length || 0}人選択中)</div>
                     </div>
                     <ChevronRight size={18} color="#B2BEC3" style={{
-                        transform: showClassPicker ? 'rotate(90deg)' : 'rotate(0deg)',
+                        transform: showUserManage ? 'rotate(90deg)' : 'rotate(0deg)',
                         transition: 'transform 0.2s ease',
                     }} />
                 </div>
 
-                {showClassPicker && (
+                {showUserManage && (
                     <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         style={{ overflow: 'hidden', borderTop: '1px solid rgba(0,0,0,0.06)' }}
                     >
-                        {CLASS_LEVELS.map(({ id, label, emoji }) => (
-                            <button
-                                key={id}
-                                onClick={() => handleClassChange(id)}
-                                style={{
-                                    width: '100%',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 10,
-                                    padding: '12px 24px',
-                                    border: 'none',
-                                    background: classLevel === id ? 'rgba(43,186,160,0.08)' : 'none',
-                                    cursor: 'pointer',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 14,
-                                    color: classLevel === id ? '#2BBAA0' : '#2D3436',
-                                    fontWeight: classLevel === id ? 700 : 400,
-                                }}
-                            >
-                                <span>{emoji}</span>
-                                <span>{label}</span>
-                                {classLevel === id && <span style={{ marginLeft: 'auto' }}>✓</span>}
-                            </button>
-                        ))}
+                        {/* List Users */}
+                        <div style={{ padding: '8px 0' }}>
+                            {users && users.map(u => {
+                                const isActive = activeUserIds?.includes(u.id);
+                                const uClass = CLASS_LEVELS.find(c => c.id === u.classLevel) || CLASS_LEVELS[1];
+                                const isEditing = editingUserId === u.id;
+
+                                return (
+                                    <div key={u.id} style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        padding: '12px 20px',
+                                        borderBottom: '1px solid rgba(0,0,0,0.04)',
+                                        background: isActive ? 'rgba(43,186,160,0.03)' : 'transparent'
+                                    }}>
+                                        {isEditing ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                                <input
+                                                    type="text"
+                                                    value={editName}
+                                                    onChange={e => setEditName(e.target.value)}
+                                                    style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #DFE6E9', fontFamily: "'Noto Sans JP'", fontSize: 14 }}
+                                                />
+                                                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+                                                    {CLASS_LEVELS.map(c => (
+                                                        <button
+                                                            key={c.id}
+                                                            onClick={() => setEditClass(c.id)}
+                                                            style={{
+                                                                padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap',
+                                                                background: editClass === c.id ? '#2BBAA0' : '#F0F3F5',
+                                                                color: editClass === c.id ? 'white' : '#2D3436',
+                                                                border: 'none', fontSize: 12, fontWeight: 700
+                                                            }}
+                                                        >
+                                                            {c.emoji} {c.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                                                    <button onClick={() => setEditingUserId(null)} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: '#F0F3F5', fontWeight: 700, color: '#636E72' }}>キャンセル</button>
+                                                    <button onClick={() => {
+                                                        updateUser(u.id, { name: editName.trim() || 'ゲスト', classLevel: editClass });
+                                                        setEditingUserId(null);
+                                                    }} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: '#2BBAA0', color: 'white', fontWeight: 700 }}>保存</button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                <button
+                                                    onClick={() => {
+                                                        if (isActive && activeUserIds.length === 1) return; // Prevent deselecting last user
+                                                        setActiveUserIds(isActive ? activeUserIds.filter(id => id !== u.id) : [...activeUserIds, u.id]);
+                                                    }}
+                                                    style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', color: isActive ? '#2BBAA0' : '#B2BEC3' }}
+                                                    title="「みんなで！」ページに表示する"
+                                                >
+                                                    {isActive ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+                                                </button>
+
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontFamily: "'Noto Sans JP'", fontSize: 15, fontWeight: 700, color: '#2D3436', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                        {u.name}
+                                                    </div>
+                                                    <div style={{ fontFamily: "'Noto Sans JP'", fontSize: 12, color: '#8395A7', marginTop: 2 }}>
+                                                        {uClass.emoji} {uClass.label}
+                                                    </div>
+                                                </div>
+
+                                                <div style={{ display: 'flex', gap: 8 }}>
+                                                    <button onClick={() => {
+                                                        setEditingUserId(u.id);
+                                                        setEditName(u.name);
+                                                        setEditClass(u.classLevel);
+                                                    }} style={{ border: 'none', background: 'rgba(0,0,0,0.05)', padding: 8, borderRadius: 8, color: '#636E72' }}>
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                    {(users?.length || 0) > 1 && (
+                                                        <button onClick={() => {
+                                                            if (window.confirm(`${u.name}さんを削除しますか？`)) {
+                                                                deleteUser(u.id);
+                                                                if (isActive) setActiveUserIds(activeUserIds.filter(id => id !== u.id));
+                                                            }
+                                                        }} style={{ border: 'none', background: 'rgba(231,76,60,0.1)', padding: 8, borderRadius: 8, color: '#E74C3C' }}>
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+
+                            {/* Add User Button */}
+                            {editingUserId !== 'NEW' && (
+                                <button
+                                    onClick={() => {
+                                        setEditingUserId('NEW');
+                                        setEditName('');
+                                        setEditClass('初級');
+                                    }}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center',
+                                        width: 'calc(100% - 40px)', margin: '12px auto', padding: '12px',
+                                        borderRadius: 12, border: '2px dashed #2BBAA0', background: 'rgba(43,186,160,0.05)',
+                                        color: '#2BBAA0', fontFamily: "'Noto Sans JP'", fontWeight: 700, cursor: 'pointer'
+                                    }}
+                                >
+                                    <UserPlus size={18} />
+                                    新しいユーザーを追加
+                                </button>
+                            )}
+
+                            {/* New User Form Inline */}
+                            {editingUserId === 'NEW' && (
+                                <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+                                    <input
+                                        type="text"
+                                        placeholder="おなまえ"
+                                        value={editName}
+                                        onChange={e => setEditName(e.target.value)}
+                                        style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #DFE6E9', fontFamily: "'Noto Sans JP'", fontSize: 14 }}
+                                    />
+                                    <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+                                        {CLASS_LEVELS.map(c => (
+                                            <button
+                                                key={c.id}
+                                                onClick={() => setEditClass(c.id)}
+                                                style={{
+                                                    padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap',
+                                                    background: editClass === c.id ? '#2BBAA0' : '#F0F3F5',
+                                                    color: editClass === c.id ? 'white' : '#2D3436',
+                                                    border: 'none', fontSize: 12, fontWeight: 700
+                                                }}
+                                            >
+                                                {c.emoji} {c.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                                        <button onClick={() => setEditingUserId(null)} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: '#F0F3F5', fontWeight: 700, color: '#636E72' }}>キャンセル</button>
+                                        <button onClick={() => {
+                                            const name = editName.trim() || 'ゲスト';
+                                            addUser({
+                                                name,
+                                                classLevel: editClass,
+                                                fuwafuwaBirthDate: new Date().toISOString().split('T')[0],
+                                                fuwafuwaType: Math.floor(Math.random() * 6),
+                                                fuwafuwaCycleCount: 1,
+                                                fuwafuwaName: null,
+                                                pastFuwafuwas: [],
+                                                notifiedFuwafuwaStages: []
+                                            });
+                                            setEditingUserId(null);
+                                        }} disabled={!editName.trim()} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: editName.trim() ? '#2BBAA0' : '#B2BEC3', color: 'white', fontWeight: 700 }}>追加</button>
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
                     </motion.div>
                 )}
             </div>
@@ -954,19 +1094,19 @@ export const SettingsPage: React.FC = () => {
                         ふわふわの年齢を偽装します (リロードするとHomeに反映)
                     </p>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <button onClick={() => { useAppStore.getState().setFuwafuwaBirthDate(getDateKeyOffset(-4)); alert('Day 5 にしました'); }}
+                        <button onClick={() => { updateUser(activeUserIds[0] || users[0].id, { fuwafuwaBirthDate: getDateKeyOffset(-4) }); alert('Day 5 にしました'); }}
                             style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                             Day 5 (たまご)
                         </button>
-                        <button onClick={() => { useAppStore.getState().setFuwafuwaBirthDate(getDateKeyOffset(-14)); alert('Day 15 にしました。※見た目は今の頑張り度に依存'); }}
+                        <button onClick={() => { updateUser(activeUserIds[0] || users[0].id, { fuwafuwaBirthDate: getDateKeyOffset(-14) }); alert('Day 15 にしました。※見た目は今の頑張り度に依存'); }}
                             style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                             Day 15 (妖精)
                         </button>
-                        <button onClick={() => { useAppStore.getState().setFuwafuwaBirthDate(getDateKeyOffset(-25)); alert('Day 26 にしました'); }}
+                        <button onClick={() => { updateUser(activeUserIds[0] || users[0].id, { fuwafuwaBirthDate: getDateKeyOffset(-25) }); alert('Day 26 にしました'); }}
                             style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                             Day 26 (成体)
                         </button>
-                        <button onClick={() => { useAppStore.getState().setFuwafuwaBirthDate(getDateKeyOffset(-29)); alert('Day 30 にしました'); }}
+                        <button onClick={() => { updateUser(activeUserIds[0] || users[0].id, { fuwafuwaBirthDate: getDateKeyOffset(-29) }); alert('Day 30 にしました'); }}
                             style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                             Day 30 (お別れ)
                         </button>

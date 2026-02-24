@@ -11,25 +11,44 @@ export interface PastFuwafuwaRecord {
     sayonaraDate: string;
 }
 
+export interface UserProfileStore {
+    id: string;
+    name: string;
+    classLevel: ClassLevel;
+    fuwafuwaBirthDate: string;
+    fuwafuwaType: number;
+    fuwafuwaCycleCount: number;
+    fuwafuwaName: string | null;
+    pastFuwafuwas: PastFuwafuwaRecord[];
+    notifiedFuwafuwaStages: number[];
+}
+
 type TabId = 'home' | 'record' | 'menu' | 'settings';
 
 interface AppState {
+    // Users
+    users: UserProfileStore[];
+    activeUserIds: string[];
+    addUser: (user: Omit<UserProfileStore, 'id'>) => void;
+    updateUser: (id: string, updates: Partial<UserProfileStore>) => void;
+    deleteUser: (id: string) => void;
+    setActiveUserIds: (ids: string[]) => void;
+    resetUserFuwafuwa: (id: string, newType: number, activeDays: number, finalStage: number) => void;
+
     // Navigation
     currentTab: TabId;
     previousTab: TabId;
     setTab: (tab: TabId) => void;
 
     // Session state
+    sessionUserIds: string[]; // Who is actually about to train (based on HomeScreen swipe)
+    setSessionUserIds: (ids: string[]) => void;
     isInSession: boolean;
     sessionReturnedFromTab: boolean; // flag: user came back from another tab
     sessionExerciseIds: string[] | null; // null = auto-generate
     startSession: () => void;
     startSessionWithExercises: (ids: string[]) => void;
     endSession: () => void;
-
-    // Class level (persisted)
-    classLevel: ClassLevel;
-    setClassLevel: (level: ClassLevel) => void;
 
     // App State (persisted)
     onboardingCompleted: boolean;
@@ -59,17 +78,6 @@ interface AppState {
     requiredExercises: string[];
     setRequiredExercises: (ids: string[]) => void;
 
-    // Fuwafuwa State (persisted)
-    fuwafuwaBirthDate: string;
-    fuwafuwaType: number;
-    fuwafuwaCycleCount: number;
-    fuwafuwaName: string | null;
-    pastFuwafuwas: PastFuwafuwaRecord[];
-    setFuwafuwaBirthDate: (date: string) => void;
-    setFuwafuwaType: (type: number) => void;
-    setFuwafuwaName: (name: string | null) => void;
-    resetFuwafuwaState: (newType: number, activeDays: number, finalStage: number) => void;
-
     // Debug Overrides
     debugFuwafuwaStage: number | null;
     debugFuwafuwaType: number | null;
@@ -77,8 +85,6 @@ interface AppState {
     setDebugFuwafuwaType: (type: number | null) => void;
 
     // Milestones
-    notifiedFuwafuwaStages: number[];
-    addNotifiedFuwafuwaStage: (stage: number) => void;
     activeMilestoneModal: 'egg' | 'fairy' | 'adult' | null;
     setActiveMilestoneModal: (modal: 'egg' | 'fairy' | 'adult' | null) => void;
 }
@@ -86,6 +92,45 @@ interface AppState {
 export const useAppStore = create<AppState>()(
     persist(
         (set, get) => ({
+            users: [],
+            activeUserIds: [],
+            sessionUserIds: [],
+            setSessionUserIds: (ids) => set({ sessionUserIds: ids }),
+            addUser: (user) => set((state) => ({ users: [...state.users, { ...user, id: crypto.randomUUID() }] })),
+            updateUser: (id, updates) => set((state) => ({
+                users: state.users.map(u => u.id === id ? { ...u, ...updates } : u)
+            })),
+            deleteUser: (id) => set((state) => ({
+                users: state.users.filter(u => u.id !== id),
+                activeUserIds: state.activeUserIds.filter(uid => uid !== id)
+            })),
+            setActiveUserIds: (ids) => set({ activeUserIds: ids }),
+            resetUserFuwafuwa: (id, newType, activeDays, finalStage) => set((state) => {
+                const today = new Date().toISOString().split('T')[0];
+                return {
+                    users: state.users.map(u => {
+                        if (u.id !== id) return u;
+                        const record: PastFuwafuwaRecord = {
+                            id: crypto.randomUUID(),
+                            name: u.fuwafuwaName,
+                            type: u.fuwafuwaType,
+                            activeDays,
+                            finalStage,
+                            sayonaraDate: today
+                        };
+                        return {
+                            ...u,
+                            fuwafuwaBirthDate: today,
+                            fuwafuwaType: newType,
+                            fuwafuwaCycleCount: u.fuwafuwaCycleCount + 1,
+                            fuwafuwaName: null,
+                            pastFuwafuwas: [...(u.pastFuwafuwas || []), record],
+                            notifiedFuwafuwaStages: []
+                        };
+                    })
+                };
+            }),
+
             currentTab: 'home',
             previousTab: 'home',
             setTab: (tab) => {
@@ -99,21 +144,6 @@ export const useAppStore = create<AppState>()(
             startSession: () => set({ isInSession: true, sessionReturnedFromTab: false, sessionExerciseIds: null }),
             startSessionWithExercises: (ids) => set({ isInSession: true, sessionReturnedFromTab: false, sessionExerciseIds: ids }),
             endSession: () => set({ isInSession: false, sessionReturnedFromTab: false, sessionExerciseIds: null }),
-
-            classLevel: '初級',
-            setClassLevel: (level) => {
-                // Determine default excluded properties
-                // When selecting 'プレ', hide 'C01' and 'C02' (Planks) by default if not already configured.
-                // We keep the logic simple: whenever Pre-class is selected, ensure C01 and C02 are in exclusions.
-                if (level === 'プレ') {
-                    set((state) => ({
-                        classLevel: level,
-                        excludedExercises: Array.from(new Set([...state.excludedExercises, 'C01', 'C02'])),
-                    }));
-                } else {
-                    set({ classLevel: level });
-                }
-            },
 
             onboardingCompleted: false,
             setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
@@ -140,47 +170,17 @@ export const useAppStore = create<AppState>()(
             requiredExercises: ['S01', 'S02', 'S07'], // Make Splits, Forward Fold & Point & Flex default MUST-DOs
             setRequiredExercises: (ids) => set({ requiredExercises: ids }),
 
-            fuwafuwaBirthDate: new Date().toISOString().split('T')[0], // Default to today
-            fuwafuwaType: Math.floor(Math.random() * 9), // Initial random type 0-8
-            fuwafuwaCycleCount: 1,
-            fuwafuwaName: null,
-            pastFuwafuwas: [],
-            setFuwafuwaBirthDate: (date) => set({ fuwafuwaBirthDate: date }),
-            setFuwafuwaType: (type) => set({ fuwafuwaType: type }),
-            setFuwafuwaName: (name) => set({ fuwafuwaName: name }),
-            resetFuwafuwaState: (newType, activeDays, finalStage) => set((state) => {
-                const today = new Date().toISOString().split('T')[0];
-                const record: PastFuwafuwaRecord = {
-                    id: crypto.randomUUID(),
-                    name: state.fuwafuwaName,
-                    type: state.fuwafuwaType,
-                    activeDays,
-                    finalStage,
-                    sayonaraDate: today
-                };
-                return {
-                    fuwafuwaBirthDate: today,
-                    fuwafuwaType: newType,
-                    fuwafuwaCycleCount: state.fuwafuwaCycleCount + 1,
-                    fuwafuwaName: null, // Reset name for new generation
-                    pastFuwafuwas: [...state.pastFuwafuwas, record],
-                    notifiedFuwafuwaStages: [] // Reset notifications for new generation
-                };
-            }),
-
             debugFuwafuwaStage: null,
             debugFuwafuwaType: null,
             setDebugFuwafuwaStage: (stage) => set({ debugFuwafuwaStage: stage }),
             setDebugFuwafuwaType: (type) => set({ debugFuwafuwaType: type }),
 
-            notifiedFuwafuwaStages: [],
-            addNotifiedFuwafuwaStage: (stage) => set((state) => ({ notifiedFuwafuwaStages: [...state.notifiedFuwafuwaStages, stage] })),
             activeMilestoneModal: null,
             setActiveMilestoneModal: (modal) => set({ activeMilestoneModal: modal })
         }),
         {
             name: 'keepgoing-app-state',
-            version: 2,
+            version: 3, // Bumped to 3 for Multi-User migration
             migrate: (persistedState: any, version: number) => {
                 if (version === 0) {
                     // Migration: Ensure 'S07' (Point & Flex) is added to required exercises for existing users
@@ -193,10 +193,39 @@ export const useAppStore = create<AppState>()(
                     persistedState.bgmEnabled = persistedState.bgmEnabled ?? true;
                     persistedState.hapticEnabled = persistedState.hapticEnabled ?? true;
                 }
+                if (version < 3) {
+                    // Migration: Move single user data to users array
+                    if (!persistedState.users || persistedState.users.length === 0) {
+                        const legacyUser: UserProfileStore = {
+                            id: crypto.randomUUID(),
+                            name: persistedState.fuwafuwaName || 'ゲスト',
+                            classLevel: persistedState.classLevel || '初級',
+                            fuwafuwaBirthDate: persistedState.fuwafuwaBirthDate || new Date().toISOString().split('T')[0],
+                            fuwafuwaType: persistedState.fuwafuwaType || Math.floor(Math.random() * 9),
+                            fuwafuwaCycleCount: persistedState.fuwafuwaCycleCount || 1,
+                            fuwafuwaName: persistedState.fuwafuwaName || null,
+                            pastFuwafuwas: persistedState.pastFuwafuwas || [],
+                            notifiedFuwafuwaStages: persistedState.notifiedFuwafuwaStages || []
+                        };
+                        persistedState.users = [legacyUser];
+                        persistedState.activeUserIds = [legacyUser.id];
+                    }
+
+                    // Cleanup legacy root properties if desired (Zustand will ignore them anyway based on partialize, 
+                    // but we can explicitly delete them)
+                    delete persistedState.classLevel;
+                    delete persistedState.fuwafuwaBirthDate;
+                    delete persistedState.fuwafuwaType;
+                    delete persistedState.fuwafuwaCycleCount;
+                    delete persistedState.fuwafuwaName;
+                    delete persistedState.pastFuwafuwas;
+                    delete persistedState.notifiedFuwafuwaStages;
+                }
                 return persistedState as AppState;
             },
             partialize: (state) => ({
-                classLevel: state.classLevel,
+                users: state.users,
+                activeUserIds: state.activeUserIds,
                 onboardingCompleted: state.onboardingCompleted,
                 soundVolume: state.soundVolume,
                 ttsEnabled: state.ttsEnabled,
@@ -207,11 +236,6 @@ export const useAppStore = create<AppState>()(
                 dailyTargetMinutes: state.dailyTargetMinutes,
                 excludedExercises: state.excludedExercises,
                 requiredExercises: state.requiredExercises,
-                fuwafuwaBirthDate: state.fuwafuwaBirthDate,
-                fuwafuwaType: state.fuwafuwaType,
-                fuwafuwaCycleCount: state.fuwafuwaCycleCount,
-                fuwafuwaName: state.fuwafuwaName,
-                pastFuwafuwas: state.pastFuwafuwas,
             }),
         }
     )

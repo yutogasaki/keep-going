@@ -11,7 +11,16 @@ import { audio } from '../lib/audio';
 type MenuTab = 'group' | 'individual';
 
 export const MenuPage: React.FC = () => {
-    const classLevel = useAppStore(s => s.classLevel);
+    const users = useAppStore(s => s.users);
+    const sessionUserIds = useAppStore(s => s.sessionUserIds);
+    // Use sessionUserIds instead of activeUserIds so the menu matches the home screen swipe state
+    const currentUsers = users.filter(u => sessionUserIds.includes(u.id));
+    const classLevel = currentUsers.length > 0
+        ? currentUsers.reduce((min, u) => {
+            const weights: Record<'プレ' | '初級' | '中級' | '上級', number> = { 'プレ': 0, '初級': 1, '中級': 2, '上級': 3 };
+            return weights[u.classLevel] < weights[min] ? u.classLevel : min;
+        }, currentUsers[0].classLevel)
+        : '初級';
     const startSessionWithExercises = useAppStore(s => s.startSessionWithExercises);
     const [tab, setTab] = useState<MenuTab>('group');
     const [presets, setPresets] = useState<MenuGroup[]>([]);

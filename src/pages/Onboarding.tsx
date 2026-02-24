@@ -12,16 +12,35 @@ const CLASS_LEVELS: { id: ClassLevel; label: string; emoji: string; desc: string
 
 export const Onboarding: React.FC = () => {
     const setOnboardingCompleted = useAppStore((state) => state.setOnboardingCompleted);
-    const setClassLevel = useAppStore((state) => state.setClassLevel);
-    const [step, setStep] = useState<'welcome' | 'class' | 'swipe'>('welcome');
+    const addUser = useAppStore((state) => state.addUser);
+    const setActiveUserIds = useAppStore((state) => state.setActiveUserIds);
+    const [step, setStep] = useState<'welcome' | 'name' | 'class' | 'swipe'>('welcome');
+    const [userName, setUserName] = useState('');
     const [selectedClass, setSelectedClass] = useState<ClassLevel | null>(null);
 
     const handleClassSelect = (level: ClassLevel) => {
         setSelectedClass(level);
-        setClassLevel(level);
     };
 
     const handleFinish = () => {
+        addUser({
+            name: userName.trim() || 'ゲスト',
+            classLevel: selectedClass || '初級',
+            fuwafuwaBirthDate: new Date().toISOString().split('T')[0],
+            fuwafuwaType: Math.floor(Math.random() * 6),
+            fuwafuwaCycleCount: 1,
+            fuwafuwaName: null,
+            pastFuwafuwas: [],
+            notifiedFuwafuwaStages: []
+        });
+
+        // Ensure the newly added user becomes active
+        const state = useAppStore.getState();
+        const latestUser = state.users[state.users.length - 1];
+        if (latestUser) {
+            setActiveUserIds([latestUser.id]);
+        }
+
         setOnboardingCompleted(true);
     };
 
@@ -89,7 +108,7 @@ export const Onboarding: React.FC = () => {
                         </p>
 
                         <button
-                            onClick={() => setStep('class')}
+                            onClick={() => setStep('name')}
                             style={{
                                 marginTop: 16,
                                 padding: '14px 48px',
@@ -109,7 +128,80 @@ export const Onboarding: React.FC = () => {
                     </motion.div>
                 )}
 
-                {/* Step 2: Class selection (spec §10.4) */}
+                {/* Step 2: Name Input */}
+                {step === 'name' && (
+                    <motion.div
+                        key="name"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -30 }}
+                        transition={{ duration: 0.5 }}
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 24,
+                            padding: '0 24px',
+                            maxWidth: 360,
+                            textAlign: 'center',
+                            width: '100%',
+                        }}
+                    >
+                        <h2 style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 22,
+                            fontWeight: 700,
+                            color: '#2D3436',
+                        }}>
+                            おなまえを おしえてね
+                        </h2>
+
+                        <input
+                            type="text"
+                            value={userName}
+                            onChange={(e) => setUserName(e.target.value)}
+                            placeholder="ゲスト"
+                            autoFocus
+                            style={{
+                                width: '100%',
+                                padding: '16px 20px',
+                                borderRadius: 16,
+                                border: '2px solid rgba(43, 186, 160, 0.3)',
+                                fontSize: 18,
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontWeight: 600,
+                                textAlign: 'center',
+                                outline: 'none',
+                                transition: 'border-color 0.2s',
+                            }}
+                            onFocus={(e) => e.target.style.borderColor = '#2BBAA0'}
+                            onBlur={(e) => e.target.style.borderColor = 'rgba(43, 186, 160, 0.3)'}
+                        />
+
+                        <button
+                            onClick={() => setStep('class')}
+                            disabled={!userName.trim()}
+                            style={{
+                                marginTop: 16,
+                                padding: '14px 48px',
+                                borderRadius: 9999,
+                                border: 'none',
+                                background: userName.trim() ? '#2BBAA0' : '#B2BEC3',
+                                color: 'white',
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 16,
+                                fontWeight: 700,
+                                cursor: userName.trim() ? 'pointer' : 'not-allowed',
+                                boxShadow: userName.trim() ? '0 4px 16px rgba(43, 186, 160, 0.35)' : 'none',
+                                transition: 'all 0.3s ease',
+                            }}
+                        >
+                            つぎへ
+                        </button>
+                    </motion.div>
+                )}
+
+                {/* Step 3: Class selection (spec §10.4) */}
                 {step === 'class' && (
                     <motion.div
                         key="class"

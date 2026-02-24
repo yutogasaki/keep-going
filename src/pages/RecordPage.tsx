@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Clock, Flame, BookHeart, CalendarDays, Star, Award } from 'lucide-react';
+import { Calendar, Clock, Flame, BookHeart, CalendarDays, Award } from 'lucide-react';
 import { getAllSessions, getSessionsByDate, getTodayKey, type SessionRecord } from '../lib/db';
 import { EXERCISES } from '../data/exercises';
 import { ExerciseIcon } from '../components/ExerciseIcon';
@@ -12,7 +12,10 @@ export const RecordPage: React.FC = () => {
     const [sessions, setSessions] = useState<SessionRecord[]>([]);
     const [todaySessions, setTodaySessions] = useState<SessionRecord[]>([]);
     const [loading, setLoading] = useState(true);
-    const pastFuwafuwas = useAppStore(s => s.pastFuwafuwas);
+    const users = useAppStore(s => s.users);
+    const activeUserIds = useAppStore(s => s.activeUserIds);
+    const activeUsers = users.filter(u => activeUserIds.includes(u.id));
+    const pastFuwafuwas = activeUsers.flatMap(u => u.pastFuwafuwas || []);
 
     useEffect(() => {
         const load = () => {

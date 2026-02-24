@@ -5,20 +5,16 @@ import { calculateFuwafuwaStatus } from '../lib/fuwafuwa';
 import { getTodayKey, type SessionRecord } from '../lib/db';
 import { Heart, Edit2 } from 'lucide-react';
 
+import type { UserProfileStore } from '../store/useAppStore';
+
 interface Props {
+    user: UserProfileStore;
     sessions: SessionRecord[];
 }
 
-export const FuwafuwaCharacter: React.FC<Props> = ({ sessions }) => {
-    const {
-        fuwafuwaBirthDate,
-        fuwafuwaType,
-        fuwafuwaName,
-        setFuwafuwaBirthDate,
-        setFuwafuwaType,
-        setFuwafuwaName,
-        resetFuwafuwaState
-    } = useAppStore();
+export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
+    const { updateUser, resetUserFuwafuwa } = useAppStore();
+    const { fuwafuwaBirthDate, fuwafuwaType, fuwafuwaName } = user;
 
     const [status, setStatus] = useState(() => calculateFuwafuwaStatus(fuwafuwaBirthDate || getTodayKey(), sessions));
     const controls = useAnimation();
@@ -30,10 +26,12 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ sessions }) => {
 
     useEffect(() => {
         if (!fuwafuwaBirthDate) {
-            setFuwafuwaBirthDate(getTodayKey());
-            setFuwafuwaType(Math.floor(Math.random() * 6));
+            updateUser(user.id, {
+                fuwafuwaBirthDate: getTodayKey(),
+                fuwafuwaType: Math.floor(Math.random() * 6)
+            });
         }
-    }, [fuwafuwaBirthDate, setFuwafuwaBirthDate, setFuwafuwaType]);
+    }, [fuwafuwaBirthDate, user.id, updateUser]);
 
     useEffect(() => {
         if (fuwafuwaBirthDate) {
@@ -45,7 +43,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ sessions }) => {
         if (status.isSayonara) {
             // Animate out and add to gallery
             await controls.start({ opacity: 0, scale: 0, y: -50, transition: { duration: 0.8 } });
-            resetFuwafuwaState(Math.floor(Math.random() * 6), status.activeDays, status.stage);
+            resetUserFuwafuwa(user.id, Math.floor(Math.random() * 6), status.activeDays, status.stage);
             controls.set({ opacity: 1, scale: 0.5, y: 0 }); // reset for new egg
             return;
         }
@@ -107,7 +105,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ sessions }) => {
     const handleEditName = () => {
         const newName = prompt('パートナーに名前をつけてあげよう！', fuwafuwaName || '');
         if (newName !== null) {
-            setFuwafuwaName(newName.trim() || null);
+            updateUser(user.id, { fuwafuwaName: newName.trim() || null });
         }
     };
 

@@ -9,18 +9,20 @@ import { calculateFuwafuwaStatus } from '../lib/fuwafuwa';
 export const HomeScreen: React.FC = () => {
     const [allSessions, setAllSessions] = useState<SessionRecord[]>([]);
 
-    const fuwafuwaType = useAppStore(s => s.fuwafuwaType);
-    const fuwafuwaBirthDate = useAppStore(s => s.fuwafuwaBirthDate);
-    const notifiedFuwafuwaStages = useAppStore(s => s.notifiedFuwafuwaStages);
-    const addNotifiedFuwafuwaStage = useAppStore(s => s.addNotifiedFuwafuwaStage);
+    const users = useAppStore(s => s.users);
+    const activeUserIds = useAppStore(s => s.activeUserIds);
+    const updateUser = useAppStore(s => s.updateUser);
     const activeMilestoneModal = useAppStore(s => s.activeMilestoneModal);
     const setActiveMilestoneModal = useAppStore(s => s.setActiveMilestoneModal);
 
-    const status = calculateFuwafuwaStatus(fuwafuwaBirthDate, allSessions);
+    const activeUsers = users.filter(u => activeUserIds.includes(u.id));
 
-    // Calculate today's total trained seconds for the Magic Tank
+    // Calculate today's total trained seconds for the Magic Tank based on active users
     const todayStr = new Date().toISOString().split('T')[0];
-    const todaySessions = allSessions.filter(s => s.date === todayStr);
+    const todaySessions = allSessions.filter(s =>
+        s.date === todayStr &&
+        (!s.userIds || s.userIds.some(id => activeUserIds.includes(id)))
+    );
     const todaySeconds = todaySessions.reduce((acc, curr) => acc + curr.totalSeconds, 0);
     const dailyTargetMinutes = useAppStore(s => s.dailyTargetMinutes);
     const targetSeconds = dailyTargetMinutes * 60;
@@ -73,22 +75,72 @@ export const HomeScreen: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (!fuwafuwaBirthDate || allSessions.length === 0) return;
-        const status = calculateFuwafuwaStatus(fuwafuwaBirthDate, allSessions);
-        const currentStage = status.stage;
+        if (allSessions.length === 0 || activeUsers.length === 0) return;
 
-        // Exclude sayonara from milestone modals, we have a different flow for that usually, or we can just ignore for now
-        if (!status.isSayonara && !notifiedFuwafuwaStages.includes(currentStage)) {
-            addNotifiedFuwafuwaStage(currentStage);
-            if (currentStage === 0) {
-                setActiveMilestoneModal('egg');
-            } else if (currentStage === 2) {
-                setActiveMilestoneModal('fairy');
-            } else if (currentStage === 3) {
-                setActiveMilestoneModal('adult');
+        let shouldTriggerModal: 'egg' | 'fairy' | 'adult' | null = null;
+
+        activeUsers.forEach(user => {
+            if (!user.fuwafuwaBirthDate) return;
+            const status = calculateFuwafuwaStatus(user.fuwafuwaBirthDate, allSessions);
+            const currentStage = status.stage;
+
+            if (!status.isSayonara && !(user.notifiedFuwafuwaStages || []).includes(currentStage)) {
+                updateUser(user.id, { notifiedFuwafuwaStages: [...(user.notifiedFuwafuwaStages || []), currentStage] });
+                if (currentStage === 0) shouldTriggerModal = 'egg';
+                else if (currentStage === 2) shouldTriggerModal = 'fairy';
+                else if (currentStage === 3) shouldTriggerModal = 'adult';
             }
+        });
+
+        if (shouldTriggerModal) {
+            setActiveMilestoneModal(shouldTriggerModal);
         }
-    }, [fuwafuwaBirthDate, allSessions, notifiedFuwafuwaStages, addNotifiedFuwafuwaStage, setActiveMilestoneModal]);
+    }, [allSessions, activeUsers, updateUser, setActiveMilestoneModal]);
+
+    // Define the swipeable pages based on users
+    const swipePages = [...users];
+    if (activeUsers.length >= 2) {
+        // Add a special "Together" page at the end if 2 or more active users exist
+        swipePages.push({ id: 'TOGETHER', name: 'みんなで！', classLevel: '初級' } as any);
+    }
+
+    const [currentPageIndex, setCurrentPageIndex] = useState(
+        // Default to the first active user, or the first user, or 0
+        Math.max(0, users.findIndex(u => activeUserIds.includes(u.id)))
+    );
+
+    const setSessionUserIds = useAppStore(s => s.setSessionUserIds);
+
+    // Sync active state whenever swipe page changes
+    useEffect(() => {
+        if (users.length === 0) return;
+        const page = swipePages[currentPageIndex];
+        if (!page) {
+            // Safety fallback
+            if (currentPageIndex > 0) setCurrentPageIndex(0);
+            return;
+        }
+
+        if (page.id === 'TOGETHER') {
+            setSessionUserIds(activeUserIds);
+        } else {
+            setSessionUserIds([page.id]);
+        }
+    }, [currentPageIndex, users, swipePages, activeUserIds, setSessionUserIds]);
+
+    const handleDragEnd = (_event: any, info: any) => {
+        const threshold = 50; // pixels
+        if (info.offset.x < -threshold && currentPageIndex < swipePages.length - 1) {
+            setCurrentPageIndex(prev => prev + 1);
+        } else if (info.offset.x > threshold && currentPageIndex > 0) {
+            setCurrentPageIndex(prev => prev - 1);
+        }
+    };
+
+    // Set globally for Menu/Session to pick up via a new store property or we just rely on passing it via navigation if possible.
+    // Wait, the easiest way to tell other pages who is playing is to actually update `activeUserIds`.
+    // BUT the plan explicitly said NOT to destroy the Setting's checkboxes.
+    // Let's add `sessionUserIds` to the global store later. For now, we'll just show the UI.
 
     return (
         <div style={{
@@ -231,17 +283,101 @@ export const HomeScreen: React.FC = () => {
                     </motion.div>
                 </div>
 
-                {/* The Star of the Show */}
-                <motion.div
-                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, ease: 'easeOut' }}
-                    style={{
-                        transform: 'scale(1.2)' // Make it slightly larger as the centerpiece
-                    }}
-                >
-                    <FuwafuwaCharacter sessions={allSessions} />
-                </motion.div>
+                {/* The Stars of the Show (Carousel) */}
+                <div style={{ width: '100%', overflow: 'hidden', position: 'relative' }}>
+                    <motion.div
+                        drag="x"
+                        dragConstraints={{ left: 0, right: 0 }}
+                        dragElastic={0.2}
+                        onDragEnd={handleDragEnd}
+                        animate={{ x: `calc(-${currentPageIndex * 100}%)` }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                        style={{ display: 'flex', width: '100%', alignItems: 'center' }}
+                    >
+                        {swipePages.map((page, index) => {
+                            const isTogetherPage = page.id === 'TOGETHER';
+                            const renderUsers = isTogetherPage ? activeUsers : [page];
+
+                            return (
+                                <div key={page.id} style={{
+                                    width: '100%',
+                                    flexShrink: 0,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: 16,
+                                    opacity: currentPageIndex === index ? 1 : 0.3,
+                                    transition: 'opacity 0.3s ease'
+                                }}>
+                                    <h2 style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 20,
+                                        fontWeight: 800,
+                                        color: '#2D3436',
+                                        margin: 0,
+                                        background: 'rgba(255,255,255,0.6)',
+                                        padding: '4px 16px',
+                                        borderRadius: 20,
+                                        letterSpacing: 2
+                                    }}>
+                                        {page.name}
+                                    </h2>
+                                    <div style={{ display: 'flex', gap: 16, justifyContent: 'center', alignItems: 'center' }}>
+                                        {renderUsers.map((u: any) => (
+                                            <div key={u.id} style={{
+                                                transform: renderUsers.length === 1 ? 'scale(1.2)' : 'scale(1)',
+                                                position: 'relative'
+                                            }}>
+                                                {/* Optional: Show tiny name badge if multiple users */}
+                                                {renderUsers.length > 1 && (
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        top: -24,
+                                                        left: '50%',
+                                                        transform: 'translateX(-50%)',
+                                                        background: 'rgba(255, 255, 255, 0.8)',
+                                                        padding: '2px 8px',
+                                                        borderRadius: 12,
+                                                        fontSize: 10,
+                                                        fontWeight: 'bold',
+                                                        color: '#2BBAA0',
+                                                        whiteSpace: 'nowrap',
+                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                                        zIndex: 2
+                                                    }}>
+                                                        {u.name}
+                                                    </div>
+                                                )}
+                                                <FuwafuwaCharacter user={u} sessions={allSessions} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </motion.div>
+                </div>
+
+                {/* Pagination Dots */}
+                <div style={{
+                    display: 'flex',
+                    gap: 8,
+                    marginTop: 32,
+                    alignItems: 'center'
+                }}>
+                    {swipePages.map((_, idx) => (
+                        <div
+                            key={idx}
+                            style={{
+                                width: currentPageIndex === idx ? 24 : 8,
+                                height: 8,
+                                borderRadius: 4,
+                                background: currentPageIndex === idx ? '#2BBAA0' : 'rgba(43, 186, 160, 0.3)',
+                                transition: 'all 0.3s ease'
+                            }}
+                        />
+                    ))}
+                </div>
 
                 {/* Subtle instruction text */}
                 <motion.div
@@ -260,9 +396,10 @@ export const HomeScreen: React.FC = () => {
                         borderRadius: 20,
                     }}
                 >
-                    つんつん してみてね
+                    スワイプしてえらんでね
                 </motion.div>
             </div>
         </div>
     );
 };
+

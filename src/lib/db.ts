@@ -8,9 +8,10 @@ export interface SessionRecord {
     totalSeconds: number;
     exerciseIds: string[];
     skippedIds: string[]; // internal only
+    userIds?: string[];   // For multi-user support
 }
 
-// User profile
+// User profile (Legacy, now moving to Zustand for simplicity/sync)
 export interface UserProfile {
     classLevel: 'プレ' | '初級' | '中級' | '上級';
     displayName: string;
