@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Flame } from 'lucide-react';
-import { getAllSessions, calculateStreak, type SessionRecord } from '../lib/db';
+import { getAllSessions, type SessionRecord } from '../lib/db';
 import { FuwafuwaCharacter } from '../components/FuwafuwaCharacter';
+import { MagicTank } from '../components/MagicTank';
 
 export const HomeScreen: React.FC = () => {
     const [allSessions, setAllSessions] = useState<SessionRecord[]>([]);
-    const [streak, setStreak] = useState(0);
 
     useEffect(() => {
         const load = () => {
             getAllSessions().then(sessions => {
                 setAllSessions(sessions);
-                setStreak(calculateStreak(sessions));
             });
         };
         load();
@@ -82,37 +80,15 @@ export const HomeScreen: React.FC = () => {
                 flex: 1,
                 paddingBottom: 40 // Adjust for bottom navigation
             }}>
-                {/* Streak Badge (if any) */}
-                <div style={{ height: 60, display: 'flex', alignItems: 'flex-end', paddingBottom: 24 }}>
-                    {streak > 0 && (
-                        <motion.div
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ type: 'spring', damping: 12 }}
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 6,
-                                background: 'rgba(255, 255, 255, 0.8)',
-                                backdropFilter: 'blur(8px)',
-                                padding: '8px 20px',
-                                borderRadius: 30,
-                                boxShadow: '0 8px 24px rgba(232, 67, 147, 0.15)',
-                                border: '1px solid rgba(255,255,255,1)'
-                            }}
-                        >
-                            <Flame size={20} color="#E84393" strokeWidth={2.5} />
-                            <span style={{
-                                fontFamily: "'Outfit', sans-serif",
-                                fontWeight: 800,
-                                fontSize: 16,
-                                color: '#E84393',
-                                letterSpacing: 1
-                            }}>
-                                {streak} DAYS STREAK!
-                            </span>
-                        </motion.div>
-                    )}
+                {/* Magic Power Tank */}
+                <div style={{ height: 120, display: 'flex', alignItems: 'flex-end', paddingBottom: 16 }}>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.3 }}
+                    >
+                        <MagicTank count={allSessions.length} maxCount={3} />
+                    </motion.div>
                 </div>
 
                 {/* The Star of the Show */}
@@ -130,18 +106,21 @@ export const HomeScreen: React.FC = () => {
                 {/* Subtle instruction text */}
                 <motion.div
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.5 }}
+                    animate={{ opacity: 0.8 }}
                     transition={{ delay: 2, duration: 2 }}
                     style={{
-                        position: 'absolute',
-                        bottom: 60,
+                        marginTop: 24,
                         fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 12,
+                        fontSize: 13,
+                        fontWeight: 700,
                         color: '#636e72',
-                        letterSpacing: 2
+                        letterSpacing: 2,
+                        background: 'rgba(255, 255, 255, 0.5)',
+                        padding: '6px 16px',
+                        borderRadius: 20,
                     }}
                 >
-                    タップしてあそぶ
+                    ✨ ふわふわに まほうを おくろう ✨
                 </motion.div>
             </div>
         </div>
