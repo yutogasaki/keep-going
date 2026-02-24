@@ -99,6 +99,7 @@ export const useAppStore = create<AppState>()(
             })),
             deleteUser: (id) => set((state) => ({
                 users: state.users.filter(u => u.id !== id),
+                sessionUserIds: state.sessionUserIds.filter(userId => userId !== id),
             })),
             resetUserFuwafuwa: (id, newType, activeDays, finalStage) => set((state) => {
                 const today = new Date().toISOString().split('T')[0];

@@ -114,10 +114,11 @@ export const HomeScreen: React.FC = () => {
     const [currentPageIndex, setCurrentPageIndex] = useState(() => {
         // Initialize to match sessionUserIds if possible (e.g. returning from Menu)
         if (sessionUserIds.length > 1) {
-            return swipePages.findIndex(p => p.id === 'TOGETHER');
+            const idx = swipePages.findIndex(p => p.id === 'TOGETHER');
+            return Math.max(0, idx);
         } else if (sessionUserIds.length === 1) {
             const idx = swipePages.findIndex(p => p.id === sessionUserIds[0]);
-            return idx >= 0 ? idx : 0;
+            return Math.max(0, idx);
         }
         return 0;
     });
@@ -129,7 +130,7 @@ export const HomeScreen: React.FC = () => {
         const page = swipePages[currentPageIndex];
         if (!page) {
             // Safety fallback
-            if (currentPageIndex > 0) setCurrentPageIndex(0);
+            if (currentPageIndex !== 0) setCurrentPageIndex(0);
             return;
         }
 
