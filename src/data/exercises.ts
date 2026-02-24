@@ -34,8 +34,8 @@ export const EXERCISES: Exercise[] = [
     { id: 'S04', name: 'ブリッジ', sec: 30, type: 'stretch', internal: 'single', classes: ['初級', '中級', '上級'], priority: 'medium', emoji: '🌈', phase: 'core' },
     { id: 'S09', name: 'Y字バランス', sec: 60, type: 'stretch', internal: 'R30→L30', classes: ['中級', '上級'], priority: 'medium', emoji: '🧘', phase: 'core', reading: 'わいじばらんす' },
     { id: 'S10', name: 'Y字バランス', sec: 60, type: 'stretch', internal: 'R30→L30', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💃', phase: 'core', reading: 'わいじばらんす' },
-    { id: 'C01', name: 'プランク', sec: 30, type: 'core', internal: 'single', classes: ['初級', '中級', '上級'], priority: 'medium', emoji: '💪', phase: 'core' },
-    { id: 'C02', name: 'サイドプランク', sec: 60, type: 'core', internal: 'R30→L30', classes: ['初級', '中級', '上級'], priority: 'medium', emoji: '🏋️', phase: 'core' },
+    { id: 'C01', name: 'プランク', sec: 30, type: 'core', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💪', phase: 'core' },
+    { id: 'C02', name: 'サイドプランク', sec: 60, type: 'core', internal: 'R30→L30', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🏋️', phase: 'core' },
 ];
 
 // Get exercise by ID
