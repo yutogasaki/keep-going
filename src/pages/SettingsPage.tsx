@@ -223,6 +223,7 @@ const HelpItem: React.FC<{
                 background: 'none',
                 cursor: 'pointer',
                 textAlign: 'left',
+                color: '#2D3436',
             }}
         >
             <span style={{
@@ -416,7 +417,7 @@ export const SettingsPage: React.FC = () => {
 
             {/* Class level setting */}
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <button
+                <div
                     onClick={() => setShowClassPicker(!showClassPicker)}
                     style={{
                         width: '100%',
@@ -424,11 +425,7 @@ export const SettingsPage: React.FC = () => {
                         alignItems: 'center',
                         gap: 12,
                         padding: '16px 20px',
-                        border: 'none',
-                        background: 'transparent',
                         cursor: 'pointer',
-                        textAlign: 'left',
-                        color: '#2D3436',
                     }}
                 >
                     <div style={{
@@ -461,7 +458,7 @@ export const SettingsPage: React.FC = () => {
                         transform: showClassPicker ? 'rotate(90deg)' : 'rotate(0deg)',
                         transition: 'transform 0.2s ease',
                     }} />
-                </button>
+                </div>
 
                 {showClassPicker && (
                     <motion.div
@@ -748,50 +745,44 @@ export const SettingsPage: React.FC = () => {
             </div>
 
             {/* Help */}
-            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <button
-                    onClick={() => setShowHelp(true)}
-                    style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 12,
-                        padding: '16px 20px',
-                        border: 'none',
-                        background: 'transparent',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        color: '#2D3436',
-                    }}
-                >
+            <div
+                className="card"
+                onClick={() => setShowHelp(true)}
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '16px 20px',
+                    cursor: 'pointer',
+                }}
+            >
+                <div style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 12,
+                    background: 'linear-gradient(135deg, #E8F8F0, #F0F8FF)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 20,
+                    flexShrink: 0,
+                }}>
+                    <HelpCircle size={22} color="#2BBAA0" />
+                </div>
+                <div style={{ flex: 1 }}>
                     <div style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 12,
-                        background: 'linear-gradient(135deg, #E8F8F0, #F0F8FF)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 20,
-                        flexShrink: 0,
-                    }}>
-                        <HelpCircle size={22} color="#2BBAA0" />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <div style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 14,
-                            fontWeight: 700,
-                            color: '#2D3436',
-                        }}>ヘルプと使い方</div>
-                        <div style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 12,
-                            color: '#8395A7',
-                        }}>よくある質問や操作について</div>
-                    </div>
-                    <ChevronRight size={18} color="#B2BEC3" />
-                </button>
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: '#2D3436',
+                    }}>ヘルプと使い方</div>
+                    <div style={{
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 12,
+                        color: '#8395A7',
+                    }}>よくある質問や操作について</div>
+                </div>
+                <ChevronRight size={18} color="#B2BEC3" />
             </div>
 
             {/* App info */}
@@ -829,49 +820,41 @@ export const SettingsPage: React.FC = () => {
             </div>
 
             {/* Re-do onboarding */}
-            <div className="card card-sm" style={{ padding: 0 }}>
-                <button
-                    onClick={handleRedoOnboarding}
-                    style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '14px 20px',
-                        border: 'none',
-                        background: 'none',
-                        cursor: 'pointer',
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 14,
-                        color: '#2BBAA0',
-                    }}
-                >
-                    <RotateCcw size={16} />
-                    <span>チュートリアルをやりなおす</span>
-                </button>
+            <div
+                className="card card-sm"
+                onClick={handleRedoOnboarding}
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '14px 20px',
+                    cursor: 'pointer',
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 14,
+                    color: '#2BBAA0',
+                }}
+            >
+                <RotateCcw size={16} />
+                <span>チュートリアルをやりなおす</span>
             </div>
 
             {/* Reset */}
-            <div className="card card-sm" style={{ padding: 0 }}>
-                <button
-                    onClick={() => setShowConfirmReset(true)}
-                    style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '14px 20px',
-                        border: 'none',
-                        background: 'none',
-                        cursor: 'pointer',
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 14,
-                        color: '#E17055',
-                    }}
-                >
-                    <Trash2 size={16} />
-                    <span>データをリセット</span>
-                </button>
+            <div
+                className="card card-sm"
+                onClick={() => setShowConfirmReset(true)}
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '14px 20px',
+                    cursor: 'pointer',
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 14,
+                    color: '#E17055',
+                }}
+            >
+                <Trash2 size={16} />
+                <span>データをリセット</span>
             </div>
 
             {/* Confirm reset dialog */}
