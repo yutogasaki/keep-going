@@ -88,8 +88,8 @@ export const Onboarding: React.FC = () => {
                             color: '#8395A7',
                             lineHeight: 1.8,
                         }}>
-                            考えなくていい。<br />
-                            ただ、つづけるだけ。
+                            今日やること、もう迷わない。<br />
+                            がんばらなくていい。ただ、開くだけ。
                         </p>
 
                         <button

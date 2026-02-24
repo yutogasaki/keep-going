@@ -35,6 +35,14 @@ interface AppState {
     setNotificationsEnabled: (enabled: boolean) => void;
     notificationTime: string;
     setNotificationTime: (time: string) => void;
+
+    // Advanced Customizations (persisted)
+    dailyTargetMinutes: number;
+    setDailyTargetMinutes: (minutes: number) => void;
+    excludedExercises: string[];
+    setExcludedExercises: (ids: string[]) => void;
+    requiredExercises: string[];
+    setRequiredExercises: (ids: string[]) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -55,7 +63,19 @@ export const useAppStore = create<AppState>()(
             endSession: () => set({ isInSession: false, sessionReturnedFromTab: false, sessionExerciseIds: null }),
 
             classLevel: '初級',
-            setClassLevel: (level) => set({ classLevel: level }),
+            setClassLevel: (level) => {
+                // Determine default excluded properties
+                // When selecting 'プレ', hide 'C01' and 'C02' (Planks) by default if not already configured.
+                // We keep the logic simple: whenever Pre-class is selected, ensure C01 and C02 are in exclusions.
+                if (level === 'プレ') {
+                    set((state) => ({
+                        classLevel: level,
+                        excludedExercises: Array.from(new Set([...state.excludedExercises, 'C01', 'C02'])),
+                    }));
+                } else {
+                    set({ classLevel: level });
+                }
+            },
 
             hasCompletedOnboarding: false,
             completeOnboarding: () => set({ hasCompletedOnboarding: true }),
@@ -68,6 +88,13 @@ export const useAppStore = create<AppState>()(
             setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled }),
             notificationTime: '21:00',
             setNotificationTime: (time) => set({ notificationTime: time }),
+
+            dailyTargetMinutes: 10,
+            setDailyTargetMinutes: (minutes) => set({ dailyTargetMinutes: minutes }),
+            excludedExercises: [],
+            setExcludedExercises: (ids) => set({ excludedExercises: ids }),
+            requiredExercises: ['S01', 'S02'], // Make Splts & Forward Fold default MUST-DOs
+            setRequiredExercises: (ids) => set({ requiredExercises: ids }),
         }),
         {
             name: 'keepgoing-app-state',
@@ -78,6 +105,9 @@ export const useAppStore = create<AppState>()(
                 ttsEnabled: state.ttsEnabled,
                 notificationsEnabled: state.notificationsEnabled,
                 notificationTime: state.notificationTime,
+                dailyTargetMinutes: state.dailyTargetMinutes,
+                excludedExercises: state.excludedExercises,
+                requiredExercises: state.requiredExercises,
             }),
         }
     )

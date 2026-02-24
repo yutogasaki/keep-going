@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ChevronRight, Trash2, Volume2, Mic, Bell, Clock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronRight, Trash2, Volume2, Mic, Bell, Clock, X, HelpCircle } from 'lucide-react';
 import { clearAllData } from '../lib/db';
 import { useAppStore } from '../store/useAppStore';
 import { audio } from '../lib/audio';
-import type { ClassLevel } from '../data/exercises';
+import { EXERCISES, type ClassLevel } from '../data/exercises';
 
 const CLASS_LEVELS: { id: ClassLevel; label: string; emoji: string }[] = [
     { id: 'プレ', label: 'プレバレエ', emoji: '🐣' },
@@ -27,8 +27,18 @@ export const SettingsPage: React.FC = () => {
     const notificationTime = useAppStore(s => s.notificationTime);
     const setNotificationTime = useAppStore(s => s.setNotificationTime);
 
+    // Advanced settings state
+    const dailyTargetMinutes = useAppStore(s => s.dailyTargetMinutes);
+    const setDailyTargetMinutes = useAppStore(s => s.setDailyTargetMinutes);
+    const excludedExercises = useAppStore(s => s.excludedExercises);
+    const setExcludedExercises = useAppStore(s => s.setExcludedExercises);
+    const requiredExercises = useAppStore(s => s.requiredExercises);
+    const setRequiredExercises = useAppStore(s => s.setRequiredExercises);
+
     const [showClassPicker, setShowClassPicker] = useState(false);
     const [showConfirmReset, setShowConfirmReset] = useState(false);
+    const [showCustomMenu, setShowCustomMenu] = useState(false);
+    const [showHelp, setShowHelp] = useState(false);
 
     const handleClassChange = (level: ClassLevel) => {
         setClassLevel(level);
@@ -169,6 +179,52 @@ export const SettingsPage: React.FC = () => {
                         ))}
                     </motion.div>
                 )}
+            </div>
+
+            {/* Custom Menu Settings */}
+            <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <button
+                    onClick={() => setShowCustomMenu(true)}
+                    style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '16px 20px',
+                        border: 'none',
+                        background: 'none',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                    }}
+                >
+                    <div style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 12,
+                        background: 'linear-gradient(135deg, #FFF0F5, #FFE4E1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 20,
+                        flexShrink: 0,
+                    }}>
+                        🛠️
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 14,
+                            fontWeight: 700,
+                            color: '#2D3436',
+                        }}>オリジナルメニュー</div>
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 12,
+                            color: '#8395A7',
+                        }}>・じかん: {dailyTargetMinutes}分<br />・こだわり: {requiredExercises.length}個 / 除外: {excludedExercises.length}個</div>
+                    </div>
+                    <ChevronRight size={18} color="#B2BEC3" />
+                </button>
             </div>
 
             {/* Audio Settings */}
@@ -382,6 +438,52 @@ export const SettingsPage: React.FC = () => {
                 )}
             </div>
 
+            {/* Help */}
+            <div className="card" style={{ padding: 0, overflow: 'hidden', marginBottom: 24 }}>
+                <button
+                    onClick={() => setShowHelp(true)}
+                    style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '16px 20px',
+                        border: 'none',
+                        background: 'none',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                    }}
+                >
+                    <div style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 12,
+                        background: 'linear-gradient(135deg, #E8F8F0, #F0F8FF)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 20,
+                        flexShrink: 0,
+                    }}>
+                        <HelpCircle size={22} color="#2BBAA0" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 14,
+                            fontWeight: 700,
+                            color: '#2D3436',
+                        }}>ヘルプと使い方</div>
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 12,
+                            color: '#8395A7',
+                        }}>よくある質問や操作について</div>
+                    </div>
+                    <ChevronRight size={18} color="#B2BEC3" />
+                </button>
+            </div>
+
             {/* App info */}
             <div className="card card-sm" style={{
                 display: 'flex',
@@ -412,7 +514,7 @@ export const SettingsPage: React.FC = () => {
                     fontSize: 13,
                 }}>
                     <span style={{ color: '#8395A7' }}>KeepGoing</span>
-                    <span style={{ color: '#B2BEC3', fontSize: 11 }}>考えなくていい。ただ、つづけるだけ。</span>
+                    <span style={{ color: '#B2BEC3', fontSize: 11 }}>がんばらなくていい。ただ、開くだけ。</span>
                 </div>
             </div>
 
@@ -520,6 +622,281 @@ export const SettingsPage: React.FC = () => {
                     </motion.div>
                 </div>
             )}
+
+            {/* Custom Menu Modal */}
+            <AnimatePresence>
+                {showCustomMenu && (
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgb(248, 249, 250)',
+                        zIndex: 200,
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }}>
+                        {/* Header */}
+                        <div style={{
+                            padding: '24px 20px 16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            background: 'white',
+                            borderBottom: '1px solid rgba(0,0,0,0.06)',
+                            boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                        }}>
+                            <h2 style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 18,
+                                fontWeight: 700,
+                                color: '#2D3436',
+                                margin: 0,
+                            }}>
+                                オリジナルメニュー
+                            </h2>
+                            <button
+                                onClick={() => setShowCustomMenu(false)}
+                                style={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    background: '#F8F9FA',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <X size={20} color="#2D3436" />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+                            {/* Duration */}
+                            <div className="card" style={{ marginBottom: 20, padding: '20px' }}>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 15,
+                                    fontWeight: 700,
+                                    color: '#2D3436',
+                                    marginBottom: 16,
+                                }}>
+                                    1日の目標じかん
+                                </div>
+                                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                                    {[5, 10, 15, 20, 30].map(mins => (
+                                        <button
+                                            key={mins}
+                                            onClick={() => setDailyTargetMinutes(mins)}
+                                            style={{
+                                                flex: 1,
+                                                minWidth: '30%',
+                                                padding: '12px 0',
+                                                borderRadius: 12,
+                                                border: dailyTargetMinutes === mins ? '2px solid #2BBAA0' : '2px solid transparent',
+                                                background: dailyTargetMinutes === mins ? 'rgba(43, 186, 160, 0.08)' : '#F8F9FA',
+                                                color: dailyTargetMinutes === mins ? '#2BBAA0' : '#8395A7',
+                                                fontFamily: "'Outfit', sans-serif",
+                                                fontSize: 16,
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                            }}
+                                        >
+                                            {mins}分
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Exercises */}
+                            <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+                                <div style={{
+                                    padding: '20px 20px 12px',
+                                    borderBottom: '1px solid rgba(0,0,0,0.06)',
+                                }}>
+                                    <div style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 15,
+                                        fontWeight: 700,
+                                        color: '#2D3436',
+                                        marginBottom: 4,
+                                    }}>
+                                        種目のカスタマイズ
+                                    </div>
+                                    <div style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 12,
+                                        color: '#8395A7',
+                                    }}>
+                                        🟢必ずやる / ⚪おまかせ / 🔴やらない
+                                    </div>
+                                </div>
+
+                                <div>
+                                    {EXERCISES.map(exercise => {
+                                        const isRequired = requiredExercises.includes(exercise.id);
+                                        const isExcluded = excludedExercises.includes(exercise.id);
+
+                                        // Next state cycler logic
+                                        const handleCycle = () => {
+                                            if (isRequired) {
+                                                // Required -> Normal
+                                                setRequiredExercises(requiredExercises.filter(id => id !== exercise.id));
+                                            } else if (!isExcluded) {
+                                                // Normal -> Excluded
+                                                setExcludedExercises([...excludedExercises, exercise.id]);
+                                            } else {
+                                                // Excluded -> Required
+                                                setExcludedExercises(excludedExercises.filter(id => id !== exercise.id));
+                                                setRequiredExercises([...requiredExercises, exercise.id]);
+                                            }
+                                        };
+
+                                        return (
+                                            <div key={exercise.id} style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                padding: '16px 20px',
+                                                borderBottom: '1px solid rgba(0,0,0,0.04)',
+                                            }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                    <span style={{ fontSize: 24 }}>{exercise.emoji}</span>
+                                                    <div>
+                                                        <div style={{
+                                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                                            fontSize: 14,
+                                                            fontWeight: 600,
+                                                            color: isExcluded ? '#B2BEC3' : '#2D3436',
+                                                        }}>
+                                                            {exercise.name}
+                                                        </div>
+                                                        <div style={{
+                                                            fontFamily: "'Outfit', sans-serif",
+                                                            fontSize: 11,
+                                                            color: '#8395A7',
+                                                        }}>
+                                                            {exercise.sec}s • {exercise.phase}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <button
+                                                    onClick={handleCycle}
+                                                    style={{
+                                                        minWidth: 70,
+                                                        padding: '8px 12px',
+                                                        borderRadius: 999,
+                                                        border: 'none',
+                                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                                        fontSize: 12,
+                                                        fontWeight: 700,
+                                                        cursor: 'pointer',
+                                                        background: isRequired ? '#E8F8F0' : isExcluded ? '#FFE4E1' : '#F8F9FA',
+                                                        color: isRequired ? '#2BBAA0' : isExcluded ? '#E17055' : '#8395A7',
+                                                        transition: 'all 0.2s ease',
+                                                    }}
+                                                >
+                                                    {isRequired ? '🟢必須' : isExcluded ? '🔴除外' : '⚪自動'}
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Help Modal */}
+            <AnimatePresence>
+                {showHelp && (
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgb(248, 249, 250)',
+                        zIndex: 200,
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }}>
+                        {/* Header */}
+                        <div style={{
+                            padding: '24px 20px 16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            background: 'white',
+                            borderBottom: '1px solid rgba(0,0,0,0.06)',
+                            boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                        }}>
+                            <h2 style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 18,
+                                fontWeight: 700,
+                                color: '#2D3436',
+                                margin: 0,
+                            }}>
+                                ヘルプ・使い方
+                            </h2>
+                            <button
+                                onClick={() => setShowHelp(false)}
+                                style={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    background: '#F8F9FA',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <X size={20} color="#2D3436" />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+                            <div className="card" style={{ marginBottom: 20, padding: 20 }}>
+                                <h3 style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 15, fontWeight: 700, color: '#2D3436', marginBottom: 16 }}>はじめかた・基本操作</h3>
+
+                                <div style={{ marginBottom: 20 }}>
+                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, fontWeight: 700, color: '#2BBAA0', marginBottom: 6 }}>Q: これはどんなアプリですか？</div>
+                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, color: '#2D3436', lineHeight: 1.6 }}>A: 考えずに、毎日続けるためのアプリです。「まいにちメニュー」をポチッと押すだけで、あなたに合った1日のカリキュラムが再生されます。</div>
+                                </div>
+
+                                <div style={{ marginBottom: 20 }}>
+                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, fontWeight: 700, color: '#2BBAA0', marginBottom: 6 }}>Q: 途中でスキップしたり、やめたりするには？</div>
+                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, color: '#2D3436', lineHeight: 1.6 }}>A: ストレッチ中に画面を上にスワイプすると「スキップ」、画面の中心をタップすると「一時停止／やめる」ことができます。</div>
+                                </div>
+
+                                <div>
+                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, fontWeight: 700, color: '#2BBAA0', marginBottom: 6 }}>Q: クラス（プレ・初級など）を変えるとどうなりますか？</div>
+                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, color: '#2D3436', lineHeight: 1.6 }}>A: 出てくる種目の種類が変わります。この設定ページからいつでも変更できます。</div>
+                                </div>
+                            </div>
+
+                            <div className="card" style={{ padding: 20 }}>
+                                <h3 style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 15, fontWeight: 700, color: '#2D3436', marginBottom: 16 }}>おすすめ機能とオリジナルメニュー</h3>
+
+                                <div style={{ marginBottom: 20 }}>
+                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, fontWeight: 700, color: '#2BBAA0', marginBottom: 6 }}>Q: オリジナルメニューとは何ですか？</div>
+                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, color: '#2D3436', lineHeight: 1.6 }}>A: この設定ページにある「🛠️オリジナルメニュー」から、1日の目標時間を変えたり、「必ずやりたい種目（必須）」「やりたくない種目（除外）」を設定したりできます。</div>
+                                </div>
+
+                                <div>
+                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, fontWeight: 700, color: '#2BBAA0', marginBottom: 6 }}>Q: プレクラスを選ぶと体幹メニューが出ないのはなぜですか？</div>
+                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, color: '#2D3436', lineHeight: 1.6 }}>A: 無理なく続けられるよう、プレクラスは初期設定で体幹メニュー（プランク等）を「🔴除外」にしています。やってみたい場合は、「オリジナルメニュー」の設定から「⚪自動」や「🟢必須」に戻してください。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

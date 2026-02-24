@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Play, ChevronDown, Clock, Trash2, Star, Edit2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
-import { getExerciseById, calculateTotalSeconds, getExercisesByClass, SESSION_TARGET_SECONDS } from '../data/exercises';
+import { getExerciseById, calculateTotalSeconds, getExercisesByClass, DEFAULT_SESSION_TARGET_SECONDS } from '../data/exercises';
 import { getPresetsForClass, getCustomGroups, deleteCustomGroup, type MenuGroup } from '../data/menuGroups';
 import { getCustomExercises, saveCustomExercise, deleteCustomExercise, type CustomExercise } from '../lib/db';
 import { audio } from '../lib/audio';
@@ -223,7 +223,7 @@ export const MenuPage: React.FC = () => {
                         color: '#8395A7',
                         marginBottom: 12,
                     }}>
-                        FABで開始すると ★ はかならず入ります（約{Math.ceil(SESSION_TARGET_SECONDS / 60)}分）
+                        FABで開始すると ★ はかならず入ります（約{Math.ceil(DEFAULT_SESSION_TARGET_SECONDS / 60)}分）
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {exercises.map((ex, i) => (
@@ -612,8 +612,12 @@ const GroupCard: React.FC<{
                                             fontFamily: "'Noto Sans JP', sans-serif",
                                             fontSize: 12,
                                             color: '#8395A7',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 4,
                                         }}
                                     >
+                                        <Edit2 size={12} />
                                         へんしゅう
                                     </button>
                                     <button

@@ -17,6 +17,7 @@ export interface Exercise {
     emoji: string;
     hasSplit?: boolean;
     phase: ExercisePhase;
+    reading?: string; // Phonetic reading for TTS (e.g., "かいきゃく" for "開脚")
 }
 
 export const EXERCISES: Exercise[] = [
@@ -25,14 +26,14 @@ export const EXERCISES: Exercise[] = [
     { id: 'S06', name: 'ゆりかご', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🛏️', phase: 'warmup' },
     { id: 'S08', name: 'どんぐり', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🌰', phase: 'warmup' },
     // Stretches (Main)
-    { id: 'S01', name: '開脚', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🦵', phase: 'main' },
-    { id: 'S02', name: '前屈', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🙇', phase: 'main' },
-    { id: 'S03', name: '前後開脚', sec: 60, type: 'stretch', internal: 'R30→L30', classes: ['初級', '中級', '上級'], priority: 'medium', emoji: '🩰', phase: 'main' },
+    { id: 'S01', name: '開脚', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🦵', phase: 'main', reading: 'かいきゃく' },
+    { id: 'S02', name: '前屈', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🙇', phase: 'main', reading: 'ぜんくつ' },
+    { id: 'S03', name: '前後開脚', sec: 60, type: 'stretch', internal: 'R30→L30', classes: ['初級', '中級', '上級'], priority: 'medium', emoji: '🩰', phase: 'main', reading: 'ぜんごかいきゃく' },
     { id: 'S05', name: 'アシカさん', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🦭', phase: 'main' },
     // Core & Balance
     { id: 'S04', name: 'ブリッジ', sec: 30, type: 'stretch', internal: 'single', classes: ['初級', '中級', '上級'], priority: 'medium', emoji: '🌈', phase: 'core' },
-    { id: 'S09', name: 'Y字バランス', sec: 60, type: 'stretch', internal: 'R30→L30', classes: ['中級', '上級'], priority: 'medium', emoji: '🧘', phase: 'core' },
-    { id: 'S10', name: 'Y字バランス', sec: 60, type: 'stretch', internal: 'R30→L30', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💃', phase: 'core' },
+    { id: 'S09', name: 'Y字バランス', sec: 60, type: 'stretch', internal: 'R30→L30', classes: ['中級', '上級'], priority: 'medium', emoji: '🧘', phase: 'core', reading: 'わいじばらんす' },
+    { id: 'S10', name: 'Y字バランス', sec: 60, type: 'stretch', internal: 'R30→L30', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💃', phase: 'core', reading: 'わいじばらんす' },
     { id: 'C01', name: 'プランク', sec: 30, type: 'core', internal: 'single', classes: ['初級', '中級', '上級'], priority: 'medium', emoji: '💪', phase: 'core' },
     { id: 'C02', name: 'サイドプランク', sec: 60, type: 'core', internal: 'R30→L30', classes: ['初級', '中級', '上級'], priority: 'medium', emoji: '🏋️', phase: 'core' },
 ];
@@ -67,12 +68,24 @@ export function getExercisesByClass(classLevel: ClassLevel): Exercise[] {
     return EXERCISES.filter(e => e.classes.includes(classLevel));
 }
 
-// Session target duration in seconds (10 minutes)
-export const SESSION_TARGET_SECONDS = 600;
+// Default Session target duration in seconds (10 minutes)
+export const DEFAULT_SESSION_TARGET_SECONDS = 600;
+
+export interface GenerateSessionOptions {
+    excludedIds?: string[];
+    requiredIds?: string[];
+    targetSeconds?: number;
+}
 
 // Generate a session (list of exercises) for a class
-// High priority always included, medium fills remaining time up to target
-export function generateSession(classLevel: ClassLevel, excludedIds: string[] = []): Exercise[] {
+// Required priority always included, high/medium fills remaining time up to target
+export function generateSession(classLevel: ClassLevel, options: GenerateSessionOptions = {}): Exercise[] {
+    const {
+        excludedIds = [],
+        requiredIds = [],
+        targetSeconds = DEFAULT_SESSION_TARGET_SECONDS
+    } = options;
+
     let available = getExercisesByClass(classLevel);
 
     // Filter out excluded IDs (like those already done today)
@@ -88,38 +101,53 @@ export function generateSession(classLevel: ClassLevel, excludedIds: string[] = 
     const availableMain = filtered.filter(e => e.phase === 'main');
     const availableCore = filtered.filter(e => e.phase === 'core');
 
-    // 1. Pick Warmup (aim for 1-2)
-    const selectedWarmup = [...availableWarmups].sort(() => Math.random() - 0.5).slice(0, 2);
+    // Filter Required exercises
+    const requiredWarmups = availableWarmups.filter(e => requiredIds.includes(e.id));
+    const requiredMain = availableMain.filter(e => requiredIds.includes(e.id));
+    const requiredCore = availableCore.filter(e => requiredIds.includes(e.id));
+
+    // 1. Pick Warmup (aim for 1-2, prioritize required)
+    const selectedWarmup = [...requiredWarmups];
+    let remainingWarmups = availableWarmups.filter(e => !requiredIds.includes(e.id)).sort(() => Math.random() - 0.5);
+    while (selectedWarmup.length < 2 && remainingWarmups.length > 0) {
+        selectedWarmup.push(remainingWarmups.shift()!);
+    }
     let currentSec = selectedWarmup.reduce((sum, e) => sum + e.sec, 0);
 
-    // 2. Pick Core/Balance (aim for 2) to put at the very end
-    const selectedCore = [...availableCore].sort(() => Math.random() - 0.5).slice(0, 2);
+    // 2. Pick Core/Balance (aim for 2, prioritize required) to put at the very end
+    const selectedCore = [...requiredCore];
+    let remainingCore = availableCore.filter(e => !requiredIds.includes(e.id)).sort(() => Math.random() - 0.5);
+    while (selectedCore.length < 2 && remainingCore.length > 0) {
+        selectedCore.push(remainingCore.shift()!);
+    }
     currentSec += selectedCore.reduce((sum, e) => sum + e.sec, 0);
 
     // 3. Pick Main Stretches to fill the rest up to target
-    let selectedMain: Exercise[] = [];
+    let selectedMain: Exercise[] = [...requiredMain];
+    currentSec += requiredMain.reduce((sum, e) => sum + e.sec, 0);
 
-    // High priority first for main stretches
-    const highMain = availableMain.filter(e => e.priority === 'high').sort(() => Math.random() - 0.5);
-    const mediumMain = availableMain.filter(e => e.priority === 'medium').sort(() => Math.random() - 0.5);
+    // High priority first for remaining main stretches
+    const remainingMain = availableMain.filter(e => !requiredIds.includes(e.id));
+    const highMain = remainingMain.filter(e => e.priority === 'high').sort(() => Math.random() - 0.5);
+    const mediumMain = remainingMain.filter(e => e.priority === 'medium').sort(() => Math.random() - 0.5);
 
     for (const ex of highMain) {
-        if (currentSec >= SESSION_TARGET_SECONDS) break;
+        if (currentSec >= targetSeconds) break;
         selectedMain.push(ex);
         currentSec += ex.sec;
     }
 
     for (const ex of mediumMain) {
-        if (currentSec >= SESSION_TARGET_SECONDS) break;
+        if (currentSec >= targetSeconds) break;
         selectedMain.push(ex);
         currentSec += ex.sec;
     }
 
     // If still under time, repeat main stretches
-    if (currentSec < SESSION_TARGET_SECONDS && availableMain.length > 0) {
+    if (currentSec < targetSeconds && availableMain.length > 0) {
         let i = 0;
         const allMainPairs = [...availableMain].sort(() => Math.random() - 0.5);
-        while (currentSec < SESSION_TARGET_SECONDS && i < allMainPairs.length * 3) {
+        while (currentSec < targetSeconds && i < allMainPairs.length * 3) {
             const ex = allMainPairs[i % allMainPairs.length];
             selectedMain.push(ex);
             currentSec += ex.sec;

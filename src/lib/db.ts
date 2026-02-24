@@ -131,11 +131,22 @@ export async function saveCustomExercise(ex: CustomExercise): Promise<void> {
 }
 
 export async function getCustomExercises(): Promise<CustomExercise[]> {
-    const exs: CustomExercise[] = [];
-    await customExercisesDB.iterate<CustomExercise, void>((value) => {
-        exs.push(value);
-    });
-    return exs.sort((a, b) => a.name.localeCompare(b.name, 'ja'));
+    try {
+        const exs: CustomExercise[] = [];
+        await customExercisesDB.iterate<CustomExercise, void>((value) => {
+            if (value && typeof value === 'object') {
+                exs.push(value);
+            }
+        });
+        return exs.sort((a, b) => {
+            const nameA = a.name || '';
+            const nameB = b.name || '';
+            return nameA.localeCompare(nameB, 'ja');
+        });
+    } catch (err) {
+        console.warn('Failed to get custom exercises', err);
+        return [];
+    }
 }
 
 export async function deleteCustomExercise(id: string): Promise<void> {

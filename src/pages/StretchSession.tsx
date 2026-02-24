@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Volume2, VolumeX } from 'lucide-react';
+import { X, Volume2, VolumeX, Play, Pause, SkipForward } from 'lucide-react';
 import { CountdownOverlay } from '../components/CountdownOverlay';
 import { BreakModal } from '../components/BreakModal';
 import { audio } from '../lib/audio';
@@ -15,30 +15,48 @@ export const StretchSession: React.FC = () => {
     const classLevel = useAppStore((state) => state.classLevel);
     const sessionExerciseIds = useAppStore((state) => state.sessionExerciseIds);
 
+    const dailyTargetMinutes = useAppStore((state) => state.dailyTargetMinutes);
+    const globalExcludedIds = useAppStore((state) => state.excludedExercises);
+    const globalRequiredIds = useAppStore((state) => state.requiredExercises);
+
     const [isLoading, setIsLoading] = useState(true);
     const [sessionExercises, setSessionExercises] = useState<Exercise[]>([]);
 
     useEffect(() => {
         const loadSession = async () => {
-            if (!sessionExerciseIds) {
-                const todaySessions = await getSessionsByDate(getTodayKey());
-                // Exclude exercises that were completely done or skipped today
-                const todayExcludedIds = todaySessions.flatMap(s => [...s.exerciseIds, ...s.skippedIds]);
-                setSessionExercises(generateSession(classLevel, todayExcludedIds));
+            try {
+                if (!sessionExerciseIds) {
+                    const todaySessions = await getSessionsByDate(getTodayKey());
+                    // Exclude exercises that were completely done or skipped today, PLUS user global exclusions
+                    const todayExcludedIds = Array.from(new Set([
+                        ...todaySessions.flatMap(s => [...s.exerciseIds, ...s.skippedIds]),
+                        ...globalExcludedIds
+                    ]));
+
+                    setSessionExercises(generateSession(classLevel, {
+                        excludedIds: todayExcludedIds,
+                        requiredIds: globalRequiredIds,
+                        targetSeconds: dailyTargetMinutes * 60
+                    }));
+                    return;
+                }
+
+                const customExList = await getCustomExercises();
+                // Combine presets and custom
+                const allExercises = [...EXERCISES, ...customExList];
+
+                const resolved = sessionExerciseIds
+                    .map(id => allExercises.find(e => e.id === id))
+                    .filter((e): e is Exercise => e !== undefined);
+
+                setSessionExercises(resolved);
+            } catch (err) {
+                console.error("Failed to load session:", err);
+                // Fallback to empty session if error occurs
+                setSessionExercises([]);
+            } finally {
                 setIsLoading(false);
-                return;
             }
-
-            const customExList = await getCustomExercises();
-            // Combine presets and custom
-            const allExercises = [...EXERCISES, ...customExList];
-
-            const resolved = sessionExerciseIds
-                .map(id => allExercises.find(e => e.id === id))
-                .filter((e): e is Exercise => e !== undefined);
-
-            setSessionExercises(resolved);
-            setIsLoading(false);
         };
         loadSession();
     }, [sessionExerciseIds, classLevel]);
@@ -200,7 +218,7 @@ export const StretchSession: React.FC = () => {
             haptics.pulse();
             const nextEx = sessionExercises[currentIndex + 1];
             if (nextEx) {
-                audio.speak(`次は、${nextEx.name}です`);
+                audio.speak(`次は、${nextEx.reading || nextEx.name}です`);
             }
             setIsTransitioning(true);
             setTransitionTime(isSmallBreak ? 5 : 3);
@@ -284,7 +302,7 @@ export const StretchSession: React.FC = () => {
         if (isCounting) {
             // During countdown: skip countdown and start immediately (spec §3.2)
             setIsCounting(false);
-            if (currentExercise) audio.speak(`最初は、${currentExercise.name}です`);
+            if (currentExercise) audio.speak(`最初は、${currentExercise.reading || currentExercise.name}です`);
             return;
         }
         if (isTransitioning) {
@@ -472,12 +490,34 @@ export const StretchSession: React.FC = () => {
 
     return (
         <div className="stretch-session">
+            {/* Total Progress Bar */}
+            <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 4,
+                background: 'rgba(0,0,0,0.05)',
+                zIndex: 65,
+            }}>
+                <motion.div
+                    style={{
+                        height: '100%',
+                        background: '#2BBAA0',
+                        originX: 0,
+                    }}
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: sessionExercises.length > 0 ? currentIndex / sessionExercises.length : 0 }}
+                    transition={{ duration: 0.5, ease: 'easeInOut' }}
+                />
+            </div>
+
             <AnimatePresence>
                 {isCounting && (
                     <CountdownOverlay key="countdown" onComplete={() => {
                         setIsCounting(false);
                         haptics.pulse();
-                        if (currentExercise) audio.speak(`最初は、${currentExercise.name}です`);
+                        if (currentExercise) audio.speak(`最初は、${currentExercise.reading || currentExercise.name}です`);
                     }} />
                 )}
                 {isBigBreak && (
@@ -507,30 +547,6 @@ export const StretchSession: React.FC = () => {
                 }}
             >
                 <X size={20} />
-            </button>
-
-            {/* Volume toggle button */}
-            <button
-                onClick={toggleMute}
-                style={{
-                    position: 'absolute',
-                    top: 'calc(env(safe-area-inset-top, 16px) + 12px)',
-                    right: 64,
-                    zIndex: 60,
-                    width: 40,
-                    height: 40,
-                    borderRadius: '50%',
-                    background: 'rgba(255,255,255,0.4)',
-                    backdropFilter: 'blur(8px)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#2D3436',
-                }}
-            >
-                {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
             </button>
 
             {/* Bounce indicator for down-swipe at start */}
@@ -583,39 +599,62 @@ export const StretchSession: React.FC = () => {
                             justifyContent: 'center',
                             gap: 20,
                             background: `linear-gradient(165deg, ${bgColor} 0%, white 100%)`,
+                            overflow: 'hidden',
                         }}
                     >
-                        {/* PAUSE overlay — spec §5.2: darkened + play icon */}
-                        {!isPlaying && !isTransitioning && !isBigBreak && !isCounting && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                style={{
-                                    position: 'absolute',
-                                    inset: 0,
-                                    background: 'rgba(0, 0, 0, 0.35)',
-                                    zIndex: 10,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                <div style={{
-                                    width: 72,
-                                    height: 72,
-                                    borderRadius: '50%',
-                                    background: 'rgba(255, 255, 255, 0.25)',
-                                    backdropFilter: 'blur(8px)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: 32,
-                                    color: 'white',
-                                }}>
-                                    ▶
-                                </div>
-                            </motion.div>
-                        )}
+                        {/* Breathing Background Glow */}
+                        <motion.div
+                            animate={{ opacity: [0, 0.4, 0] }}
+                            transition={{ duration: 8, ease: "easeInOut", repeat: Infinity }}
+                            style={{
+                                position: 'absolute',
+                                inset: 0,
+                                background: `radial-gradient(circle at center, ${bgColor} 0%, transparent 70%)`,
+                                zIndex: 1,
+                            }}
+                        />
+
+                        {/* PAUSE overlay — spec §5.2: darkened + pause icon */}
+                        <AnimatePresence>
+                            {!isPlaying && !isTransitioning && !isBigBreak && !isCounting && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    style={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        background: 'rgba(255, 255, 255, 0.2)',
+                                        zIndex: 30,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        backdropFilter: 'blur(12px)',
+                                        WebkitBackdropFilter: 'blur(12px)',
+                                    }}
+                                >
+                                    <div style={{
+                                        fontFamily: "'Outfit', sans-serif",
+                                        letterSpacing: 4,
+                                        fontSize: 20,
+                                        fontWeight: 700,
+                                        color: '#2D3436',
+                                        marginBottom: 16,
+                                    }}>
+                                        PAUSED
+                                    </div>
+                                    <div style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 14,
+                                        fontWeight: 700,
+                                        color: '#8395A7',
+                                    }}>
+                                        一時停止中
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
                         {/* Emoji + name */}
                         <div style={{ zIndex: 20, textAlign: 'center' }}>
@@ -788,13 +827,13 @@ export const StretchSession: React.FC = () => {
                 {/* Swipe hint — spec §3.6: always visible */}
                 <div style={{
                     position: 'absolute',
-                    bottom: 40,
+                    top: 80,
                     width: '100%',
                     display: 'flex',
                     justifyContent: 'center',
                     zIndex: 40,
                     pointerEvents: 'none',
-                    opacity: 0.4,
+                    opacity: 0.2, // dimmer since we have a button now
                 }}>
                     <div style={{
                         display: 'flex',
@@ -805,10 +844,87 @@ export const StretchSession: React.FC = () => {
                         color: '#8395A7',
                     }}>
                         <span>↑</span>
-                        <span>次へ</span>
+                        <span>スワイプでも次へ</span>
                     </div>
                 </div>
             </motion.div>
-        </div>
+
+            {/* Bottom Floating Control Bar */}
+            <motion.div
+                initial={{ y: 100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                style={{
+                    position: 'absolute',
+                    bottom: 'calc(env(safe-area-inset-bottom, 24px) + 24px)',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    zIndex: 80,
+                    background: 'rgba(255, 255, 255, 0.85)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    borderRadius: 99,
+                    padding: '8px 24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 32,
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                    border: '1px solid rgba(255,255,255,0.6)',
+                }}
+            >
+                {/* Mute Toggle */}
+                <button
+                    onClick={(e) => { e.stopPropagation(); toggleMute(); }}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: isMuted ? '#B2BEC3' : '#2D3436',
+                        padding: 8,
+                    }}
+                >
+                    {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                </button>
+
+                {/* Play/Pause */}
+                <button
+                    onClick={(e) => { e.stopPropagation(); handleTap(); }}
+                    style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: '50%',
+                        background: '#2BBAA0',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        boxShadow: '0 4px 12px rgba(43, 186, 160, 0.3)',
+                    }}
+                >
+                    {isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" style={{ marginLeft: 4 }} />}
+                </button>
+
+                {/* Skip */}
+                <button
+                    onClick={(e) => { e.stopPropagation(); handleSwipeUp(); }}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#2D3436',
+                        padding: 8,
+                    }}
+                >
+                    <SkipForward size={24} />
+                </button>
+            </motion.div>
+        </div >
     );
 };
