@@ -2,6 +2,15 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ClassLevel } from '../data/exercises';
 
+export interface PastFuwafuwaRecord {
+    id: string; // unique ID
+    name: string | null;
+    type: number;
+    activeDays: number;
+    finalStage: number; // 3 implies Adult
+    sayonaraDate: string;
+}
+
 type TabId = 'home' | 'record' | 'menu' | 'settings';
 
 interface AppState {
@@ -23,9 +32,10 @@ interface AppState {
     setClassLevel: (level: ClassLevel) => void;
 
     // App State (persisted)
-    hasCompletedOnboarding: boolean;
-    completeOnboarding: () => void;
-    resetOnboarding: () => void;
+    onboardingCompleted: boolean;
+    setOnboardingCompleted: (completed: boolean) => void;
+    hasSeenMenuTip: boolean;
+    setHasSeenMenuTip: (seen: boolean) => void;
 
     // Settings (persisted)
     soundVolume: number;
@@ -50,10 +60,15 @@ interface AppState {
     setRequiredExercises: (ids: string[]) => void;
 
     // Fuwafuwa State (persisted)
-    fuwafuwaBirthDate: string | null;
+    fuwafuwaBirthDate: string;
     fuwafuwaType: number;
     fuwafuwaCycleCount: number;
-    setFuwafuwaState: (state: Partial<{ fuwafuwaBirthDate: string | null; fuwafuwaType: number; fuwafuwaCycleCount: number }>) => void;
+    fuwafuwaName: string | null;
+    pastFuwafuwas: PastFuwafuwaRecord[];
+    setFuwafuwaBirthDate: (date: string) => void;
+    setFuwafuwaType: (type: number) => void;
+    setFuwafuwaName: (name: string | null) => void;
+    resetFuwafuwaState: (newType: number, activeDays: number, finalStage: number) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -88,9 +103,10 @@ export const useAppStore = create<AppState>()(
                 }
             },
 
-            hasCompletedOnboarding: false,
-            completeOnboarding: () => set({ hasCompletedOnboarding: true }),
-            resetOnboarding: () => set({ hasCompletedOnboarding: false }),
+            onboardingCompleted: false,
+            setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
+            hasSeenMenuTip: false,
+            setHasSeenMenuTip: (seen) => set({ hasSeenMenuTip: seen }),
 
             soundVolume: 0.5,
             setSoundVolume: (vol) => set({ soundVolume: vol }),
@@ -112,10 +128,32 @@ export const useAppStore = create<AppState>()(
             requiredExercises: ['S01', 'S02', 'S07'], // Make Splits, Forward Fold & Point & Flex default MUST-DOs
             setRequiredExercises: (ids) => set({ requiredExercises: ids }),
 
-            fuwafuwaBirthDate: null,
-            fuwafuwaType: Math.floor(Math.random() * 6),
+            fuwafuwaBirthDate: new Date().toISOString().split('T')[0], // Default to today
+            fuwafuwaType: Math.floor(Math.random() * 6), // Initial random type 0-5
             fuwafuwaCycleCount: 1,
-            setFuwafuwaState: (newState) => set((state) => ({ ...state, ...newState })),
+            fuwafuwaName: null,
+            pastFuwafuwas: [],
+            setFuwafuwaBirthDate: (date) => set({ fuwafuwaBirthDate: date }),
+            setFuwafuwaType: (type) => set({ fuwafuwaType: type }),
+            setFuwafuwaName: (name) => set({ fuwafuwaName: name }),
+            resetFuwafuwaState: (newType, activeDays, finalStage) => set((state) => {
+                const today = new Date().toISOString().split('T')[0];
+                const record: PastFuwafuwaRecord = {
+                    id: crypto.randomUUID(),
+                    name: state.fuwafuwaName,
+                    type: state.fuwafuwaType,
+                    activeDays,
+                    finalStage,
+                    sayonaraDate: today
+                };
+                return {
+                    fuwafuwaBirthDate: today,
+                    fuwafuwaType: newType,
+                    fuwafuwaCycleCount: state.fuwafuwaCycleCount + 1,
+                    fuwafuwaName: null, // Reset name for new generation
+                    pastFuwafuwas: [...state.pastFuwafuwas, record]
+                };
+            }),
         }),
         {
             name: 'keepgoing-app-state',
@@ -136,7 +174,7 @@ export const useAppStore = create<AppState>()(
             },
             partialize: (state) => ({
                 classLevel: state.classLevel,
-                hasCompletedOnboarding: state.hasCompletedOnboarding,
+                onboardingCompleted: state.onboardingCompleted,
                 soundVolume: state.soundVolume,
                 ttsEnabled: state.ttsEnabled,
                 bgmEnabled: state.bgmEnabled,
@@ -149,6 +187,8 @@ export const useAppStore = create<AppState>()(
                 fuwafuwaBirthDate: state.fuwafuwaBirthDate,
                 fuwafuwaType: state.fuwafuwaType,
                 fuwafuwaCycleCount: state.fuwafuwaCycleCount,
+                fuwafuwaName: state.fuwafuwaName,
+                pastFuwafuwas: state.pastFuwafuwas,
             }),
         }
     )

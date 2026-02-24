@@ -11,11 +11,10 @@ const CLASS_LEVELS: { id: ClassLevel; label: string; emoji: string; desc: string
 ];
 
 export const Onboarding: React.FC = () => {
-    const completeOnboarding = useAppStore((state) => state.completeOnboarding);
+    const setOnboardingCompleted = useAppStore((state) => state.setOnboardingCompleted);
     const setClassLevel = useAppStore((state) => state.setClassLevel);
     const [step, setStep] = useState<'welcome' | 'class' | 'swipe'>('welcome');
     const [selectedClass, setSelectedClass] = useState<ClassLevel | null>(null);
-    const [swiped, setSwiped] = useState(false);
 
     const handleClassSelect = (level: ClassLevel) => {
         setSelectedClass(level);
@@ -23,7 +22,7 @@ export const Onboarding: React.FC = () => {
     };
 
     const handleFinish = () => {
-        completeOnboarding();
+        setOnboardingCompleted(true);
     };
 
     return (
@@ -246,16 +245,8 @@ export const Onboarding: React.FC = () => {
                             つかいかた
                         </h2>
 
-                        {/* Swipe demo area */}
-                        <motion.div
-                            drag="y"
-                            dragConstraints={{ top: -100, bottom: 100 }}
-                            dragElastic={0.3}
-                            onDragEnd={(_, { offset }) => {
-                                if (Math.abs(offset.y) > 50) {
-                                    setSwiped(true);
-                                }
-                            }}
+                        {/* Instructions area */}
+                        <div
                             style={{
                                 width: '100%',
                                 height: 200,
@@ -267,47 +258,22 @@ export const Onboarding: React.FC = () => {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 gap: 12,
-                                cursor: 'grab',
                                 border: '2px dashed rgba(43, 186, 160, 0.3)',
                             }}
                         >
-                            {!swiped ? (
-                                <>
-                                    <motion.div
-                                        animate={{ y: [-5, 5, -5] }}
-                                        transition={{ duration: 1.5, repeat: Infinity }}
-                                        style={{ fontSize: 32, color: '#2BBAA0' }}
-                                    >
-                                        ↕
-                                    </motion.div>
-                                    <p style={{
-                                        fontFamily: "'Noto Sans JP', sans-serif",
-                                        fontSize: 15,
-                                        fontWeight: 600,
-                                        color: '#2D3436',
-                                    }}>
-                                        上下にスワイプしてみよう！
-                                    </p>
-                                </>
-                            ) : (
-                                <motion.div
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    style={{ textAlign: 'center' }}
-                                >
-                                    <span style={{ fontSize: 48 }}>🎉</span>
-                                    <p style={{
-                                        fontFamily: "'Noto Sans JP', sans-serif",
-                                        fontSize: 16,
-                                        fontWeight: 700,
-                                        color: '#2BBAA0',
-                                        marginTop: 8,
-                                    }}>
-                                        かんぺき！
-                                    </p>
-                                </motion.div>
-                            )}
-                        </motion.div>
+                            <div style={{ textAlign: 'center' }}>
+                                <span style={{ fontSize: 48 }}>🎉</span>
+                                <p style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 16,
+                                    fontWeight: 700,
+                                    color: '#2BBAA0',
+                                    marginTop: 8,
+                                }}>
+                                    準備完了！
+                                </p>
+                            </div>
+                        </div>
 
                         <div style={{
                             fontFamily: "'Noto Sans JP', sans-serif",
@@ -321,19 +287,18 @@ export const Onboarding: React.FC = () => {
 
                         <button
                             onClick={handleFinish}
-                            disabled={!swiped}
                             style={{
                                 marginTop: 8,
                                 padding: '14px 48px',
                                 borderRadius: 9999,
                                 border: 'none',
-                                background: swiped ? '#2BBAA0' : '#B2BEC3',
+                                background: '#2BBAA0',
                                 color: 'white',
                                 fontFamily: "'Noto Sans JP', sans-serif",
                                 fontSize: 16,
                                 fontWeight: 700,
-                                cursor: swiped ? 'pointer' : 'not-allowed',
-                                boxShadow: swiped ? '0 4px 16px rgba(43, 186, 160, 0.35)' : 'none',
+                                cursor: 'pointer',
+                                boxShadow: '0 4px 16px rgba(43, 186, 160, 0.35)',
                                 transition: 'all 0.3s ease',
                             }}
                         >

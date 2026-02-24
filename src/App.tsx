@@ -4,7 +4,7 @@ import { Onboarding } from './pages/Onboarding';
 import { useAppStore } from './store/useAppStore';
 
 function App() {
-    const hasCompletedOnboarding = useAppStore(state => state.hasCompletedOnboarding);
+    const hasCompletedOnboarding = useAppStore(state => state.onboardingCompleted);
 
     useEffect(() => {
         const hour = new Date().getHours();

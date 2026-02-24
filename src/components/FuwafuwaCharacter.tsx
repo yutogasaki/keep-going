@@ -1,24 +1,39 @@
-import React, { useEffect, useState } from 'react';
-import { motion, useAnimation } from 'framer-motion';
+import React, { useEffect, useState, useRef } from 'react';
+import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 import { calculateFuwafuwaStatus } from '../lib/fuwafuwa';
 import { getTodayKey, type SessionRecord } from '../lib/db';
-import { Heart } from 'lucide-react';
+import { Heart, Edit2 } from 'lucide-react';
 
 interface Props {
     sessions: SessionRecord[];
 }
 
 export const FuwafuwaCharacter: React.FC<Props> = ({ sessions }) => {
-    const { fuwafuwaBirthDate, fuwafuwaType, fuwafuwaCycleCount, setFuwafuwaState } = useAppStore();
+    const {
+        fuwafuwaBirthDate,
+        fuwafuwaType,
+        fuwafuwaName,
+        setFuwafuwaBirthDate,
+        setFuwafuwaType,
+        setFuwafuwaName,
+        resetFuwafuwaState
+    } = useAppStore();
+
     const [status, setStatus] = useState(() => calculateFuwafuwaStatus(fuwafuwaBirthDate || getTodayKey(), sessions));
     const controls = useAnimation();
+    const [particles, setParticles] = useState<{ id: number; x: number; y: number; emoji: string }[]>([]);
+    const [ripple, setRipple] = useState<{ x: number, y: number, id: number } | null>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const particleIdCounter = useRef(0);
+    const rippleIdCounter = useRef(0);
 
     useEffect(() => {
         if (!fuwafuwaBirthDate) {
-            setFuwafuwaState({ fuwafuwaBirthDate: getTodayKey(), fuwafuwaType: Math.floor(Math.random() * 6) });
+            setFuwafuwaBirthDate(getTodayKey());
+            setFuwafuwaType(Math.floor(Math.random() * 6));
         }
-    }, [fuwafuwaBirthDate, setFuwafuwaState]);
+    }, [fuwafuwaBirthDate, setFuwafuwaBirthDate, setFuwafuwaType]);
 
     useEffect(() => {
         if (fuwafuwaBirthDate) {
@@ -26,32 +41,82 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ sessions }) => {
         }
     }, [fuwafuwaBirthDate, sessions]);
 
-    const handleTap = async () => {
+    const handleTap = async (e: React.MouseEvent) => {
         if (status.isSayonara) {
-            // Animate out
+            // Animate out and add to gallery
             await controls.start({ opacity: 0, scale: 0, y: -50, transition: { duration: 0.8 } });
-            // Reset for next generation
-            setFuwafuwaState({
-                fuwafuwaBirthDate: getTodayKey(),
-                fuwafuwaType: Math.floor(Math.random() * 6),
-                fuwafuwaCycleCount: fuwafuwaCycleCount + 1
-            });
+            resetFuwafuwaState(Math.floor(Math.random() * 6), status.activeDays, status.stage);
             controls.set({ opacity: 1, scale: 0.5, y: 0 }); // reset for new egg
-        } else {
-            // "Tsun-Tsun" animation
+            return;
+        }
+
+        // Ripple Effect
+        if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            setRipple({ x, y, id: rippleIdCounter.current++ });
+        }
+
+        // Spawn emotion particles
+        const emojis = ['🎵', '✨', '💖', '🌟', '🫧'];
+        const newParticles = Array.from({ length: 3 }).map(() => ({
+            id: particleIdCounter.current++,
+            x: (Math.random() - 0.5) * 60, // random offset around center
+            y: (Math.random() - 0.5) * 60,
+            emoji: emojis[Math.floor(Math.random() * emojis.length)]
+        }));
+        setParticles(prev => [...prev, ...newParticles]);
+        setTimeout(() => {
+            setParticles(prev => prev.filter(p => !newParticles.find(np => np.id === p.id)));
+        }, 1500);
+
+        // Random Tsun-Tsun Animations
+        const rand = Math.random();
+        const baseScale = status.scale;
+        if (rand < 0.25) {
+            // Bounce
             controls.start({
-                y: [0, -20, 0, -10, 0],
-                scale: [status.scale, status.scale * 1.1, status.scale, status.scale * 1.05, status.scale],
+                y: [0, -30, 0, -15, 0],
+                scale: [baseScale, baseScale * 1.1, baseScale, baseScale * 1.05, baseScale],
                 transition: { duration: 0.6, type: 'spring', bounce: 0.5 }
+            });
+        } else if (rand < 0.5) {
+            // Shake
+            controls.start({
+                x: [0, -10, 10, -10, 10, 0],
+                transition: { duration: 0.4 }
+            });
+        } else if (rand < 0.75) {
+            // Spin
+            controls.start({
+                rotate: [0, 360],
+                scale: [baseScale, baseScale * 1.2, baseScale],
+                transition: { duration: 0.6, ease: "easeInOut" }
+            });
+        } else {
+            // Stretch
+            controls.start({
+                scaleX: [baseScale, baseScale * 0.8, baseScale * 1.1, baseScale],
+                scaleY: [baseScale, baseScale * 1.2, baseScale * 0.9, baseScale],
+                transition: { duration: 0.5 }
             });
         }
     };
 
-    // Idle floating animation
+    const handleEditName = () => {
+        const newName = prompt('パートナーに名前をつけてあげよう！', fuwafuwaName || '');
+        if (newName !== null) {
+            setFuwafuwaName(newName.trim() || null);
+        }
+    };
+
+    // Idle floating and breathing animation
     useEffect(() => {
         if (!status.isSayonara) {
             controls.start({
                 y: [0, -8, 0],
+                scale: [status.scale * 0.98, status.scale * 1.02, status.scale * 0.98], // Breathing
                 transition: {
                     duration: 3,
                     repeat: Infinity,
@@ -59,9 +124,22 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ sessions }) => {
                 }
             });
         }
-    }, [controls, status.isSayonara]);
+    }, [controls, status.isSayonara, status.scale]);
 
-    // Path to image: /ikimono/{type}-{stage}.png
+    // Aura Logic based on activeDays
+    let auraColor = 'rgba(43,186,160,0.15)';
+    let pulseDuration = 4;
+    let showFireflies = false;
+
+    if (status.activeDays >= 5) {
+        auraColor = 'rgba(255, 215, 0, 0.35)'; // Bright Warm Gold
+        pulseDuration = 2; // Fast heartbeat
+        showFireflies = true;
+    } else if (status.activeDays >= 2) {
+        auraColor = 'rgba(255, 154, 158, 0.25)'; // Soft Warm Pink/Orange
+        pulseDuration = 3;
+    }
+
     const imagePath = `/ikimono/${fuwafuwaType}-${status.stage}.png`;
 
     return (
@@ -74,27 +152,33 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ sessions }) => {
             position: 'relative',
         }}>
             {/* Elegant Habitat Orb Container */}
-            <div style={{
-                position: 'relative',
-                width: 180,
-                height: 180,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 16,
-            }}>
+            <div
+                ref={containerRef}
+                onClick={handleTap}
+                style={{
+                    position: 'relative',
+                    width: 180,
+                    height: 180,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 16,
+                    cursor: 'pointer',
+                    WebkitTapHighlightColor: 'transparent',
+                }}
+            >
                 {/* Outer Glowing Aura */}
                 <motion.div
                     animate={{
-                        scale: [1, 1.05, 1],
-                        opacity: [0.5, 0.8, 0.5],
+                        scale: [1, 1.1, 1],
+                        opacity: [0.5, 0.9, 0.5],
                     }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                    transition={{ duration: pulseDuration, repeat: Infinity, ease: "easeInOut" }}
                     style={{
                         position: 'absolute',
-                        inset: -10,
+                        inset: -15,
                         borderRadius: '50%',
-                        background: 'radial-gradient(circle, rgba(43,186,160,0.15) 0%, rgba(255,255,255,0) 70%)',
+                        background: `radial-gradient(circle, ${auraColor} 0%, rgba(255,255,255,0) 70%)`,
                         zIndex: 0,
                         pointerEvents: 'none'
                     }}
@@ -106,19 +190,50 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ sessions }) => {
                         position: 'absolute',
                         inset: 4,
                         borderRadius: '50%',
-                        background: '#ffffff', // Solid white perfectly blends with white image backgrounds
-                        boxShadow: '0 12px 32px rgba(43, 186, 160, 0.12), inset 0 4px 16px rgba(43, 186, 160, 0.08)',
-                        border: '1px solid rgba(43, 186, 160, 0.15)',
+                        background: '#ffffff',
+                        boxShadow: `0 12px 32px ${auraColor}, inset 0 4px 16px rgba(43, 186, 160, 0.08)`,
+                        border: '1px solid rgba(255, 255, 255, 0.8)',
                         zIndex: 0,
                     }}
                 />
 
+                {/* Fireflies for high active days */}
+                {showFireflies && (
+                    <motion.div
+                        style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1 }}
+                    >
+                        {[...Array(5)].map((_, i) => (
+                            <motion.div
+                                key={`firefly-${i}`}
+                                animate={{
+                                    y: [40, -60],
+                                    x: [Math.random() * 40 - 20, Math.random() * 40 - 20],
+                                    opacity: [0, 0.8, 0]
+                                }}
+                                transition={{
+                                    duration: 2 + Math.random() * 2,
+                                    repeat: Infinity,
+                                    delay: Math.random() * 2,
+                                    ease: 'easeInOut'
+                                }}
+                                style={{
+                                    position: 'absolute',
+                                    bottom: '30%',
+                                    left: '50%',
+                                    width: 4,
+                                    height: 4,
+                                    borderRadius: '50%',
+                                    background: '#FFF3B0',
+                                    boxShadow: '0 0 8px #FFD700'
+                                }}
+                            />
+                        ))}
+                    </motion.div>
+                )}
+
                 {/* Ground Shadow underneath the character */}
                 <motion.div
-                    animate={{
-                        scale: [1, 0.9, 1],
-                        opacity: [0.3, 0.15, 0.3]
-                    }}
+                    animate={{ scale: [1, 0.9, 1], opacity: [0.3, 0.15, 0.3] }}
                     transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                     style={{
                         position: 'absolute',
@@ -137,13 +252,10 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ sessions }) => {
                     animate={controls}
                     initial={{ opacity: 0, scale: 0.5 }}
                     whileInView={{ opacity: 1, scale: status.scale }}
-                    onClick={handleTap}
                     style={{
-                        cursor: 'pointer',
                         zIndex: 2,
                         position: 'relative',
                         userSelect: 'none',
-                        WebkitTapHighlightColor: 'transparent',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
@@ -171,7 +283,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ sessions }) => {
                                 width: '100%',
                                 height: '100%',
                                 objectFit: 'cover',
-                                transform: 'scale(1.05)' /* Slight zoom to avoid edge artifacts */
+                                transform: 'scale(1.05)'
                             }}
                         />
                         {/* Glass Reflection Overlay */}
@@ -190,7 +302,51 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ sessions }) => {
                             boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.1)',
                             pointerEvents: 'none',
                         }} />
+
+                        {/* Ripple Effect Canvas inside portal */}
+                        <AnimatePresence>
+                            {ripple && (
+                                <motion.div
+                                    key={ripple.id}
+                                    initial={{ scale: 0, opacity: 0.5 }}
+                                    animate={{ scale: 4, opacity: 0 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.6, ease: "easeOut" }}
+                                    style={{
+                                        position: 'absolute',
+                                        left: ripple.x - 20, // offset half width of ripple
+                                        top: ripple.y - 20,
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: '50%',
+                                        background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%)',
+                                        pointerEvents: 'none',
+                                    }}
+                                />
+                            )}
+                        </AnimatePresence>
                     </div>
+
+                    {/* Emotion Particles */}
+                    <AnimatePresence>
+                        {particles.map(p => (
+                            <motion.div
+                                key={p.id}
+                                initial={{ opacity: 0, scale: 0.5, x: 0, y: 0 }}
+                                animate={{ opacity: [0, 1, 0], scale: 1, x: p.x, y: p.y - 40 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 1, ease: "easeOut" }}
+                                style={{
+                                    position: 'absolute',
+                                    fontSize: 24,
+                                    pointerEvents: 'none',
+                                    zIndex: 10
+                                }}
+                            >
+                                {p.emoji}
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
 
                     {status.isSayonara && (
                         <motion.div
@@ -221,23 +377,61 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ sessions }) => {
                 </motion.div>
             </div>
 
-            {/* Status indicator */}
+            {/* Status indicator and Naming */}
             <div style={{
                 marginTop: status.isSayonara ? 16 : 8,
-                padding: '6px 14px',
-                background: 'rgba(255, 255, 255, 0.7)',
-                border: '1px solid rgba(0,0,0,0.03)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-                borderRadius: 20,
-                fontSize: 12,
-                color: '#8395A7',
-                fontWeight: 600,
-                fontFamily: "'Noto Sans JP', sans-serif",
-                textAlign: 'center',
+                padding: '8px 16px',
+                background: 'rgba(255, 255, 255, 0.8)',
+                border: '1px solid rgba(255,255,255,1)',
+                backdropFilter: 'blur(8px)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                borderRadius: 24,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
                 zIndex: 1
             }}>
-                生まれてから {status.daysAlive} 日目
-                {status.stage === 2 && ` (頑張り度: ${status.activeDays}日)`}
+                <div style={{
+                    fontSize: 13,
+                    color: '#636E72',
+                    fontWeight: 600,
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    textAlign: 'center',
+                }}>
+                    {status.stage === 1 ? (
+                        status.daysAlive < 3
+                            ? `たまごになって ${status.daysAlive} 日目`
+                            : 'もうすぐ生まれそう...！'
+                    ) : (
+                        <>
+                            <span style={{ color: '#2D3436', fontWeight: 800 }}>{fuwafuwaName || 'なまえなし'}</span>
+                            <span style={{ margin: '0 6px', color: '#B2BEC3' }}>|</span>
+                            {status.daysAlive} 日目
+                        </>
+                    )}
+                </div>
+                {status.stage !== 1 && (
+                    <button
+                        onClick={handleEditName}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 4,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#8395A7',
+                            borderRadius: '50%',
+                            transition: 'background 0.2s',
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = 'rgba(0,0,0,0.05)'}
+                        onMouseOut={e => e.currentTarget.style.background = 'none'}
+                        title="名前を変更する"
+                    >
+                        <Edit2 size={14} />
+                    </button>
+                )}
             </div>
         </div>
     );

@@ -335,10 +335,11 @@ export const SettingsPage: React.FC = () => {
     const setNotificationsEnabled = useAppStore(s => s.setNotificationsEnabled);
     const notificationTime = useAppStore(s => s.notificationTime);
     const setNotificationTime = useAppStore(s => s.setNotificationTime);
-    const resetOnboarding = useAppStore(s => s.resetOnboarding);
+    const setOnboardingCompleted = useAppStore(s => s.setOnboardingCompleted);
 
     const [showClassPicker, setShowClassPicker] = useState(false);
     const [showConfirmReset, setShowConfirmReset] = useState(false);
+    const [showConfirmRedo, setShowConfirmRedo] = useState(false);
     const [showHelp, setShowHelp] = useState(false);
     const [openHelpItems, setOpenHelpItems] = useState<Set<string>>(new Set());
     const [showDeveloperDebug, setShowDeveloperDebug] = useState(false);
@@ -382,8 +383,12 @@ export const SettingsPage: React.FC = () => {
     };
 
     const handleRedoOnboarding = () => {
-        resetOnboarding();
-        window.location.reload();
+        setOnboardingCompleted(false);
+        setShowConfirmRedo(false);
+        // Using slight delay to allow React state to settle if needed, or simply relying on App.tsx to remount
+        setTimeout(() => {
+            window.location.reload();
+        }, 50);
     };
 
     const toggleHelpItem = (id: string) => {
@@ -862,7 +867,7 @@ export const SettingsPage: React.FC = () => {
             {/* Re-do onboarding */}
             <div
                 className="card card-sm"
-                onClick={handleRedoOnboarding}
+                onClick={() => setShowConfirmRedo(true)}
                 style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -949,19 +954,19 @@ export const SettingsPage: React.FC = () => {
                         ふわふわの年齢を偽装します (リロードするとHomeに反映)
                     </p>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <button onClick={() => { useAppStore.getState().setFuwafuwaState({ fuwafuwaBirthDate: getDateKeyOffset(-4) }); alert('Day 5 にしました'); }}
+                        <button onClick={() => { useAppStore.getState().setFuwafuwaBirthDate(getDateKeyOffset(-4)); alert('Day 5 にしました'); }}
                             style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                             Day 5 (たまご)
                         </button>
-                        <button onClick={() => { useAppStore.getState().setFuwafuwaState({ fuwafuwaBirthDate: getDateKeyOffset(-14) }); alert('Day 15 にしました。※見た目は今の頑張り度に依存'); }}
+                        <button onClick={() => { useAppStore.getState().setFuwafuwaBirthDate(getDateKeyOffset(-14)); alert('Day 15 にしました。※見た目は今の頑張り度に依存'); }}
                             style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                             Day 15 (妖精)
                         </button>
-                        <button onClick={() => { useAppStore.getState().setFuwafuwaState({ fuwafuwaBirthDate: getDateKeyOffset(-25) }); alert('Day 26 にしました'); }}
+                        <button onClick={() => { useAppStore.getState().setFuwafuwaBirthDate(getDateKeyOffset(-25)); alert('Day 26 にしました'); }}
                             style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                             Day 26 (成体)
                         </button>
-                        <button onClick={() => { useAppStore.getState().setFuwafuwaState({ fuwafuwaBirthDate: getDateKeyOffset(-29) }); alert('Day 30 にしました'); }}
+                        <button onClick={() => { useAppStore.getState().setFuwafuwaBirthDate(getDateKeyOffset(-29)); alert('Day 30 にしました'); }}
                             style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                             Day 30 (お別れ)
                         </button>
@@ -1027,7 +1032,7 @@ export const SettingsPage: React.FC = () => {
                                     color: '#8395A7',
                                 }}
                             >
-                                やめる
+                                キャンセル
                             </button>
                             <button
                                 onClick={handleReset}
@@ -1037,14 +1042,100 @@ export const SettingsPage: React.FC = () => {
                                     borderRadius: 12,
                                     border: 'none',
                                     background: '#E17055',
-                                    cursor: 'pointer',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 14,
-                                    fontWeight: 700,
                                     color: 'white',
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 15,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
                                 }}
                             >
-                                リセット
+                                リセットする
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Confirm redo onboarding dialog */}
+            {showConfirmRedo && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'rgba(0,0,0,0.3)',
+                    backdropFilter: 'blur(4px)',
+                    zIndex: 200,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 24,
+                }}>
+                    <motion.div
+                        className="card"
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        style={{
+                            textAlign: 'center',
+                            padding: '32px 24px',
+                            maxWidth: 320,
+                            width: '100%',
+                        }}
+                    >
+                        <h3 style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 18,
+                            fontWeight: 700,
+                            color: '#2D3436',
+                            margin: '0 0 16px',
+                        }}>
+                            チュートリアルをやり直す
+                        </h3>
+                        <p style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 14,
+                            color: '#636E72',
+                            margin: '0 0 24px',
+                            lineHeight: 1.6,
+                        }}>
+                            最初の設定画面に戻りますか？<br />
+                            <span style={{ fontSize: 13, color: '#8395A7' }}>※これまでの記録は消えません。</span>
+                        </p>
+                        <div style={{
+                            display: 'flex',
+                            gap: 12,
+                        }}>
+                            <button
+                                onClick={() => setShowConfirmRedo(false)}
+                                style={{
+                                    flex: 1,
+                                    padding: '12px 0',
+                                    borderRadius: 12,
+                                    border: 'none',
+                                    background: '#DFE6E9',
+                                    color: '#2D3436',
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 15,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                キャンセル
+                            </button>
+                            <button
+                                onClick={handleRedoOnboarding}
+                                style={{
+                                    flex: 1,
+                                    padding: '12px 0',
+                                    borderRadius: 12,
+                                    border: 'none',
+                                    background: '#2BBAA0',
+                                    color: 'white',
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 15,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                やり直す
                             </button>
                         </div>
                     </motion.div>
