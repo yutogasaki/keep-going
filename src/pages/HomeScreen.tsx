@@ -266,10 +266,11 @@ export const HomeScreen: React.FC = () => {
                 justifyContent: 'center',
                 width: '100%',
                 flex: 1,
-                paddingBottom: 40 // Adjust for bottom navigation
+                paddingTop: 'min(2vh, 16px)',
+                paddingBottom: 90 // Ensure it clears the floating play button
             }}>
                 {/* Magic Power Tank */}
-                <div style={{ height: 120, display: 'flex', alignItems: 'flex-end', paddingBottom: 16 }}>
+                <div style={{ height: 'min(10vh, 100px)', display: 'flex', alignItems: 'flex-end', paddingBottom: 'min(1vh, 8px)' }}>
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -305,7 +306,7 @@ export const HomeScreen: React.FC = () => {
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
-                                    gap: 16,
+                                    gap: 'min(2vh, 16px)',
                                     opacity: currentPageIndex === index ? 1 : 0.3,
                                     transition: 'opacity 0.3s ease'
                                 }}>
@@ -325,7 +326,7 @@ export const HomeScreen: React.FC = () => {
                                     <div style={{ display: 'flex', gap: 16, justifyContent: 'center', alignItems: 'center' }}>
                                         {renderUsers.map((u: any) => (
                                             <div key={u.id} style={{
-                                                transform: renderUsers.length === 1 ? 'scale(1.2)' : 'scale(1)',
+                                                transform: renderUsers.length === 1 ? 'scale(0.95)' : 'scale(0.85)',
                                                 position: 'relative'
                                             }}>
                                                 {/* Optional: Show tiny name badge if multiple users */}
@@ -359,45 +360,49 @@ export const HomeScreen: React.FC = () => {
                 </div>
 
                 {/* Pagination Dots */}
-                <div style={{
-                    display: 'flex',
-                    gap: 8,
-                    marginTop: 32,
-                    alignItems: 'center'
-                }}>
-                    {swipePages.map((_, idx) => (
-                        <div
-                            key={idx}
-                            style={{
-                                width: currentPageIndex === idx ? 24 : 8,
-                                height: 8,
-                                borderRadius: 4,
-                                background: currentPageIndex === idx ? '#2BBAA0' : 'rgba(43, 186, 160, 0.3)',
-                                transition: 'all 0.3s ease'
-                            }}
-                        />
-                    ))}
-                </div>
+                {swipePages.length > 1 && (
+                    <div style={{
+                        display: 'flex',
+                        gap: 8,
+                        marginTop: 'min(3vh, 24px)',
+                        alignItems: 'center'
+                    }}>
+                        {swipePages.map((_, idx) => (
+                            <div
+                                key={idx}
+                                style={{
+                                    width: currentPageIndex === idx ? 24 : 8,
+                                    height: 8,
+                                    borderRadius: 4,
+                                    background: currentPageIndex === idx ? '#2BBAA0' : 'rgba(43, 186, 160, 0.3)',
+                                    transition: 'all 0.3s ease'
+                                }}
+                            />
+                        ))}
+                    </div>
+                )}
 
                 {/* Subtle instruction text */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.8 }}
-                    transition={{ delay: 2, duration: 2 }}
-                    style={{
-                        marginTop: 24,
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: '#636e72',
-                        letterSpacing: 2,
-                        background: 'rgba(255, 255, 255, 0.5)',
-                        padding: '6px 16px',
-                        borderRadius: 20,
-                    }}
-                >
-                    スワイプしてえらんでね
-                </motion.div>
+                {swipePages.length > 1 && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.8 }}
+                        transition={{ delay: 2, duration: 2 }}
+                        style={{
+                            marginTop: 'min(2vh, 16px)',
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: '#636e72',
+                            letterSpacing: 2,
+                            background: 'rgba(255, 255, 255, 0.5)',
+                            padding: '6px 16px',
+                            borderRadius: 20,
+                        }}
+                    >
+                        スワイプしてえらんでね
+                    </motion.div>
+                )}
             </div>
         </div>
     );
