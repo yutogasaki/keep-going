@@ -7,6 +7,11 @@ class AudioEngine {
     private ctx: AudioContext | null = null;
     private isMuted: boolean = false;
 
+    // BGM properties
+    private bgmGain: GainNode | null = null;
+    private isBgmPlaying: boolean = false;
+    private synBgmOscillators: OscillatorNode[] = [];
+
     // Initialize context only on user interaction
     public init() {
         if (!this.ctx) {
@@ -19,10 +24,95 @@ class AudioEngine {
 
     public toggleMute() {
         this.isMuted = !this.isMuted;
+
+        // Handle BGM volume on mute toggle
+        if (this.isBgmPlaying && this.bgmGain && this.ctx) {
+            const now = this.ctx.currentTime;
+            this.bgmGain.gain.cancelScheduledValues(now);
+            if (this.isMuted || useAppStore.getState().soundVolume === 0) {
+                this.bgmGain.gain.linearRampToValueAtTime(0, now + 0.5);
+            } else {
+                const vol = useAppStore.getState().soundVolume * 0.3; // Default BGM volume ratio
+                this.bgmGain.gain.linearRampToValueAtTime(vol, now + 0.5);
+            }
+        }
     }
 
     public getMuted() {
         return this.isMuted;
+    }
+
+    // --- Synthetic BGM Methods ---
+    // Generates a soft, breathing ambient drone using Web Audio API
+
+    public async startBGM(fadeTime: number = 2.0) {
+        if (this.isMuted || useAppStore.getState().soundVolume === 0) return;
+
+        this.init();
+        if (!this.ctx) return;
+
+        // Stop existing BGM if already playing
+        if (this.isBgmPlaying) {
+            this.stopBGM(1.0);
+        }
+
+        this.bgmGain = this.ctx.createGain();
+        const targetVol = useAppStore.getState().soundVolume * 0.15; // Set synthetic ambient volume very low
+
+        // Fade in
+        const now = this.ctx.currentTime;
+        this.bgmGain.gain.setValueAtTime(0, now);
+        this.bgmGain.gain.linearRampToValueAtTime(targetVol, now + fadeTime);
+
+        this.bgmGain.connect(this.ctx.destination);
+
+        // Create a relaxing ambient drone (e.g., Cmaj9 chord with low frequencies and detune)
+        const baseFreq = 130.81; // C3
+        const ratios = [1, 1.25, 1.5, 1.889, 2]; // C, E, G, B, C
+
+        this.synBgmOscillators = ratios.map(ratio => {
+            const osc = this.ctx!.createOscillator();
+            osc.type = 'sine'; // Softest waveform
+            // Add tiny slow LFO effect to frequency for "breathing" feel
+            osc.frequency.value = baseFreq * ratio;
+
+            // Separate gain for each osc to balance chord
+            const oscGain = this.ctx!.createGain();
+            oscGain.gain.value = 1 / ratios.length;
+
+            osc.connect(oscGain);
+            oscGain.connect(this.bgmGain!);
+
+            osc.start(now);
+            return osc;
+        });
+
+        this.isBgmPlaying = true;
+    }
+
+    public stopBGM(fadeTime: number = 2.0) {
+        if (!this.isBgmPlaying || !this.bgmGain || !this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        this.bgmGain.gain.cancelScheduledValues(now);
+        this.bgmGain.gain.setValueAtTime(this.bgmGain.gain.value, now);
+        this.bgmGain.gain.linearRampToValueAtTime(0, now + fadeTime);
+
+        const oscsToStop = this.synBgmOscillators;
+        setTimeout(() => {
+            try {
+                oscsToStop.forEach((osc: OscillatorNode) => {
+                    osc.stop();
+                    osc.disconnect();
+                });
+            } catch (e) {
+                // Ignore errors if already stopped
+            }
+        }, fadeTime * 1000 + 100);
+
+        this.synBgmOscillators = [];
+        this.isBgmPlaying = false;
+        this.bgmGain = null;
     }
 
     // Initialize TTS engine (needed for iOS Safari)
@@ -42,15 +132,29 @@ class AudioEngine {
         if (!state.ttsEnabled || state.soundVolume === 0) return;
 
         if ('speechSynthesis' in window) {
-            // Cancel any ongoing speech
             window.speechSynthesis.cancel();
 
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'ja-JP';
             utterance.volume = state.soundVolume;
-            // Optionally adjust rate/pitch for a more natural instructor voice
-            utterance.rate = 1.05;
-            utterance.pitch = 1.1;
+
+            // Voice selection logic for premium natural voices
+            const voices = window.speechSynthesis.getVoices();
+            const jpVoices = voices.filter(v => v.lang.includes('ja'));
+
+            if (jpVoices.length > 0) {
+                // Priority: Google (Android/Chrome) > Kyoko (Mac/iOS) > Otoya > Default
+                const premiumVoice = jpVoices.find(v => v.name.includes('Google') || v.name.includes('Kyoko') || v.name.includes('Otoya'));
+                if (premiumVoice) {
+                    utterance.voice = premiumVoice;
+                } else {
+                    utterance.voice = jpVoices[0];
+                }
+            }
+
+            // Adjust rate and pitch to sound more calming and natural
+            utterance.rate = 0.95; // Slightly slower
+            utterance.pitch = 1.05; // Slightly higher but soft
 
             window.speechSynthesis.speak(utterance);
         }

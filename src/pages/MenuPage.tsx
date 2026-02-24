@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Play, ChevronDown, Clock, Trash2, Star, Edit2, X, Settings } from 'lucide-react';
+import { Plus, Play, ChevronDown, Clock, Trash2, Star, Edit2, X, Settings2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
+import { ExerciseIcon } from '../components/ExerciseIcon';
 import { getExerciseById, calculateTotalSeconds, getExercisesByClass, DEFAULT_SESSION_TARGET_SECONDS, EXERCISES } from '../data/exercises';
 import { getPresetsForClass, getCustomGroups, deleteCustomGroup, type MenuGroup } from '../data/menuGroups';
 import { getCustomExercises, saveCustomExercise, deleteCustomExercise, type CustomExercise } from '../lib/db';
@@ -119,7 +120,7 @@ export const MenuPage: React.FC = () => {
             }}>
                 {[
                     { id: 'group' as MenuTab, label: 'セット' },
-                    { id: 'individual' as MenuTab, label: 'オリジナル' },
+                    { id: 'individual' as MenuTab, label: 'カスタマイズ' },
                 ].map(t => (
                     <button
                         key={t.id}
@@ -226,41 +227,64 @@ export const MenuPage: React.FC = () => {
             {/* Individual tab content */}
             {tab === 'individual' && (
                 <section>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: 12,
-                    }}>
+                    {/* Custom Menu Settings Card */}
+                    <div style={{ marginBottom: 16 }}>
+                        <motion.button
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setShowCustomMenu(true)}
+                            className="card"
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 16,
+                                padding: '16px 20px',
+                                border: 'none',
+                                background: 'white',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                            }}
+                        >
+                            <div style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 14,
+                                background: 'linear-gradient(135deg, #FFF0F5, #FFE4E1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                                boxShadow: '0 2px 8px rgba(255, 228, 225, 0.5)',
+                            }}>
+                                <Settings2 size={24} color="#E17055" />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 15,
+                                    fontWeight: 700,
+                                    color: '#2D3436',
+                                    marginBottom: 4,
+                                }}>おまかせの設定</div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 12,
+                                    color: '#8395A7',
+                                    lineHeight: 1.4,
+                                }}>{dailyTargetMinutes}分 / こだわり: {requiredExercises.length}個 / 除外: {excludedExercises.length}個</div>
+                            </div>
+                        </motion.button>
+
                         <p style={{
                             fontFamily: "'Noto Sans JP', sans-serif",
                             fontSize: 12,
                             color: '#8395A7',
-                            margin: 0,
+                            marginTop: 12,
+                            textAlign: 'center',
                         }}>
-                            「はじめる」ボタンで開始すると ★ はかならず入ります<br />（約{Math.ceil(DEFAULT_SESSION_TARGET_SECONDS / 60)}分）
+                            「はじめる」ボタンで開始すると ★ はかならず入ります<br />（おまかせで約{Math.ceil(DEFAULT_SESSION_TARGET_SECONDS / 60)}分）
                         </p>
-                        <button
-                            onClick={() => setShowCustomMenu(true)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 6,
-                                padding: '8px 12px',
-                                borderRadius: 8,
-                                border: '1px solid rgba(0,0,0,0.06)',
-                                background: 'white',
-                                cursor: 'pointer',
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 12,
-                                fontWeight: 700,
-                                color: '#2D3436',
-                                boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-                            }}
-                        >
-                            <Settings size={14} color="#8395A7" />
-                            <span>メニューの設定</span>
-                        </button>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -278,7 +302,7 @@ export const MenuPage: React.FC = () => {
                                     padding: '14px 16px',
                                 }}
                             >
-                                <span style={{ fontSize: 24, flexShrink: 0 }}>{ex.emoji}</span>
+                                <ExerciseIcon id={ex.id} emoji={ex.emoji} size={24} color="#2D3436" />
                                 <div style={{ flex: 1 }}>
                                     <div style={{
                                         display: 'flex',
@@ -294,7 +318,7 @@ export const MenuPage: React.FC = () => {
                                         }}>
                                             {ex.name}
                                         </span>
-                                        {ex.priority === 'high' && (
+                                        {requiredExercises.includes(ex.id) && (
                                             <span style={{
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
@@ -356,6 +380,16 @@ export const MenuPage: React.FC = () => {
 
                     {/* Custom Single Exercises */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
+                        <h2 style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: '#8395A7',
+                            marginBottom: 10,
+                            letterSpacing: 1,
+                        }}>
+                            じぶん種目
+                        </h2>
                         {customExercises.map((ex, i) => (
                             <motion.div
                                 key={ex.id}
@@ -370,7 +404,7 @@ export const MenuPage: React.FC = () => {
                                     padding: '14px 16px',
                                 }}
                             >
-                                <span style={{ fontSize: 24, flexShrink: 0 }}>{ex.emoji}</span>
+                                <ExerciseIcon id={ex.id} emoji={ex.emoji} size={24} color="#2D3436" />
                                 <div style={{ flex: 1 }}>
                                     <div style={{
                                         display: 'flex',
@@ -478,7 +512,7 @@ export const MenuPage: React.FC = () => {
                             }}
                         >
                             <Plus size={18} />
-                            オリジナル種目をつくる
+                            じぶん種目をつくる
                         </motion.button>
                     </div>
                 </section>
@@ -497,35 +531,47 @@ export const MenuPage: React.FC = () => {
                     }}>
                         {/* Header */}
                         <div style={{
-                            padding: '24px 20px 16px',
+                            padding: '24px 24px 20px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             background: 'white',
                             borderBottom: '1px solid rgba(0,0,0,0.06)',
-                            boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
                         }}>
-                            <h2 style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 18,
-                                fontWeight: 700,
-                                color: '#2D3436',
-                                margin: 0,
-                            }}>
-                                メニューの設定
-                            </h2>
+                            <div>
+                                <h2 style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 18,
+                                    fontWeight: 700,
+                                    color: '#2D3436',
+                                    margin: 0,
+                                    marginBottom: 4,
+                                }}>
+                                    おまかせの設定
+                                </h2>
+                                <p style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 12,
+                                    color: '#8395A7',
+                                    margin: 0,
+                                }}>
+                                    毎日のルーティン内容を調整します
+                                </p>
+                            </div>
                             <button
                                 onClick={() => setShowCustomMenu(false)}
                                 style={{
-                                    width: 36,
-                                    height: 36,
+                                    width: 40,
+                                    height: 40,
                                     borderRadius: '50%',
                                     border: 'none',
-                                    background: '#F8F9FA',
+                                    background: '#F1F2F6',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     cursor: 'pointer',
+                                    transition: 'background 0.2s ease',
                                 }}
                             >
                                 <X size={20} color="#2D3436" />
@@ -533,9 +579,9 @@ export const MenuPage: React.FC = () => {
                         </div>
 
                         {/* Content */}
-                        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px' }}>
                             {/* Duration */}
-                            <div className="card" style={{ marginBottom: 20, padding: '20px' }}>
+                            <div className="card" style={{ marginBottom: 24, padding: '24px 20px' }}>
                                 <div style={{
                                     fontFamily: "'Noto Sans JP', sans-serif",
                                     fontSize: 15,
@@ -552,9 +598,9 @@ export const MenuPage: React.FC = () => {
                                             onClick={() => setDailyTargetMinutes(mins)}
                                             style={{
                                                 flex: 1,
-                                                minWidth: '30%',
-                                                padding: '12px 0',
-                                                borderRadius: 12,
+                                                minWidth: '28%',
+                                                padding: '14px 0',
+                                                borderRadius: 14,
                                                 border: dailyTargetMinutes === mins ? '2px solid #2BBAA0' : '2px solid transparent',
                                                 background: dailyTargetMinutes === mins ? 'rgba(43, 186, 160, 0.08)' : '#F8F9FA',
                                                 color: dailyTargetMinutes === mins ? '#2BBAA0' : '#8395A7',
@@ -563,6 +609,7 @@ export const MenuPage: React.FC = () => {
                                                 fontWeight: 700,
                                                 cursor: 'pointer',
                                                 transition: 'all 0.2s ease',
+                                                boxShadow: dailyTargetMinutes !== mins ? '0 2px 4px rgba(0,0,0,0.02)' : 'none',
                                             }}
                                         >
                                             {mins}分
@@ -624,7 +671,7 @@ export const MenuPage: React.FC = () => {
                                                 borderBottom: '1px solid rgba(0,0,0,0.04)',
                                             }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                    <span style={{ fontSize: 24 }}>{exercise.emoji}</span>
+                                                    <ExerciseIcon id={exercise.id} emoji={exercise.emoji} size={24} color="#2D3436" />
                                                     <div>
                                                         <div style={{
                                                             fontFamily: "'Noto Sans JP', sans-serif",
@@ -687,6 +734,7 @@ const GroupCard: React.FC<{
     const [expanded, setExpanded] = useState(false);
     const totalSec = calculateTotalSeconds(group.exerciseIds);
     const minutes = Math.ceil(totalSec / 60);
+    const firstEx = getExerciseById(group.exerciseIds[0]);
 
     return (
         <motion.div
@@ -715,10 +763,9 @@ const GroupCard: React.FC<{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 24,
                     flexShrink: 0,
                 }}>
-                    {group.emoji}
+                    <ExerciseIcon id={firstEx?.id || 'S01'} emoji={group.emoji} size={24} color="#2BBAA0" />
                 </div>
 
                 <div style={{ flex: 1 }}>
@@ -1000,7 +1047,7 @@ const CreateGroupView: React.FC<{
                     type="text"
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    placeholder="マイメニュー"
+                    placeholder="じぶんのメニュー"
                     style={{
                         width: '100%',
                         padding: '10px 14px',
@@ -1248,7 +1295,7 @@ const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ initial, on
                     fontWeight: 700,
                     color: '#2D3436',
                 }}>
-                    {initial ? 'オリジナルをへんしゅう' : 'オリジナルをつくる'}
+                    {initial ? 'じぶん種目をへんしゅう' : 'じぶん種目をつくる'}
                 </h1>
                 <div style={{ width: 48 }} />
             </div>

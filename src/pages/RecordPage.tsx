@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Calendar, Clock, Flame } from 'lucide-react';
 import { getAllSessions, type SessionRecord } from '../lib/db';
 import { EXERCISES } from '../data/exercises';
+import { ExerciseIcon } from '../components/ExerciseIcon';
 
 export const RecordPage: React.FC = () => {
     const [sessions, setSessions] = useState<SessionRecord[]>([]);
@@ -100,7 +101,18 @@ export const RecordPage: React.FC = () => {
                                         background: 'rgba(255, 255, 255, 0.9)',
                                     }}
                                 >
-                                    <span style={{ fontSize: 24 }}>{ex.emoji}</span>
+                                    <div style={{
+                                        width: 48,
+                                        height: 48,
+                                        borderRadius: 16,
+                                        background: '#E1705515',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                    }}>
+                                        <ExerciseIcon id={ex.id} emoji={ex.emoji} size={28} color="#E17055" />
+                                    </div>
                                     <span style={{
                                         fontFamily: "'Noto Sans JP', sans-serif",
                                         fontSize: 10,

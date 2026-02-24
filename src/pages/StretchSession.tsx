@@ -8,6 +8,7 @@ import { audio } from '../lib/audio';
 import { haptics } from '../lib/haptics';
 import { useAppStore } from '../store/useAppStore';
 import { getExerciseColor, generateSession, getReplacementExercise, EXERCISES, type Exercise } from '../data/exercises';
+import { ExerciseIcon } from '../components/ExerciseIcon';
 import { saveSession, getTodayKey, getSessionsByDate, getCustomExercises, type SessionRecord } from '../lib/db';
 
 export const StretchSession: React.FC = () => {
@@ -67,6 +68,20 @@ export const StretchSession: React.FC = () => {
     const [startedAt] = useState(() => new Date().toISOString());
     const [completedIds, setCompletedIds] = useState<string[]>([]);
     const [skippedIds, setSkippedIds] = useState<string[]>([]);
+    const [isCompleted, setIsCompleted] = useState(false);
+
+    // Handle BGM Playback based on playing/counting state
+    useEffect(() => {
+        if (!isLoading && !isCounting && isPlaying && !isCompleted) {
+            audio.startBGM(2.0); // 2-second fade in
+        } else {
+            audio.stopBGM(1.0); // 1-second fade out when paused/stopped
+        }
+
+        return () => {
+            audio.stopBGM(1.0);
+        };
+    }, [isLoading, isCounting, isPlaying, isCompleted]);
 
     // Transition state
     const [isTransitioning, setIsTransitioning] = useState(false);
@@ -82,8 +97,6 @@ export const StretchSession: React.FC = () => {
 
     // Bounce state for swipe limit
     const [showBounce, setShowBounce] = useState(false);
-
-    const [isCompleted, setIsCompleted] = useState(false);
 
     // Audio Mute Toggle
     const [isMuted, setIsMuted] = useState(audio.getMuted());
@@ -204,6 +217,7 @@ export const StretchSession: React.FC = () => {
             if (currentMultiple > previousMultiple) {
                 audio.playSuccess();
                 setIsBigBreak(true);
+                setIsPlaying(false); // Pause session (and BGM via useEffect)
                 return;
             }
 
@@ -376,6 +390,7 @@ export const StretchSession: React.FC = () => {
 
     const handleContinueBlock = () => {
         setIsBigBreak(false);
+        setIsPlaying(true); // Resume playing (and BGM via useEffect)
         setIsTransitioning(true);
         setTransitionTime(3);
     };
@@ -658,9 +673,24 @@ export const StretchSession: React.FC = () => {
 
                         {/* Emoji + name */}
                         <div style={{ zIndex: 20, textAlign: 'center' }}>
-                            <span style={{ fontSize: 40, display: 'block', marginBottom: 8 }}>
-                                {currentExercise.emoji}
-                            </span>
+                            <div style={{
+                                width: 100,
+                                height: 100,
+                                margin: '0 auto 16px',
+                                background: 'white',
+                                borderRadius: 32,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                            }}>
+                                <ExerciseIcon
+                                    id={currentExercise.id}
+                                    emoji={currentExercise.emoji}
+                                    size={64}
+                                    color={getExerciseColor(currentExercise.type)}
+                                />
+                            </div>
                             <h2 style={{
                                 fontFamily: "'Noto Sans JP', sans-serif",
                                 fontSize: 28,
@@ -793,9 +823,25 @@ export const StretchSession: React.FC = () => {
                                 color: '#B2BEC3',
                                 letterSpacing: 3,
                             }}>NEXT</p>
-                            <span style={{ fontSize: 36 }}>
-                                {sessionExercises[(currentIndex + 1) % sessionExercises.length].emoji}
-                            </span>
+
+                            <div style={{
+                                width: 80,
+                                height: 80,
+                                background: 'white',
+                                borderRadius: 24,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 6px 20px rgba(0,0,0,0.06)',
+                                marginBottom: 16,
+                            }}>
+                                <ExerciseIcon
+                                    id={sessionExercises[(currentIndex + 1) % sessionExercises.length].id}
+                                    emoji={sessionExercises[(currentIndex + 1) % sessionExercises.length].emoji}
+                                    size={48}
+                                    color={getExerciseColor(sessionExercises[(currentIndex + 1) % sessionExercises.length].type)}
+                                />
+                            </div>
                             <h2 style={{
                                 fontFamily: "'Noto Sans JP', sans-serif",
                                 fontSize: 28,
@@ -851,13 +897,12 @@ export const StretchSession: React.FC = () => {
 
             {/* Bottom Floating Control Bar */}
             <motion.div
-                initial={{ y: 100, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
+                initial={{ y: 100, opacity: 0, x: '-50%' }}
+                animate={{ y: 0, opacity: 1, x: '-50%' }}
                 style={{
                     position: 'absolute',
                     bottom: 'calc(env(safe-area-inset-bottom, 24px) + 24px)',
                     left: '50%',
-                    transform: 'translateX(-50%)',
                     zIndex: 80,
                     background: 'rgba(255, 255, 255, 0.85)',
                     backdropFilter: 'blur(20px)',

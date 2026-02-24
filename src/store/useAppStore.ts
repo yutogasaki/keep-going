@@ -93,11 +93,21 @@ export const useAppStore = create<AppState>()(
             setDailyTargetMinutes: (minutes) => set({ dailyTargetMinutes: minutes }),
             excludedExercises: [],
             setExcludedExercises: (ids) => set({ excludedExercises: ids }),
-            requiredExercises: ['S01', 'S02'], // Make Splts & Forward Fold default MUST-DOs
+            requiredExercises: ['S01', 'S02', 'S07'], // Make Splits, Forward Fold & Point & Flex default MUST-DOs
             setRequiredExercises: (ids) => set({ requiredExercises: ids }),
         }),
         {
             name: 'keepgoing-app-state',
+            version: 1,
+            migrate: (persistedState: any, version: number) => {
+                if (version === 0) {
+                    // Migration: Ensure 'S07' (Point & Flex) is added to required exercises for existing users
+                    if (persistedState.requiredExercises && !persistedState.requiredExercises.includes('S07')) {
+                        persistedState.requiredExercises.push('S07');
+                    }
+                }
+                return persistedState as AppState;
+            },
             partialize: (state) => ({
                 classLevel: state.classLevel,
                 hasCompletedOnboarding: state.hasCompletedOnboarding,

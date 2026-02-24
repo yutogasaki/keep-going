@@ -638,16 +638,14 @@ export const SettingsPage: React.FC = () => {
                             </div>
 
                             <div className="card" style={{ padding: 20 }}>
-                                <h3 style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 15, fontWeight: 700, color: '#2D3436', marginBottom: 16 }}>おすすめ機能とオリジナルメニュー</h3>
-
-                                <div style={{ marginBottom: 20 }}>
-                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, fontWeight: 700, color: '#2BBAA0', marginBottom: 6 }}>Q: オリジナルメニューとは何ですか？</div>
-                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, color: '#2D3436', lineHeight: 1.6 }}>A: この設定ページにある「🛠️オリジナルメニュー」から、1日の目標時間を変えたり、「必ずやりたい種目（必須）」「やりたくない種目（除外）」を設定したりできます。</div>
+                                <h3 style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 15, fontWeight: 700, color: '#2D3436', marginBottom: 16 }}>おすすめ機能とおまかせメニュー</h3>
+                                <div style={{ marginBottom: 16 }}>
+                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, fontWeight: 700, color: '#2BBAA0', marginBottom: 6 }}>Q: おまかせメニューとは何ですか？</div>
+                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, color: '#2D3436', lineHeight: 1.6 }}>A: メニューページの「カスタマイズ」タブにある「⚙️おまかせの設定」から、1日の目標時間を変えたり、「必ずやりたい種目（必須）」「やりたくない種目（除外）」を設定でき、日々のルーティンを自分好みに調整できます。</div>
                                 </div>
-
                                 <div>
-                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, fontWeight: 700, color: '#2BBAA0', marginBottom: 6 }}>Q: プレクラスを選ぶと体幹メニューが出ないのはなぜですか？</div>
-                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, color: '#2D3436', lineHeight: 1.6 }}>A: 無理なく続けられるよう、プレクラスは初期設定で体幹メニュー（プランク等）を「🔴除外」にしています。やってみたい場合は、「オリジナルメニュー」の設定から「⚪自動」や「🟢必須」に戻してください。</div>
+                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, fontWeight: 700, color: '#2BBAA0', marginBottom: 6 }}>Q: プレクラスの体幹メニューがどこにもありません</div>
+                                    <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 13, color: '#2D3436', lineHeight: 1.6 }}>A: 無理なく続けられるよう、プレクラスは初期設定で体幹メニュー（プランク等）を「🔴除外」にしています。やってみたい場合は、「カスタマイズ」タブの「おまかせの設定」から「⚪自動」や「🟢必須」に変更してください。</div>
                                 </div>
                             </div>
                         </div>
