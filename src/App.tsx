@@ -3,6 +3,8 @@ import { MainLayout } from './layouts/MainLayout';
 import { Onboarding } from './pages/Onboarding';
 import { useAppStore } from './store/useAppStore';
 
+import { PwaReloadPrompt } from './components/PwaReloadPrompt';
+
 function App() {
     const hasCompletedOnboarding = useAppStore(state => state.onboardingCompleted);
 
@@ -20,6 +22,7 @@ function App() {
     return (
         <div className="app-container">
             {hasCompletedOnboarding ? <MainLayout /> : <Onboarding />}
+            <PwaReloadPrompt />
         </div>
     );
 }
