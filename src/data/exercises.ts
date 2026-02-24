@@ -143,12 +143,18 @@ export function generateSession(classLevel: ClassLevel, options: GenerateSession
         currentSec += ex.sec;
     }
 
-    // If still under time, repeat main stretches
+    // If still under time, repeat main stretches (avoid consecutive duplicates)
     if (currentSec < targetSeconds && availableMain.length > 0) {
         let i = 0;
-        const allMainPairs = [...availableMain].sort(() => Math.random() - 0.5);
-        while (currentSec < targetSeconds && i < allMainPairs.length * 3) {
-            const ex = allMainPairs[i % allMainPairs.length];
+        const repeatPool = [...availableMain].sort(() => Math.random() - 0.5);
+        while (currentSec < targetSeconds && i < repeatPool.length * 2) {
+            const ex = repeatPool[i % repeatPool.length];
+            // Skip if same as last added (unless only 1 exercise in pool)
+            const lastMain = selectedMain[selectedMain.length - 1];
+            if (lastMain && lastMain.id === ex.id && repeatPool.length > 1) {
+                i++;
+                continue;
+            }
             selectedMain.push(ex);
             currentSec += ex.sec;
             i++;

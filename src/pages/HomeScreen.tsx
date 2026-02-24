@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, TrendingUp, Flame } from 'lucide-react';
 import { getSessionsByDate, getTodayKey, getAllSessions, calculateStreak, type SessionRecord } from '../lib/db';
+import { useAppStore } from '../store/useAppStore';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
 
 const motivationalMessages = [
@@ -36,11 +37,12 @@ export const HomeScreen: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
+    const dailyTargetMinutes = useAppStore(s => s.dailyTargetMinutes);
     const todayTotalSeconds = todaySessions.reduce((acc, s) => acc + s.totalSeconds, 0);
     const todayMinutes = Math.floor(todayTotalSeconds / 60);
     const todayExerciseCount = todaySessions.reduce((acc, s) => acc + s.exerciseIds.length, 0);
-    // Target: 15 min (900 sec)
-    const progressPercent = Math.min(100, Math.round((todayTotalSeconds / 900) * 100));
+    const targetSeconds = dailyTargetMinutes * 60;
+    const progressPercent = Math.min(100, Math.round((todayTotalSeconds / targetSeconds) * 100));
 
     // Progress ring calculations
     const ringRadius = 24;
