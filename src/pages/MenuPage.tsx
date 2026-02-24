@@ -43,11 +43,25 @@ export const MenuPage: React.FC = () => {
     useEffect(() => {
         setPresets(getPresetsForClass(classLevel));
         loadCustomData();
-    }, [classLevel]);
+    }, [classLevel, sessionUserIds]); // reload if context changes
 
     const loadCustomData = async () => {
-        setCustomGroups(await getCustomGroups());
-        setCustomExercises(await getCustomExercises());
+        const isTogetherMode = sessionUserIds.length > 1;
+        const currentUserId = sessionUserIds[0];
+
+        const allGroups = await getCustomGroups();
+        const allEx = await getCustomExercises();
+
+        // Filter based on context
+        setCustomGroups(allGroups.filter(g => {
+            if (isTogetherMode) return true; // Show all in Together Mode
+            return !g.creatorId || g.creatorId === currentUserId; // Show only shared or own
+        }));
+
+        setCustomExercises(allEx.filter(e => {
+            if (isTogetherMode) return true;
+            return !e.creatorId || e.creatorId === currentUserId;
+        }));
     };
 
     const handleGroupTap = (group: MenuGroup) => {
@@ -82,6 +96,7 @@ export const MenuPage: React.FC = () => {
             <CreateGroupView
                 classLevel={classLevel}
                 initial={editGroup}
+                currentUserId={sessionUserIds.length === 1 ? sessionUserIds[0] : undefined}
                 onSave={handleCreatedGroup}
                 onCancel={() => { setShowCreateGroup(false); setEditGroup(null); }}
             />
@@ -92,11 +107,18 @@ export const MenuPage: React.FC = () => {
         return (
             <SingleExerciseEditor
                 initial={editEx}
+                currentUserId={sessionUserIds.length === 1 ? sessionUserIds[0] : undefined}
                 onSave={handleCreatedEx}
                 onCancel={() => { setShowCreateEx(false); setEditEx(null); }}
             />
         );
     }
+
+    const getCreatorName = (creatorId?: string) => {
+        if (!creatorId) return null;
+        const user = users.find(u => u.id === creatorId);
+        return user ? user.name : null;
+    };
 
     const exercises = getExercisesByClass(classLevel);
 
@@ -198,6 +220,7 @@ export const MenuPage: React.FC = () => {
                                         key={group.id}
                                         group={group}
                                         index={i}
+                                        creatorName={sessionUserIds.length > 1 ? getCreatorName(group.creatorId) : undefined}
                                         onTap={() => handleGroupTap(group)}
                                         onEdit={() => setEditGroup(group)}
                                         onDelete={() => handleDeleteGroup(group.id)}
@@ -429,6 +452,22 @@ export const MenuPage: React.FC = () => {
                                         }}>
                                             {ex.name}
                                         </span>
+                                        {sessionUserIds.length > 1 && ex.creatorId && (
+                                            <span style={{
+                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                fontSize: 10,
+                                                fontWeight: 700,
+                                                color: '#2BBAA0',
+                                                background: 'rgba(43, 186, 160, 0.1)',
+                                                padding: '2px 6px',
+                                                borderRadius: 8,
+                                                marginLeft: 8,
+                                                display: 'inline-block',
+                                                verticalAlign: 'middle',
+                                            }}>
+                                                👤 {getCreatorName(ex.creatorId)}
+                                            </span>
+                                        )}
                                     </div>
                                     <div style={{
                                         fontFamily: "'Noto Sans JP', sans-serif",
@@ -735,11 +774,12 @@ export const MenuPage: React.FC = () => {
 const GroupCard: React.FC<{
     group: MenuGroup;
     index: number;
+    creatorName?: string | null;
     onTap: () => void;
     onEdit?: () => void;
     onDelete?: () => void;
     isCustom?: boolean;
-}> = ({ group, index, onTap, onEdit, onDelete, isCustom }) => {
+}> = ({ group, index, creatorName, onTap, onEdit, onDelete, isCustom }) => {
     const [expanded, setExpanded] = useState(false);
     const totalSec = calculateTotalSeconds(group.exerciseIds);
     const minutes = Math.ceil(totalSec / 60);
@@ -786,6 +826,22 @@ const GroupCard: React.FC<{
                         marginBottom: 2,
                     }}>
                         {group.name}
+                        {creatorName && (
+                            <span style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 10,
+                                fontWeight: 600,
+                                color: '#2BBAA0',
+                                background: 'rgba(43, 186, 160, 0.1)',
+                                padding: '2px 6px',
+                                borderRadius: 8,
+                                marginLeft: 8,
+                                display: 'inline-block',
+                                verticalAlign: 'middle',
+                            }}>
+                                👤 {creatorName}
+                            </span>
+                        )}
                     </div>
                     <div style={{
                         fontFamily: "'Noto Sans JP', sans-serif",
@@ -939,9 +995,10 @@ const EMOJI_OPTIONS = ['🌸', '💪', '🦵', '🩰', '⭐', '🌈', '🔥', '�
 const CreateGroupView: React.FC<{
     classLevel: string;
     initial: MenuGroup | null;
+    currentUserId?: string;
     onSave: () => void;
     onCancel: () => void;
-}> = ({ classLevel, initial, onSave, onCancel }) => {
+}> = ({ classLevel, initial, currentUserId, onSave, onCancel }) => {
     const [name, setName] = useState(initial?.name || '');
     const [emoji, setEmoji] = useState(initial?.emoji || '🌸');
     const [selectedIds, setSelectedIds] = useState<string[]>(initial?.exerciseIds || []);
@@ -963,6 +1020,7 @@ const CreateGroupView: React.FC<{
             description: '',
             exerciseIds: selectedIds,
             isPreset: false,
+            creatorId: currentUserId,
         };
         await saveCustomGroup(group);
         onSave();
@@ -1244,11 +1302,12 @@ const CreateGroupView: React.FC<{
 // --- Single Exercise Editor ---
 interface SingleExerciseEditorProps {
     initial?: CustomExercise | null;
+    currentUserId?: string;
     onSave: () => void;
     onCancel: () => void;
 }
 
-const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ initial, onSave, onCancel }) => {
+const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ initial, currentUserId, onSave, onCancel }) => {
     const [name, setName] = useState(initial?.name || '');
     const [emoji, setEmoji] = useState(initial?.emoji || '🌸');
     const [sec, setSec] = useState<number>(initial?.sec || 30);
@@ -1268,6 +1327,7 @@ const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ initial, on
             emoji,
             sec: sec as number,
             hasSplit,
+            creatorId: currentUserId,
         };
         await saveCustomExercise(ex);
         onSave();

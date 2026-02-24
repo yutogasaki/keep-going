@@ -10,19 +10,26 @@ export const HomeScreen: React.FC = () => {
     const [allSessions, setAllSessions] = useState<SessionRecord[]>([]);
 
     const users = useAppStore(s => s.users);
-    const activeUserIds = useAppStore(s => s.activeUserIds);
+    const sessionUserIds = useAppStore(s => s.sessionUserIds);
+    const setSessionUserIds = useAppStore(s => s.setSessionUserIds);
     const updateUser = useAppStore(s => s.updateUser);
     const activeMilestoneModal = useAppStore(s => s.activeMilestoneModal);
     const setActiveMilestoneModal = useAppStore(s => s.setActiveMilestoneModal);
 
-    const activeUsers = users.filter(u => activeUserIds.includes(u.id));
-
-    // Calculate today's total trained seconds for the Magic Tank based on active users
+    // Calculate today's total trained seconds for the Magic Tank based on the CURRENT swipe selection (sessionUserIds)
     const todayStr = new Date().toISOString().split('T')[0];
-    const todaySessions = allSessions.filter(s =>
-        s.date === todayStr &&
-        (!s.userIds || s.userIds.some(id => activeUserIds.includes(id)))
-    );
+    const isTogetherMode = sessionUserIds.length > 1;
+
+    const todaySessions = allSessions.filter(s => {
+        if (s.date !== todayStr) return false;
+        // In together mode, sum ALL sessions that involve ANY of the users to show family total.
+        // In individual mode, sum ONLY sessions that involve this specific user.
+        if (isTogetherMode) {
+            return !s.userIds || s.userIds.some(id => users.map(u => u.id).includes(id));
+        } else {
+            return !s.userIds || s.userIds.includes(sessionUserIds[0]);
+        }
+    });
     const todaySeconds = todaySessions.reduce((acc, curr) => acc + curr.totalSeconds, 0);
     const dailyTargetMinutes = useAppStore(s => s.dailyTargetMinutes);
     const targetSeconds = dailyTargetMinutes * 60;
@@ -75,11 +82,11 @@ export const HomeScreen: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        if (allSessions.length === 0 || activeUsers.length === 0) return;
+        if (allSessions.length === 0 || users.length === 0) return;
 
         let shouldTriggerModal: 'egg' | 'fairy' | 'adult' | null = null;
 
-        activeUsers.forEach(user => {
+        users.forEach(user => {
             if (!user.fuwafuwaBirthDate) return;
             const status = calculateFuwafuwaStatus(user.fuwafuwaBirthDate, allSessions);
             const currentStage = status.stage;
@@ -95,23 +102,28 @@ export const HomeScreen: React.FC = () => {
         if (shouldTriggerModal) {
             setActiveMilestoneModal(shouldTriggerModal);
         }
-    }, [allSessions, activeUsers, updateUser, setActiveMilestoneModal]);
+    }, [allSessions, users, updateUser, setActiveMilestoneModal]);
 
     // Define the swipeable pages based on users
     const swipePages = [...users];
-    if (activeUsers.length >= 2) {
-        // Add a special "Together" page at the end if 2 or more active users exist
+    if (users.length >= 2) {
+        // Automatically add "Together" page if 2 or more users exist
         swipePages.push({ id: 'TOGETHER', name: 'みんなで！', classLevel: '初級' } as any);
     }
 
-    const [currentPageIndex, setCurrentPageIndex] = useState(
-        // Default to the first active user, or the first user, or 0
-        Math.max(0, users.findIndex(u => activeUserIds.includes(u.id)))
-    );
+    const [currentPageIndex, setCurrentPageIndex] = useState(() => {
+        // Initialize to match sessionUserIds if possible (e.g. returning from Menu)
+        if (sessionUserIds.length > 1) {
+            return swipePages.findIndex(p => p.id === 'TOGETHER');
+        } else if (sessionUserIds.length === 1) {
+            const idx = swipePages.findIndex(p => p.id === sessionUserIds[0]);
+            return idx >= 0 ? idx : 0;
+        }
+        return 0;
+    });
 
-    const setSessionUserIds = useAppStore(s => s.setSessionUserIds);
 
-    // Sync active state whenever swipe page changes
+    // Sync sessionUserIds whenever swipe page changes
     useEffect(() => {
         if (users.length === 0) return;
         const page = swipePages[currentPageIndex];
@@ -122,11 +134,11 @@ export const HomeScreen: React.FC = () => {
         }
 
         if (page.id === 'TOGETHER') {
-            setSessionUserIds(activeUserIds);
+            setSessionUserIds(users.map(u => u.id));
         } else {
             setSessionUserIds([page.id]);
         }
-    }, [currentPageIndex, users, swipePages, activeUserIds, setSessionUserIds]);
+    }, [currentPageIndex, users]);
 
     const handleDragEnd = (_event: any, info: any) => {
         const threshold = 50; // pixels
@@ -136,11 +148,6 @@ export const HomeScreen: React.FC = () => {
             setCurrentPageIndex(prev => prev - 1);
         }
     };
-
-    // Set globally for Menu/Session to pick up via a new store property or we just rely on passing it via navigation if possible.
-    // Wait, the easiest way to tell other pages who is playing is to actually update `activeUserIds`.
-    // BUT the plan explicitly said NOT to destroy the Setting's checkboxes.
-    // Let's add `sessionUserIds` to the global store later. For now, we'll just show the UI.
 
     return (
         <div style={{
@@ -297,7 +304,7 @@ export const HomeScreen: React.FC = () => {
                     >
                         {swipePages.map((page, index) => {
                             const isTogetherPage = page.id === 'TOGETHER';
-                            const renderUsers = isTogetherPage ? activeUsers : [page];
+                            const renderUsers = isTogetherPage ? users : [page];
 
                             return (
                                 <div key={page.id} style={{

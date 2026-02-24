@@ -28,11 +28,9 @@ type TabId = 'home' | 'record' | 'menu' | 'settings';
 interface AppState {
     // Users
     users: UserProfileStore[];
-    activeUserIds: string[];
     addUser: (user: Omit<UserProfileStore, 'id'>) => void;
     updateUser: (id: string, updates: Partial<UserProfileStore>) => void;
     deleteUser: (id: string) => void;
-    setActiveUserIds: (ids: string[]) => void;
     resetUserFuwafuwa: (id: string, newType: number, activeDays: number, finalStage: number) => void;
 
     // Navigation
@@ -93,7 +91,6 @@ export const useAppStore = create<AppState>()(
     persist(
         (set, get) => ({
             users: [],
-            activeUserIds: [],
             sessionUserIds: [],
             setSessionUserIds: (ids) => set({ sessionUserIds: ids }),
             addUser: (user) => set((state) => ({ users: [...state.users, { ...user, id: crypto.randomUUID() }] })),
@@ -102,9 +99,7 @@ export const useAppStore = create<AppState>()(
             })),
             deleteUser: (id) => set((state) => ({
                 users: state.users.filter(u => u.id !== id),
-                activeUserIds: state.activeUserIds.filter(uid => uid !== id)
             })),
-            setActiveUserIds: (ids) => set({ activeUserIds: ids }),
             resetUserFuwafuwa: (id, newType, activeDays, finalStage) => set((state) => {
                 const today = new Date().toISOString().split('T')[0];
                 return {
@@ -208,7 +203,7 @@ export const useAppStore = create<AppState>()(
                             notifiedFuwafuwaStages: persistedState.notifiedFuwafuwaStages || []
                         };
                         persistedState.users = [legacyUser];
-                        persistedState.activeUserIds = [legacyUser.id];
+                        persistedState.sessionUserIds = [legacyUser.id];
                     }
 
                     // Cleanup legacy root properties if desired (Zustand will ignore them anyway based on partialize, 
@@ -225,7 +220,6 @@ export const useAppStore = create<AppState>()(
             },
             partialize: (state) => ({
                 users: state.users,
-                activeUserIds: state.activeUserIds,
                 onboardingCompleted: state.onboardingCompleted,
                 soundVolume: state.soundVolume,
                 ttsEnabled: state.ttsEnabled,

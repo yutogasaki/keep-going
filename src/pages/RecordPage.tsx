@@ -13,15 +13,18 @@ export const RecordPage: React.FC = () => {
     const [todaySessions, setTodaySessions] = useState<SessionRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const users = useAppStore(s => s.users);
-    const activeUserIds = useAppStore(s => s.activeUserIds);
-    const activeUsers = users.filter(u => activeUserIds.includes(u.id));
-    const pastFuwafuwas = activeUsers.flatMap(u => u.pastFuwafuwas || []);
+    const sessionUserIds = useAppStore(s => s.sessionUserIds);
+    // Find who is currently active in this session view
+    const currentViewUsers = users.filter(u => sessionUserIds.includes(u.id));
+    const pastFuwafuwas = currentViewUsers.flatMap(u => u.pastFuwafuwas || []);
 
     useEffect(() => {
         const load = () => {
-            getSessionsByDate(getTodayKey()).then(setTodaySessions);
+            getSessionsByDate(getTodayKey()).then(allToday => {
+                setTodaySessions(filterSessionsByContext(allToday));
+            });
             getAllSessions().then(s => {
-                setSessions(s);
+                setSessions(filterSessionsByContext(s));
                 setLoading(false);
             });
         };
@@ -30,7 +33,20 @@ export const RecordPage: React.FC = () => {
         // Refresh every 5 seconds
         const interval = setInterval(load, 5000);
         return () => clearInterval(interval);
-    }, []);
+    }, [sessionUserIds]); // Re-fetch/re-filter when context changes
+
+    const filterSessionsByContext = (unfiltered: SessionRecord[]) => {
+        const isTogetherMode = sessionUserIds.length > 1;
+        return unfiltered.filter(s => {
+            if (isTogetherMode) {
+                // In together mode, include any session that involved at least one of the ALL users
+                return !s.userIds || s.userIds.some(id => users.map(u => u.id).includes(id));
+            } else {
+                // In individual mode, only include sessions strictly for this user
+                return !s.userIds || s.userIds.includes(sessionUserIds[0]);
+            }
+        });
+    };
 
     // Group by date
     const grouped = new Map<string, SessionRecord[]>();

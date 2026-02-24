@@ -13,7 +13,7 @@ const CLASS_LEVELS: { id: ClassLevel; label: string; emoji: string; desc: string
 export const Onboarding: React.FC = () => {
     const setOnboardingCompleted = useAppStore((state) => state.setOnboardingCompleted);
     const addUser = useAppStore((state) => state.addUser);
-    const setActiveUserIds = useAppStore((state) => state.setActiveUserIds);
+    const setSessionUserIds = useAppStore((state) => state.setSessionUserIds);
     const [step, setStep] = useState<'welcome' | 'name' | 'class' | 'swipe'>('welcome');
     const [userName, setUserName] = useState('');
     const [selectedClass, setSelectedClass] = useState<ClassLevel | null>(null);
@@ -38,7 +38,7 @@ export const Onboarding: React.FC = () => {
         const state = useAppStore.getState();
         const latestUser = state.users[state.users.length - 1];
         if (latestUser) {
-            setActiveUserIds([latestUser.id]);
+            setSessionUserIds([latestUser.id]);
         }
 
         setOnboardingCompleted(true);

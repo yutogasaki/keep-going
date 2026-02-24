@@ -8,6 +8,7 @@ export interface MenuGroup {
     description: string;
     exerciseIds: string[];
     isPreset: boolean;
+    creatorId?: string; // If undefined, it's a family shared menu
 }
 
 // localforage instance for custom groups

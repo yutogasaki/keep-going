@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, Trash2, Volume2, Mic, Bell, Clock, X, HelpCircle, Music, Smartphone, RotateCcw, RefreshCw, Bug, Users, UserPlus, Edit2, CheckCircle2, Circle } from 'lucide-react';
+import { ChevronRight, ChevronDown, Trash2, Volume2, Mic, Bell, Clock, X, HelpCircle, Music, Smartphone, RotateCcw, RefreshCw, Bug, Users, UserPlus, Edit2 } from 'lucide-react';
 import { clearAllData, getDateKeyOffset } from '../lib/db';
 import { useAppStore } from '../store/useAppStore';
 import { audio } from '../lib/audio';
@@ -320,11 +320,9 @@ const ToggleButton: React.FC<{
 
 export const SettingsPage: React.FC = () => {
     const users = useAppStore(s => s.users);
-    const activeUserIds = useAppStore(s => s.activeUserIds);
     const addUser = useAppStore(s => s.addUser);
     const updateUser = useAppStore(s => s.updateUser);
     const deleteUser = useAppStore(s => s.deleteUser);
-    const setActiveUserIds = useAppStore(s => s.setActiveUserIds);
 
     // Settings state
     const soundVolume = useAppStore(s => s.soundVolume);
@@ -500,7 +498,7 @@ export const SettingsPage: React.FC = () => {
                             fontFamily: "'Noto Sans JP', sans-serif",
                             fontSize: 12,
                             color: '#8395A7',
-                        }}>{users?.length || 0}人のユーザー ({activeUserIds?.length || 0}人選択中)</div>
+                        }}>{users?.length || 0}人のユーザーが登録されています</div>
                     </div>
                     <ChevronRight size={18} color="#B2BEC3" style={{
                         transform: showUserManage ? 'rotate(90deg)' : 'rotate(0deg)',
@@ -517,7 +515,6 @@ export const SettingsPage: React.FC = () => {
                         {/* List Users */}
                         <div style={{ padding: '8px 0' }}>
                             {users && users.map(u => {
-                                const isActive = activeUserIds?.includes(u.id);
                                 const uClass = CLASS_LEVELS.find(c => c.id === u.classLevel) || CLASS_LEVELS[1];
                                 const isEditing = editingUserId === u.id;
 
@@ -527,7 +524,7 @@ export const SettingsPage: React.FC = () => {
                                         flexDirection: 'column',
                                         padding: '12px 20px',
                                         borderBottom: '1px solid rgba(0,0,0,0.04)',
-                                        background: isActive ? 'rgba(43,186,160,0.03)' : 'transparent'
+                                        background: 'transparent'
                                     }}>
                                         {isEditing ? (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -563,17 +560,6 @@ export const SettingsPage: React.FC = () => {
                                             </div>
                                         ) : (
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                <button
-                                                    onClick={() => {
-                                                        if (isActive && activeUserIds.length === 1) return; // Prevent deselecting last user
-                                                        setActiveUserIds(isActive ? activeUserIds.filter(id => id !== u.id) : [...activeUserIds, u.id]);
-                                                    }}
-                                                    style={{ border: 'none', background: 'none', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', color: isActive ? '#2BBAA0' : '#B2BEC3' }}
-                                                    title="「みんなで！」ページに表示する"
-                                                >
-                                                    {isActive ? <CheckCircle2 size={24} /> : <Circle size={24} />}
-                                                </button>
-
                                                 <div style={{ flex: 1 }}>
                                                     <div style={{ fontFamily: "'Noto Sans JP'", fontSize: 15, fontWeight: 700, color: '#2D3436', display: 'flex', alignItems: 'center', gap: 6 }}>
                                                         {u.name}
@@ -595,7 +581,6 @@ export const SettingsPage: React.FC = () => {
                                                         <button onClick={() => {
                                                             if (window.confirm(`${u.name}さんを削除しますか？`)) {
                                                                 deleteUser(u.id);
-                                                                if (isActive) setActiveUserIds(activeUserIds.filter(id => id !== u.id));
                                                             }
                                                         }} style={{ border: 'none', background: 'rgba(231,76,60,0.1)', padding: 8, borderRadius: 8, color: '#E74C3C' }}>
                                                             <Trash2 size={16} />
@@ -1094,19 +1079,19 @@ export const SettingsPage: React.FC = () => {
                         ふわふわの年齢を偽装します (リロードするとHomeに反映)
                     </p>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <button onClick={() => { updateUser(activeUserIds[0] || users[0].id, { fuwafuwaBirthDate: getDateKeyOffset(-4) }); alert('Day 5 にしました'); }}
+                        <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-4) }); alert('Day 5 にしました'); }}
                             style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                             Day 5 (たまご)
                         </button>
-                        <button onClick={() => { updateUser(activeUserIds[0] || users[0].id, { fuwafuwaBirthDate: getDateKeyOffset(-14) }); alert('Day 15 にしました。※見た目は今の頑張り度に依存'); }}
+                        <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-14) }); alert('Day 15 にしました。※見た目は今の頑張り度に依存'); }}
                             style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                             Day 15 (妖精)
                         </button>
-                        <button onClick={() => { updateUser(activeUserIds[0] || users[0].id, { fuwafuwaBirthDate: getDateKeyOffset(-25) }); alert('Day 26 にしました'); }}
+                        <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-25) }); alert('Day 26 にしました'); }}
                             style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                             Day 26 (成体)
                         </button>
-                        <button onClick={() => { updateUser(activeUserIds[0] || users[0].id, { fuwafuwaBirthDate: getDateKeyOffset(-29) }); alert('Day 30 にしました'); }}
+                        <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-29) }); alert('Day 30 にしました'); }}
                             style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                             Day 30 (お別れ)
                         </button>
