@@ -1,19 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Clock, Flame } from 'lucide-react';
-import { getAllSessions, type SessionRecord } from '../lib/db';
+import { getAllSessions, getSessionsByDate, getTodayKey, type SessionRecord } from '../lib/db';
 import { EXERCISES } from '../data/exercises';
 import { ExerciseIcon } from '../components/ExerciseIcon';
+import { useAppStore } from '../store/useAppStore';
+import { ActivityHeatmap } from '../components/ActivityHeatmap';
 
 export const RecordPage: React.FC = () => {
     const [sessions, setSessions] = useState<SessionRecord[]>([]);
+    const [todaySessions, setTodaySessions] = useState<SessionRecord[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getAllSessions().then(s => {
-            setSessions(s);
-            setLoading(false);
-        });
+        const load = () => {
+            getSessionsByDate(getTodayKey()).then(setTodaySessions);
+            getAllSessions().then(s => {
+                setSessions(s);
+                setLoading(false);
+            });
+        };
+        load();
+
+        // Refresh every 5 seconds
+        const interval = setInterval(load, 5000);
+        return () => clearInterval(interval);
     }, []);
 
     // Group by date
@@ -40,6 +51,19 @@ export const RecordPage: React.FC = () => {
         .sort((a, b) => b.count - a.count)
         .slice(0, 3);
 
+    // Today's Progress Calculations
+    const dailyTargetMinutes = useAppStore(s => s.dailyTargetMinutes);
+    const todayTotalSeconds = todaySessions.reduce((acc, s) => acc + s.totalSeconds, 0);
+    const todayMinutes = Math.floor(todayTotalSeconds / 60);
+    const todayExerciseCount = todaySessions.reduce((acc, s) => acc + s.exerciseIds.length, 0);
+    const targetSeconds = dailyTargetMinutes * 60;
+    const progressPercent = Math.min(100, Math.round((todayTotalSeconds / targetSeconds) * 100));
+
+    // Progress ring calculations
+    const ringRadius = 24;
+    const ringCircumference = 2 * Math.PI * ringRadius;
+    const ringOffset = ringCircumference * (1 - progressPercent / 100);
+
     return (
         <div style={{
             width: '100%',
@@ -60,11 +84,108 @@ export const RecordPage: React.FC = () => {
                 きろく
             </h1>
 
+            {/* Today's Progress Card */}
+            <motion.div
+                className="card"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 16,
+                    padding: '20px 24px',
+                }}
+            >
+                {/* Progress Ring */}
+                <div style={{ position: 'relative', width: 64, height: 64, flexShrink: 0 }}>
+                    <svg width="64" height="64" viewBox="0 0 64 64" className="progress-ring">
+                        <circle cx="32" cy="32" r={ringRadius} fill="none" stroke="#E8F8F0" strokeWidth="6" />
+                        <circle
+                            cx="32" cy="32" r={ringRadius}
+                            fill="none"
+                            stroke="#2BBAA0"
+                            strokeWidth="6"
+                            strokeLinecap="round"
+                            strokeDasharray={ringCircumference}
+                            strokeDashoffset={ringOffset}
+                            className="progress-ring__circle"
+                            style={{ transition: 'stroke-dashoffset 1s ease-in-out' }}
+                        />
+                    </svg>
+                    <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontFamily: "'Outfit', sans-serif",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: '#2BBAA0',
+                    }}>
+                        {progressPercent}%
+                    </div>
+                </div>
+
+                <div>
+                    <h3 style={{
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 16,
+                        fontWeight: 700,
+                        color: '#2D3436',
+                        marginBottom: 4,
+                    }}>
+                        今日のストレッチ
+                    </h3>
+                    <p style={{
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 13,
+                        color: '#8395A7',
+                    }}>
+                        {todaySessions.length === 0
+                            ? 'まだ始めていません'
+                            : `${todayExerciseCount}種目 · ${todayMinutes}分`
+                        }
+                    </p>
+                </div>
+            </motion.div>
+
+            {/* Heatmap */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
+            >
+                <div style={{
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#8395A7',
+                    marginBottom: 10,
+                    letterSpacing: 1,
+                }}>
+                    アクティビティ
+                </div>
+                <div className="card" style={{ padding: '20px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                    <ActivityHeatmap sessions={sessions} daysToShow={14} />
+                    <p style={{
+                        fontSize: 11,
+                        color: '#B2BEC3',
+                        marginTop: 10,
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        letterSpacing: 1
+                    }}>
+                        LAST 14 DAYS
+                    </p>
+                </div>
+            </motion.div>
+
             {/* Stats row */}
-            <div style={{ display: 'flex', gap: 10 }}>
-                <StatCard icon={<Flame size={18} color="#E17055" />} value={totalSessions} label="合計回数" color="#FFE5D9" delay={0} />
-                <StatCard icon={<Clock size={18} color="#2BBAA0" />} value={totalMinutes} label="合計分" color="#E8F8F0" delay={0.1} />
-                <StatCard icon={<Calendar size={18} color="#6C5CE7" />} value={uniqueDays} label="日数" color="#E8D5F5" delay={0.2} />
+            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                <StatCard icon={<Flame size={18} color="#E17055" />} value={totalSessions} label="合計回数" color="#FFE5D9" delay={0.2} />
+                <StatCard icon={<Clock size={18} color="#2BBAA0" />} value={totalMinutes} label="合計分" color="#E8F8F0" delay={0.3} />
+                <StatCard icon={<Calendar size={18} color="#6C5CE7" />} value={uniqueDays} label="日数" color="#E8D5F5" delay={0.4} />
             </div>
 
             {/* Top Exercises */}
