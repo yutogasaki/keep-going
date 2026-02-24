@@ -25,12 +25,17 @@ interface AppState {
     // App State (persisted)
     hasCompletedOnboarding: boolean;
     completeOnboarding: () => void;
+    resetOnboarding: () => void;
 
     // Settings (persisted)
     soundVolume: number;
     setSoundVolume: (vol: number) => void;
     ttsEnabled: boolean;
     setTtsEnabled: (enabled: boolean) => void;
+    bgmEnabled: boolean;
+    setBgmEnabled: (enabled: boolean) => void;
+    hapticEnabled: boolean;
+    setHapticEnabled: (enabled: boolean) => void;
     notificationsEnabled: boolean;
     setNotificationsEnabled: (enabled: boolean) => void;
     notificationTime: string;
@@ -79,11 +84,16 @@ export const useAppStore = create<AppState>()(
 
             hasCompletedOnboarding: false,
             completeOnboarding: () => set({ hasCompletedOnboarding: true }),
+            resetOnboarding: () => set({ hasCompletedOnboarding: false }),
 
             soundVolume: 0.5,
             setSoundVolume: (vol) => set({ soundVolume: vol }),
             ttsEnabled: true,
             setTtsEnabled: (enabled) => set({ ttsEnabled: enabled }),
+            bgmEnabled: true,
+            setBgmEnabled: (enabled) => set({ bgmEnabled: enabled }),
+            hapticEnabled: true,
+            setHapticEnabled: (enabled) => set({ hapticEnabled: enabled }),
             notificationsEnabled: false,
             setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled }),
             notificationTime: '21:00',
@@ -98,13 +108,18 @@ export const useAppStore = create<AppState>()(
         }),
         {
             name: 'keepgoing-app-state',
-            version: 1,
+            version: 2,
             migrate: (persistedState: any, version: number) => {
                 if (version === 0) {
                     // Migration: Ensure 'S07' (Point & Flex) is added to required exercises for existing users
                     if (persistedState.requiredExercises && !persistedState.requiredExercises.includes('S07')) {
                         persistedState.requiredExercises.push('S07');
                     }
+                }
+                if (version < 2) {
+                    // Migration: Add BGM and haptic toggle defaults for existing users
+                    persistedState.bgmEnabled = persistedState.bgmEnabled ?? true;
+                    persistedState.hapticEnabled = persistedState.hapticEnabled ?? true;
                 }
                 return persistedState as AppState;
             },
@@ -113,6 +128,8 @@ export const useAppStore = create<AppState>()(
                 hasCompletedOnboarding: state.hasCompletedOnboarding,
                 soundVolume: state.soundVolume,
                 ttsEnabled: state.ttsEnabled,
+                bgmEnabled: state.bgmEnabled,
+                hapticEnabled: state.hapticEnabled,
                 notificationsEnabled: state.notificationsEnabled,
                 notificationTime: state.notificationTime,
                 dailyTargetMinutes: state.dailyTargetMinutes,

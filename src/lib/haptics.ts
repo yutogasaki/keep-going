@@ -1,9 +1,12 @@
 // Haptic feedback utility utilizing navigator.vibrate
 // This provides physical feedback for actions, enhancing the UX (Android/PC primarily, iOS web lacks support)
 
+import { useAppStore } from '../store/useAppStore';
+
 export const haptics = {
     // Basic vibration method
     vibrate(pattern: number | number[]) {
+        if (!useAppStore.getState().hapticEnabled) return;
         if (typeof window !== 'undefined' && 'navigator' in window && 'vibrate' in navigator) {
             try {
                 navigator.vibrate(pattern);

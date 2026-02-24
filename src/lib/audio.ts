@@ -46,7 +46,7 @@ class AudioEngine {
     // Generates a soft, breathing ambient drone using Web Audio API
 
     public async startBGM(fadeTime: number = 2.0) {
-        if (this.isMuted || useAppStore.getState().soundVolume === 0) return;
+        if (this.isMuted || useAppStore.getState().soundVolume === 0 || !useAppStore.getState().bgmEnabled) return;
 
         this.init();
         if (!this.ctx) return;
