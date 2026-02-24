@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronDown, Trash2, Volume2, Mic, Bell, Clock, X, HelpCircle, Music, Smartphone, RotateCcw } from 'lucide-react';
+import { ChevronRight, ChevronDown, Trash2, Volume2, Mic, Bell, Clock, X, HelpCircle, Music, Smartphone, RotateCcw, RefreshCw } from 'lucide-react';
 import { clearAllData } from '../lib/db';
 import { useAppStore } from '../store/useAppStore';
 import { audio } from '../lib/audio';
@@ -406,14 +406,53 @@ export const SettingsPage: React.FC = () => {
             gap: 16,
             overflowY: 'auto',
         }}>
-            <h1 style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: 24,
-                fontWeight: 700,
-                color: '#2D3436',
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
             }}>
-                せってい
-            </h1>
+                <h1 style={{
+                    fontFamily: "'Outfit', sans-serif",
+                    fontSize: 24,
+                    fontWeight: 700,
+                    color: '#2D3436',
+                    margin: 0,
+                }}>
+                    せってい
+                </h1>
+                <button
+                    onClick={async () => {
+                        if ('serviceWorker' in navigator) {
+                            const registrations = await navigator.serviceWorker.getRegistrations();
+                            for (const reg of registrations) {
+                                await reg.update();
+                            }
+                        }
+                        if ('caches' in window) {
+                            const names = await caches.keys();
+                            for (const name of names) {
+                                await caches.delete(name);
+                            }
+                        }
+                        window.location.reload();
+                    }}
+                    style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: '50%',
+                        border: 'none',
+                        background: '#F0F3F5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: '#8395A7',
+                    }}
+                    title="アプリを最新版に更新"
+                >
+                    <RefreshCw size={16} />
+                </button>
+            </div>
 
             {/* Class level setting */}
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
