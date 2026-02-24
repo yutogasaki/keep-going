@@ -425,9 +425,10 @@ export const SettingsPage: React.FC = () => {
                         gap: 12,
                         padding: '16px 20px',
                         border: 'none',
-                        background: 'none',
+                        background: 'transparent',
                         cursor: 'pointer',
                         textAlign: 'left',
+                        color: '#2D3436',
                     }}
                 >
                     <div style={{
@@ -757,9 +758,10 @@ export const SettingsPage: React.FC = () => {
                         gap: 12,
                         padding: '16px 20px',
                         border: 'none',
-                        background: 'none',
+                        background: 'transparent',
                         cursor: 'pointer',
                         textAlign: 'left',
+                        color: '#2D3436',
                     }}
                 >
                     <div style={{
