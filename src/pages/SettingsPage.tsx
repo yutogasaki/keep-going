@@ -455,6 +455,7 @@ export const SettingsPage: React.FC = () => {
                         justifyContent: 'center',
                         cursor: 'pointer',
                         color: '#8395A7',
+                        marginRight: 110, // Avoid overlap with CurrentContextBadge
                     }}
                     title="アプリを最新版に更新"
                 >
