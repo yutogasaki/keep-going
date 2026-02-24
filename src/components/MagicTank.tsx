@@ -137,7 +137,7 @@ export const MagicTank: React.FC<MagicTankProps> = ({ currentSeconds, maxSeconds
                         {onReset && <span style={{ fontSize: 10, color: '#E67E22', opacity: 0.8 }}>タップしてふわふわに送る</span>}
                     </>
                 ) : (
-                    `きょうの目標まで: ${Math.ceil((maxSeconds - currentSeconds) / 60)}分`
+                    'まほうエネルギーを あつめよう！'
                 )}
             </motion.div>
         </div>

@@ -277,35 +277,59 @@ export const Onboarding: React.FC = () => {
 
                         <div style={{
                             fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 14,
+                            fontSize: 16,
                             fontWeight: 700,
                             color: '#8395A7',
                             lineHeight: 1.8,
                             textAlign: 'center',
-                            marginTop: 16
+                            marginTop: 32,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 16
                         }}>
-                            <p>下のスタートボタンを押したら はじまるよ！</p>
-                        </div>
+                            <p>準備ができたら<br />このボタンを押してスタート！</p>
 
-                        <button
-                            onClick={handleFinish}
-                            style={{
-                                marginTop: 8,
-                                padding: '14px 48px',
-                                borderRadius: 9999,
-                                border: 'none',
-                                background: '#2BBAA0',
-                                color: 'white',
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 16,
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                boxShadow: '0 4px 16px rgba(43, 186, 160, 0.35)',
-                                transition: 'all 0.3s ease',
-                            }}
-                        >
-                            はじめよう！
-                        </button>
+                            {/* Bouncing Arrow */}
+                            <motion.div
+                                animate={{ y: [0, 10, 0] }}
+                                transition={{ duration: 1, repeat: Infinity }}
+                                style={{ color: '#2BBAA0' }}
+                            >
+                                ↓
+                            </motion.div>
+
+                            {/* Simulated FAB Button to close onboarding */}
+                            <button
+                                onClick={handleFinish}
+                                style={{
+                                    width: 72,
+                                    height: 72,
+                                    borderRadius: '50%',
+                                    background: 'linear-gradient(135deg, #2BBAA0 0%, #1A937D 100%)',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 8px 32px rgba(43, 186, 160, 0.4), inset 0 2px 0 rgba(255,255,255,0.3)',
+                                    transform: 'scale(1)',
+                                    transition: 'transform 0.2s',
+                                }}
+                                onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.95)')}
+                                onPointerUp={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                                onPointerLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                            >
+                                <div style={{
+                                    width: 0,
+                                    height: 0,
+                                    borderTop: '12px solid transparent',
+                                    borderBottom: '12px solid transparent',
+                                    borderLeft: '18px solid white',
+                                    marginLeft: 6,
+                                }} />
+                            </button>
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
