@@ -69,6 +69,18 @@ interface AppState {
     setFuwafuwaType: (type: number) => void;
     setFuwafuwaName: (name: string | null) => void;
     resetFuwafuwaState: (newType: number, activeDays: number, finalStage: number) => void;
+
+    // Debug Overrides
+    debugFuwafuwaStage: number | null;
+    debugFuwafuwaType: number | null;
+    setDebugFuwafuwaStage: (stage: number | null) => void;
+    setDebugFuwafuwaType: (type: number | null) => void;
+
+    // Milestones
+    notifiedFuwafuwaStages: number[];
+    addNotifiedFuwafuwaStage: (stage: number) => void;
+    activeMilestoneModal: 'egg' | 'fairy' | 'adult' | null;
+    setActiveMilestoneModal: (modal: 'egg' | 'fairy' | 'adult' | null) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -151,9 +163,20 @@ export const useAppStore = create<AppState>()(
                     fuwafuwaType: newType,
                     fuwafuwaCycleCount: state.fuwafuwaCycleCount + 1,
                     fuwafuwaName: null, // Reset name for new generation
-                    pastFuwafuwas: [...state.pastFuwafuwas, record]
+                    pastFuwafuwas: [...state.pastFuwafuwas, record],
+                    notifiedFuwafuwaStages: [] // Reset notifications for new generation
                 };
             }),
+
+            debugFuwafuwaStage: null,
+            debugFuwafuwaType: null,
+            setDebugFuwafuwaStage: (stage) => set({ debugFuwafuwaStage: stage }),
+            setDebugFuwafuwaType: (type) => set({ debugFuwafuwaType: type }),
+
+            notifiedFuwafuwaStages: [],
+            addNotifiedFuwafuwaStage: (stage) => set((state) => ({ notifiedFuwafuwaStages: [...state.notifiedFuwafuwaStages, stage] })),
+            activeMilestoneModal: null,
+            setActiveMilestoneModal: (modal) => set({ activeMilestoneModal: modal })
         }),
         {
             name: 'keepgoing-app-state',

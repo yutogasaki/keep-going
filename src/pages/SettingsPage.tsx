@@ -971,6 +971,67 @@ export const SettingsPage: React.FC = () => {
                             Day 30 (お別れ)
                         </button>
                     </div>
+
+                    <div style={{ marginTop: '12px', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '12px' }}>
+                        <p style={{ fontSize: 12, color: '#2D3436', margin: '0 0 8px', fontWeight: 700 }}>デバッグ: 姿を強制上書き</p>
+                        <div style={{ display: 'flex', gap: 8, flexDirection: 'column' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 12, width: 40, color: '#8395A7' }}>種類:</span>
+                                <select
+                                    value={useAppStore.getState().debugFuwafuwaType ?? ''}
+                                    onChange={(e) => {
+                                        useAppStore.getState().setDebugFuwafuwaType(e.target.value ? Number(e.target.value) : null);
+                                    }}
+                                    style={{ padding: 4, borderRadius: 4, flex: 1, border: '1px solid #ccc' }}
+                                >
+                                    <option value="">(デフォルト)</option>
+                                    {[0, 1, 2, 3, 4, 5].map(v => <option key={v} value={v}>タイプ {v}</option>)}
+                                </select>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 12, width: 40, color: '#8395A7' }}>段階:</span>
+                                <select
+                                    value={useAppStore.getState().debugFuwafuwaStage ?? ''}
+                                    onChange={(e) => {
+                                        useAppStore.getState().setDebugFuwafuwaStage(e.target.value ? Number(e.target.value) : null);
+                                    }}
+                                    style={{ padding: 4, borderRadius: 4, flex: 1, border: '1px solid #ccc' }}
+                                >
+                                    <option value="">(デフォルト)</option>
+                                    <option value="0">たまご (Stage 0)</option>
+                                    <option value="1">たまごヒビ (Stage 1)</option>
+                                    <option value="2">妖精 (Stage 2)</option>
+                                    <option value="3">成体 (Stage 3)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ marginTop: '12px', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '12px' }}>
+                        <p style={{ fontSize: 12, color: '#2D3436', margin: '0 0 8px', fontWeight: 700 }}>デバッグ: メッセージ確認</p>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <button onClick={() => {
+                                useAppStore.getState().setActiveMilestoneModal('egg');
+                                // Force navigate to home to see it
+                                window.location.hash = '#'; // Might need to just use appStore tab
+                                useAppStore.getState().setTab('home');
+                            }} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
+                                たまご
+                            </button>
+                            <button onClick={() => {
+                                useAppStore.getState().setActiveMilestoneModal('fairy');
+                                useAppStore.getState().setTab('home');
+                            }} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
+                                かえった
+                            </button>
+                            <button onClick={() => {
+                                useAppStore.getState().setActiveMilestoneModal('adult');
+                                useAppStore.getState().setTab('home');
+                            }} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
+                                そだった
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 

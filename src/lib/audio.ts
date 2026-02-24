@@ -45,49 +45,9 @@ class AudioEngine {
     // --- Synthetic BGM Methods ---
     // Generates a soft, breathing ambient drone using Web Audio API
 
-    public async startBGM(fadeTime: number = 2.0) {
-        if (this.isMuted || useAppStore.getState().soundVolume === 0 || !useAppStore.getState().bgmEnabled) return;
-
-        this.init();
-        if (!this.ctx) return;
-
-        // Stop existing BGM if already playing
-        if (this.isBgmPlaying) {
-            this.stopBGM(1.0);
-        }
-
-        this.bgmGain = this.ctx.createGain();
-        const targetVol = useAppStore.getState().soundVolume * 0.15; // Set synthetic ambient volume very low
-
-        // Fade in
-        const now = this.ctx.currentTime;
-        this.bgmGain.gain.setValueAtTime(0, now);
-        this.bgmGain.gain.linearRampToValueAtTime(targetVol, now + fadeTime);
-
-        this.bgmGain.connect(this.ctx.destination);
-
-        // Create a relaxing ambient drone (e.g., Cmaj9 chord with low frequencies and detune)
-        const baseFreq = 130.81; // C3
-        const ratios = [1, 1.25, 1.5, 1.889, 2]; // C, E, G, B, C
-
-        this.synBgmOscillators = ratios.map(ratio => {
-            const osc = this.ctx!.createOscillator();
-            osc.type = 'sine'; // Softest waveform
-            // Add tiny slow LFO effect to frequency for "breathing" feel
-            osc.frequency.value = baseFreq * ratio;
-
-            // Separate gain for each osc to balance chord
-            const oscGain = this.ctx!.createGain();
-            oscGain.gain.value = 1 / ratios.length;
-
-            osc.connect(oscGain);
-            oscGain.connect(this.bgmGain!);
-
-            osc.start(now);
-            return osc;
-        });
-
-        this.isBgmPlaying = true;
+    public async startBGM(_fadeTime: number = 2.0) {
+        // Disabled synthetic drone BGM as requested by user ("bobobobo" sound is unpleasant during training)
+        return;
     }
 
     public stopBGM(fadeTime: number = 2.0) {

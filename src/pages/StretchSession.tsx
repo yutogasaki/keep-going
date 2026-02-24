@@ -243,6 +243,10 @@ export const StretchSession: React.FC = () => {
             audio.speak('残り10秒です');
         }
 
+        if (timeLeft > 0 && timeLeft <= 5) {
+            audio.speak(timeLeft.toString());
+        }
+
         if (timeLeft > 0 && timeLeft <= 3) {
             audio.playTick();
             haptics.tick();
@@ -730,7 +734,7 @@ export const StretchSession: React.FC = () => {
                                     exit={{ opacity: 0, scale: 0.8 }}
                                     style={{
                                         position: 'absolute',
-                                        top: '30%',
+                                        bottom: '22%',
                                         zIndex: 30,
                                         background: 'rgba(43, 186, 160, 0.9)',
                                         color: 'white',

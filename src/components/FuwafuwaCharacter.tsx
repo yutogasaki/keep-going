@@ -131,16 +131,24 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ sessions }) => {
     let pulseDuration = 4;
     let showFireflies = false;
 
-    if (status.activeDays >= 5) {
+    // Apply Debug Overrides
+    const debugStage = useAppStore(s => s.debugFuwafuwaStage);
+    const debugType = useAppStore(s => s.debugFuwafuwaType);
+
+    let displayStage = debugStage !== null ? debugStage : status.stage;
+    const displayType = debugType !== null ? debugType : fuwafuwaType;
+    const displayActiveDays = debugStage !== null ? debugStage * 10 : status.activeDays; // fake days for aura based on debug stage
+
+    if (displayActiveDays >= 5) {
         auraColor = 'rgba(255, 215, 0, 0.35)'; // Bright Warm Gold
         pulseDuration = 2; // Fast heartbeat
         showFireflies = true;
-    } else if (status.activeDays >= 2) {
+    } else if (displayActiveDays >= 2) {
         auraColor = 'rgba(255, 154, 158, 0.25)'; // Soft Warm Pink/Orange
         pulseDuration = 3;
     }
 
-    const imagePath = `/ikimono/${fuwafuwaType}-${status.stage}.png`;
+    const imagePath = `/ikimono/${displayType}-${displayStage}.png`;
 
     return (
         <div style={{

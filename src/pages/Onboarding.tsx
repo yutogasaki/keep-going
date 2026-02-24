@@ -277,12 +277,14 @@ export const Onboarding: React.FC = () => {
 
                         <div style={{
                             fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 13,
+                            fontSize: 14,
+                            fontWeight: 700,
                             color: '#8395A7',
                             lineHeight: 1.8,
+                            textAlign: 'center',
+                            marginTop: 16
                         }}>
-                            <p>↑ スワイプ = つぎのストレッチへ</p>
-                            <p>タップ = いちじていし</p>
+                            <p>さあ、今日も1日頑張ろう！</p>
                         </div>
 
                         <button
