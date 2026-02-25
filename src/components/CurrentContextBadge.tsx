@@ -57,10 +57,6 @@ export const CurrentContextBadge: React.FC = () => {
                 exit={{ opacity: 0, scale: 0.9, y: -10 }}
                 whileTap={{ scale: 0.95 }}
                 style={{
-                    position: 'absolute',
-                    top: 16,
-                    right: 20,
-                    zIndex: 40,
                     background: 'rgba(255, 255, 255, 0.9)',
                     backdropFilter: 'blur(8px)',
                     padding: '6px 14px',

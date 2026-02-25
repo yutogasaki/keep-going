@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAllSessions, getTodayKey, type SessionRecord } from '../lib/db';
+import { CurrentContextBadge } from '../components/CurrentContextBadge';
+import { PageHeader } from '../components/PageHeader';
 import { FuwafuwaCharacter } from '../components/FuwafuwaCharacter';
 import { MagicTank } from '../components/MagicTank';
 import { useAppStore } from '../store/useAppStore';
@@ -173,12 +175,15 @@ export const HomeScreen: React.FC = () => {
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
             position: 'relative',
             overflow: 'hidden',
         }}>
-            {/* Milestone Modals */}
+            <PageHeader
+                title="ホーム"
+                rightElement={<CurrentContextBadge />}
+            />
+
+            {/* Pagination Dots (Top) */}
             <AnimatePresence>
                 {activeMilestoneModal && (
                     <div style={{

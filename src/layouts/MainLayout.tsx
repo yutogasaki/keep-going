@@ -6,10 +6,7 @@ import { HomeScreen } from '../pages/HomeScreen';
 import { MenuPage } from '../pages/MenuPage';
 import { RecordPage } from '../pages/RecordPage';
 import { SettingsPage } from '../pages/SettingsPage';
-import { StretchSession } from '../pages/StretchSession';
-import { CurrentContextBadge } from '../components/CurrentContextBadge';
-
-export const MainLayout: React.FC = () => {
+import { StretchSession } from '../pages/StretchSession'; export const MainLayout: React.FC = () => {
     const currentTab = useAppStore((state) => state.currentTab);
     const isInSession = useAppStore((state) => state.isInSession);
 
@@ -24,8 +21,6 @@ export const MainLayout: React.FC = () => {
                 flexDirection: 'column',
                 overflow: 'hidden',
             }}>
-                <CurrentContextBadge />
-
                 {/* Dynamic Main Content based on Tab */}
                 <main style={{ flex: 1, height: '100%', width: '100%', overflow: 'hidden', position: 'relative' }}>
                     <AnimatePresence mode="wait">

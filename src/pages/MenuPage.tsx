@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Play, ChevronDown, Clock, Trash2, Star, Edit2, X, Settings2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
@@ -7,6 +8,8 @@ import { getExerciseById, calculateTotalSeconds, getExercisesByClass, DEFAULT_SE
 import { getPresetsForClass, getCustomGroups, deleteCustomGroup, type MenuGroup } from '../data/menuGroups';
 import { getCustomExercises, saveCustomExercise, deleteCustomExercise, type CustomExercise } from '../lib/db';
 import { audio } from '../lib/audio';
+import { PageHeader } from '../components/PageHeader';
+import { CurrentContextBadge } from '../components/CurrentContextBadge';
 
 type MenuTab = 'group' | 'individual';
 
@@ -128,18 +131,13 @@ export const MenuPage: React.FC = () => {
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            padding: '20px 20px 100px 20px',
-            gap: 16,
             overflowY: 'auto',
+            paddingBottom: 100,
         }}>
-            <h1 style={{
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: 24,
-                fontWeight: 700,
-                color: '#2D3436',
-            }}>
-                メニュー
-            </h1>
+            <PageHeader
+                title="メニュー"
+                rightElement={<CurrentContextBadge />}
+            />
 
             {/* Tab toggle */}
             <div style={{
@@ -148,6 +146,7 @@ export const MenuPage: React.FC = () => {
                 background: 'rgba(0,0,0,0.04)',
                 borderRadius: 12,
                 padding: 3,
+                margin: '0 20px 16px',
             }}>
                 {[
                     { id: 'group' as MenuTab, label: 'セット' },
@@ -258,7 +257,7 @@ export const MenuPage: React.FC = () => {
 
             {/* Individual tab content */}
             {tab === 'individual' && (
-                <section>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '0 20px' }}>
                     {/* Custom Menu Settings Card */}
                     <div style={{ marginBottom: 16 }}>
                         <motion.button
@@ -563,7 +562,7 @@ export const MenuPage: React.FC = () => {
                             じぶん種目をつくる
                         </motion.button>
                     </div>
-                </section>
+                </div>
             )}
 
             {/* Custom Menu Modal */}
@@ -1026,8 +1025,12 @@ const CreateGroupView: React.FC<{
         onSave();
     };
 
-    return (
+    return createPortal(
         <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgb(248, 249, 250)',
+            zIndex: 100,
             width: '100%',
             height: '100%',
             display: 'flex',
@@ -1295,7 +1298,8 @@ const CreateGroupView: React.FC<{
             >
                 {initial ? 'ほぞん' : 'つくる！'}
             </motion.button>
-        </div>
+        </div>,
+        document.body
     );
 };
 
@@ -1333,8 +1337,12 @@ const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ initial, cu
         onSave();
     };
 
-    return (
+    return createPortal(
         <div style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgb(248, 249, 250)',
+            zIndex: 100,
             width: '100%',
             height: '100%',
             display: 'flex',
@@ -1551,6 +1559,7 @@ const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ initial, cu
             >
                 {initial ? 'ほぞん' : 'つくる！'}
             </motion.button>
-        </div>
+        </div>,
+        document.body
     );
 };

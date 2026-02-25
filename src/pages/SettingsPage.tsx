@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronDown, Trash2, Volume2, Mic, Bell, Clock, X, HelpCircle, Music, Smartphone, RotateCcw, RefreshCw, Bug, Users, UserPlus, Edit2 } from 'lucide-react';
 import { clearAllData, getDateKeyOffset } from '../lib/db';
 import { useAppStore } from '../store/useAppStore';
+import { PageHeader } from '../components/PageHeader';
+import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { audio } from '../lib/audio';
 import type { ClassLevel } from '../data/exercises';
 
@@ -149,13 +152,18 @@ const HELP_SECTIONS: HelpSectionData[] = [
         ],
     },
     {
-        title: '休憩のしくみ',
+        title: '休憩と終了のしくみ',
         emoji: '☕',
         items: [
             {
                 id: 'break-1',
                 q: '休憩はいつ入る？',
-                a: '約5分ごとに短い休憩（小休憩）、約15分ごとに長い休憩（大休憩）が入ります。大休憩ではそこで終了するか、続けるかを選べます。',
+                a: '約5分ごとに短い休憩（小休憩）、約15分ごとに長い休憩（大休憩）が入ります。1番短いメニューでは休憩は入りません。',
+            },
+            {
+                id: 'break-2',
+                q: 'いつ終わるの？',
+                a: 'あらかじめ設定された「目標時間（初期設定は10分）」分のメニューを完走した時点で終了となります。「おつかれさま」画面が出たら、今日はおしまいです！',
             },
         ],
     },
@@ -415,65 +423,508 @@ export const SettingsPage: React.FC = () => {
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            padding: '64px 20px 100px 20px', // Avoid overlap with CurrentContextBadge
-            gap: 16,
             overflowY: 'auto',
+            paddingBottom: 100,
         }}>
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-            }}>
-                <h1 style={{
-                    fontFamily: "'Outfit', sans-serif",
-                    fontSize: 24,
-                    fontWeight: 700,
-                    color: '#2D3436',
-                    margin: 0,
-                }}>
-                    せってい
-                </h1>
-                <button
-                    onClick={async () => {
-                        if ('serviceWorker' in navigator) {
-                            const registrations = await navigator.serviceWorker.getRegistrations();
-                            for (const reg of registrations) {
-                                await reg.update();
-                            }
-                        }
-                        if ('caches' in window) {
-                            const names = await caches.keys();
-                            for (const name of names) {
-                                await caches.delete(name);
-                            }
-                        }
-                        window.location.reload();
-                    }}
-                    style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: '50%',
-                        border: 'none',
-                        background: '#F0F3F5',
+            <PageHeader
+                title="せってい"
+                rightElement={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <button
+                            onClick={async () => {
+                                if ('serviceWorker' in navigator) {
+                                    const registrations = await navigator.serviceWorker.getRegistrations();
+                                    for (const reg of registrations) {
+                                        await reg.update();
+                                    }
+                                }
+                                if ('caches' in window) {
+                                    const names = await caches.keys();
+                                    for (const name of names) {
+                                        await caches.delete(name);
+                                    }
+                                }
+                                window.location.reload();
+                            }}
+                            style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: '50%',
+                                border: 'none',
+                                background: '#F0F3F5',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                color: '#8395A7',
+                            }}
+                            title="アプリを最新版に更新"
+                        >
+                            <RefreshCw size={16} />
+                        </button>
+                        <CurrentContextBadge />
+                    </div>
+                }
+            />
+
+            <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* User Management */}
+                <div className="card" style={{ padding: 0, overflow: 'hidden', flexShrink: 0 }}>
+                    <div
+                        onClick={() => setShowUserManage(!showUserManage)}
+                        style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            padding: '16px 20px',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        <div style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 12,
+                            background: 'linear-gradient(135deg, #E8F8F0, #D4F0E7)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                        }}>
+                            <Users size={20} color="#2BBAA0" />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 14,
+                                fontWeight: 700,
+                                color: '#2D3436',
+                            }}>ユーザー・クラス設定</div>
+                            <div style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 12,
+                                color: '#8395A7',
+                            }}>{users?.length || 0}人のユーザーが登録されています</div>
+                        </div>
+                        <ChevronRight size={18} color="#B2BEC3" style={{
+                            transform: showUserManage ? 'rotate(90deg)' : 'rotate(0deg)',
+                            transition: 'transform 0.2s ease',
+                        }} />
+                    </div>
+
+                    {showUserManage && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            style={{ overflow: 'hidden', borderTop: '1px solid rgba(0,0,0,0.06)' }}
+                        >
+                            {/* List Users */}
+                            <div style={{ padding: '8px 0' }}>
+                                {users && users.map(u => {
+                                    const uClass = CLASS_LEVELS.find(c => c.id === u.classLevel) || CLASS_LEVELS[1];
+                                    const isEditing = editingUserId === u.id;
+
+                                    return (
+                                        <div key={u.id} style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            padding: '12px 20px',
+                                            borderBottom: '1px solid rgba(0,0,0,0.04)',
+                                            background: 'transparent'
+                                        }}>
+                                            {isEditing ? (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                                    <input
+                                                        type="text"
+                                                        value={editName}
+                                                        onChange={e => setEditName(e.target.value)}
+                                                        style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #DFE6E9', fontFamily: "'Noto Sans JP'", fontSize: 14 }}
+                                                    />
+                                                    <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+                                                        {CLASS_LEVELS.map(c => (
+                                                            <button
+                                                                key={c.id}
+                                                                onClick={() => setEditClass(c.id)}
+                                                                style={{
+                                                                    padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap',
+                                                                    background: editClass === c.id ? '#2BBAA0' : '#F0F3F5',
+                                                                    color: editClass === c.id ? 'white' : '#2D3436',
+                                                                    border: 'none', fontSize: 12, fontWeight: 700
+                                                                }}
+                                                            >
+                                                                {c.emoji} {c.label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                                                        <button onClick={() => setEditingUserId(null)} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: '#F0F3F5', fontWeight: 700, color: '#636E72' }}>キャンセル</button>
+                                                        <button onClick={() => {
+                                                            updateUser(u.id, { name: editName.trim() || 'ゲスト', classLevel: editClass });
+                                                            setEditingUserId(null);
+                                                        }} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: '#2BBAA0', color: 'white', fontWeight: 700 }}>保存</button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontFamily: "'Noto Sans JP'", fontSize: 15, fontWeight: 700, color: '#2D3436', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                            {u.name}
+                                                        </div>
+                                                        <div style={{ fontFamily: "'Noto Sans JP'", fontSize: 12, color: '#8395A7', marginTop: 2 }}>
+                                                            {uClass.emoji} {uClass.label}
+                                                        </div>
+                                                    </div>
+
+                                                    <div style={{ display: 'flex', gap: 8 }}>
+                                                        <button onClick={() => {
+                                                            setEditingUserId(u.id);
+                                                            setEditName(u.name);
+                                                            setEditClass(u.classLevel);
+                                                        }} style={{ border: 'none', background: 'rgba(0,0,0,0.05)', padding: 8, borderRadius: 8, color: '#636E72' }}>
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                        {(users?.length || 0) > 1 && (
+                                                            <button onClick={() => {
+                                                                if (window.confirm(`${u.name}さんを削除しますか？`)) {
+                                                                    deleteUser(u.id);
+                                                                }
+                                                            }} style={{ border: 'none', background: 'rgba(231,76,60,0.1)', padding: 8, borderRadius: 8, color: '#E74C3C' }}>
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+
+                                {/* Add User Button */}
+                                {editingUserId !== 'NEW' && (
+                                    <button
+                                        onClick={() => {
+                                            setEditingUserId('NEW');
+                                            setEditName('');
+                                            setEditClass('初級');
+                                        }}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center',
+                                            width: 'calc(100% - 40px)', margin: '12px auto', padding: '12px',
+                                            borderRadius: 12, border: '2px dashed #2BBAA0', background: 'rgba(43,186,160,0.05)',
+                                            color: '#2BBAA0', fontFamily: "'Noto Sans JP'", fontWeight: 700, cursor: 'pointer'
+                                        }}
+                                    >
+                                        <UserPlus size={18} />
+                                        新しいユーザーを追加
+                                    </button>
+                                )}
+
+                                {/* New User Form Inline */}
+                                {editingUserId === 'NEW' && (
+                                    <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
+                                        <input
+                                            type="text"
+                                            placeholder="おなまえ"
+                                            value={editName}
+                                            onChange={e => setEditName(e.target.value)}
+                                            style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #DFE6E9', fontFamily: "'Noto Sans JP'", fontSize: 14 }}
+                                        />
+                                        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+                                            {CLASS_LEVELS.map(c => (
+                                                <button
+                                                    key={c.id}
+                                                    onClick={() => setEditClass(c.id)}
+                                                    style={{
+                                                        padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap',
+                                                        background: editClass === c.id ? '#2BBAA0' : '#F0F3F5',
+                                                        color: editClass === c.id ? 'white' : '#2D3436',
+                                                        border: 'none', fontSize: 12, fontWeight: 700
+                                                    }}
+                                                >
+                                                    {c.emoji} {c.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                                            <button onClick={() => setEditingUserId(null)} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: '#F0F3F5', fontWeight: 700, color: '#636E72' }}>キャンセル</button>
+                                            <button onClick={() => {
+                                                const name = editName.trim() || 'ゲスト';
+                                                addUser({
+                                                    name,
+                                                    classLevel: editClass,
+                                                    fuwafuwaBirthDate: new Date().toISOString().split('T')[0],
+                                                    fuwafuwaType: Math.floor(Math.random() * 6),
+                                                    fuwafuwaCycleCount: 1,
+                                                    fuwafuwaName: null,
+                                                    pastFuwafuwas: [],
+                                                    notifiedFuwafuwaStages: []
+                                                });
+                                                setEditingUserId(null);
+                                            }} disabled={!editName.trim()} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: editName.trim() ? '#2BBAA0' : '#B2BEC3', color: 'white', fontWeight: 700 }}>追加</button>
+                                        </div>
+                                    </div>
+                                )}
+
+                            </div>
+                        </motion.div>
+                    )}
+                </div>
+
+                {/* Audio Settings */}
+                <div className="card" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                            <div style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 10,
+                                background: 'rgba(43, 186, 160, 0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}>
+                                <Volume2 size={16} color="#2BBAA0" />
+                            </div>
+                            <div style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 14,
+                                fontWeight: 700,
+                                color: '#2D3436',
+                            }}>音量</div>
+                        </div>
+                        <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            value={soundVolume}
+                            onChange={handleVolumeChange}
+                            style={{
+                                width: '100%',
+                                accentColor: '#2BBAA0',
+                            }}
+                        />
+                    </div>
+
+                    <div style={{
+                        padding: '16px 20px',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        color: '#8395A7',
-                        marginRight: 110, // Avoid overlap with CurrentContextBadge
-                    }}
-                    title="アプリを最新版に更新"
-                >
-                    <RefreshCw size={16} />
-                </button>
-            </div>
+                        justifyContent: 'space-between',
+                        borderBottom: '1px solid rgba(0,0,0,0.06)',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 10,
+                                background: 'rgba(225, 112, 85, 0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}>
+                                <Mic size={16} color="#E17055" />
+                            </div>
+                            <div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 14,
+                                    fontWeight: 700,
+                                    color: '#2D3436',
+                                }}>音声ガイダンス</div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 11,
+                                    color: '#8395A7',
+                                    marginTop: 2,
+                                }}>残り時間などを声でお知らせ</div>
+                            </div>
+                        </div>
+                        <ToggleButton
+                            enabled={ttsEnabled}
+                            onToggle={() => {
+                                const next = !ttsEnabled;
+                                setTtsEnabled(next);
+                                if (next) {
+                                    audio.initTTS();
+                                    audio.speak('音声ガイダンスをオンにしました');
+                                }
+                            }}
+                            color="#2BBAA0"
+                        />
+                    </div>
 
-            {/* User Management */}
-            <div className="card" style={{ padding: 0, overflow: 'hidden', flexShrink: 0 }}>
+                    {/* BGM Toggle */}
+                    <div style={{
+                        padding: '16px 20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 10,
+                                background: 'rgba(108, 92, 231, 0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}>
+                                <Music size={16} color="#6C5CE7" />
+                            </div>
+                            <div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 14,
+                                    fontWeight: 700,
+                                    color: '#2D3436',
+                                }}>BGM</div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 11,
+                                    color: '#8395A7',
+                                    marginTop: 2,
+                                }}>ストレッチ中のBGM</div>
+                            </div>
+                        </div>
+                        <ToggleButton
+                            enabled={bgmEnabled}
+                            onToggle={() => setBgmEnabled(!bgmEnabled)}
+                            color="#6C5CE7"
+                        />
+                    </div>
+                </div>
+
+                {/* Feedback Settings */}
+                <div className="card" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{
+                        padding: '16px 20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 10,
+                                background: 'rgba(253, 203, 110, 0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}>
+                                <Smartphone size={16} color="#E17055" />
+                            </div>
+                            <div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 14,
+                                    fontWeight: 700,
+                                    color: '#2D3436',
+                                }}>振動フィードバック</div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 11,
+                                    color: '#8395A7',
+                                    marginTop: 2,
+                                }}>対応デバイスのみ</div>
+                            </div>
+                        </div>
+                        <ToggleButton
+                            enabled={hapticEnabled}
+                            onToggle={() => setHapticEnabled(!hapticEnabled)}
+                            color="#FDCB6E"
+                        />
+                    </div>
+                </div>
+
+                {/* Notifications Settings */}
+                <div className="card" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{
+                        padding: '16px 20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        borderBottom: notificationsEnabled ? '1px solid rgba(0,0,0,0.06)' : 'none',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 10,
+                                background: 'rgba(9, 132, 227, 0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}>
+                                <Bell size={16} color="#0984e3" />
+                            </div>
+                            <div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 14,
+                                    fontWeight: 700,
+                                    color: '#2D3436',
+                                }}>まいにち通知</div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 11,
+                                    color: '#8395A7',
+                                    marginTop: 2,
+                                }}>忘れないようにリマインド</div>
+                            </div>
+                        </div>
+                        <ToggleButton
+                            enabled={notificationsEnabled}
+                            onToggle={() => requestNotificationPermission(!notificationsEnabled)}
+                            color="#0984e3"
+                        />
+                    </div>
+
+                    {notificationsEnabled && (
+                        <div style={{
+                            padding: '16px 20px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{ width: 32, display: 'flex', justifyContent: 'center' }}>
+                                    <Clock size={16} color="#B2BEC3" />
+                                </div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 14,
+                                    fontWeight: 700,
+                                    color: '#2D3436',
+                                }}>お知らせ時間</div>
+                            </div>
+                            <input
+                                type="time"
+                                value={notificationTime}
+                                onChange={(e) => setNotificationTime(e.target.value)}
+                                style={{
+                                    border: '1px solid rgba(0,0,0,0.1)',
+                                    borderRadius: 8,
+                                    padding: '6px 12px',
+                                    fontFamily: "'Outfit', sans-serif",
+                                    fontSize: 16,
+                                    fontWeight: 600,
+                                    color: '#2D3436',
+                                    background: '#F8F9FA',
+                                    outline: 'none',
+                                }}
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {/* Help */}
                 <div
-                    onClick={() => setShowUserManage(!showUserManage)}
+                    className="card"
+                    onClick={() => setShowHelp(true)}
                     style={{
-                        width: '100%',
                         display: 'flex',
                         alignItems: 'center',
                         gap: 12,
@@ -485,13 +936,14 @@ export const SettingsPage: React.FC = () => {
                         width: 40,
                         height: 40,
                         borderRadius: 12,
-                        background: 'linear-gradient(135deg, #E8F8F0, #D4F0E7)',
+                        background: 'linear-gradient(135deg, #E8F8F0, #F0F8FF)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        fontSize: 20,
                         flexShrink: 0,
                     }}>
-                        <Users size={20} color="#2BBAA0" />
+                        <HelpCircle size={22} color="#2BBAA0" />
                     </div>
                     <div style={{ flex: 1 }}>
                         <div style={{
@@ -499,927 +951,479 @@ export const SettingsPage: React.FC = () => {
                             fontSize: 14,
                             fontWeight: 700,
                             color: '#2D3436',
-                        }}>ユーザー・クラス設定</div>
+                        }}>ヘルプと使い方</div>
                         <div style={{
                             fontFamily: "'Noto Sans JP', sans-serif",
                             fontSize: 12,
                             color: '#8395A7',
-                        }}>{users?.length || 0}人のユーザーが登録されています</div>
+                        }}>よくある質問や操作について</div>
                     </div>
-                    <ChevronRight size={18} color="#B2BEC3" style={{
-                        transform: showUserManage ? 'rotate(90deg)' : 'rotate(0deg)',
-                        transition: 'transform 0.2s ease',
-                    }} />
+                    <ChevronRight size={18} color="#B2BEC3" />
                 </div>
 
-                {showUserManage && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        style={{ overflow: 'hidden', borderTop: '1px solid rgba(0,0,0,0.06)' }}
-                    >
-                        {/* List Users */}
-                        <div style={{ padding: '8px 0' }}>
-                            {users && users.map(u => {
-                                const uClass = CLASS_LEVELS.find(c => c.id === u.classLevel) || CLASS_LEVELS[1];
-                                const isEditing = editingUserId === u.id;
-
-                                return (
-                                    <div key={u.id} style={{
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        padding: '12px 20px',
-                                        borderBottom: '1px solid rgba(0,0,0,0.04)',
-                                        background: 'transparent'
-                                    }}>
-                                        {isEditing ? (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                                <input
-                                                    type="text"
-                                                    value={editName}
-                                                    onChange={e => setEditName(e.target.value)}
-                                                    style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #DFE6E9', fontFamily: "'Noto Sans JP'", fontSize: 14 }}
-                                                />
-                                                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-                                                    {CLASS_LEVELS.map(c => (
-                                                        <button
-                                                            key={c.id}
-                                                            onClick={() => setEditClass(c.id)}
-                                                            style={{
-                                                                padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap',
-                                                                background: editClass === c.id ? '#2BBAA0' : '#F0F3F5',
-                                                                color: editClass === c.id ? 'white' : '#2D3436',
-                                                                border: 'none', fontSize: 12, fontWeight: 700
-                                                            }}
-                                                        >
-                                                            {c.emoji} {c.label}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                                                    <button onClick={() => setEditingUserId(null)} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: '#F0F3F5', fontWeight: 700, color: '#636E72' }}>キャンセル</button>
-                                                    <button onClick={() => {
-                                                        updateUser(u.id, { name: editName.trim() || 'ゲスト', classLevel: editClass });
-                                                        setEditingUserId(null);
-                                                    }} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: '#2BBAA0', color: 'white', fontWeight: 700 }}>保存</button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ fontFamily: "'Noto Sans JP'", fontSize: 15, fontWeight: 700, color: '#2D3436', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                        {u.name}
-                                                    </div>
-                                                    <div style={{ fontFamily: "'Noto Sans JP'", fontSize: 12, color: '#8395A7', marginTop: 2 }}>
-                                                        {uClass.emoji} {uClass.label}
-                                                    </div>
-                                                </div>
-
-                                                <div style={{ display: 'flex', gap: 8 }}>
-                                                    <button onClick={() => {
-                                                        setEditingUserId(u.id);
-                                                        setEditName(u.name);
-                                                        setEditClass(u.classLevel);
-                                                    }} style={{ border: 'none', background: 'rgba(0,0,0,0.05)', padding: 8, borderRadius: 8, color: '#636E72' }}>
-                                                        <Edit2 size={16} />
-                                                    </button>
-                                                    {(users?.length || 0) > 1 && (
-                                                        <button onClick={() => {
-                                                            if (window.confirm(`${u.name}さんを削除しますか？`)) {
-                                                                deleteUser(u.id);
-                                                            }
-                                                        }} style={{ border: 'none', background: 'rgba(231,76,60,0.1)', padding: 8, borderRadius: 8, color: '#E74C3C' }}>
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-
-                            {/* Add User Button */}
-                            {editingUserId !== 'NEW' && (
-                                <button
-                                    onClick={() => {
-                                        setEditingUserId('NEW');
-                                        setEditName('');
-                                        setEditClass('初級');
-                                    }}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center',
-                                        width: 'calc(100% - 40px)', margin: '12px auto', padding: '12px',
-                                        borderRadius: 12, border: '2px dashed #2BBAA0', background: 'rgba(43,186,160,0.05)',
-                                        color: '#2BBAA0', fontFamily: "'Noto Sans JP'", fontWeight: 700, cursor: 'pointer'
-                                    }}
-                                >
-                                    <UserPlus size={18} />
-                                    新しいユーザーを追加
-                                </button>
-                            )}
-
-                            {/* New User Form Inline */}
-                            {editingUserId === 'NEW' && (
-                                <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 12, marginTop: 12 }}>
-                                    <input
-                                        type="text"
-                                        placeholder="おなまえ"
-                                        value={editName}
-                                        onChange={e => setEditName(e.target.value)}
-                                        style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #DFE6E9', fontFamily: "'Noto Sans JP'", fontSize: 14 }}
-                                    />
-                                    <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-                                        {CLASS_LEVELS.map(c => (
-                                            <button
-                                                key={c.id}
-                                                onClick={() => setEditClass(c.id)}
-                                                style={{
-                                                    padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap',
-                                                    background: editClass === c.id ? '#2BBAA0' : '#F0F3F5',
-                                                    color: editClass === c.id ? 'white' : '#2D3436',
-                                                    border: 'none', fontSize: 12, fontWeight: 700
-                                                }}
-                                            >
-                                                {c.emoji} {c.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                                        <button onClick={() => setEditingUserId(null)} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: '#F0F3F5', fontWeight: 700, color: '#636E72' }}>キャンセル</button>
-                                        <button onClick={() => {
-                                            const name = editName.trim() || 'ゲスト';
-                                            addUser({
-                                                name,
-                                                classLevel: editClass,
-                                                fuwafuwaBirthDate: new Date().toISOString().split('T')[0],
-                                                fuwafuwaType: Math.floor(Math.random() * 6),
-                                                fuwafuwaCycleCount: 1,
-                                                fuwafuwaName: null,
-                                                pastFuwafuwas: [],
-                                                notifiedFuwafuwaStages: []
-                                            });
-                                            setEditingUserId(null);
-                                        }} disabled={!editName.trim()} style={{ padding: '6px 16px', borderRadius: 20, border: 'none', background: editName.trim() ? '#2BBAA0' : '#B2BEC3', color: 'white', fontWeight: 700 }}>追加</button>
-                                    </div>
-                                </div>
-                            )}
-
-                        </div>
-                    </motion.div>
-                )}
-            </div>
-
-            {/* Audio Settings */}
-            <div className="card" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                        <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 10,
-                            background: 'rgba(43, 186, 160, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <Volume2 size={16} color="#2BBAA0" />
-                        </div>
-                        <div style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 14,
-                            fontWeight: 700,
-                            color: '#2D3436',
-                        }}>音量</div>
-                    </div>
-                    <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.05"
-                        value={soundVolume}
-                        onChange={handleVolumeChange}
-                        style={{
-                            width: '100%',
-                            accentColor: '#2BBAA0',
-                        }}
-                    />
-                </div>
-
-                <div style={{
-                    padding: '16px 20px',
+                {/* App info */}
+                <div className="card card-sm" style={{
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderBottom: '1px solid rgba(0,0,0,0.06)',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 10,
-                            background: 'rgba(225, 112, 85, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <Mic size={16} color="#E17055" />
-                        </div>
-                        <div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 14,
-                                fontWeight: 700,
-                                color: '#2D3436',
-                            }}>音声ガイダンス</div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 11,
-                                color: '#8395A7',
-                                marginTop: 2,
-                            }}>残り時間などを声でお知らせ</div>
-                        </div>
-                    </div>
-                    <ToggleButton
-                        enabled={ttsEnabled}
-                        onToggle={() => {
-                            const next = !ttsEnabled;
-                            setTtsEnabled(next);
-                            if (next) {
-                                audio.initTTS();
-                                audio.speak('音声ガイダンスをオンにしました');
-                            }
-                        }}
-                        color="#2BBAA0"
-                    />
-                </div>
-
-                {/* BGM Toggle */}
-                <div style={{
-                    padding: '16px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 10,
-                            background: 'rgba(108, 92, 231, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <Music size={16} color="#6C5CE7" />
-                        </div>
-                        <div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 14,
-                                fontWeight: 700,
-                                color: '#2D3436',
-                            }}>BGM</div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 11,
-                                color: '#8395A7',
-                                marginTop: 2,
-                            }}>ストレッチ中のBGM</div>
-                        </div>
-                    </div>
-                    <ToggleButton
-                        enabled={bgmEnabled}
-                        onToggle={() => setBgmEnabled(!bgmEnabled)}
-                        color="#6C5CE7"
-                    />
-                </div>
-            </div>
-
-            {/* Feedback Settings */}
-            <div className="card" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
-                <div style={{
-                    padding: '16px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 10,
-                            background: 'rgba(253, 203, 110, 0.15)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <Smartphone size={16} color="#E17055" />
-                        </div>
-                        <div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 14,
-                                fontWeight: 700,
-                                color: '#2D3436',
-                            }}>振動フィードバック</div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 11,
-                                color: '#8395A7',
-                                marginTop: 2,
-                            }}>対応デバイスのみ</div>
-                        </div>
-                    </div>
-                    <ToggleButton
-                        enabled={hapticEnabled}
-                        onToggle={() => setHapticEnabled(!hapticEnabled)}
-                        color="#FDCB6E"
-                    />
-                </div>
-            </div>
-
-            {/* Notifications Settings */}
-            <div className="card" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
-                <div style={{
-                    padding: '16px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderBottom: notificationsEnabled ? '1px solid rgba(0,0,0,0.06)' : 'none',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 10,
-                            background: 'rgba(9, 132, 227, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <Bell size={16} color="#0984e3" />
-                        </div>
-                        <div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 14,
-                                fontWeight: 700,
-                                color: '#2D3436',
-                            }}>まいにち通知</div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 11,
-                                color: '#8395A7',
-                                marginTop: 2,
-                            }}>忘れないようにリマインド</div>
-                        </div>
-                    </div>
-                    <ToggleButton
-                        enabled={notificationsEnabled}
-                        onToggle={() => requestNotificationPermission(!notificationsEnabled)}
-                        color="#0984e3"
-                    />
-                </div>
-
-                {notificationsEnabled && (
-                    <div style={{
-                        padding: '16px 20px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div style={{ width: 32, display: 'flex', justifyContent: 'center' }}>
-                                <Clock size={16} color="#B2BEC3" />
-                            </div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 14,
-                                fontWeight: 700,
-                                color: '#2D3436',
-                            }}>お知らせ時間</div>
-                        </div>
-                        <input
-                            type="time"
-                            value={notificationTime}
-                            onChange={(e) => setNotificationTime(e.target.value)}
-                            style={{
-                                border: '1px solid rgba(0,0,0,0.1)',
-                                borderRadius: 8,
-                                padding: '6px 12px',
-                                fontFamily: "'Outfit', sans-serif",
-                                fontSize: 16,
-                                fontWeight: 600,
-                                color: '#2D3436',
-                                background: '#F8F9FA',
-                                outline: 'none',
-                            }}
-                        />
-                    </div>
-                )}
-            </div>
-
-            {/* Help */}
-            <div
-                className="card"
-                onClick={() => setShowHelp(true)}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
+                    flexDirection: 'column',
                     gap: 12,
-                    padding: '16px 20px',
-                    cursor: 'pointer',
-                }}
-            >
-                <div style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 12,
-                    background: 'linear-gradient(135deg, #E8F8F0, #F0F8FF)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 20,
-                    flexShrink: 0,
                 }}>
-                    <HelpCircle size={22} color="#2BBAA0" />
-                </div>
-                <div style={{ flex: 1 }}>
                     <div style={{
                         fontFamily: "'Noto Sans JP', sans-serif",
                         fontSize: 14,
                         fontWeight: 700,
                         color: '#2D3436',
-                    }}>ヘルプと使い方</div>
+                    }}>
+                        アプリ情報
+                    </div>
                     <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
                         fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 12,
-                        color: '#8395A7',
-                    }}>よくある質問や操作について</div>
-                </div>
-                <ChevronRight size={18} color="#B2BEC3" />
-            </div>
-
-            {/* App info */}
-            <div className="card card-sm" style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-            }}>
-                <div style={{
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: '#2D3436',
-                }}>
-                    アプリ情報
-                </div>
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 13,
-                }}>
-                    <span style={{ color: '#8395A7' }}>バージョン</span>
-                    <span style={{ color: '#2D3436', fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>0.1.0</span>
-                </div>
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 13,
-                }}>
-                    <span style={{ color: '#8395A7' }}>KeepGoing</span>
-                    <span style={{ color: '#B2BEC3', fontSize: 11 }}>今日のちょっとが、未来のちからに。</span>
-                </div>
-            </div>
-
-            {/* Re-do onboarding */}
-            <div
-                className="card card-sm"
-                onClick={() => setShowConfirmRedo(true)}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '14px 20px',
-                    cursor: 'pointer',
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 14,
-                    color: '#2BBAA0',
-                }}
-            >
-                <RotateCcw size={16} />
-                <span>チュートリアルをやりなおす</span>
-            </div>
-
-            {/* Reset */}
-            <div
-                className="card card-sm"
-                onClick={() => setShowConfirmReset(true)}
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '14px 20px',
-                    cursor: 'pointer',
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 14,
-                    color: '#E17055',
-                }}
-            >
-                <Trash2 size={16} />
-                <span>データをリセット</span>
-            </div>
-
-            {/* Developer Mode Entry */}
-            {!showDeveloperDebug && (
-                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-                    <button
-                        onClick={() => {
-                            const pwd = prompt('パスワードを入力してください:');
-                            if (pwd === '0320') {
-                                setShowDeveloperDebug(true);
-                            } else if (pwd !== null) {
-                                alert('パスワードが違います');
-                            }
-                        }}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            color: '#B2BEC3',
-                            fontSize: 11,
-                            cursor: 'pointer',
-                            padding: '8px 16px',
-                            fontFamily: "'Noto Sans JP', sans-serif"
-                        }}
-                    >
-                        開発者モード
-                    </button>
-                </div>
-            )}
-
-            {/* --- DEVELOPER / DEBUG --- */}
-            {showDeveloperDebug && (
-                <div className="card card-sm" style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 12,
-                    marginTop: 24,
-                    border: '1px dashed #E17055'
-                }}>
+                        fontSize: 13,
+                    }}>
+                        <span style={{ color: '#8395A7' }}>バージョン</span>
+                        <span style={{ color: '#2D3436', fontFamily: "'Outfit', sans-serif", fontWeight: 600 }}>0.1.0</span>
+                    </div>
                     <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
                         fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 14,
-                        fontWeight: 700,
-                        color: '#E17055',
+                        fontSize: 13,
+                    }}>
+                        <span style={{ color: '#8395A7' }}>KeepGoing</span>
+                        <span style={{ color: '#B2BEC3', fontSize: 11 }}>今日のちょっとが、未来のちからに。</span>
+                    </div>
+                </div>
+
+                {/* Re-do onboarding */}
+                <div
+                    className="card card-sm"
+                    onClick={() => setShowConfirmRedo(true)}
+                    style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 8
+                        gap: 10,
+                        padding: '14px 20px',
+                        cursor: 'pointer',
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 14,
+                        color: '#2BBAA0',
+                    }}
+                >
+                    <RotateCcw size={16} />
+                    <span>チュートリアルをやりなおす</span>
+                </div>
+
+                {/* Reset */}
+                <div
+                    className="card card-sm"
+                    onClick={() => setShowConfirmReset(true)}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '14px 20px',
+                        cursor: 'pointer',
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 14,
+                        color: '#E17055',
+                    }}
+                >
+                    <Trash2 size={16} />
+                    <span>データをリセット</span>
+                </div>
+
+                {/* Developer Mode Entry */}
+                {!showDeveloperDebug && (
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+                        <button
+                            onClick={() => {
+                                const pwd = prompt('パスワードを入力してください:');
+                                if (pwd === '0320') {
+                                    setShowDeveloperDebug(true);
+                                } else if (pwd !== null) {
+                                    alert('パスワードが違います');
+                                }
+                            }}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: '#B2BEC3',
+                                fontSize: 11,
+                                cursor: 'pointer',
+                                padding: '8px 16px',
+                                fontFamily: "'Noto Sans JP', sans-serif"
+                            }}
+                        >
+                            開発者モード
+                        </button>
+                    </div>
+                )}
+
+                {/* --- DEVELOPER / DEBUG --- */}
+                {showDeveloperDebug && (
+                    <div className="card card-sm" style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 12,
+                        marginTop: 24,
+                        border: '1px dashed #E17055'
                     }}>
-                        <Bug size={16} />
-                        デバッグ機能 (開発専用)
-                    </div>
-                    <p style={{ fontSize: 11, color: '#8395A7', margin: 0 }}>
-                        ふわふわの年齢を偽装します (リロードするとHomeに反映)
-                    </p>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-4) }); alert('Day 5 にしました'); }}
-                            style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
-                            Day 5 (たまご)
-                        </button>
-                        <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-14) }); alert('Day 15 にしました。※見た目は今の頑張り度に依存'); }}
-                            style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
-                            Day 15 (妖精)
-                        </button>
-                        <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-25) }); alert('Day 26 にしました'); }}
-                            style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
-                            Day 26 (成体)
-                        </button>
-                        <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-29) }); alert('Day 30 にしました'); }}
-                            style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
-                            Day 30 (お別れ)
-                        </button>
-                    </div>
-
-                    <div style={{ marginTop: '12px', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '12px' }}>
-                        <p style={{ fontSize: 12, color: '#2D3436', margin: '0 0 8px', fontWeight: 700 }}>デバッグ: 姿を強制上書き</p>
-                        <div style={{ display: 'flex', gap: 8, flexDirection: 'column' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ fontSize: 12, width: 40, color: '#8395A7' }}>種類:</span>
-                                <select
-                                    value={useAppStore.getState().debugFuwafuwaType ?? ''}
-                                    onChange={(e) => {
-                                        useAppStore.getState().setDebugFuwafuwaType(e.target.value ? Number(e.target.value) : null);
-                                    }}
-                                    style={{ padding: 4, borderRadius: 4, flex: 1, border: '1px solid #ccc' }}
-                                >
-                                    <option value="">(デフォルト)</option>
-                                    {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(v => <option key={v} value={v}>タイプ {v}</option>)}
-                                </select>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ fontSize: 12, width: 40, color: '#8395A7' }}>段階:</span>
-                                <select
-                                    value={useAppStore.getState().debugFuwafuwaStage ?? ''}
-                                    onChange={(e) => {
-                                        useAppStore.getState().setDebugFuwafuwaStage(e.target.value ? Number(e.target.value) : null);
-                                    }}
-                                    style={{ padding: 4, borderRadius: 4, flex: 1, border: '1px solid #ccc' }}
-                                >
-                                    <option value="">(デフォルト)</option>
-                                    <option value="0">たまご (Stage 0)</option>
-                                    <option value="1">たまごヒビ (Stage 1)</option>
-                                    <option value="2">妖精 (Stage 2)</option>
-                                    <option value="3">成体 (Stage 3)</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style={{ marginTop: '12px', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '12px' }}>
-                        <p style={{ fontSize: 12, color: '#2D3436', margin: '0 0 8px', fontWeight: 700 }}>デバッグ: メッセージ確認</p>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                            <button onClick={() => {
-                                useAppStore.getState().setActiveMilestoneModal('egg');
-                                // Force navigate to home to see it
-                                window.location.hash = '#'; // Might need to just use appStore tab
-                                useAppStore.getState().setTab('home');
-                            }} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
-                                たまご
-                            </button>
-                            <button onClick={() => {
-                                useAppStore.getState().setActiveMilestoneModal('fairy');
-                                useAppStore.getState().setTab('home');
-                            }} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
-                                かえった
-                            </button>
-                            <button onClick={() => {
-                                useAppStore.getState().setActiveMilestoneModal('adult');
-                                useAppStore.getState().setTab('home');
-                            }} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
-                                そだった
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Confirm reset dialog */}
-            {showConfirmReset && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(0,0,0,0.3)',
-                    backdropFilter: 'blur(4px)',
-                    zIndex: 200,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 24,
-                }}>
-                    <motion.div
-                        className="card"
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        style={{
-                            textAlign: 'center',
-                            padding: '32px 24px',
-                            maxWidth: 320,
-                            width: '100%',
-                        }}
-                    >
-                        <h3 style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 18,
-                            fontWeight: 700,
-                            color: '#2D3436',
-                            marginBottom: 8,
-                        }}>
-                            本当にリセットしますか？
-                        </h3>
-                        <p style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 13,
-                            color: '#8395A7',
-                            marginBottom: 24,
-                            lineHeight: 1.5,
-                        }}>
-                            すべての記録とプロフィールが<br />削除されます。
-                        </p>
-                        <div style={{ display: 'flex', gap: 10 }}>
-                            <button
-                                onClick={() => setShowConfirmReset(false)}
-                                style={{
-                                    flex: 1,
-                                    padding: '12px 0',
-                                    borderRadius: 12,
-                                    border: '1px solid rgba(0,0,0,0.1)',
-                                    background: 'white',
-                                    cursor: 'pointer',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 14,
-                                    fontWeight: 500,
-                                    color: '#8395A7',
-                                }}
-                            >
-                                キャンセル
-                            </button>
-                            <button
-                                onClick={handleReset}
-                                style={{
-                                    flex: 1,
-                                    padding: '12px 0',
-                                    borderRadius: 12,
-                                    border: 'none',
-                                    background: '#E17055',
-                                    color: 'white',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 15,
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                リセットする
-                            </button>
-                        </div>
-                    </motion.div>
-                </div>
-            )}
-
-            {/* Confirm redo onboarding dialog */}
-            {showConfirmRedo && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(0,0,0,0.3)',
-                    backdropFilter: 'blur(4px)',
-                    zIndex: 200,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 24,
-                }}>
-                    <motion.div
-                        className="card"
-                        initial={{ scale: 0.9, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        style={{
-                            textAlign: 'center',
-                            padding: '32px 24px',
-                            maxWidth: 320,
-                            width: '100%',
-                        }}
-                    >
-                        <h3 style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 18,
-                            fontWeight: 700,
-                            color: '#2D3436',
-                            margin: '0 0 16px',
-                        }}>
-                            チュートリアルをやり直す
-                        </h3>
-                        <p style={{
+                        <div style={{
                             fontFamily: "'Noto Sans JP', sans-serif",
                             fontSize: 14,
-                            color: '#636E72',
-                            margin: '0 0 24px',
-                            lineHeight: 1.6,
-                        }}>
-                            最初の設定画面に戻りますか？<br />
-                            <span style={{ fontSize: 13, color: '#8395A7' }}>※これまでの記録は消えません。</span>
-                        </p>
-                        <div style={{
+                            fontWeight: 700,
+                            color: '#E17055',
                             display: 'flex',
-                            gap: 12,
+                            alignItems: 'center',
+                            gap: 8
                         }}>
-                            <button
-                                onClick={() => setShowConfirmRedo(false)}
-                                style={{
-                                    flex: 1,
-                                    padding: '12px 0',
-                                    borderRadius: 12,
-                                    border: 'none',
-                                    background: '#DFE6E9',
-                                    color: '#2D3436',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 15,
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                キャンセル
+                            <Bug size={16} />
+                            デバッグ機能 (開発専用)
+                        </div>
+                        <p style={{ fontSize: 11, color: '#8395A7', margin: 0 }}>
+                            ふわふわの年齢を偽装します (リロードするとHomeに反映)
+                        </p>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-4) }); alert('Day 5 にしました'); }}
+                                style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
+                                Day 5 (たまご)
                             </button>
-                            <button
-                                onClick={handleRedoOnboarding}
-                                style={{
-                                    flex: 1,
-                                    padding: '12px 0',
-                                    borderRadius: 12,
-                                    border: 'none',
-                                    background: '#2BBAA0',
-                                    color: 'white',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 15,
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                やり直す
+                            <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-14) }); alert('Day 15 にしました。※見た目は今の頑張り度に依存'); }}
+                                style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
+                                Day 15 (妖精)
+                            </button>
+                            <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-25) }); alert('Day 26 にしました'); }}
+                                style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
+                                Day 26 (成体)
+                            </button>
+                            <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-29) }); alert('Day 30 にしました'); }}
+                                style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
+                                Day 30 (お別れ)
                             </button>
                         </div>
-                    </motion.div>
-                </div>
-            )}
 
-            {/* Help modal */}
-            <AnimatePresence>
-                {showHelp && (
+                        <div style={{ marginTop: '12px', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '12px' }}>
+                            <p style={{ fontSize: 12, color: '#2D3436', margin: '0 0 8px', fontWeight: 700 }}>デバッグ: 姿を強制上書き</p>
+                            <div style={{ display: 'flex', gap: 8, flexDirection: 'column' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <span style={{ fontSize: 12, width: 40, color: '#8395A7' }}>種類:</span>
+                                    <select
+                                        value={useAppStore.getState().debugFuwafuwaType ?? ''}
+                                        onChange={(e) => {
+                                            useAppStore.getState().setDebugFuwafuwaType(e.target.value ? Number(e.target.value) : null);
+                                        }}
+                                        style={{ padding: 4, borderRadius: 4, flex: 1, border: '1px solid #ccc' }}
+                                    >
+                                        <option value="">(デフォルト)</option>
+                                        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(v => <option key={v} value={v}>タイプ {v}</option>)}
+                                    </select>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <span style={{ fontSize: 12, width: 40, color: '#8395A7' }}>段階:</span>
+                                    <select
+                                        value={useAppStore.getState().debugFuwafuwaStage ?? ''}
+                                        onChange={(e) => {
+                                            useAppStore.getState().setDebugFuwafuwaStage(e.target.value ? Number(e.target.value) : null);
+                                        }}
+                                        style={{ padding: 4, borderRadius: 4, flex: 1, border: '1px solid #ccc' }}
+                                    >
+                                        <option value="">(デフォルト)</option>
+                                        <option value="0">たまご (Stage 0)</option>
+                                        <option value="1">たまごヒビ (Stage 1)</option>
+                                        <option value="2">妖精 (Stage 2)</option>
+                                        <option value="3">成体 (Stage 3)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '12px', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '12px' }}>
+                            <p style={{ fontSize: 12, color: '#2D3436', margin: '0 0 8px', fontWeight: 700 }}>デバッグ: メッセージ確認</p>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <button onClick={() => {
+                                    useAppStore.getState().setActiveMilestoneModal('egg');
+                                    // Force navigate to home to see it
+                                    window.location.hash = '#'; // Might need to just use appStore tab
+                                    useAppStore.getState().setTab('home');
+                                }} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
+                                    たまご
+                                </button>
+                                <button onClick={() => {
+                                    useAppStore.getState().setActiveMilestoneModal('fairy');
+                                    useAppStore.getState().setTab('home');
+                                }} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
+                                    かえった
+                                </button>
+                                <button onClick={() => {
+                                    useAppStore.getState().setActiveMilestoneModal('adult');
+                                    useAppStore.getState().setTab('home');
+                                }} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
+                                    そだった
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Confirm reset dialog */}
+                {showConfirmReset && createPortal(
                     <div style={{
                         position: 'fixed',
                         inset: 0,
-                        background: 'rgb(248, 249, 250)',
+                        background: 'rgba(0,0,0,0.3)',
+                        backdropFilter: 'blur(4px)',
                         zIndex: 200,
                         display: 'flex',
-                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 24,
                     }}>
-                        {/* Header */}
-                        <div style={{
-                            padding: '24px 20px 16px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            background: 'white',
-                            borderBottom: '1px solid rgba(0,0,0,0.06)',
-                            boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
-                        }}>
-                            <h2 style={{
+                        <motion.div
+                            className="card"
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            style={{
+                                textAlign: 'center',
+                                padding: '32px 24px',
+                                maxWidth: 320,
+                                width: '100%',
+                            }}
+                        >
+                            <h3 style={{
                                 fontFamily: "'Noto Sans JP', sans-serif",
                                 fontSize: 18,
                                 fontWeight: 700,
                                 color: '#2D3436',
-                                margin: 0,
+                                marginBottom: 8,
                             }}>
-                                ヘルプ・使い方
-                            </h2>
-                            <button
-                                onClick={() => setShowHelp(false)}
-                                style={{
-                                    width: 36,
-                                    height: 36,
-                                    borderRadius: '50%',
-                                    border: 'none',
-                                    background: '#F8F9FA',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                <X size={20} color="#2D3436" />
-                            </button>
-                        </div>
-
-                        {/* Content */}
-                        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', paddingBottom: 40 }}>
-                            {HELP_SECTIONS.map((section, idx) => (
-                                <div
-                                    key={section.title}
-                                    className="card"
+                                本当にリセットしますか？
+                            </h3>
+                            <p style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 13,
+                                color: '#8395A7',
+                                marginBottom: 24,
+                                lineHeight: 1.5,
+                            }}>
+                                すべての記録とプロフィールが<br />削除されます。
+                            </p>
+                            <div style={{ display: 'flex', gap: 10 }}>
+                                <button
+                                    onClick={() => setShowConfirmReset(false)}
                                     style={{
-                                        marginBottom: idx < HELP_SECTIONS.length - 1 ? 16 : 0,
-                                        padding: '16px 20px',
+                                        flex: 1,
+                                        padding: '12px 0',
+                                        borderRadius: 12,
+                                        border: '1px solid rgba(0,0,0,0.1)',
+                                        background: 'white',
+                                        cursor: 'pointer',
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 14,
+                                        fontWeight: 500,
+                                        color: '#8395A7',
                                     }}
                                 >
-                                    <h3 style={{
+                                    キャンセル
+                                </button>
+                                <button
+                                    onClick={handleReset}
+                                    style={{
+                                        flex: 1,
+                                        padding: '12px 0',
+                                        borderRadius: 12,
+                                        border: 'none',
+                                        background: '#E17055',
+                                        color: 'white',
                                         fontFamily: "'Noto Sans JP', sans-serif",
                                         fontSize: 15,
                                         fontWeight: 700,
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    リセットする
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>,
+                    document.body
+                )}
+
+                {/* Confirm redo onboarding dialog */}
+                {showConfirmRedo && createPortal(
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.3)',
+                        backdropFilter: 'blur(4px)',
+                        zIndex: 200,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 24,
+                    }}>
+                        <motion.div
+                            className="card"
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            style={{
+                                textAlign: 'center',
+                                padding: '32px 24px',
+                                maxWidth: 320,
+                                width: '100%',
+                            }}
+                        >
+                            <h3 style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 18,
+                                fontWeight: 700,
+                                color: '#2D3436',
+                                margin: '0 0 16px',
+                            }}>
+                                チュートリアルをやり直す
+                            </h3>
+                            <p style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 14,
+                                color: '#636E72',
+                                margin: '0 0 24px',
+                                lineHeight: 1.6,
+                            }}>
+                                最初の設定画面に戻りますか？<br />
+                                <span style={{ fontSize: 13, color: '#8395A7' }}>※これまでの記録は消えません。</span>
+                            </p>
+                            <div style={{
+                                display: 'flex',
+                                gap: 12,
+                            }}>
+                                <button
+                                    onClick={() => setShowConfirmRedo(false)}
+                                    style={{
+                                        flex: 1,
+                                        padding: '12px 0',
+                                        borderRadius: 12,
+                                        border: 'none',
+                                        background: '#DFE6E9',
                                         color: '#2D3436',
-                                        marginBottom: 8,
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 15,
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    キャンセル
+                                </button>
+                                <button
+                                    onClick={handleRedoOnboarding}
+                                    style={{
+                                        flex: 1,
+                                        padding: '12px 0',
+                                        borderRadius: 12,
+                                        border: 'none',
+                                        background: '#2BBAA0',
+                                        color: 'white',
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 15,
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    やり直す
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>,
+                    document.body
+                )}
+
+                {/* Help modal */}
+                <AnimatePresence>
+                    {showHelp && createPortal(
+                        <motion.div style={{
+                            position: 'fixed',
+                            inset: 0,
+                            background: 'rgb(248, 249, 250)',
+                            zIndex: 200,
+                            display: 'flex',
+                            flexDirection: 'column',
+                        }}>
+                            {/* Header */}
+                            <div style={{
+                                padding: '24px 20px 16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                background: 'white',
+                                borderBottom: '1px solid rgba(0,0,0,0.06)',
+                                boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                            }}>
+                                <h2 style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 18,
+                                    fontWeight: 700,
+                                    color: '#2D3436',
+                                    margin: 0,
+                                }}>
+                                    ヘルプ・使い方
+                                </h2>
+                                <button
+                                    onClick={() => setShowHelp(false)}
+                                    style={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        background: '#F8F9FA',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: 8,
-                                    }}>
-                                        <span>{section.emoji}</span>
-                                        <span>{section.title}</span>
-                                    </h3>
-                                    {section.items.map(item => (
-                                        <HelpItem
-                                            key={item.id}
-                                            item={item}
-                                            isOpen={openHelpItems.has(item.id)}
-                                            onToggle={() => toggleHelpItem(item.id)}
-                                        />
-                                    ))}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </AnimatePresence>
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    <X size={20} color="#2D3436" />
+                                </button>
+                            </div>
+
+                            {/* Content */}
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '20px', paddingBottom: 40 }}>
+                                {HELP_SECTIONS.map((section, idx) => (
+                                    <div
+                                        key={section.title}
+                                        className="card"
+                                        style={{
+                                            marginBottom: idx < HELP_SECTIONS.length - 1 ? 16 : 0,
+                                            padding: '16px 20px',
+                                        }}
+                                    >
+                                        <h3 style={{
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 15,
+                                            fontWeight: 700,
+                                            color: '#2D3436',
+                                            marginBottom: 8,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                        }}>
+                                            <span>{section.emoji}</span>
+                                            <span>{section.title}</span>
+                                        </h3>
+                                        {section.items.map(item => (
+                                            <HelpItem
+                                                key={item.id}
+                                                item={item}
+                                                isOpen={openHelpItems.has(item.id)}
+                                                onToggle={() => toggleHelpItem(item.id)}
+                                            />
+                                        ))}
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>,
+                        document.body
+                    )}
+                </AnimatePresence>
+            </div>
         </div>
     );
 };
