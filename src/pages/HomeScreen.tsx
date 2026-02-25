@@ -140,7 +140,23 @@ export const HomeScreen: React.FC = () => {
         } else {
             setSessionUserIds([page.id]);
         }
-    }, [currentPageIndex, users]);
+    }, [currentPageIndex]); // Removed users from dependency to prevent infinite loops
+
+    // Reverse sync: Update currentPageIndex when sessionUserIds change externally (e.g. from badge tap)
+    useEffect(() => {
+        if (users.length === 0) return;
+
+        let targetIndex = 0;
+        if (sessionUserIds.length > 1) {
+            targetIndex = swipePages.findIndex(p => p.id === 'TOGETHER');
+        } else if (sessionUserIds.length === 1) {
+            targetIndex = swipePages.findIndex(p => p.id === sessionUserIds[0]);
+        }
+
+        if (targetIndex !== -1 && targetIndex !== currentPageIndex) {
+            setCurrentPageIndex(targetIndex);
+        }
+    }, [sessionUserIds]);
 
     const handleDragEnd = (_event: any, info: any) => {
         const threshold = 50; // pixels

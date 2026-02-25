@@ -6,6 +6,7 @@ import { useAppStore } from '../store/useAppStore';
 export const CurrentContextBadge: React.FC = () => {
     const sessionUserIds = useAppStore(state => state.sessionUserIds);
     const users = useAppStore(state => state.users);
+    const setSessionUserIds = useAppStore(state => state.setSessionUserIds);
 
     const isTogetherMode = sessionUserIds.length > 1;
 
@@ -19,12 +20,42 @@ export const CurrentContextBadge: React.FC = () => {
         return null; // Don't show if no users are selected
     }
 
+    const handleCycleContext = () => {
+        if (users.length <= 1) return; // Cannot cycle if 1 or 0 users
+
+        // Define the cycle order: User 0 -> User 1 -> ... -> Together -> User 0
+        const swipePages = [...users];
+        if (users.length >= 2) {
+            swipePages.push({ id: 'TOGETHER', name: 'みんなで！', classLevel: '初級' } as any);
+        }
+
+        // Find current index
+        let currentIndex = 0;
+        if (isTogetherMode) {
+            currentIndex = swipePages.findIndex(p => p.id === 'TOGETHER');
+        } else {
+            currentIndex = swipePages.findIndex(p => p.id === sessionUserIds[0]);
+        }
+
+        // Next index
+        const nextIndex = (currentIndex + 1) % swipePages.length;
+        const nextPage = swipePages[nextIndex];
+
+        if (nextPage.id === 'TOGETHER') {
+            setSessionUserIds(users.map(u => u.id));
+        } else {
+            setSessionUserIds([nextPage.id]);
+        }
+    };
+
     return (
         <AnimatePresence>
             <motion.div
+                onClick={handleCycleContext}
                 initial={{ opacity: 0, scale: 0.9, y: -10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                whileTap={{ scale: 0.95 }}
                 style={{
                     position: 'absolute',
                     top: 16,
@@ -39,7 +70,8 @@ export const CurrentContextBadge: React.FC = () => {
                     alignItems: 'center',
                     gap: 6,
                     border: '1px solid rgba(0,0,0,0.05)',
-                    pointerEvents: 'none' // Let clicks pass through if needed, just a status indicator
+                    cursor: users.length > 1 ? 'pointer' : 'default',
+                    pointerEvents: 'auto'
                 }}
             >
                 {isTogetherMode ? (
@@ -51,7 +83,8 @@ export const CurrentContextBadge: React.FC = () => {
                     fontFamily: "'Noto Sans JP', sans-serif",
                     fontSize: 13,
                     fontWeight: 700,
-                    color: isTogetherMode ? '#0984E3' : '#2BBAA0'
+                    color: isTogetherMode ? '#0984E3' : '#2BBAA0',
+                    userSelect: 'none'
                 }}>
                     {displayText}
                 </span>
