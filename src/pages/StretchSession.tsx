@@ -150,6 +150,8 @@ export const StretchSession: React.FC = () => {
             audio.playTick(); // soft beep every 10s
         }
 
+        if (isCounting) return; // Prevent any "change" audio during the initial 5s countdown
+
         if (isPointFlex) {
             // 10s intervals: 0-9 P, 10-19 F, 20-29 P, 30-39 F...
             const intervalIndex = Math.floor(elapsed / 10);
@@ -547,7 +549,7 @@ export const StretchSession: React.FC = () => {
                         setIsCounting(false);
                         haptics.pulse();
                         if (currentExercise) audio.speak(`最初は、${currentExercise.reading || currentExercise.name}です`);
-                    }} />
+                    }} firstExercise={currentExercise || undefined} />
                 )}
                 {isBigBreak && (
                     <BreakModal key="break-modal" onContinue={handleContinueBlock} />

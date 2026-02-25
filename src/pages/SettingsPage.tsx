@@ -1337,92 +1337,90 @@ export const SettingsPage: React.FC = () => {
                 )}
 
                 {/* Help modal */}
-                <AnimatePresence>
-                    {showHelp && createPortal(
-                        <motion.div style={{
-                            position: 'fixed',
-                            inset: 0,
-                            background: 'rgb(248, 249, 250)',
-                            zIndex: 200,
+                {showHelp && createPortal(
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgb(248, 249, 250)',
+                        zIndex: 200,
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }}>
+                        {/* Header */}
+                        <div style={{
+                            padding: '24px 20px 16px',
                             display: 'flex',
-                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            background: 'white',
+                            borderBottom: '1px solid rgba(0,0,0,0.06)',
+                            boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
                         }}>
-                            {/* Header */}
-                            <div style={{
-                                padding: '24px 20px 16px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                background: 'white',
-                                borderBottom: '1px solid rgba(0,0,0,0.06)',
-                                boxShadow: '0 2px 10px rgba(0,0,0,0.02)',
+                            <h2 style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 18,
+                                fontWeight: 700,
+                                color: '#2D3436',
+                                margin: 0,
                             }}>
-                                <h2 style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 18,
-                                    fontWeight: 700,
-                                    color: '#2D3436',
-                                    margin: 0,
-                                }}>
-                                    ヘルプ・使い方
-                                </h2>
-                                <button
-                                    onClick={() => setShowHelp(false)}
+                                ヘルプ・使い方
+                            </h2>
+                            <button
+                                onClick={() => setShowHelp(false)}
+                                style={{
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    background: '#F8F9FA',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <X size={20} color="#2D3436" />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', paddingBottom: 40 }}>
+                            {HELP_SECTIONS.map((section, idx) => (
+                                <div
+                                    key={section.title}
+                                    className="card"
                                     style={{
-                                        width: 36,
-                                        height: 36,
-                                        borderRadius: '50%',
-                                        border: 'none',
-                                        background: '#F8F9FA',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
+                                        marginBottom: idx < HELP_SECTIONS.length - 1 ? 16 : 0,
+                                        padding: '16px 20px',
                                     }}
                                 >
-                                    <X size={20} color="#2D3436" />
-                                </button>
-                            </div>
-
-                            {/* Content */}
-                            <div style={{ flex: 1, overflowY: 'auto', padding: '20px', paddingBottom: 40 }}>
-                                {HELP_SECTIONS.map((section, idx) => (
-                                    <div
-                                        key={section.title}
-                                        className="card"
-                                        style={{
-                                            marginBottom: idx < HELP_SECTIONS.length - 1 ? 16 : 0,
-                                            padding: '16px 20px',
-                                        }}
-                                    >
-                                        <h3 style={{
-                                            fontFamily: "'Noto Sans JP', sans-serif",
-                                            fontSize: 15,
-                                            fontWeight: 700,
-                                            color: '#2D3436',
-                                            marginBottom: 8,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 8,
-                                        }}>
-                                            <span>{section.emoji}</span>
-                                            <span>{section.title}</span>
-                                        </h3>
-                                        {section.items.map(item => (
-                                            <HelpItem
-                                                key={item.id}
-                                                item={item}
-                                                isOpen={openHelpItems.has(item.id)}
-                                                onToggle={() => toggleHelpItem(item.id)}
-                                            />
-                                        ))}
-                                    </div>
-                                ))}
-                            </div>
-                        </motion.div>,
-                        document.body
-                    )}
-                </AnimatePresence>
+                                    <h3 style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 15,
+                                        fontWeight: 700,
+                                        color: '#2D3436',
+                                        marginBottom: 8,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 8,
+                                    }}>
+                                        <span>{section.emoji}</span>
+                                        <span>{section.title}</span>
+                                    </h3>
+                                    {section.items.map(item => (
+                                        <HelpItem
+                                            key={item.id}
+                                            item={item}
+                                            isOpen={openHelpItems.has(item.id)}
+                                            onToggle={() => toggleHelpItem(item.id)}
+                                        />
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                    </div>,
+                    document.body
+                )}
             </div>
         </div>
     );
