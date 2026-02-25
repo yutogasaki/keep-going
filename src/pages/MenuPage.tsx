@@ -245,27 +245,51 @@ export const MenuPage: React.FC = () => {
                             </div>
                         )}
                         <motion.button
-                            whileTap={{ scale: 0.97 }}
+                            whileTap={{ scale: 0.98 }}
                             onClick={() => setShowCreateGroup(true)}
+                            className="card"
                             style={{
                                 width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 16,
                                 padding: '16px 20px',
-                                borderRadius: 16,
-                                border: '2px dashed rgba(43, 186, 160, 0.3)',
-                                background: 'rgba(43, 186, 160, 0.04)',
+                                border: 'none',
+                                background: 'white',
                                 cursor: 'pointer',
+                                textAlign: 'left',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                marginTop: customGroups.length === 0 ? 0 : 4,
+                            }}
+                        >
+                            <div style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 14,
+                                background: 'linear-gradient(135deg, #E0F2F1, #B2DFDB)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: 8,
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 14,
-                                fontWeight: 600,
-                                color: '#2BBAA0',
-                            }}
-                        >
-                            <Plus size={18} />
-                            じぶんでつくる
+                                flexShrink: 0,
+                                boxShadow: '0 2px 8px rgba(178, 223, 219, 0.5)',
+                            }}>
+                                <Plus size={24} color="#00796B" strokeWidth={2.5} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 15,
+                                    fontWeight: 700,
+                                    color: '#2D3436',
+                                    marginBottom: 4,
+                                }}>新しくつくる</div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 12,
+                                    color: '#8395A7',
+                                    lineHeight: 1.4,
+                                }}>自分だけのくみあわせを作成</div>
+                            </div>
                         </motion.button>
                     </section>
                 </>
@@ -554,28 +578,51 @@ export const MenuPage: React.FC = () => {
                         ))}
 
                         <motion.button
-                            whileTap={{ scale: 0.97 }}
+                            whileTap={{ scale: 0.98 }}
                             onClick={() => setShowCreateEx(true)}
+                            className="card"
                             style={{
                                 width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 16,
                                 padding: '16px 20px',
-                                borderRadius: 16,
-                                border: '2px dashed rgba(43, 186, 160, 0.3)',
-                                background: 'rgba(43, 186, 160, 0.04)',
+                                border: 'none',
+                                background: 'white',
                                 cursor: 'pointer',
+                                textAlign: 'left',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                marginTop: 4,
+                            }}
+                        >
+                            <div style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 14,
+                                background: 'linear-gradient(135deg, #E0F2F1, #B2DFDB)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: 8,
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 14,
-                                fontWeight: 600,
-                                color: '#2BBAA0',
-                                marginTop: 8,
-                            }}
-                        >
-                            <Plus size={18} />
-                            じぶん種目をつくる
+                                flexShrink: 0,
+                                boxShadow: '0 2px 8px rgba(178, 223, 219, 0.5)',
+                            }}>
+                                <Plus size={24} color="#00796B" strokeWidth={2.5} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 15,
+                                    fontWeight: 700,
+                                    color: '#2D3436',
+                                    marginBottom: 4,
+                                }}>新しくつくる</div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 12,
+                                    color: '#8395A7',
+                                    lineHeight: 1.4,
+                                }}>オリジナル種目を追加</div>
+                            </div>
                         </motion.button>
                     </div>
                 </div>
