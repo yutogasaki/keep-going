@@ -161,7 +161,7 @@ export const useAppStore = create<AppState>()(
 
             dailyTargetMinutes: 10,
             setDailyTargetMinutes: (minutes) => set({ dailyTargetMinutes: minutes }),
-            excludedExercises: [],
+            excludedExercises: ['C01', 'C02'], // Default exclude Plank and Side Plank for Pre class ease
             setExcludedExercises: (ids) => set({ excludedExercises: ids }),
             requiredExercises: ['S01', 'S02', 'S07'], // Make Splits, Forward Fold & Point & Flex default MUST-DOs
             setRequiredExercises: (ids) => set({ requiredExercises: ids }),
@@ -176,7 +176,7 @@ export const useAppStore = create<AppState>()(
         }),
         {
             name: 'keepgoing-app-state',
-            version: 3, // Bumped to 3 for Multi-User migration
+            version: 4, // Bumped to 4 for Pre-class excluded exercises migration
             migrate: (persistedState: any, version: number) => {
                 if (version === 0) {
                     // Migration: Ensure 'S07' (Point & Flex) is added to required exercises for existing users
@@ -216,6 +216,12 @@ export const useAppStore = create<AppState>()(
                     delete persistedState.fuwafuwaName;
                     delete persistedState.pastFuwafuwas;
                     delete persistedState.notifiedFuwafuwaStages;
+                }
+                if (version < 4) {
+                    // Migration: Default exclude Plank and Side Plank if no exclusions were set
+                    if (!persistedState.excludedExercises || persistedState.excludedExercises.length === 0) {
+                        persistedState.excludedExercises = ['C01', 'C02'];
+                    }
                 }
                 return persistedState as AppState;
             },
