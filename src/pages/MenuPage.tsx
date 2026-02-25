@@ -1115,14 +1115,14 @@ const CreateGroupView: React.FC<{
         <div style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgb(248, 249, 250)',
+            background: 'linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%)',
             zIndex: 100,
             width: '100%',
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
             padding: '64px 20px 100px 20px', // Avoid overlap with CurrentContextBadge
-            gap: 16,
+            gap: 20,
             overflowY: 'auto',
         }}>
             {/* Header */}
@@ -1152,50 +1152,52 @@ const CreateGroupView: React.FC<{
             </div>
 
             {/* Emoji selector */}
-            <div className="card card-sm" style={{ padding: '12px 16px' }}>
+            <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
                 <label style={{
                     fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: 700,
-                    color: '#8395A7',
+                    color: '#2D3436',
                     display: 'block',
-                    marginBottom: 8,
+                    marginBottom: 12,
                 }}>
                     アイコン
                 </label>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {EMOJI_OPTIONS.map(e => (
-                        <button
+                        <motion.button
                             key={e}
+                            whileTap={{ scale: 0.9 }}
                             onClick={() => setEmoji(e)}
                             style={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: 12,
+                                width: 44,
+                                height: 44,
+                                borderRadius: 14,
                                 border: emoji === e ? '2px solid #2BBAA0' : '2px solid transparent',
-                                background: emoji === e ? 'rgba(43,186,160,0.08)' : 'rgba(0,0,0,0.03)',
+                                background: emoji === e ? 'rgba(43,186,160,0.08)' : '#F8F9FA',
                                 cursor: 'pointer',
-                                fontSize: 20,
+                                fontSize: 22,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
+                                transition: 'all 0.2s',
                             }}
                         >
                             {e}
-                        </button>
+                        </motion.button>
                     ))}
                 </div>
             </div>
 
             {/* Name input */}
-            <div className="card card-sm" style={{ padding: '12px 16px' }}>
+            <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
                 <label style={{
                     fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: 700,
-                    color: '#8395A7',
+                    color: '#2D3436',
                     display: 'block',
-                    marginBottom: 8,
+                    marginBottom: 12,
                 }}>
                     なまえ
                 </label>
@@ -1206,56 +1208,75 @@ const CreateGroupView: React.FC<{
                     placeholder="じぶんのメニュー"
                     style={{
                         width: '100%',
-                        padding: '10px 14px',
-                        borderRadius: 12,
-                        border: '1px solid rgba(0,0,0,0.1)',
-                        background: 'rgba(0,0,0,0.02)',
+                        padding: '16px 20px',
+                        borderRadius: 16,
+                        border: '1px solid rgba(0,0,0,0.05)',
+                        background: '#F8F9FA',
                         fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 15,
+                        fontSize: 16,
                         color: '#2D3436',
                         outline: 'none',
+                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)',
+                        transition: 'all 0.2s',
                     }}
                 />
             </div>
 
             {/* Selected exercises */}
-            <div className="card card-sm" style={{ padding: '12px 16px' }}>
+            <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: 10,
+                    marginBottom: 16,
                 }}>
                     <label style={{
                         fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 12,
+                        fontSize: 13,
                         fontWeight: 700,
-                        color: '#8395A7',
+                        color: '#2D3436',
                     }}>
                         えらんだ種目（{selectedIds.length}）
                     </label>
                     <span style={{
                         fontFamily: "'Outfit', sans-serif",
-                        fontSize: 12,
-                        fontWeight: 600,
+                        fontSize: 13,
+                        fontWeight: 700,
                         color: '#2BBAA0',
+                        background: 'rgba(43, 186, 160, 0.1)',
+                        padding: '4px 10px',
+                        borderRadius: 10,
                     }}>
                         約{minutes}分
                     </span>
                 </div>
 
                 {selectedIds.length === 0 ? (
-                    <p style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 13,
-                        color: '#B2BEC3',
-                        textAlign: 'center',
-                        padding: 16,
+                    <div style={{
+                        background: '#F8F9FA',
+                        borderRadius: 16,
+                        padding: '24px 16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 8,
+                        border: '2px dashed rgba(0,0,0,0.05)',
                     }}>
-                        下のリストから種目をタップしてね
-                    </p>
+                        <div style={{ fontSize: 24, opacity: 0.5 }}>👇</div>
+                        <p style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 13,
+                            color: '#8395A7',
+                            textAlign: 'center',
+                            margin: 0,
+                            fontWeight: 600,
+                        }}>
+                            下のリストから種目をタップしてね
+                        </p>
+                    </div>
                 ) : (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                         {selectedIds.map((id, i) => {
                             const ex = getExerciseById(id);
                             if (!ex) return null;
@@ -1267,21 +1288,34 @@ const CreateGroupView: React.FC<{
                                         setSelectedIds(prev => prev.filter((_, idx) => idx !== i));
                                     }}
                                     style={{
-                                        padding: '6px 12px',
-                                        borderRadius: 10,
+                                        padding: '8px 14px',
+                                        borderRadius: 12,
                                         border: 'none',
                                         background: 'rgba(43, 186, 160, 0.1)',
                                         cursor: 'pointer',
                                         fontFamily: "'Noto Sans JP', sans-serif",
-                                        fontSize: 13,
-                                        color: '#2D3436',
+                                        fontSize: 14,
+                                        fontWeight: 600,
+                                        color: '#00796B',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: 4,
+                                        gap: 6,
+                                        boxShadow: '0 2px 4px rgba(43, 186, 160, 0.05)'
                                     }}
                                 >
                                     {ex.emoji} {ex.name}
-                                    <span style={{ color: '#B2BEC3', fontSize: 11, marginLeft: 2 }}>×</span>
+                                    <span style={{
+                                        background: 'rgba(0,0,0,0.05)',
+                                        borderRadius: '50%',
+                                        width: 16,
+                                        height: 16,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#00796B',
+                                        fontSize: 10,
+                                        marginLeft: 4
+                                    }}>×</span>
                                 </motion.button>
                             );
                         })}
@@ -1293,15 +1327,16 @@ const CreateGroupView: React.FC<{
             <div>
                 <label style={{
                     fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: 700,
-                    color: '#8395A7',
+                    color: '#2D3436',
                     display: 'block',
-                    marginBottom: 8,
+                    marginBottom: 12,
+                    marginLeft: 4,
                 }}>
                     種目をタップして追加（くりかえしOK）
                 </label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {availableExercises.map(ex => {
                         const count = selectedIds.filter(id => id === ex.id).length;
                         return (
@@ -1309,50 +1344,67 @@ const CreateGroupView: React.FC<{
                                 key={ex.id}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => addExercise(ex.id)}
-                                className="card card-sm"
+                                className="card"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: 12,
-                                    padding: '12px 14px',
+                                    gap: 16,
+                                    padding: '16px 20px',
                                     cursor: 'pointer',
-                                    border: count > 0 ? '1px solid rgba(43,186,160,0.3)' : '1px solid transparent',
+                                    border: count > 0 ? '2px solid #2BBAA0' : '2px solid transparent',
+                                    background: count > 0 ? 'rgba(43,186,160,0.04)' : 'white',
                                     textAlign: 'left',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                                    transition: 'all 0.2s',
                                 }}
                             >
-                                <span style={{ fontSize: 20, flexShrink: 0 }}>{ex.emoji}</span>
+                                <span style={{ fontSize: 24, flexShrink: 0 }}>{ex.emoji}</span>
                                 <div style={{ flex: 1 }}>
                                     <span style={{
                                         fontFamily: "'Noto Sans JP', sans-serif",
-                                        fontSize: 14,
-                                        fontWeight: 600,
+                                        fontSize: 15,
+                                        fontWeight: 700,
                                         color: '#2D3436',
+                                        display: 'block',
+                                        marginBottom: 4,
                                     }}>
                                         {ex.name}
                                     </span>
                                     <span style={{
                                         fontFamily: "'Noto Sans JP', sans-serif",
-                                        fontSize: 11,
+                                        fontSize: 12,
                                         color: '#8395A7',
-                                        marginLeft: 8,
                                     }}>
                                         {ex.sec}秒 {ex.internal !== 'single' ? `(${ex.internal})` : ''}
                                     </span>
                                 </div>
                                 {count > 0 && (
                                     <span style={{
-                                        padding: '2px 8px',
-                                        borderRadius: 8,
+                                        padding: '4px 10px',
+                                        borderRadius: 10,
                                         background: '#2BBAA0',
                                         color: 'white',
-                                        fontSize: 11,
+                                        fontSize: 12,
                                         fontWeight: 700,
                                         fontFamily: "'Outfit', sans-serif",
+                                        boxShadow: '0 2px 8px rgba(43, 186, 160, 0.4)'
                                     }}>
                                         ×{count}
                                     </span>
                                 )}
-                                <Plus size={16} color="#B2BEC3" />
+                                {count === 0 && (
+                                    <div style={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: '50%',
+                                        background: '#F8F9FA',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                    }}>
+                                        <Plus size={18} color="#B2BEC3" />
+                                    </div>
+                                )}
                             </motion.button>
                         );
                     })}
@@ -1367,19 +1419,20 @@ const CreateGroupView: React.FC<{
                 style={{
                     position: 'sticky',
                     bottom: 16,
-                    padding: '14px 0',
-                    borderRadius: 9999,
+                    padding: '16px 0',
+                    borderRadius: 16,
                     border: 'none',
-                    background: name.trim() && selectedIds.length > 0 ? '#2BBAA0' : '#B2BEC3',
-                    color: 'white',
+                    background: name.trim() && selectedIds.length > 0 ? 'linear-gradient(135deg, #2BBAA0, #1A937D)' : '#DFE6E9',
+                    color: name.trim() && selectedIds.length > 0 ? 'white' : '#B2BEC3',
                     fontFamily: "'Noto Sans JP', sans-serif",
                     fontSize: 16,
                     fontWeight: 700,
                     cursor: name.trim() && selectedIds.length > 0 ? 'pointer' : 'not-allowed',
                     boxShadow: name.trim() && selectedIds.length > 0
-                        ? '0 4px 16px rgba(43, 186, 160, 0.35)'
+                        ? '0 8px 20px rgba(43, 186, 160, 0.3)'
                         : 'none',
                     transition: 'all 0.3s ease',
+                    marginTop: 16,
                 }}
             >
                 {initial ? 'ほぞん' : 'つくる！'}
@@ -1427,14 +1480,14 @@ const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ initial, cu
         <div style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgb(248, 249, 250)',
+            background: 'linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%)',
             zIndex: 100,
             width: '100%',
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
             padding: '64px 20px 100px 20px', // Avoid overlap with CurrentContextBadge
-            gap: 16,
+            gap: 20,
             overflowY: 'auto',
         }}>
             {/* Header */}
@@ -1464,50 +1517,52 @@ const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ initial, cu
             </div>
 
             {/* Emoji selector */}
-            <div className="card card-sm" style={{ padding: '12px 16px' }}>
+            <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
                 <label style={{
                     fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: 700,
-                    color: '#8395A7',
+                    color: '#2D3436',
                     display: 'block',
-                    marginBottom: 8,
+                    marginBottom: 12,
                 }}>
                     アイコン
                 </label>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {EMOJI_OPTIONS.map(e => (
-                        <button
+                        <motion.button
                             key={e}
+                            whileTap={{ scale: 0.9 }}
                             onClick={() => setEmoji(e)}
                             style={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: 12,
+                                width: 44,
+                                height: 44,
+                                borderRadius: 14,
                                 border: emoji === e ? '2px solid #2BBAA0' : '2px solid transparent',
-                                background: emoji === e ? 'rgba(43,186,160,0.08)' : 'rgba(0,0,0,0.03)',
+                                background: emoji === e ? 'rgba(43,186,160,0.08)' : '#F8F9FA',
                                 cursor: 'pointer',
-                                fontSize: 20,
+                                fontSize: 22,
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
+                                transition: 'all 0.2s',
                             }}
                         >
                             {e}
-                        </button>
+                        </motion.button>
                     ))}
                 </div>
             </div>
 
             {/* Name input */}
-            <div className="card card-sm" style={{ padding: '12px 16px' }}>
+            <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
                 <label style={{
                     fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: 700,
-                    color: '#8395A7',
+                    color: '#2D3436',
                     display: 'block',
-                    marginBottom: 8,
+                    marginBottom: 12,
                 }}>
                     なまえ
                 </label>
@@ -1518,60 +1573,65 @@ const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ initial, cu
                     placeholder="新しい種目の名前"
                     style={{
                         width: '100%',
-                        border: 'none',
-                        background: 'rgba(0,0,0,0.03)',
-                        padding: '12px 16px',
-                        borderRadius: 12,
+                        padding: '16px 20px',
+                        borderRadius: 16,
+                        border: '1px solid rgba(0,0,0,0.05)',
+                        background: '#F8F9FA',
                         fontFamily: "'Noto Sans JP', sans-serif",
                         fontSize: 16,
+                        color: '#2D3436',
                         outline: 'none',
+                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)',
+                        transition: 'all 0.2s',
                     }}
                 />
             </div>
 
             {/* Time Settings */}
-            <div className="card card-sm" style={{ padding: '12px 16px' }}>
+            <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
                 <label style={{
                     fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: 700,
-                    color: '#8395A7',
+                    color: '#2D3436',
                     display: 'block',
-                    marginBottom: 8,
+                    marginBottom: 12,
                 }}>
                     時間（秒）
                 </label>
                 <div style={{ display: 'flex', gap: 10 }}>
                     {[15, 30, 60, 120].map(s => (
-                        <button
+                        <motion.button
                             key={s}
+                            whileTap={{ scale: 0.95 }}
                             onClick={() => setSec(s)}
                             style={{
                                 flex: 1,
-                                padding: '10px 0',
+                                padding: '12px 0',
                                 borderRadius: 12,
                                 border: sec === s ? '2px solid #2BBAA0' : '2px solid transparent',
-                                background: sec === s ? 'rgba(43,186,160,0.08)' : 'rgba(0,0,0,0.03)',
+                                background: sec === s ? 'rgba(43,186,160,0.08)' : '#F8F9FA',
                                 cursor: 'pointer',
                                 fontFamily: "'Outfit', sans-serif",
                                 fontSize: 16,
                                 fontWeight: 700,
                                 color: sec === s ? '#2BBAA0' : '#8395A7',
+                                transition: 'all 0.2s',
                             }}
                         >
                             {s}秒
-                        </button>
+                        </motion.button>
                     ))}
                 </div>
             </div>
 
             {/* Split Toggle */}
-            <div className="card card-sm" style={{ padding: '12px 16px' }}>
+            <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
                         <label style={{
                             fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 14,
+                            fontSize: 15,
                             fontWeight: 700,
                             color: '#2D3436',
                             display: 'block',
@@ -1581,7 +1641,7 @@ const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ initial, cu
                         </label>
                         <span style={{
                             fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 11,
+                            fontSize: 12,
                             color: '#8395A7',
                         }}>
                             半分の時間で「反対」「切り替え」の合図が鳴ります
@@ -1598,6 +1658,7 @@ const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ initial, cu
                             position: 'relative',
                             cursor: 'pointer',
                             transition: 'background 0.3s',
+                            boxShadow: hasSplit ? 'inset 0 2px 4px rgba(0,0,0,0.1)' : 'inset 0 2px 4px rgba(0,0,0,0.05)',
                         }}
                     >
                         <motion.div
@@ -1628,19 +1689,20 @@ const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ initial, cu
                 style={{
                     position: 'sticky',
                     bottom: 16,
-                    padding: '14px 0',
-                    borderRadius: 9999,
+                    padding: '16px 0',
+                    borderRadius: 16,
                     border: 'none',
-                    background: name.trim() ? '#2BBAA0' : '#B2BEC3',
-                    color: 'white',
+                    background: name.trim() ? 'linear-gradient(135deg, #2BBAA0, #1A937D)' : '#DFE6E9',
+                    color: name.trim() ? 'white' : '#B2BEC3',
                     fontFamily: "'Noto Sans JP', sans-serif",
                     fontSize: 16,
                     fontWeight: 700,
                     cursor: name.trim() ? 'pointer' : 'not-allowed',
                     boxShadow: name.trim()
-                        ? '0 4px 16px rgba(43, 186, 160, 0.35)'
+                        ? '0 8px 20px rgba(43, 186, 160, 0.3)'
                         : 'none',
                     transition: 'all 0.3s ease',
+                    marginTop: 16,
                 }}
             >
                 {initial ? 'ほぞん' : 'つくる！'}
