@@ -97,8 +97,8 @@ class AudioEngine {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'ja-JP';
             // Scale up voice volume because default TTS is often quiet compared to media
-            utterance.volume = Math.min(1.0, state.soundVolume * 2.5);
-
+            // Increase TTS volume substantially to ensure it cuts through BGM and is audible on mobile.
+            utterance.volume = Math.min(1.0, state.soundVolume * 5.0);
             // Voice selection logic for premium natural voices
             const voices = window.speechSynthesis.getVoices();
             const jpVoices = voices.filter(v => v.lang.includes('ja'));

@@ -303,7 +303,7 @@ export const MenuPage: React.FC = () => {
                                     fontSize: 12,
                                     color: '#8395A7',
                                     lineHeight: 1.4,
-                                }}>{dailyTargetMinutes}分 / こだわり: {requiredExercises.length}個 / 除外: {excludedExercises.length}個</div>
+                                }}>{dailyTargetMinutes}分 / ★ 必須: {requiredExercises.length}個 / 🔴 除外: {excludedExercises.length}個</div>
                             </div>
                         </motion.button>
 
@@ -314,7 +314,7 @@ export const MenuPage: React.FC = () => {
                             marginTop: 12,
                             textAlign: 'center',
                         }}>
-                            「はじめる」ボタンで開始すると ★ はかならず入ります<br />（おまかせで約{Math.ceil(DEFAULT_SESSION_TARGET_SECONDS / 60)}分）
+                            ★ 必須にした種目は、ホーム画面のおまかせメニューに必ず入ります<br />（おまかせで約{Math.ceil(DEFAULT_SESSION_TARGET_SECONDS / 60)}分）
                         </p>
                     </div>
 
@@ -684,7 +684,7 @@ export const MenuPage: React.FC = () => {
                                     fontSize: 12,
                                     color: '#8395A7',
                                 }}>
-                                    🟢必ずやる / ⚪おまかせ / 🔴やらない
+                                    ★ 必須 / ⚪ おまかせ / 🔴 除外
                                 </div>
                             </div>
 
@@ -753,7 +753,7 @@ export const MenuPage: React.FC = () => {
                                                     transition: 'all 0.2s ease',
                                                 }}
                                             >
-                                                {isRequired ? '🟢必須' : isExcluded ? '🔴除外' : '⚪自動'}
+                                                {isRequired ? '★ 必須' : isExcluded ? '🔴 除外' : '⚪ おまかせ'}
                                             </button>
                                         </div>
                                     );
