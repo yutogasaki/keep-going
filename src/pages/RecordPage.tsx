@@ -73,7 +73,10 @@ export const RecordPage: React.FC = () => {
         .slice(0, 3);
 
     // Today's Progress Calculations
-    const dailyTargetMinutes = useAppStore(s => s.dailyTargetMinutes);
+    const baseDailyTargetMinutes = useAppStore(s => s.dailyTargetMinutes);
+    const isTogetherMode = sessionUserIds.length > 1;
+    const dailyTargetMinutes = isTogetherMode ? baseDailyTargetMinutes * users.length : baseDailyTargetMinutes;
+
     const todayTotalSeconds = todaySessions.reduce((acc, s) => acc + s.totalSeconds, 0);
     const todayMinutes = Math.floor(todayTotalSeconds / 60);
     const todayExerciseCount = todaySessions.reduce((acc, s) => acc + s.exerciseIds.length, 0);
@@ -91,7 +94,7 @@ export const RecordPage: React.FC = () => {
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            padding: '24px 20px 100px 20px',
+            padding: '64px 20px 100px 20px', // Avoid overlap with CurrentContextBadge
             gap: 20,
             overflowY: 'auto',
         }}>

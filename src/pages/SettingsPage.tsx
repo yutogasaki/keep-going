@@ -410,7 +410,7 @@ export const SettingsPage: React.FC = () => {
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            padding: '20px 20px 100px 20px',
+            padding: '64px 20px 100px 20px', // Avoid overlap with CurrentContextBadge
             gap: 16,
             overflowY: 'auto',
         }}>

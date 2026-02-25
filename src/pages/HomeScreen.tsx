@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getAllSessions, type SessionRecord } from '../lib/db';
+import { getAllSessions, getTodayKey, type SessionRecord } from '../lib/db';
 import { FuwafuwaCharacter } from '../components/FuwafuwaCharacter';
 import { MagicTank } from '../components/MagicTank';
 import { useAppStore } from '../store/useAppStore';
@@ -17,7 +17,7 @@ export const HomeScreen: React.FC = () => {
     const setActiveMilestoneModal = useAppStore(s => s.setActiveMilestoneModal);
 
     // Calculate today's total trained seconds for the Magic Tank based on the CURRENT swipe selection (sessionUserIds)
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getTodayKey();
     const isTogetherMode = sessionUserIds.length > 1;
 
     const todaySessions = allSessions.filter(s => {
@@ -31,8 +31,9 @@ export const HomeScreen: React.FC = () => {
         }
     });
     const todaySeconds = todaySessions.reduce((acc, curr) => acc + curr.totalSeconds, 0);
-    const dailyTargetMinutes = useAppStore(s => s.dailyTargetMinutes);
-    const targetSeconds = dailyTargetMinutes * 60;
+    const baseDailyTargetMinutes = useAppStore(s => s.dailyTargetMinutes);
+    // In Together mode, scale target by the number of active family members so it represents a shared pool
+    const targetSeconds = (isTogetherMode ? baseDailyTargetMinutes * users.length : baseDailyTargetMinutes) * 60;
 
     // Confetti logic for Magic Tank reset
     const handleTankReset = () => {

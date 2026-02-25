@@ -37,13 +37,19 @@ const customExercisesDB = localforage.createInstance({ name: 'keepgoing', storeN
 export function getTodayKey(): string {
     const now = new Date();
     const adjusted = new Date(now.getTime() - 3 * 60 * 60 * 1000); // subtract 3 hours
-    return adjusted.toISOString().split('T')[0];
+    const year = adjusted.getFullYear();
+    const month = String(adjusted.getMonth() + 1).padStart(2, '0');
+    const day = String(adjusted.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 export function getDateKeyOffset(offsetDays: number): string {
     const now = new Date();
     const adjusted = new Date(now.getTime() - 3 * 60 * 60 * 1000 + offsetDays * 24 * 60 * 60 * 1000);
-    return adjusted.toISOString().split('T')[0];
+    const year = adjusted.getFullYear();
+    const month = String(adjusted.getMonth() + 1).padStart(2, '0');
+    const day = String(adjusted.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 export function calculateStreak(sessions: SessionRecord[]): number {
