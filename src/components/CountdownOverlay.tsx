@@ -93,6 +93,20 @@ export const CountdownOverlay: React.FC<CountdownOverlayProps> = ({ onComplete, 
                         }}>
                             {firstExercise.name}
                         </div>
+                        {firstExercise.hasSplit && (
+                            <div style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 13,
+                                color: '#2BBAA0',
+                                fontWeight: 700,
+                                background: 'rgba(43, 186, 160, 0.1)',
+                                padding: '4px 12px',
+                                borderRadius: 20,
+                                marginTop: -8,
+                            }}>
+                                左右あり
+                            </div>
+                        )}
                     </motion.div>
                 )}
 

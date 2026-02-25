@@ -165,8 +165,8 @@ export const MenuPage: React.FC = () => {
                 margin: '0 20px 16px',
             }}>
                 {[
-                    { id: 'group' as MenuTab, label: 'セット' },
-                    { id: 'individual' as MenuTab, label: 'カスタマイズ' },
+                    { id: 'group' as MenuTab, label: 'くみあわせ' },
+                    { id: 'individual' as MenuTab, label: 'ひとつ' },
                 ].map(t => (
                     <button
                         key={t.id}

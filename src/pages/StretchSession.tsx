@@ -866,6 +866,20 @@ export const StretchSession: React.FC = () => {
                             }}>
                                 {sessionExercises[(currentIndex + 1) % sessionExercises.length].name}
                             </h2>
+                            {sessionExercises[(currentIndex + 1) % sessionExercises.length].hasSplit && (
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 14,
+                                    color: '#81ECEC',
+                                    fontWeight: 700,
+                                    background: 'rgba(129, 236, 236, 0.15)',
+                                    padding: '6px 14px',
+                                    borderRadius: 20,
+                                    marginTop: -8,
+                                }}>
+                                    左右あり
+                                </div>
+                            )}
                             <div style={{
                                 width: 52,
                                 height: 52,
