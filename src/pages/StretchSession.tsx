@@ -25,9 +25,9 @@ export const StretchSession: React.FC = () => {
         }, currentUsers[0].classLevel)
         : '初級';
 
-    const dailyTargetMinutes = useAppStore((state) => state.dailyTargetMinutes);
-    const globalExcludedIds = useAppStore((state) => state.excludedExercises);
-    const globalRequiredIds = useAppStore((state) => state.requiredExercises);
+    const dailyTargetMinutes = currentUsers.reduce((sum, u) => sum + (u.dailyTargetMinutes ?? 10), 0);
+    const globalExcludedIds = Array.from(new Set(currentUsers.flatMap(u => u.excludedExercises || ['C01', 'C02'])));
+    const globalRequiredIds = Array.from(new Set(currentUsers.flatMap(u => u.requiredExercises || ['S01', 'S02', 'S07'])));
 
     const [isLoading, setIsLoading] = useState(true);
     const [sessionExercises, setSessionExercises] = useState<Exercise[]>([]);

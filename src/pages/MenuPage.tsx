@@ -35,13 +35,30 @@ export const MenuPage: React.FC = () => {
     const [editEx, setEditEx] = useState<CustomExercise | null>(null);
     const [showCustomMenu, setShowCustomMenu] = useState(false);
 
-    // Advanced settings state
-    const dailyTargetMinutes = useAppStore(s => s.dailyTargetMinutes);
-    const setDailyTargetMinutes = useAppStore(s => s.setDailyTargetMinutes);
-    const excludedExercises = useAppStore(s => s.excludedExercises);
-    const setExcludedExercises = useAppStore(s => s.setExcludedExercises);
-    const requiredExercises = useAppStore(s => s.requiredExercises);
-    const setRequiredExercises = useAppStore(s => s.setRequiredExercises);
+    const updateUserSettings = useAppStore(s => s.updateUserSettings);
+
+    // Advanced settings state (derived from current user or aggregated)
+    const isTogetherMode = sessionUserIds.length > 1;
+
+    const dailyTargetMinutes = currentUsers.reduce((sum, u) => sum + (u.dailyTargetMinutes ?? 10), 0);
+    const excludedExercises = Array.from(new Set(currentUsers.flatMap((u) => u.excludedExercises || ['C01', 'C02'])));
+    const requiredExercises = Array.from(new Set(currentUsers.flatMap((u) => u.requiredExercises || ['S01', 'S02', 'S07'])));
+
+    const setDailyTargetMinutes = (mins: number) => {
+        if (!isTogetherMode && currentUsers[0]) {
+            updateUserSettings(currentUsers[0].id, { dailyTargetMinutes: mins });
+        }
+    };
+    const setExcludedExercises = (ids: string[]) => {
+        if (!isTogetherMode && currentUsers[0]) {
+            updateUserSettings(currentUsers[0].id, { excludedExercises: ids });
+        }
+    };
+    const setRequiredExercises = (ids: string[]) => {
+        if (!isTogetherMode && currentUsers[0]) {
+            updateUserSettings(currentUsers[0].id, { requiredExercises: ids });
+        }
+    };
 
     useEffect(() => {
         setPresets(getPresetsForClass(classLevel));
@@ -49,7 +66,6 @@ export const MenuPage: React.FC = () => {
     }, [classLevel, sessionUserIds]); // reload if context changes
 
     const loadCustomData = async () => {
-        const isTogetherMode = sessionUserIds.length > 1;
         const currentUserId = sessionUserIds[0];
 
         const allGroups = await getCustomGroups();
@@ -625,9 +641,33 @@ export const MenuPage: React.FC = () => {
                     </div>
 
                     {/* Content */}
-                    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px' }}>
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', position: 'relative' }}>
+                        {isTogetherMode && (
+                            <div style={{
+                                background: '#FFF3E0',
+                                border: '1px solid #FFE0B2',
+                                borderRadius: 12,
+                                padding: '12px 16px',
+                                marginBottom: 20,
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: 12
+                            }}>
+                                <span style={{ fontSize: 20 }}>👩‍👧‍👦</span>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 13,
+                                    color: '#E65100',
+                                    lineHeight: 1.5,
+                                }}>
+                                    「みんなで！」モード中は全員のおまかせ設定が合算されます。<br />
+                                    <strong>個人の設定を変更するには、ホーム画面で設定したい人を選んでから開いてね。</strong>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Duration */}
-                        <div className="card" style={{ marginBottom: 24, padding: '24px 20px' }}>
+                        <div className="card" style={{ marginBottom: 24, padding: '24px 20px', opacity: isTogetherMode ? 0.6 : 1, pointerEvents: isTogetherMode ? 'none' : 'auto' }}>
                             <div style={{
                                 fontFamily: "'Noto Sans JP', sans-serif",
                                 fontSize: 15,
@@ -665,7 +705,7 @@ export const MenuPage: React.FC = () => {
                         </div>
 
                         {/* Exercises */}
-                        <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
+                        <div className="card" style={{ overflow: 'hidden', opacity: isTogetherMode ? 0.6 : 1, pointerEvents: isTogetherMode ? 'none' : 'auto' }}>
                             <div style={{
                                 padding: '20px 20px 12px',
                                 borderBottom: '1px solid rgba(0,0,0,0.06)',

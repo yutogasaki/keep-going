@@ -21,6 +21,10 @@ export interface UserProfileStore {
     fuwafuwaName: string | null;
     pastFuwafuwas: PastFuwafuwaRecord[];
     notifiedFuwafuwaStages: number[];
+    // Auto Menu Settings
+    dailyTargetMinutes: number;
+    excludedExercises: string[];
+    requiredExercises: string[];
 }
 
 type TabId = 'home' | 'record' | 'menu' | 'settings';
@@ -28,9 +32,11 @@ type TabId = 'home' | 'record' | 'menu' | 'settings';
 interface AppState {
     // Users
     users: UserProfileStore[];
-    addUser: (user: Omit<UserProfileStore, 'id'>) => void;
+    addUser: (user: Omit<UserProfileStore, 'id' | 'dailyTargetMinutes' | 'excludedExercises' | 'requiredExercises'>) => void;
     updateUser: (id: string, updates: Partial<UserProfileStore>) => void;
     deleteUser: (id: string) => void;
+    // user-specific update helpers
+    updateUserSettings: (id: string, updates: Partial<Pick<UserProfileStore, 'dailyTargetMinutes' | 'excludedExercises' | 'requiredExercises'>>) => void;
     resetUserFuwafuwa: (id: string, newType: number, activeDays: number, finalStage: number) => void;
 
     // Navigation
@@ -68,13 +74,7 @@ interface AppState {
     notificationTime: string;
     setNotificationTime: (time: string) => void;
 
-    // Advanced Customizations (persisted)
-    dailyTargetMinutes: number;
-    setDailyTargetMinutes: (minutes: number) => void;
-    excludedExercises: string[];
-    setExcludedExercises: (ids: string[]) => void;
-    requiredExercises: string[];
-    setRequiredExercises: (ids: string[]) => void;
+    // Note: Advanced Customizations (dailyTargetMinutes, excludedExercises, requiredExercises) are now per-user in UserProfileStore.
 
     // Debug Overrides
     debugFuwafuwaStage: number | null;
@@ -93,8 +93,19 @@ export const useAppStore = create<AppState>()(
             users: [],
             sessionUserIds: [],
             setSessionUserIds: (ids) => set({ sessionUserIds: ids }),
-            addUser: (user) => set((state) => ({ users: [...state.users, { ...user, id: crypto.randomUUID() }] })),
+            addUser: (user) => set((state) => ({
+                users: [...state.users, {
+                    ...user,
+                    id: crypto.randomUUID(),
+                    dailyTargetMinutes: 10,
+                    excludedExercises: ['C01', 'C02'],
+                    requiredExercises: ['S01', 'S02', 'S07']
+                }]
+            })),
             updateUser: (id, updates) => set((state) => ({
+                users: state.users.map(u => u.id === id ? { ...u, ...updates } : u)
+            })),
+            updateUserSettings: (id, updates) => set((state) => ({
                 users: state.users.map(u => u.id === id ? { ...u, ...updates } : u)
             })),
             deleteUser: (id) => set((state) => ({
@@ -159,13 +170,6 @@ export const useAppStore = create<AppState>()(
             notificationTime: '21:00',
             setNotificationTime: (time) => set({ notificationTime: time }),
 
-            dailyTargetMinutes: 10,
-            setDailyTargetMinutes: (minutes) => set({ dailyTargetMinutes: minutes }),
-            excludedExercises: ['C01', 'C02'], // Default exclude Plank and Side Plank for Pre class ease
-            setExcludedExercises: (ids) => set({ excludedExercises: ids }),
-            requiredExercises: ['S01', 'S02', 'S07'], // Make Splits, Forward Fold & Point & Flex default MUST-DOs
-            setRequiredExercises: (ids) => set({ requiredExercises: ids }),
-
             debugFuwafuwaStage: null,
             debugFuwafuwaType: null,
             setDebugFuwafuwaStage: (stage) => set({ debugFuwafuwaStage: stage }),
@@ -176,23 +180,20 @@ export const useAppStore = create<AppState>()(
         }),
         {
             name: 'keepgoing-app-state',
-            version: 4, // Bumped to 4 for Pre-class excluded exercises migration
+            version: 5, // Bumped to 5 for per-user auto menu settings migration
             migrate: (persistedState: any, version: number) => {
                 if (version === 0) {
-                    // Migration: Ensure 'S07' (Point & Flex) is added to required exercises for existing users
                     if (persistedState.requiredExercises && !persistedState.requiredExercises.includes('S07')) {
                         persistedState.requiredExercises.push('S07');
                     }
                 }
                 if (version < 2) {
-                    // Migration: Add BGM and haptic toggle defaults for existing users
                     persistedState.bgmEnabled = persistedState.bgmEnabled ?? true;
                     persistedState.hapticEnabled = persistedState.hapticEnabled ?? true;
                 }
                 if (version < 3) {
-                    // Migration: Move single user data to users array
                     if (!persistedState.users || persistedState.users.length === 0) {
-                        const legacyUser: UserProfileStore = {
+                        const legacyUser: any = {
                             id: crypto.randomUUID(),
                             name: persistedState.fuwafuwaName || 'ゲスト',
                             classLevel: persistedState.classLevel || '初級',
@@ -206,9 +207,6 @@ export const useAppStore = create<AppState>()(
                         persistedState.users = [legacyUser];
                         persistedState.sessionUserIds = [legacyUser.id];
                     }
-
-                    // Cleanup legacy root properties if desired (Zustand will ignore them anyway based on partialize, 
-                    // but we can explicitly delete them)
                     delete persistedState.classLevel;
                     delete persistedState.fuwafuwaBirthDate;
                     delete persistedState.fuwafuwaType;
@@ -218,10 +216,40 @@ export const useAppStore = create<AppState>()(
                     delete persistedState.notifiedFuwafuwaStages;
                 }
                 if (version < 4) {
-                    // Migration: Default exclude Plank and Side Plank if no exclusions were set
                     if (!persistedState.excludedExercises || persistedState.excludedExercises.length === 0) {
                         persistedState.excludedExercises = ['C01', 'C02'];
                     }
+                }
+                if (version < 5) {
+                    // Migration: Move global dailyTargetMinutes, excludedExercises, requiredExercises to individual users
+                    const globalTarget = persistedState.dailyTargetMinutes ?? 10;
+                    const globalExcluded = persistedState.excludedExercises ?? ['C01', 'C02'];
+                    const globalRequired = persistedState.requiredExercises ?? ['S01', 'S02', 'S07'];
+
+                    if (persistedState.users && Array.isArray(persistedState.users)) {
+                        persistedState.users = persistedState.users.map((u: any, index: number) => {
+                            // Assign global settings to the first user. For others, give defaults.
+                            if (index === 0) {
+                                return {
+                                    ...u,
+                                    dailyTargetMinutes: u.dailyTargetMinutes ?? globalTarget,
+                                    excludedExercises: u.excludedExercises ?? globalExcluded,
+                                    requiredExercises: u.requiredExercises ?? globalRequired,
+                                };
+                            } else {
+                                return {
+                                    ...u,
+                                    dailyTargetMinutes: u.dailyTargetMinutes ?? 10,
+                                    excludedExercises: u.excludedExercises ?? ['C01', 'C02'],
+                                    requiredExercises: u.requiredExercises ?? ['S01', 'S02', 'S07'],
+                                };
+                            }
+                        });
+                    }
+
+                    delete persistedState.dailyTargetMinutes;
+                    delete persistedState.excludedExercises;
+                    delete persistedState.requiredExercises;
                 }
                 return persistedState as AppState;
             },
@@ -234,9 +262,6 @@ export const useAppStore = create<AppState>()(
                 hapticEnabled: state.hapticEnabled,
                 notificationsEnabled: state.notificationsEnabled,
                 notificationTime: state.notificationTime,
-                dailyTargetMinutes: state.dailyTargetMinutes,
-                excludedExercises: state.excludedExercises,
-                requiredExercises: state.requiredExercises,
             }),
         }
     )

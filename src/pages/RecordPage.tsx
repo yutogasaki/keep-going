@@ -75,9 +75,8 @@ export const RecordPage: React.FC = () => {
         .slice(0, 3);
 
     // Today's Progress Calculations
-    const baseDailyTargetMinutes = useAppStore(s => s.dailyTargetMinutes);
-    const isTogetherMode = sessionUserIds.length > 1;
-    const dailyTargetMinutes = isTogetherMode ? baseDailyTargetMinutes * users.length : baseDailyTargetMinutes;
+    const activeUsers = users.filter((u) => sessionUserIds.includes(u.id));
+    const dailyTargetMinutes = activeUsers.reduce((sum, u) => sum + (u.dailyTargetMinutes ?? 10), 0);
 
     const todayTotalSeconds = todaySessions.reduce((acc, s) => acc + s.totalSeconds, 0);
     const todayMinutes = Math.floor(todayTotalSeconds / 60);
