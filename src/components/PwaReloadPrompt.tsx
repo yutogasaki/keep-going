@@ -5,7 +5,16 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 import { audio } from '../lib/audio';
 
 // Vite injects this at build time (see vite.config.ts)
-const APP_VERSION = import.meta.env.VITE_APP_VERSION || (window as any).__APP_VERSION__;
+// Fallback to window object if environment variables aren't available
+const getAppVersion = () => {
+    try {
+        return import.meta.env.VITE_APP_VERSION || (window as any).__APP_VERSION__;
+    } catch (e) {
+        return (window as any).__APP_VERSION__;
+    }
+};
+
+const APP_VERSION = getAppVersion();
 
 export const PwaReloadPrompt: React.FC = () => {
     const {
@@ -51,13 +60,24 @@ export const PwaReloadPrompt: React.FC = () => {
 
                 if (res.ok) {
                     const data = await res.json();
-                    if (data && data.version && data.version !== APP_VERSION) {
-                        console.warn(`Version mismatch detected! Client: ${APP_VERSION}, Server: ${data.version}`);
-                        setHasVersionMismatch(true);
+
+                    // Add defensive checks
+                    if (data && data.version && APP_VERSION) {
+                        // Compare as strings to prevent type mismatch issues
+                        const serverVersion = String(data.version);
+                        const clientVersion = String(APP_VERSION);
+
+                        if (serverVersion !== clientVersion) {
+                            console.warn(`[PWA] Version mismatch detected! Client: ${clientVersion}, Server: ${serverVersion}`);
+                            setHasVersionMismatch(true);
+                        } else {
+                            // Version matched, clear flag just in case
+                            setHasVersionMismatch(false);
+                        }
                     }
                 }
             } catch (err) {
-                console.error("Failed to check version.json", err);
+                console.warn("[PWA] Failed to check version.json (might be offline)", err);
             }
         };
 
@@ -93,13 +113,35 @@ export const PwaReloadPrompt: React.FC = () => {
         }
     }, [showUpdateBanner]);
 
-    const handleUpdate = () => {
+    const handleUpdate = async () => {
         if (needRefresh) {
             // Standard vite-plugin-pwa flow: wait for the new SW to control, then reload
             updateServiceWorker(true);
         } else if (hasVersionMismatch) {
-            // Manual fallback: just force a hard reload
-            window.location.reload();
+            // Manual fallback: Aggressive SW unregister and hard reload
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (let registration of registrations) {
+                        await registration.unregister();
+                        console.log('[PWA] Unregistered service worker');
+                    }
+                }
+
+                // Also clear standard caches just in case
+                if ('caches' in window) {
+                    const keys = await caches.keys();
+                    for (const key of keys) {
+                        await caches.delete(key);
+                        console.log(`[PWA] Cleared cache: ${key}`);
+                    }
+                }
+            } catch (err) {
+                console.error('[PWA] Error clearing cache/sw:', err);
+            } finally {
+                // Force a hard reload from server
+                window.location.href = window.location.href.split('?')[0] + '?v=' + Date.now();
+            }
         }
     };
 

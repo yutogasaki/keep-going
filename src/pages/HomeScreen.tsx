@@ -33,9 +33,14 @@ export const HomeScreen: React.FC = () => {
         }
     });
     const todaySeconds = todaySessions.reduce((acc, curr) => acc + curr.totalSeconds, 0);
-    const baseDailyTargetMinutes = useAppStore(s => s.dailyTargetMinutes);
-    // In Together mode, scale target by the number of active family members so it represents a shared pool
-    const targetSeconds = (isTogetherMode ? baseDailyTargetMinutes * users.length : baseDailyTargetMinutes) * 60;
+
+    // Calculate total target time based on active session users
+    const activeUsers = users.filter(u => sessionUserIds.includes(u.id));
+    const totalTargetMinutes = activeUsers.reduce((sum, u) => sum + (u.dailyTargetMinutes || 10), 0);
+    // If no users are selected yet but users exist, default to the first user's target (or 10 min)
+    const fallbackTargetMinutes = users.length > 0 ? (users[0].dailyTargetMinutes || 10) : 10;
+
+    const targetSeconds = (activeUsers.length > 0 ? totalTargetMinutes : fallbackTargetMinutes) * 60;
 
     // Confetti logic for Magic Tank reset
     const handleTankReset = () => {
