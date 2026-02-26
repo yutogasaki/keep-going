@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { useAppStore } from './store/useAppStore';
 import { PwaReloadPrompt } from './components/PwaReloadPrompt';
+import { AuthProvider } from './contexts/AuthContext';
 
 const MainLayout = lazy(() =>
     import('./layouts/MainLayout').then((module) => ({ default: module.MainLayout }))
@@ -25,12 +26,14 @@ function App() {
     }, []);
 
     return (
-        <div className="app-container">
-            <Suspense fallback={null}>
-                {hasCompletedOnboarding ? <MainLayout /> : <Onboarding />}
-            </Suspense>
-            <PwaReloadPrompt />
-        </div>
+        <AuthProvider>
+            <div className="app-container">
+                <Suspense fallback={null}>
+                    {hasCompletedOnboarding ? <MainLayout /> : <Onboarding />}
+                </Suspense>
+                <PwaReloadPrompt />
+            </div>
+        </AuthProvider>
     );
 }
 

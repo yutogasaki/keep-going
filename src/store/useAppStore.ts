@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ClassLevel } from '../data/exercises';
 import { getTodayKey } from '../lib/db';
+import { getAccountId, pushFamilyMember, deleteFamilyMember as syncDeleteFamilyMember, pushAppSettings } from '../lib/sync';
 
 export interface PastFuwafuwaRecord {
     id: string; // unique ID
@@ -295,3 +296,52 @@ export const useAppStore = create<AppState>()(
         }
     )
 );
+
+// ─── Supabase sync on state change ──────────────────
+// Subscribe to users changes and push to Supabase
+useAppStore.subscribe((state, prevState) => {
+    if (!getAccountId()) return;
+
+    // Sync user profile changes
+    if (state.users !== prevState.users) {
+        const prevIds = new Set(prevState.users.map(u => u.id));
+        const currIds = new Set(state.users.map(u => u.id));
+
+        // Upsert changed/new users
+        for (const user of state.users) {
+            const prev = prevState.users.find(u => u.id === user.id);
+            if (!prev || prev !== user) {
+                pushFamilyMember(user).catch(console.warn);
+            }
+        }
+
+        // Delete removed users
+        for (const id of prevIds) {
+            if (!currIds.has(id)) {
+                syncDeleteFamilyMember(id).catch(console.warn);
+            }
+        }
+    }
+
+    // Sync settings changes
+    const settingsChanged =
+        state.onboardingCompleted !== prevState.onboardingCompleted ||
+        state.soundVolume !== prevState.soundVolume ||
+        state.ttsEnabled !== prevState.ttsEnabled ||
+        state.bgmEnabled !== prevState.bgmEnabled ||
+        state.hapticEnabled !== prevState.hapticEnabled ||
+        state.notificationsEnabled !== prevState.notificationsEnabled ||
+        state.notificationTime !== prevState.notificationTime;
+
+    if (settingsChanged) {
+        pushAppSettings({
+            onboardingCompleted: state.onboardingCompleted,
+            soundVolume: state.soundVolume,
+            ttsEnabled: state.ttsEnabled,
+            bgmEnabled: state.bgmEnabled,
+            hapticEnabled: state.hapticEnabled,
+            notificationsEnabled: state.notificationsEnabled,
+            notificationTime: state.notificationTime,
+        }).catch(console.warn);
+    }
+});

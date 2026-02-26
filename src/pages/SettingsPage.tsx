@@ -3,6 +3,7 @@ import { RefreshCw } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
+import { AccountSection } from './settings/AccountSection';
 import { UserManagementSection } from './settings/UserManagementSection';
 import { SoundNotificationSettingsSection } from './settings/SoundNotificationSettingsSection';
 import { HelpCenterSection } from './settings/HelpCenterSection';
@@ -66,6 +67,8 @@ export const SettingsPage: React.FC = () => {
             />
 
             <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <AccountSection />
+
                 <UserManagementSection
                     users={users}
                     onAddUser={addUser}

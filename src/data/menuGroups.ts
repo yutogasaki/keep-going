@@ -1,5 +1,6 @@
 import localforage from 'localforage';
 import { getExercisesByClass, type ClassLevel } from './exercises';
+import { pushMenuGroup, deleteMenuGroupRemote, getAccountId } from '../lib/sync';
 
 export interface MenuGroup {
     id: string;
@@ -79,9 +80,16 @@ export async function getCustomGroups(): Promise<MenuGroup[]> {
 }
 
 export async function saveCustomGroup(group: MenuGroup): Promise<void> {
-    await groupsDB.setItem(group.id, { ...group, isPreset: false });
+    const saved = { ...group, isPreset: false };
+    await groupsDB.setItem(group.id, saved);
+    if (getAccountId()) {
+        pushMenuGroup(saved).catch(console.warn);
+    }
 }
 
 export async function deleteCustomGroup(id: string): Promise<void> {
     await groupsDB.removeItem(id);
+    if (getAccountId()) {
+        deleteMenuGroupRemote(id).catch(console.warn);
+    }
 }

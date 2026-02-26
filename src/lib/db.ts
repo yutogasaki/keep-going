@@ -1,4 +1,5 @@
 import localforage from 'localforage';
+import { pushSession as syncPushSession, pushCustomExercise as syncPushCustomExercise, deleteCustomExerciseRemote, getAccountId } from './sync';
 
 // Session history record
 export interface SessionRecord {
@@ -105,6 +106,10 @@ export function calculateStreak(sessions: SessionRecord[]): number {
 // History operations
 export async function saveSession(record: SessionRecord): Promise<void> {
     await historyDB.setItem(record.id, record);
+    // Dual-write to Supabase if logged in
+    if (getAccountId()) {
+        syncPushSession(record).catch(console.warn);
+    }
 }
 
 export async function getSessionsByDate(date: string): Promise<SessionRecord[]> {
@@ -154,6 +159,9 @@ export async function clearAllData(): Promise<void> {
 // Custom Exercise operations
 export async function saveCustomExercise(ex: CustomExercise): Promise<void> {
     await customExercisesDB.setItem(ex.id, ex);
+    if (getAccountId()) {
+        syncPushCustomExercise(ex).catch(console.warn);
+    }
 }
 
 export async function getCustomExercises(): Promise<CustomExercise[]> {
@@ -177,4 +185,7 @@ export async function getCustomExercises(): Promise<CustomExercise[]> {
 
 export async function deleteCustomExercise(id: string): Promise<void> {
     await customExercisesDB.removeItem(id);
+    if (getAccountId()) {
+        deleteCustomExerciseRemote(id).catch(console.warn);
+    }
 }
