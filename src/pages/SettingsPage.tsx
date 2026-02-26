@@ -362,8 +362,14 @@ export const SettingsPage: React.FC = () => {
     const [showHelp, setShowHelp] = useState(false);
     const [openHelpItems, setOpenHelpItems] = useState<Set<string>>(new Set());
     const [showDeveloperDebug, setShowDeveloperDebug] = useState(false);
+    const [showDevPasswordModal, setShowDevPasswordModal] = useState(false);
+    const [devPasswordInput, setDevPasswordInput] = useState('');
 
-
+    // Subscribe to debug state reactively (so selects re-render on change)
+    const debugFuwafuwaType = useAppStore(s => s.debugFuwafuwaType);
+    const debugFuwafuwaStage = useAppStore(s => s.debugFuwafuwaStage);
+    const debugFuwafuwaScale = useAppStore(s => s.debugFuwafuwaScale);
+    const debugActiveDays = useAppStore(s => s.debugActiveDays);
 
     const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = parseFloat(e.target.value);
@@ -650,7 +656,7 @@ export const SettingsPage: React.FC = () => {
                                                     name,
                                                     classLevel: editClass,
                                                     fuwafuwaBirthDate: new Date().toISOString().split('T')[0],
-                                                    fuwafuwaType: Math.floor(Math.random() * 6),
+                                                    fuwafuwaType: Math.floor(Math.random() * 10),
                                                     fuwafuwaCycleCount: 1,
                                                     fuwafuwaName: null,
                                                     pastFuwafuwas: [],
@@ -1123,12 +1129,8 @@ export const SettingsPage: React.FC = () => {
                     <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
                         <button
                             onClick={() => {
-                                const pwd = prompt('パスワードを入力してください:');
-                                if (pwd === '0320') {
-                                    setShowDeveloperDebug(true);
-                                } else if (pwd !== null) {
-                                    alert('パスワードが違います');
-                                }
+                                setDevPasswordInput('');
+                                setShowDevPasswordModal(true);
                             }}
                             style={{
                                 background: 'none',
@@ -1143,6 +1145,167 @@ export const SettingsPage: React.FC = () => {
                             開発者モード
                         </button>
                     </div>
+                )}
+
+                {/* Developer Password Modal (numeric keypad) */}
+                {showDevPasswordModal && createPortal(
+                    <div style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0,0,0,0.3)',
+                        backdropFilter: 'blur(4px)',
+                        zIndex: 200,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 24,
+                    }}>
+                        <motion.div
+                            className="card"
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            style={{
+                                textAlign: 'center',
+                                padding: '32px 24px',
+                                maxWidth: 280,
+                                width: '100%',
+                            }}
+                        >
+                            <h3 style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 16,
+                                fontWeight: 700,
+                                color: '#2D3436',
+                                marginBottom: 16,
+                            }}>
+                                パスワードを入力
+                            </h3>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                                gap: 8,
+                                marginBottom: 20,
+                            }}>
+                                {[0, 1, 2, 3].map(i => (
+                                    <div key={i} style={{
+                                        width: 40,
+                                        height: 48,
+                                        borderRadius: 8,
+                                        border: '2px solid #DFE6E9',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: 24,
+                                        fontWeight: 700,
+                                        color: '#2D3436',
+                                        background: devPasswordInput[i] ? '#F0FDFA' : '#fff',
+                                    }}>
+                                        {devPasswordInput[i] ? '●' : ''}
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(3, 1fr)',
+                                gap: 8,
+                                maxWidth: 220,
+                                margin: '0 auto',
+                            }}>
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                                    <button
+                                        key={n}
+                                        onClick={() => {
+                                            const next = devPasswordInput + String(n);
+                                            if (next.length <= 4) {
+                                                setDevPasswordInput(next);
+                                                if (next.length === 4) {
+                                                    if (next === '0320') {
+                                                        setShowDevPasswordModal(false);
+                                                        setShowDeveloperDebug(true);
+                                                    } else {
+                                                        setTimeout(() => setDevPasswordInput(''), 300);
+                                                    }
+                                                }
+                                            }
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            aspectRatio: '1',
+                                            borderRadius: 12,
+                                            border: '1px solid #DFE6E9',
+                                            background: '#fff',
+                                            fontSize: 20,
+                                            fontWeight: 700,
+                                            color: '#2D3436',
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        {n}
+                                    </button>
+                                ))}
+                                <button
+                                    onClick={() => setShowDevPasswordModal(false)}
+                                    style={{
+                                        width: '100%',
+                                        aspectRatio: '1',
+                                        borderRadius: 12,
+                                        border: '1px solid #DFE6E9',
+                                        background: '#fff',
+                                        fontSize: 14,
+                                        color: '#8395A7',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    ✕
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const next = devPasswordInput + '0';
+                                        if (next.length <= 4) {
+                                            setDevPasswordInput(next);
+                                            if (next.length === 4) {
+                                                if (next === '0320') {
+                                                    setShowDevPasswordModal(false);
+                                                    setShowDeveloperDebug(true);
+                                                } else {
+                                                    setTimeout(() => setDevPasswordInput(''), 300);
+                                                }
+                                            }
+                                        }
+                                    }}
+                                    style={{
+                                        width: '100%',
+                                        aspectRatio: '1',
+                                        borderRadius: 12,
+                                        border: '1px solid #DFE6E9',
+                                        background: '#fff',
+                                        fontSize: 20,
+                                        fontWeight: 700,
+                                        color: '#2D3436',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    0
+                                </button>
+                                <button
+                                    onClick={() => setDevPasswordInput(devPasswordInput.slice(0, -1))}
+                                    style={{
+                                        width: '100%',
+                                        aspectRatio: '1',
+                                        borderRadius: 12,
+                                        border: '1px solid #DFE6E9',
+                                        background: '#fff',
+                                        fontSize: 14,
+                                        color: '#8395A7',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    ←
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>,
+                    document.body
                 )}
 
                 {/* --- DEVELOPER / DEBUG --- */}
@@ -1166,70 +1329,113 @@ export const SettingsPage: React.FC = () => {
                             <Bug size={16} />
                             デバッグ機能 (開発専用)
                         </div>
+
+                        {/* Age Falsification */}
                         <p style={{ fontSize: 11, color: '#8395A7', margin: 0 }}>
-                            ふわふわの年齢を偽装します (リロードするとHomeに反映)
+                            ふわふわの年齢を偽装します (Homeに即時反映)
                         </p>
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                            <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-4) }); alert('Day 5 にしました'); }}
+                            <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-4) }); }}
                                 style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                                 Day 5 (たまご)
                             </button>
-                            <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-14) }); alert('Day 15 にしました。※見た目は今の頑張り度に依存'); }}
+                            <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-14) }); }}
                                 style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                                 Day 15 (妖精)
                             </button>
-                            <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-25) }); alert('Day 26 にしました'); }}
+                            <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-25) }); }}
                                 style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                                 Day 26 (成体)
                             </button>
-                            <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-29) }); alert('Day 30 にしました'); }}
+                            <button onClick={() => { updateUser(users[0]?.id, { fuwafuwaBirthDate: getDateKeyOffset(-29) }); }}
                                 style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                                 Day 30 (お別れ)
                             </button>
                         </div>
 
+                        {/* Appearance Override */}
                         <div style={{ marginTop: '12px', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '12px' }}>
-                            <p style={{ fontSize: 12, color: '#2D3436', margin: '0 0 8px', fontWeight: 700 }}>デバッグ: 姿を強制上書き</p>
+                            <p style={{ fontSize: 12, color: '#2D3436', margin: '0 0 8px', fontWeight: 700 }}>姿を強制上書き (即時反映)</p>
                             <div style={{ display: 'flex', gap: 8, flexDirection: 'column' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span style={{ fontSize: 12, width: 40, color: '#8395A7' }}>種類:</span>
+                                    <span style={{ fontSize: 12, width: 50, color: '#8395A7', flexShrink: 0 }}>種類:</span>
                                     <select
-                                        value={useAppStore.getState().debugFuwafuwaType ?? ''}
+                                        value={debugFuwafuwaType ?? ''}
                                         onChange={(e) => {
-                                            useAppStore.getState().setDebugFuwafuwaType(e.target.value ? Number(e.target.value) : null);
+                                            useAppStore.getState().setDebugFuwafuwaType(e.target.value !== '' ? Number(e.target.value) : null);
                                         }}
                                         style={{ padding: 4, borderRadius: 4, flex: 1, border: '1px solid #ccc' }}
                                     >
                                         <option value="">(デフォルト)</option>
-                                        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(v => <option key={v} value={v}>タイプ {v}</option>)}
+                                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(v => <option key={v} value={v}>タイプ {v}</option>)}
                                     </select>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span style={{ fontSize: 12, width: 40, color: '#8395A7' }}>段階:</span>
+                                    <span style={{ fontSize: 12, width: 50, color: '#8395A7', flexShrink: 0 }}>段階:</span>
                                     <select
-                                        value={useAppStore.getState().debugFuwafuwaStage ?? ''}
+                                        value={debugFuwafuwaStage ?? ''}
                                         onChange={(e) => {
-                                            useAppStore.getState().setDebugFuwafuwaStage(e.target.value ? Number(e.target.value) : null);
+                                            useAppStore.getState().setDebugFuwafuwaStage(e.target.value !== '' ? Number(e.target.value) : null);
                                         }}
                                         style={{ padding: 4, borderRadius: 4, flex: 1, border: '1px solid #ccc' }}
                                     >
                                         <option value="">(デフォルト)</option>
-                                        <option value="0">たまご (Stage 0)</option>
-                                        <option value="1">たまごヒビ (Stage 1)</option>
+                                        <option value="1">たまご (Stage 1)</option>
                                         <option value="2">妖精 (Stage 2)</option>
                                         <option value="3">成体 (Stage 3)</option>
                                     </select>
                                 </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <span style={{ fontSize: 12, width: 50, color: '#8395A7', flexShrink: 0 }}>サイズ:</span>
+                                    <select
+                                        value={debugFuwafuwaScale ?? ''}
+                                        onChange={(e) => {
+                                            useAppStore.getState().setDebugFuwafuwaScale(e.target.value !== '' ? Number(e.target.value) : null);
+                                        }}
+                                        style={{ padding: 4, borderRadius: 4, flex: 1, border: '1px solid #ccc' }}
+                                    >
+                                        <option value="">(デフォルト)</option>
+                                        <option value="0.5">小 (0.5)</option>
+                                        <option value="0.75">中 (0.75)</option>
+                                        <option value="1">大 (1.0)</option>
+                                    </select>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <span style={{ fontSize: 12, width: 50, color: '#8395A7', flexShrink: 0 }}>活動日:</span>
+                                    <select
+                                        value={debugActiveDays ?? ''}
+                                        onChange={(e) => {
+                                            useAppStore.getState().setDebugActiveDays(e.target.value !== '' ? Number(e.target.value) : null);
+                                        }}
+                                        style={{ padding: 4, borderRadius: 4, flex: 1, border: '1px solid #ccc' }}
+                                    >
+                                        <option value="">(デフォルト)</option>
+                                        <option value="0">0日 (オーラなし)</option>
+                                        <option value="2">2日 (ピンクオーラ)</option>
+                                        <option value="5">5日 (金オーラ+蛍)</option>
+                                        <option value="10">10日 (金オーラ+蛍)</option>
+                                    </select>
+                                </div>
                             </div>
+                            <button
+                                onClick={() => {
+                                    useAppStore.getState().setDebugFuwafuwaType(null);
+                                    useAppStore.getState().setDebugFuwafuwaStage(null);
+                                    useAppStore.getState().setDebugFuwafuwaScale(null);
+                                    useAppStore.getState().setDebugActiveDays(null);
+                                }}
+                                style={{ marginTop: 8, padding: '4px 12px', fontSize: 11, borderRadius: 6, border: '1px solid #E17055', background: '#fff', color: '#E17055', cursor: 'pointer' }}
+                            >
+                                すべてリセット
+                            </button>
                         </div>
 
+                        {/* Milestone Modal Test */}
                         <div style={{ marginTop: '12px', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '12px' }}>
-                            <p style={{ fontSize: 12, color: '#2D3436', margin: '0 0 8px', fontWeight: 700 }}>デバッグ: メッセージ確認</p>
+                            <p style={{ fontSize: 12, color: '#2D3436', margin: '0 0 8px', fontWeight: 700 }}>メッセージ確認</p>
                             <div style={{ display: 'flex', gap: 8 }}>
                                 <button onClick={() => {
                                     useAppStore.getState().setActiveMilestoneModal('egg');
-                                    // Force navigate to home to see it
-                                    window.location.hash = '#'; // Might need to just use appStore tab
                                     useAppStore.getState().setTab('home');
                                 }} style={{ padding: '6px 12px', fontSize: 12, borderRadius: 6, border: '1px solid #ccc', background: '#fff' }}>
                                     たまご

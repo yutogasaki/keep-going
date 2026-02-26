@@ -27,7 +27,7 @@ export const Onboarding: React.FC = () => {
             name: userName.trim() || 'ゲスト',
             classLevel: selectedClass || '初級',
             fuwafuwaBirthDate: new Date().toISOString().split('T')[0],
-            fuwafuwaType: Math.floor(Math.random() * 6),
+            fuwafuwaType: Math.floor(Math.random() * 10),
             fuwafuwaCycleCount: 1,
             fuwafuwaName: null,
             pastFuwafuwas: [],

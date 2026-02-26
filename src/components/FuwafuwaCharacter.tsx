@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 import { calculateFuwafuwaStatus } from '../lib/fuwafuwa';
@@ -20,15 +21,28 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
     const controls = useAnimation();
     const [particles, setParticles] = useState<{ id: number; x: number; y: number; emoji: string }[]>([]);
     const [ripple, setRipple] = useState<{ x: number, y: number, id: number } | null>(null);
+    const [sayonaraModal, setSayonaraModal] = useState<'farewell' | 'welcome' | null>(null);
+    const [departingInfo, setDepartingInfo] = useState<{ name: string | null; type: number; stage: number; activeDays: number } | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const particleIdCounter = useRef(0);
     const rippleIdCounter = useRef(0);
+
+    // Debug Overrides (subscribed early so they can be used in effects)
+    const debugStage = useAppStore(s => s.debugFuwafuwaStage);
+    const debugType = useAppStore(s => s.debugFuwafuwaType);
+    const debugActiveDays = useAppStore(s => s.debugActiveDays);
+    const debugScale = useAppStore(s => s.debugFuwafuwaScale);
+
+    const displayStage = debugStage !== null ? debugStage : status.stage;
+    const displayType = debugType !== null ? debugType : fuwafuwaType;
+    const displayActiveDays = debugActiveDays !== null ? debugActiveDays : (debugStage !== null ? debugStage * 10 : status.activeDays);
+    const displayScale = debugScale !== null ? debugScale : status.scale;
 
     useEffect(() => {
         if (!fuwafuwaBirthDate) {
             updateUser(user.id, {
                 fuwafuwaBirthDate: getTodayKey(),
-                fuwafuwaType: Math.floor(Math.random() * 6)
+                fuwafuwaType: Math.floor(Math.random() * 10)
             });
         }
     }, [fuwafuwaBirthDate, user.id, updateUser]);
@@ -39,12 +53,32 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
         }
     }, [fuwafuwaBirthDate, sessions]);
 
+    const handleSayonaraConfirm = async () => {
+        // Save departing info for the farewell screen
+        setDepartingInfo({
+            name: fuwafuwaName,
+            type: fuwafuwaType,
+            stage: status.stage,
+            activeDays: status.activeDays,
+        });
+        setSayonaraModal('farewell');
+    };
+
+    const handleNewEggTransition = () => {
+        // Reset and create new egg
+        resetUserFuwafuwa(user.id, Math.floor(Math.random() * 10), departingInfo?.activeDays || status.activeDays, departingInfo?.stage || status.stage);
+        controls.set({ opacity: 1, scale: 0.5, y: 0 });
+        setSayonaraModal('welcome');
+    };
+
+    const handleWelcomeClose = () => {
+        setSayonaraModal(null);
+        setDepartingInfo(null);
+    };
+
     const handleTap = async (e: React.MouseEvent) => {
         if (status.isSayonara) {
-            // Animate out and add to gallery
-            await controls.start({ opacity: 0, scale: 0, y: -50, transition: { duration: 0.8 } });
-            resetUserFuwafuwa(user.id, Math.floor(Math.random() * 6), status.activeDays, status.stage);
-            controls.set({ opacity: 1, scale: 0.5, y: 0 }); // reset for new egg
+            handleSayonaraConfirm();
             return;
         }
 
@@ -71,7 +105,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
 
         // Random Tsun-Tsun Animations
         const rand = Math.random();
-        const baseScale = status.scale;
+        const baseScale = displayScale;
         if (rand < 0.25) {
             // Bounce
             controls.start({
@@ -114,7 +148,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
         if (!status.isSayonara) {
             controls.start({
                 y: [0, -8, 0],
-                scale: [status.scale * 0.98, status.scale * 1.02, status.scale * 0.98], // Breathing
+                scale: [displayScale * 0.98, displayScale * 1.02, displayScale * 0.98], // Breathing
                 transition: {
                     duration: 3,
                     repeat: Infinity,
@@ -122,20 +156,12 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
                 }
             });
         }
-    }, [controls, status.isSayonara, status.scale]);
+    }, [controls, status.isSayonara, displayScale]);
 
     // Aura Logic based on activeDays
     let auraColor = 'rgba(43,186,160,0.15)';
     let pulseDuration = 4;
     let showFireflies = false;
-
-    // Apply Debug Overrides
-    const debugStage = useAppStore(s => s.debugFuwafuwaStage);
-    const debugType = useAppStore(s => s.debugFuwafuwaType);
-
-    let displayStage = debugStage !== null ? debugStage : status.stage;
-    const displayType = debugType !== null ? debugType : fuwafuwaType;
-    const displayActiveDays = debugStage !== null ? debugStage * 10 : status.activeDays; // fake days for aura based on debug stage
 
     if (displayActiveDays >= 5) {
         auraColor = 'rgba(255, 215, 0, 0.35)'; // Bright Warm Gold
@@ -257,7 +283,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
                 <motion.div
                     animate={controls}
                     initial={{ opacity: 0, scale: 0.5 }}
-                    whileInView={{ opacity: 1, scale: status.scale }}
+                    whileInView={{ opacity: 1, scale: displayScale }}
                     style={{
                         zIndex: 2,
                         position: 'relative',
@@ -439,6 +465,291 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
                     </button>
                 )}
             </div>
+
+            {/* Sayonara → New Egg Transition Modal */}
+            {sayonaraModal && createPortal(
+                <AnimatePresence mode="wait">
+                    {sayonaraModal === 'farewell' && departingInfo && (
+                        <motion.div
+                            key="farewell"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.5 }}
+                            style={{
+                                position: 'fixed',
+                                inset: 0,
+                                background: 'linear-gradient(180deg, #FFF5F5 0%, #FFF0F5 50%, #F8F0FF 100%)',
+                                zIndex: 200,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: 32,
+                            }}
+                        >
+                            {/* Floating particles background */}
+                            {[...Array(8)].map((_, i) => (
+                                <motion.div
+                                    key={i}
+                                    animate={{
+                                        y: [0, -30, 0],
+                                        x: [0, (i % 2 ? 10 : -10), 0],
+                                        opacity: [0.3, 0.7, 0.3],
+                                    }}
+                                    transition={{
+                                        duration: 3 + i * 0.5,
+                                        repeat: Infinity,
+                                        delay: i * 0.3,
+                                    }}
+                                    style={{
+                                        position: 'absolute',
+                                        fontSize: 20,
+                                        left: `${10 + (i * 12) % 80}%`,
+                                        top: `${15 + (i * 17) % 60}%`,
+                                        pointerEvents: 'none',
+                                    }}
+                                >
+                                    {['🌸', '✨', '💫', '🍃', '🌙', '💖', '⭐', '🦋'][i]}
+                                </motion.div>
+                            ))}
+
+                            {/* Departing character */}
+                            <motion.div
+                                initial={{ scale: 1, y: 0 }}
+                                animate={{ scale: [1, 1.05, 1], y: [0, -5, 0] }}
+                                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                                style={{
+                                    width: 120,
+                                    height: 120,
+                                    borderRadius: '50%',
+                                    overflow: 'hidden',
+                                    border: '4px solid rgba(255,255,255,0.9)',
+                                    boxShadow: '0 12px 40px rgba(232, 67, 147, 0.2)',
+                                    marginBottom: 24,
+                                }}
+                            >
+                                <img
+                                    src={`/ikimono/${departingInfo.type}-${departingInfo.stage}.png`}
+                                    alt="departing fuwafuwa"
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                            </motion.div>
+
+                            <motion.h2
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 }}
+                                style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 22,
+                                    fontWeight: 800,
+                                    color: '#2D3436',
+                                    margin: '0 0 8px',
+                                    textAlign: 'center',
+                                }}
+                            >
+                                {departingInfo.name || 'ふわふわ'}と<br />おわかれの時間です
+                            </motion.h2>
+
+                            <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.6 }}
+                                style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 14,
+                                    color: '#8395A7',
+                                    textAlign: 'center',
+                                    lineHeight: 1.8,
+                                    margin: '0 0 8px',
+                                }}
+                            >
+                                {departingInfo.activeDays}日間、いっしょにがんばったね。
+                            </motion.p>
+
+                            <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.9 }}
+                                style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 13,
+                                    color: '#B2BEC3',
+                                    textAlign: 'center',
+                                    lineHeight: 1.6,
+                                    margin: '0 0 32px',
+                                }}
+                            >
+                                おもいでは ずっと こころのなかに。
+                            </motion.p>
+
+                            <motion.button
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 1.2 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={handleNewEggTransition}
+                                style={{
+                                    padding: '16px 40px',
+                                    borderRadius: 99,
+                                    border: 'none',
+                                    background: 'linear-gradient(135deg, #E84393, #FD79A8)',
+                                    color: 'white',
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 16,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    boxShadow: '0 8px 24px rgba(232, 67, 147, 0.3)',
+                                    letterSpacing: 2,
+                                }}
+                            >
+                                ありがとう、バイバイ
+                            </motion.button>
+                        </motion.div>
+                    )}
+
+                    {sayonaraModal === 'welcome' && (
+                        <motion.div
+                            key="welcome"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5 }}
+                            style={{
+                                position: 'fixed',
+                                inset: 0,
+                                background: 'linear-gradient(180deg, #F0FDFA 0%, #E0F7FA 50%, #F0F4FF 100%)',
+                                zIndex: 200,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: 32,
+                            }}
+                        >
+                            {/* Sparkle particles */}
+                            {[...Array(10)].map((_, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{
+                                        opacity: [0, 1, 0],
+                                        scale: [0, 1, 0],
+                                        y: [0, -20, 0],
+                                    }}
+                                    transition={{
+                                        duration: 2,
+                                        repeat: Infinity,
+                                        delay: i * 0.2,
+                                    }}
+                                    style={{
+                                        position: 'absolute',
+                                        fontSize: 16,
+                                        left: `${5 + (i * 11) % 90}%`,
+                                        top: `${10 + (i * 13) % 70}%`,
+                                        pointerEvents: 'none',
+                                    }}
+                                >
+                                    ✨
+                                </motion.div>
+                            ))}
+
+                            {/* New egg with grand entrance */}
+                            <motion.div
+                                initial={{ scale: 0, rotate: -10 }}
+                                animate={{ scale: 1, rotate: 0 }}
+                                transition={{ type: 'spring', damping: 12, stiffness: 100, delay: 0.2 }}
+                                style={{
+                                    width: 130,
+                                    height: 130,
+                                    borderRadius: '50%',
+                                    overflow: 'hidden',
+                                    border: '4px solid rgba(255,255,255,0.95)',
+                                    boxShadow: '0 16px 48px rgba(43, 186, 160, 0.25)',
+                                    marginBottom: 24,
+                                    background: '#fff',
+                                }}
+                            >
+                                <motion.img
+                                    animate={{
+                                        scale: [1.05, 1.1, 1.05],
+                                        rotate: [0, 2, -2, 0],
+                                    }}
+                                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                                    src={`/ikimono/${user.fuwafuwaType}-1.png`}
+                                    alt="new egg"
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                            </motion.div>
+
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.5 }}
+                                style={{ fontSize: 48, marginBottom: 8 }}
+                            >
+                                🎉
+                            </motion.div>
+
+                            <motion.h2
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.7 }}
+                                style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 22,
+                                    fontWeight: 800,
+                                    color: '#2D3436',
+                                    margin: '0 0 12px',
+                                    textAlign: 'center',
+                                }}
+                            >
+                                あたらしい たまごが<br />やってきたよ！
+                            </motion.h2>
+
+                            <motion.p
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 1.0 }}
+                                style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 14,
+                                    color: '#8395A7',
+                                    textAlign: 'center',
+                                    lineHeight: 1.8,
+                                    margin: '0 0 32px',
+                                }}
+                            >
+                                まいにち がんばって<br />たいせつに そだてよう！
+                            </motion.p>
+
+                            <motion.button
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 1.3 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={handleWelcomeClose}
+                                style={{
+                                    padding: '16px 40px',
+                                    borderRadius: 99,
+                                    border: 'none',
+                                    background: 'linear-gradient(135deg, #2BBAA0, #3AEDC6)',
+                                    color: 'white',
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 16,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    boxShadow: '0 8px 24px rgba(43, 186, 160, 0.3)',
+                                    letterSpacing: 2,
+                                }}
+                            >
+                                よろしくね！
+                            </motion.button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     );
 };
