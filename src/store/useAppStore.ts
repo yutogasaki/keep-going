@@ -83,8 +83,12 @@ interface AppState {
     // Debug Overrides
     debugFuwafuwaStage: number | null;
     debugFuwafuwaType: number | null;
+    debugActiveDays: number | null;
+    debugFuwafuwaScale: number | null;
     setDebugFuwafuwaStage: (stage: number | null) => void;
     setDebugFuwafuwaType: (type: number | null) => void;
+    setDebugActiveDays: (days: number | null) => void;
+    setDebugFuwafuwaScale: (scale: number | null) => void;
 
     // Milestones
     activeMilestoneModal: 'egg' | 'fairy' | 'adult' | null;
@@ -183,8 +187,12 @@ export const useAppStore = create<AppState>()(
 
             debugFuwafuwaStage: null,
             debugFuwafuwaType: null,
+            debugActiveDays: null,
+            debugFuwafuwaScale: null,
             setDebugFuwafuwaStage: (stage) => set({ debugFuwafuwaStage: stage }),
             setDebugFuwafuwaType: (type) => set({ debugFuwafuwaType: type }),
+            setDebugActiveDays: (days) => set({ debugActiveDays: days }),
+            setDebugFuwafuwaScale: (scale) => set({ debugFuwafuwaScale: scale }),
 
             activeMilestoneModal: null,
             setActiveMilestoneModal: (modal) => set({ activeMilestoneModal: modal })
@@ -209,7 +217,7 @@ export const useAppStore = create<AppState>()(
                             name: persistedState.fuwafuwaName || 'ゲスト',
                             classLevel: persistedState.classLevel || '初級',
                             fuwafuwaBirthDate: persistedState.fuwafuwaBirthDate || new Date().toISOString().split('T')[0],
-                            fuwafuwaType: persistedState.fuwafuwaType || Math.floor(Math.random() * 9),
+                            fuwafuwaType: persistedState.fuwafuwaType || Math.floor(Math.random() * 10),
                             fuwafuwaCycleCount: persistedState.fuwafuwaCycleCount || 1,
                             fuwafuwaName: persistedState.fuwafuwaName || null,
                             pastFuwafuwas: persistedState.pastFuwafuwas || [],
