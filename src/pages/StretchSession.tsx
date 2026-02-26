@@ -9,7 +9,7 @@ import { haptics } from '../lib/haptics';
 import { useAppStore } from '../store/useAppStore';
 import { getExerciseColor, generateSession, getReplacementExercise, EXERCISES, type Exercise } from '../data/exercises';
 import { ExerciseIcon } from '../components/ExerciseIcon';
-import { saveSession, getTodayKey, getSessionsByDate, getCustomExercises, type SessionRecord } from '../lib/db';
+import { saveSession, getTodayKey, getCustomExercises, getAllSessions, type SessionRecord } from '../lib/db';
 
 export const StretchSession: React.FC = () => {
     const endSession = useAppStore((state) => state.endSession);
@@ -35,25 +35,39 @@ export const StretchSession: React.FC = () => {
     useEffect(() => {
         const loadSession = async () => {
             try {
+                const customExList = await getCustomExercises();
+                // Combine presets and custom
+                const allExercises = [...EXERCISES, ...customExList];
+
                 if (!sessionExerciseIds) {
-                    const todaySessions = await getSessionsByDate(getTodayKey());
+                    const allSessions = await getAllSessions();
+
+                    // Count historcal usage overall for all sessions (to prioritize unplayed ones)
+                    const historcalCounts: Record<string, number> = {};
+                    allSessions.forEach((s: SessionRecord) => {
+                        if (!s.userIds || s.userIds.some((u: string) => sessionUserIds.includes(u))) {
+                            s.exerciseIds.forEach((id: string) => {
+                                historcalCounts[id] = (historcalCounts[id] || 0) + 1;
+                            });
+                        }
+                    });
+
+                    const todaySessions = allSessions.filter((s: SessionRecord) => s.date === getTodayKey());
                     // Exclude exercises that were completely done or skipped today, PLUS user global exclusions
                     const todayExcludedIds = Array.from(new Set([
-                        ...todaySessions.flatMap(s => [...s.exerciseIds, ...s.skippedIds]),
+                        ...todaySessions.flatMap((s: SessionRecord) => [...s.exerciseIds, ...s.skippedIds]),
                         ...globalExcludedIds
                     ]));
 
                     setSessionExercises(generateSession(classLevel, {
                         excludedIds: todayExcludedIds,
                         requiredIds: globalRequiredIds,
-                        targetSeconds: dailyTargetMinutes * 60
+                        targetSeconds: dailyTargetMinutes * 60,
+                        customPool: customExList as any as Exercise[],
+                        historcalCounts
                     }));
                     return;
                 }
-
-                const customExList = await getCustomExercises();
-                // Combine presets and custom
-                const allExercises = [...EXERCISES, ...customExList];
 
                 const resolved = sessionExerciseIds
                     .map(id => allExercises.find(e => e.id === id))
@@ -197,12 +211,19 @@ export const StretchSession: React.FC = () => {
 
     // Save session on end
     const handleEndSession = useCallback(async () => {
-        if (completedIds.length > 0 || totalRunningTime > 0) {
+        let finalRunningTime = totalRunningTime;
+
+        // If it's an auto-generated session (omakase) and fully completed, force 100% of the daily target
+        if (!sessionExerciseIds && isCompleted) {
+            finalRunningTime = Math.max(totalRunningTime, dailyTargetMinutes * 60);
+        }
+
+        if (completedIds.length > 0 || finalRunningTime > 0) {
             const record: SessionRecord = {
                 id: `session-${Date.now()}`,
                 date: getTodayKey(),
                 startedAt,
-                totalSeconds: totalRunningTime,
+                totalSeconds: finalRunningTime,
                 exerciseIds: completedIds,
                 skippedIds,
                 userIds: sessionUserIds,
@@ -210,7 +231,7 @@ export const StretchSession: React.FC = () => {
             await saveSession(record);
         }
         endSession();
-    }, [completedIds, skippedIds, totalRunningTime, startedAt, endSession, sessionUserIds]);
+    }, [completedIds, skippedIds, totalRunningTime, startedAt, endSession, sessionUserIds, sessionExerciseIds, isCompleted, dailyTargetMinutes]);
 
     // Main playback timer
     useEffect(() => {

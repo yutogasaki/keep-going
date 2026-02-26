@@ -5,7 +5,7 @@ import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { PageHeader } from '../components/PageHeader';
 import { FuwafuwaCharacter } from '../components/FuwafuwaCharacter';
 import { MagicTank } from '../components/MagicTank';
-import { useAppStore } from '../store/useAppStore';
+import { useAppStore, type UserProfileStore } from '../store/useAppStore';
 import { calculateFuwafuwaStatus } from '../lib/fuwafuwa';
 
 export const HomeScreen: React.FC = () => {
@@ -17,6 +17,8 @@ export const HomeScreen: React.FC = () => {
     const updateUser = useAppStore(s => s.updateUser);
     const activeMilestoneModal = useAppStore(s => s.activeMilestoneModal);
     const setActiveMilestoneModal = useAppStore(s => s.setActiveMilestoneModal);
+
+    const consumeUserMagicEnergy = useAppStore(s => s.consumeUserMagicEnergy);
 
     // Calculate today's total trained seconds for the Magic Tank based on the CURRENT swipe selection (sessionUserIds)
     const todayStr = getTodayKey();
@@ -42,8 +44,30 @@ export const HomeScreen: React.FC = () => {
 
     const targetSeconds = (activeUsers.length > 0 ? totalTargetMinutes : fallbackTargetMinutes) * 60;
 
+    // Calculate consumed seconds for today
+    const consumedSeconds = activeUsers.reduce((sum, u) => {
+        if (u.consumedMagicDate === todayStr) {
+            return sum + (u.consumedMagicSeconds || 0);
+        }
+        return sum;
+    }, 0);
+
+    const displaySeconds = Math.max(0, todaySeconds - consumedSeconds);
+
     // Confetti logic for Magic Tank reset
     const handleTankReset = () => {
+        // Only reset if we actually reached the target
+        if (displaySeconds < targetSeconds) return;
+
+        // Consume the energy 
+        activeUsers.forEach(u => {
+            // Give proportional consumption to each active user based on their own target, 
+            // or just give all the consumption equally if simple? Actually `targetSeconds` is sum of all targets.
+            // Simplified: just consume each user's target amount from them.
+            const uTarget = (u.dailyTargetMinutes || 10) * 60;
+            consumeUserMagicEnergy(u.id, uTarget, todayStr);
+        });
+
         import('canvas-confetti').then((confetti) => {
             const duration = 3000;
             const end = Date.now() + duration;
@@ -312,7 +336,7 @@ export const HomeScreen: React.FC = () => {
                         transition={{ delay: 0.3 }}
                     >
                         <MagicTank
-                            currentSeconds={todaySeconds}
+                            currentSeconds={displaySeconds}
                             maxSeconds={targetSeconds}
                             onReset={handleTankReset}
                         />
@@ -332,59 +356,60 @@ export const HomeScreen: React.FC = () => {
                     >
                         {swipePages.map((page, index) => {
                             const isTogetherPage = page.id === 'TOGETHER';
-                            const renderUsers = isTogetherPage ? users : [page];
+                            const renderUsers = isTogetherPage ? users : [page as any as UserProfileStore];
 
                             return (
                                 <div key={page.id} style={{
                                     width: '100%',
                                     flexShrink: 0,
+                                    padding: '0 20px',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
                                     gap: 'min(2vh, 16px)',
-                                    opacity: currentPageIndex === index ? 1 : 0.3,
+                                    opacity: currentPageIndex === index ? 1 : 0.5,
                                     transition: 'opacity 0.3s ease'
                                 }}>
-                                    <h2 style={{
-                                        fontFamily: "'Noto Sans JP', sans-serif",
-                                        fontSize: 20,
-                                        fontWeight: 800,
-                                        color: '#2D3436',
-                                        margin: 0,
-                                        background: 'rgba(255,255,255,0.6)',
-                                        padding: '4px 16px',
-                                        borderRadius: 20,
-                                        letterSpacing: 2
+                                    {/* User Name Badge */}
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.2 }}
+                                        style={{
+                                            background: 'rgba(255,255,255,0.85)',
+                                            padding: '6px 16px',
+                                            borderRadius: 20,
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 14,
+                                            fontWeight: 700,
+                                            color: '#2D3436',
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                                            marginBottom: '1vh',
+                                            backdropFilter: 'blur(10px)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                        }}
+                                    >
+                                        {isTogetherPage ? '🌍' : '👤'} {page.name}
+                                    </motion.div>
+
+                                    <div style={{
+                                        display: 'flex',
+                                        gap: isTogetherPage ? 12 : 0,
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        width: '100%'
                                     }}>
-                                        {page.name}
-                                    </h2>
-                                    <div style={{ display: 'flex', gap: 16, justifyContent: 'center', alignItems: 'center' }}>
-                                        {renderUsers.map((u: any) => (
+                                        {renderUsers.map((u) => (
                                             <div key={u.id} style={{
-                                                transform: renderUsers.length === 1 ? 'scale(0.95)' : 'scale(0.85)',
+                                                transform: isTogetherPage ? 'scale(0.85)' : 'scale(1)',
                                                 position: 'relative'
                                             }}>
-                                                {/* Optional: Show tiny name badge if multiple users */}
-                                                {renderUsers.length > 1 && (
-                                                    <div style={{
-                                                        position: 'absolute',
-                                                        top: -24,
-                                                        left: '50%',
-                                                        transform: 'translateX(-50%)',
-                                                        background: 'rgba(255, 255, 255, 0.8)',
-                                                        padding: '2px 8px',
-                                                        borderRadius: 12,
-                                                        fontSize: 10,
-                                                        fontWeight: 'bold',
-                                                        color: '#2BBAA0',
-                                                        whiteSpace: 'nowrap',
-                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                                                        zIndex: 2
-                                                    }}>
-                                                        {u.name}
-                                                    </div>
-                                                )}
-                                                <FuwafuwaCharacter user={u} sessions={allSessions} />
+                                                <FuwafuwaCharacter
+                                                    user={u}
+                                                    sessions={allSessions}
+                                                />
                                             </div>
                                         ))}
                                     </div>

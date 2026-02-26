@@ -193,7 +193,67 @@ export const MenuPage: React.FC = () => {
 
             {/* Group tab content */}
             {tab === 'group' && (
-                <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '0 20px' }}>
+                    {/* Custom Menu Settings Card */}
+                    <div>
+                        <motion.button
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setShowCustomMenu(true)}
+                            className="card"
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 16,
+                                padding: '16px 20px',
+                                border: 'none',
+                                background: 'white',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                            }}
+                        >
+                            <div style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 14,
+                                background: 'linear-gradient(135deg, #FFF0F5, #FFE4E1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                                boxShadow: '0 2px 8px rgba(255, 228, 225, 0.5)',
+                            }}>
+                                <Settings2 size={24} color="#E17055" />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 15,
+                                    fontWeight: 700,
+                                    color: '#2D3436',
+                                    marginBottom: 4,
+                                }}>おまかせの設定</div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 12,
+                                    color: '#8395A7',
+                                    lineHeight: 1.4,
+                                }}>{dailyTargetMinutes}分 / ★ 必須: {requiredExercises.length}個 / 🔴 除外: {excludedExercises.length}個</div>
+                            </div>
+                        </motion.button>
+
+                        <p style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 12,
+                            color: '#8395A7',
+                            marginTop: 12,
+                            textAlign: 'center',
+                        }}>
+                            ★ 必須にした種目は、ホーム画面のおまかせメニューに必ず入ります<br />（おまかせで約{Math.ceil(DEFAULT_SESSION_TARGET_SECONDS / 60)}分）
+                        </p>
+                    </div>
+
                     <section>
                         <h2 style={{
                             fontFamily: "'Noto Sans JP', sans-serif",
@@ -292,72 +352,12 @@ export const MenuPage: React.FC = () => {
                             </div>
                         </motion.button>
                     </section>
-                </>
+                </div>
             )}
 
             {/* Individual tab content */}
             {tab === 'individual' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '0 20px' }}>
-                    {/* Custom Menu Settings Card */}
-                    <div style={{ marginBottom: 16 }}>
-                        <motion.button
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => setShowCustomMenu(true)}
-                            className="card"
-                            style={{
-                                width: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 16,
-                                padding: '16px 20px',
-                                border: 'none',
-                                background: 'white',
-                                cursor: 'pointer',
-                                textAlign: 'left',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-                            }}
-                        >
-                            <div style={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: 14,
-                                background: 'linear-gradient(135deg, #FFF0F5, #FFE4E1)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                flexShrink: 0,
-                                boxShadow: '0 2px 8px rgba(255, 228, 225, 0.5)',
-                            }}>
-                                <Settings2 size={24} color="#E17055" />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 15,
-                                    fontWeight: 700,
-                                    color: '#2D3436',
-                                    marginBottom: 4,
-                                }}>おまかせの設定</div>
-                                <div style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 12,
-                                    color: '#8395A7',
-                                    lineHeight: 1.4,
-                                }}>{dailyTargetMinutes}分 / ★ 必須: {requiredExercises.length}個 / 🔴 除外: {excludedExercises.length}個</div>
-                            </div>
-                        </motion.button>
-
-                        <p style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 12,
-                            color: '#8395A7',
-                            marginTop: 12,
-                            textAlign: 'center',
-                        }}>
-                            ★ 必須にした種目は、ホーム画面のおまかせメニューに必ず入ります<br />（おまかせで約{Math.ceil(DEFAULT_SESSION_TARGET_SECONDS / 60)}分）
-                        </p>
-                    </div>
-
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {exercises.map((ex, i) => (
                             <motion.div
@@ -776,7 +776,7 @@ export const MenuPage: React.FC = () => {
                             </div>
 
                             <div>
-                                {EXERCISES.map(exercise => {
+                                {[...EXERCISES, ...customExercises].map(exercise => {
                                     const isRequired = requiredExercises.includes(exercise.id);
                                     const isExcluded = excludedExercises.includes(exercise.id);
 
@@ -807,19 +807,40 @@ export const MenuPage: React.FC = () => {
                                                 <ExerciseIcon id={exercise.id} emoji={exercise.emoji} size={24} color="#2D3436" />
                                                 <div>
                                                     <div style={{
-                                                        fontFamily: "'Noto Sans JP', sans-serif",
-                                                        fontSize: 14,
-                                                        fontWeight: 600,
-                                                        color: isExcluded ? '#B2BEC3' : '#2D3436',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 6
                                                     }}>
-                                                        {exercise.name}
+                                                        <div style={{
+                                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                                            fontSize: 14,
+                                                            fontWeight: 600,
+                                                            color: isExcluded ? '#B2BEC3' : '#2D3436',
+                                                        }}>
+                                                            {exercise.name}
+                                                        </div>
+                                                        {'creatorId' in exercise && (
+                                                            <span style={{
+                                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                                fontSize: 9,
+                                                                fontWeight: 700,
+                                                                color: '#2BBAA0',
+                                                                background: 'rgba(43, 186, 160, 0.1)',
+                                                                padding: '1px 4px',
+                                                                borderRadius: 6,
+                                                                display: 'inline-block',
+                                                                verticalAlign: 'middle',
+                                                            }}>
+                                                                じぶん種目
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <div style={{
                                                         fontFamily: "'Outfit', sans-serif",
                                                         fontSize: 11,
                                                         color: '#8395A7',
                                                     }}>
-                                                        {exercise.sec}s • {exercise.phase}
+                                                        {exercise.sec}s • {'phase' in exercise ? exercise.phase : 'main'}
                                                     </div>
                                                 </div>
                                             </div>

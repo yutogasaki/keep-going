@@ -14,7 +14,8 @@
       "Bash(pip install:*)",
       "Bash(py:*)",
       "Bash(ls:*)",
-      "WebFetch(domain:keep-going-three.vercel.app)"
+      "WebFetch(domain:keep-going-three.vercel.app)",
+      "Bash(git -C \"C:/Users/yutog/claude/keep-goiing2\" diff src/data/exercises.ts)"
     ]
   }
 }

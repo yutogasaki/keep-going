@@ -32,7 +32,6 @@ export const EXERCISES: Exercise[] = [
     { id: 'S05', name: 'アシカさん', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🦭', phase: 'main' },
     // Core & Balance
     { id: 'S04', name: 'ブリッジ', sec: 30, type: 'stretch', internal: 'single', classes: ['初級', '中級', '上級'], priority: 'medium', emoji: '🌈', phase: 'core' },
-    { id: 'S09', name: 'Y字バランス', sec: 60, type: 'stretch', internal: 'R30→L30', classes: ['中級', '上級'], priority: 'medium', emoji: '🧘', phase: 'core', hasSplit: true, reading: 'わいじばらんす' },
     { id: 'S10', name: 'Y字バランス', sec: 60, type: 'stretch', internal: 'R30→L30', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💃', phase: 'core', hasSplit: true, reading: 'わいじばらんす' },
     { id: 'C01', name: 'プランク', sec: 30, type: 'core', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💪', phase: 'core' },
     { id: 'C02', name: 'サイドプランク', sec: 60, type: 'core', internal: 'R30→L30', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🏋️', phase: 'core', hasSplit: true },
@@ -75,6 +74,8 @@ export interface GenerateSessionOptions {
     excludedIds?: string[];
     requiredIds?: string[];
     targetSeconds?: number;
+    customPool?: Exercise[];
+    historcalCounts?: Record<string, number>;
 }
 
 // Generate a session (list of exercises) for a class
@@ -83,17 +84,27 @@ export function generateSession(classLevel: ClassLevel, options: GenerateSession
     const {
         excludedIds = [],
         requiredIds = [],
-        targetSeconds = DEFAULT_SESSION_TARGET_SECONDS
+        targetSeconds = DEFAULT_SESSION_TARGET_SECONDS,
+        customPool = [],
+        historcalCounts = {}
     } = options;
 
-    let available = getExercisesByClass(classLevel);
+    const baseExercises = getExercisesByClass(classLevel);
+    // Merge base exercises with custom exercises. Ensure custom exercises have 'main' phase and 'stretch' type as defaults.
+    const allAvailable = [...baseExercises, ...customPool.map(c => ({
+        ...c,
+        phase: c.phase || 'main',
+        type: c.type || 'stretch',
+        classes: c.classes || ['プレ', '初級', '中級', '上級'],
+        priority: c.priority || 'medium'
+    }))];
 
     // Filter out excluded IDs (like those already done today)
-    let filtered = available.filter(e => !excludedIds.includes(e.id));
+    let filtered = allAvailable.filter(e => !excludedIds.includes(e.id));
 
     // If we've exhausted everything (user did ALL exercises today), reset and use everything
     if (filtered.length < 3) {
-        filtered = available;
+        filtered = allAvailable;
     }
 
     // Split by phases
@@ -106,9 +117,14 @@ export function generateSession(classLevel: ClassLevel, options: GenerateSession
     const requiredMain = availableMain.filter(e => requiredIds.includes(e.id));
     const requiredCore = availableCore.filter(e => requiredIds.includes(e.id));
 
+    const getSortWeight = (e: Exercise) => {
+        // Random slight variance + historical usage weight (lower usage = more likely)
+        return Math.random() + (historcalCounts[e.id] || 0) * 10;
+    };
+
     // 1. Pick Warmup (aim for 1-2, prioritize required)
     const selectedWarmup = [...requiredWarmups];
-    let remainingWarmups = availableWarmups.filter(e => !requiredIds.includes(e.id)).sort(() => Math.random() - 0.5);
+    let remainingWarmups = availableWarmups.filter(e => !requiredIds.includes(e.id)).sort((a, b) => getSortWeight(a) - getSortWeight(b));
     while (selectedWarmup.length < 2 && remainingWarmups.length > 0) {
         selectedWarmup.push(remainingWarmups.shift()!);
     }
@@ -116,7 +132,7 @@ export function generateSession(classLevel: ClassLevel, options: GenerateSession
 
     // 2. Pick Core/Balance (aim for 2, prioritize required) to put at the very end
     const selectedCore = [...requiredCore];
-    let remainingCore = availableCore.filter(e => !requiredIds.includes(e.id)).sort(() => Math.random() - 0.5);
+    let remainingCore = availableCore.filter(e => !requiredIds.includes(e.id)).sort((a, b) => getSortWeight(a) - getSortWeight(b));
     while (selectedCore.length < 2 && remainingCore.length > 0) {
         selectedCore.push(remainingCore.shift()!);
     }
@@ -128,8 +144,8 @@ export function generateSession(classLevel: ClassLevel, options: GenerateSession
 
     // High priority first for remaining main stretches
     const remainingMain = availableMain.filter(e => !requiredIds.includes(e.id));
-    const highMain = remainingMain.filter(e => e.priority === 'high').sort(() => Math.random() - 0.5);
-    const mediumMain = remainingMain.filter(e => e.priority === 'medium').sort(() => Math.random() - 0.5);
+    const highMain = remainingMain.filter(e => e.priority === 'high').sort((a, b) => getSortWeight(a) - getSortWeight(b));
+    const mediumMain = remainingMain.filter(e => e.priority === 'medium').sort((a, b) => getSortWeight(a) - getSortWeight(b));
 
     for (const ex of highMain) {
         if (currentSec >= targetSeconds) break;
@@ -147,7 +163,7 @@ export function generateSession(classLevel: ClassLevel, options: GenerateSession
     if (currentSec < targetSeconds && availableMain.length > 0) {
         const alreadySelectedIds = new Set(selectedMain.map(e => e.id));
         // First: add exercises not yet used at all
-        const unused = availableMain.filter(e => !alreadySelectedIds.has(e.id)).sort(() => Math.random() - 0.5);
+        const unused = availableMain.filter(e => !alreadySelectedIds.has(e.id)).sort((a, b) => getSortWeight(a) - getSortWeight(b));
         for (const ex of unused) {
             if (currentSec >= targetSeconds) break;
             selectedMain.push(ex);
@@ -157,7 +173,7 @@ export function generateSession(classLevel: ClassLevel, options: GenerateSession
         if (currentSec < targetSeconds) {
             const countMap = new Map<string, number>();
             for (const e of selectedMain) countMap.set(e.id, (countMap.get(e.id) || 0) + 1);
-            const canRepeat = availableMain.filter(e => (countMap.get(e.id) || 0) < 2).sort(() => Math.random() - 0.5);
+            const canRepeat = availableMain.filter(e => (countMap.get(e.id) || 0) < 2).sort((a, b) => getSortWeight(a) - getSortWeight(b));
             for (const ex of canRepeat) {
                 if (currentSec >= targetSeconds) break;
                 selectedMain.push(ex);

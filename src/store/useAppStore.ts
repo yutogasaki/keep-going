@@ -25,6 +25,9 @@ export interface UserProfileStore {
     dailyTargetMinutes: number;
     excludedExercises: string[];
     requiredExercises: string[];
+    // Tank Reset state
+    consumedMagicDate?: string;
+    consumedMagicSeconds?: number;
 }
 
 type TabId = 'home' | 'record' | 'menu' | 'settings';
@@ -37,6 +40,7 @@ interface AppState {
     deleteUser: (id: string) => void;
     // user-specific update helpers
     updateUserSettings: (id: string, updates: Partial<Pick<UserProfileStore, 'dailyTargetMinutes' | 'excludedExercises' | 'requiredExercises'>>) => void;
+    consumeUserMagicEnergy: (id: string, seconds: number, date: string) => void;
     resetUserFuwafuwa: (id: string, newType: number, activeDays: number, finalStage: number) => void;
 
     // Navigation
@@ -112,6 +116,13 @@ export const useAppStore = create<AppState>()(
                 users: state.users.filter(u => u.id !== id),
                 sessionUserIds: state.sessionUserIds.filter(userId => userId !== id),
             })),
+            consumeUserMagicEnergy: (id, seconds, date) => set((state) => ({
+                users: state.users.map(u => {
+                    if (u.id !== id) return u;
+                    const prevSeconds = u.consumedMagicDate === date ? (u.consumedMagicSeconds || 0) : 0;
+                    return { ...u, consumedMagicDate: date, consumedMagicSeconds: prevSeconds + seconds };
+                })
+            })),
             resetUserFuwafuwa: (id, newType, activeDays, finalStage) => set((state) => {
                 const today = new Date().toISOString().split('T')[0];
                 return {
@@ -180,7 +191,7 @@ export const useAppStore = create<AppState>()(
         }),
         {
             name: 'keepgoing-app-state',
-            version: 5, // Bumped to 5 for per-user auto menu settings migration
+            version: 6, // Bumped to 6 for consumedMagicSeconds
             migrate: (persistedState: any, version: number) => {
                 if (version === 0) {
                     if (persistedState.requiredExercises && !persistedState.requiredExercises.includes('S07')) {
@@ -250,6 +261,15 @@ export const useAppStore = create<AppState>()(
                     delete persistedState.dailyTargetMinutes;
                     delete persistedState.excludedExercises;
                     delete persistedState.requiredExercises;
+                }
+                if (version < 6) {
+                    if (persistedState.users && Array.isArray(persistedState.users)) {
+                        persistedState.users = persistedState.users.map((u: any) => ({
+                            ...u,
+                            consumedMagicDate: u.consumedMagicDate || '',
+                            consumedMagicSeconds: u.consumedMagicSeconds || 0,
+                        }));
+                    }
                 }
                 return persistedState as AppState;
             },
