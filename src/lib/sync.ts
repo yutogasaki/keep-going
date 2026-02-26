@@ -6,6 +6,19 @@ import { getCustomGroups, type MenuGroup, saveCustomGroupDirect, clearGroupsDB }
 import type { UserProfileStore, PastFuwafuwaRecord } from '../store/useAppStore';
 import type { ClassLevel } from '../data/exercises';
 
+// ─── Store accessor (avoids circular import) ────────
+// Set by useAppStore.ts at module init time
+let _getStoreState: (() => { users: UserProfileStore[];[key: string]: any }) | null = null;
+let _setStoreState: ((partial: Record<string, any>) => void) | null = null;
+
+export function registerStoreAccessor(
+    getState: () => any,
+    setState: (partial: Record<string, any>) => void,
+) {
+    _getStoreState = getState;
+    _setStoreState = setState;
+}
+
 // ─── Auth state (set by AuthContext) ─────────────────
 let _accountId: string | null = null;
 let _isPulling = false;
@@ -357,11 +370,14 @@ export async function hasCloudData(accountId: string): Promise<boolean> {
     return (count ?? 0) > 0;
 }
 
-export function hasLocalData(): boolean {
-    // Lazy import to avoid circular dependency at module level
-    const { useAppStore } = require('../store/useAppStore');
-    const state = useAppStore.getState();
-    return state.users.length > 0;
+export async function hasLocalData(): Promise<boolean> {
+    if (_getStoreState) {
+        const state = _getStoreState();
+        if (state.users.length > 0) return true;
+    }
+    // Also check IndexedDB for orphaned sessions
+    const sessions = await getAllSessions();
+    return sessions.length > 0;
 }
 
 export type ConflictScenario =
@@ -372,7 +388,7 @@ export type ConflictScenario =
 
 export async function detectConflict(accountId: string): Promise<ConflictScenario> {
     const [local, cloud] = await Promise.all([
-        Promise.resolve(hasLocalData()),
+        hasLocalData(),
         hasCloudData(accountId),
     ]);
 
@@ -483,8 +499,8 @@ export async function pullAllData(accountId: string): Promise<PullResult> {
         }
 
         // 4. Write to Zustand (triggers persist to localStorage automatically)
-        const { useAppStore } = require('../store/useAppStore');
-        useAppStore.setState({
+        if (!_setStoreState) throw new Error('Store accessor not registered');
+        _setStoreState({
             users,
             sessionUserIds: [users[0]?.id].filter(Boolean),
             onboardingCompleted: cloudSettings?.onboarding_completed ?? true,
@@ -506,26 +522,90 @@ export async function pullAllData(accountId: string): Promise<PullResult> {
     }
 }
 
-// ─── Session merge (union by ID, no data loss) ──────
-export async function mergeSessions(accountId: string): Promise<void> {
+// ─── Merge append-only data (union by ID, no data loss) ──
+export async function mergeAppendData(accountId: string): Promise<void> {
     if (!supabase || !accountId) return;
 
-    // Get local sessions
+    // 1. Sessions: push local-only to cloud
     const localSessions = await getAllSessions();
-    if (localSessions.length === 0) return;
+    if (localSessions.length > 0) {
+        const { data: cloudSessions } = await supabase
+            .from('sessions')
+            .select('id')
+            .eq('account_id', accountId);
+        const cloudSessionIds = new Set((cloudSessions ?? []).map((s: any) => s.id));
 
-    // Get cloud session IDs
-    const { data: cloudSessions } = await supabase
-        .from('sessions')
-        .select('id')
+        for (const session of localSessions) {
+            if (!cloudSessionIds.has(session.id)) {
+                await pushSession(session);
+            }
+        }
+
+        // Also pull cloud-only sessions into local
+        if (cloudSessions && cloudSessions.length > 0) {
+            const localIds = new Set(localSessions.map(s => s.id));
+            const { data: fullCloudSessions } = await supabase
+                .from('sessions')
+                .select('*')
+                .eq('account_id', accountId);
+            for (const cs of fullCloudSessions ?? []) {
+                if (!localIds.has(cs.id)) {
+                    await saveSessionDirect({
+                        id: cs.id,
+                        date: cs.date,
+                        startedAt: cs.started_at,
+                        totalSeconds: cs.total_seconds,
+                        exerciseIds: cs.exercise_ids as string[],
+                        skippedIds: cs.skipped_ids as string[],
+                        userIds: cs.user_ids as string[],
+                    });
+                }
+            }
+        }
+    }
+
+    // 2. Custom exercises: merge by ID
+    const localExercises = await getCustomExercises();
+    const { data: cloudExercises } = await supabase
+        .from('custom_exercises')
+        .select('*')
         .eq('account_id', accountId);
+    if (cloudExercises) {
+        const localExIds = new Set(localExercises.map(e => e.id));
+        for (const ce of cloudExercises) {
+            if (!localExIds.has(ce.id)) {
+                await saveCustomExerciseDirect({
+                    id: ce.id,
+                    name: ce.name,
+                    sec: ce.sec,
+                    emoji: ce.emoji,
+                    hasSplit: ce.has_split ?? false,
+                    creatorId: ce.creator_id ?? undefined,
+                });
+            }
+        }
+    }
 
-    const cloudIds = new Set((cloudSessions ?? []).map((s: any) => s.id));
-
-    // Push local-only sessions to cloud
-    for (const session of localSessions) {
-        if (!cloudIds.has(session.id)) {
-            await pushSession(session);
+    // 3. Menu groups: merge by ID (non-preset only)
+    const localGroups = await getCustomGroups();
+    const { data: cloudGroups } = await supabase
+        .from('menu_groups')
+        .select('*')
+        .eq('account_id', accountId);
+    if (cloudGroups) {
+        const localGroupIds = new Set(localGroups.map(g => g.id));
+        for (const cg of cloudGroups) {
+            if (!cg.is_preset && !localGroupIds.has(cg.id)) {
+                await saveCustomGroupDirect({
+                    id: cg.id,
+                    name: cg.name,
+                    emoji: cg.emoji,
+                    description: cg.description ?? '',
+                    exerciseIds: cg.exercise_ids as string[],
+                    isPreset: false,
+                    creatorId: cg.creator_id ?? undefined,
+                });
+            }
         }
     }
 }

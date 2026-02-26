@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ClassLevel } from '../data/exercises';
 import { getTodayKey } from '../lib/db';
-import { getAccountId, isPulling, pushFamilyMember, deleteFamilyMember as syncDeleteFamilyMember, pushAppSettings } from '../lib/sync';
+import { getAccountId, isPulling, pushFamilyMember, deleteFamilyMember as syncDeleteFamilyMember, pushAppSettings, registerStoreAccessor } from '../lib/sync';
 
 export interface PastFuwafuwaRecord {
     id: string; // unique ID
@@ -296,6 +296,9 @@ export const useAppStore = create<AppState>()(
         }
     )
 );
+
+// Register store accessor for sync.ts (avoids circular import)
+registerStoreAccessor(useAppStore.getState, useAppStore.setState);
 
 // ─── Supabase sync on state change ──────────────────
 // Subscribe to users changes and push to Supabase

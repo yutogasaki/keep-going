@@ -28,9 +28,10 @@ export const Onboarding: React.FC = () => {
 
     const { user, signInWithGoogle, loginContext, setLoginContext } = useAuth();
 
-    // Handle OAuth redirect return: if user is logged in and context is 'onboarding'
+    // Handle post-login: OAuth redirect return OR async email auth state change
+    // step !== 'restoring' prevents double-fire (handlePostLogin sets step='restoring')
     useEffect(() => {
-        if (user && loginContext === 'onboarding' && step !== 'restoring' && step !== 'emailLogin') {
+        if (user && loginContext === 'onboarding' && step !== 'restoring') {
             handlePostLogin(user.id);
         }
     }, [user, loginContext]);

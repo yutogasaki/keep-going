@@ -8,9 +8,8 @@ import {
     processQueue,
     detectConflict,
     pullAllData,
-    mergeSessions,
+    mergeAppendData,
     clearSyncQueue,
-    hasCloudData,
     type ConflictScenario,
 } from '../lib/sync';
 import { useAppStore } from '../store/useAppStore';
@@ -43,7 +42,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isSyncing, setIsSyncing] = useState(false);
     const [loginContext, setLoginContextState] = useState<LoginContext>(() => {
-        // Restore from sessionStorage (survives OAuth redirect)
         const saved = sessionStorage.getItem(LOGIN_CONTEXT_KEY);
         if (saved === 'onboarding' || saved === 'settings') return saved;
         return null;
@@ -70,6 +68,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => clearTimeout(timer);
     }, [toastMessage]);
 
+    // #10: Auto-dismiss conflict dialog when user logs out
+    useEffect(() => {
+        if (!user && conflictScenario) {
+            setConflictScenario(null);
+            setIsSyncing(false);
+        }
+    }, [user, conflictScenario]);
+
     // Handle post-login sync for settings-based login
     const handleSettingsLogin = useCallback(async (accountId: string) => {
         setIsSyncing(true);
@@ -78,13 +84,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             if (scenario === 'conflict') {
                 setConflictScenario(scenario);
-                // User will choose via resolveConflict
+                // User will choose via resolveConflict - don't clear isSyncing yet
                 return;
             }
 
             if (scenario === 'no_conflict_pull') {
                 await pullAllData(accountId);
-                await mergeSessions(accountId);
+                await mergeAppendData(accountId);
                 setToastMessage('データを復元しました');
             } else if (scenario === 'no_conflict_push') {
                 const state = useAppStore.getState();
@@ -97,11 +103,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     notificationsEnabled: state.notificationsEnabled,
                     notificationTime: state.notificationTime,
                 });
+                // #8: Also merge append-only data on push
+                await mergeAppendData(accountId);
                 setToastMessage('同期が完了しました');
             }
             // 'nothing' -> no action needed
         } catch (err) {
             console.warn('[auth] handleSettingsLogin failed:', err);
+            setToastMessage('同期に失敗しました');
         } finally {
             setIsSyncing(false);
             setLoginContext(null);
@@ -115,12 +124,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsSyncing(true);
         try {
             if (choice === 'cloud') {
-                // Pull cloud data, then merge sessions (local-only sessions get pushed)
+                // Pull cloud data, then merge append-only data
                 await pullAllData(user.id);
-                await mergeSessions(user.id);
+                await mergeAppendData(user.id);
                 setToastMessage('クラウドのデータを復元しました');
             } else {
-                // Push local to cloud, then merge sessions (cloud-only sessions get pulled)
+                // Push local to cloud, then merge append-only data (#7: includes exercises & groups)
                 const state = useAppStore.getState();
                 await initialSync(state.users, {
                     onboardingCompleted: state.onboardingCompleted,
@@ -131,29 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     notificationsEnabled: state.notificationsEnabled,
                     notificationTime: state.notificationTime,
                 });
-                // Pull cloud-only sessions into local
-                const { data: cloudSessions } = await (supabase!
-                    .from('sessions')
-                    .select('*')
-                    .eq('account_id', user.id));
-                if (cloudSessions) {
-                    const { getAllSessions, saveSessionDirect } = await import('../lib/db');
-                    const localSessions = await getAllSessions();
-                    const localIds = new Set(localSessions.map(s => s.id));
-                    for (const cs of cloudSessions) {
-                        if (!localIds.has(cs.id)) {
-                            await saveSessionDirect({
-                                id: cs.id,
-                                date: cs.date,
-                                startedAt: cs.started_at,
-                                totalSeconds: cs.total_seconds,
-                                exerciseIds: cs.exercise_ids as string[],
-                                skippedIds: cs.skipped_ids as string[],
-                                userIds: cs.user_ids as string[],
-                            });
-                        }
-                    }
-                }
+                await mergeAppendData(user.id);
                 setToastMessage('このデバイスのデータで同期しました');
             }
         } catch (err) {
@@ -186,13 +173,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (hasSyncedRef.current) return;
         hasSyncedRef.current = true;
 
-        // If login was initiated from onboarding, don't auto-sync here.
-        // The Onboarding component handles pull/push logic itself.
-        if (loginContext === 'onboarding') return;
+        // #4/#5: Only skip sync for onboarding if actually in onboarding
+        const isOnboarding = loginContext === 'onboarding'
+            && !useAppStore.getState().onboardingCompleted;
+
+        if (isOnboarding) return;
+
+        // Clean up stale context if onboarding is already completed
+        if (loginContext === 'onboarding') {
+            setLoginContext(null);
+        }
 
         // For settings-based login (or unknown context), run conflict-aware sync
         handleSettingsLogin(user.id);
-    }, [user, loginContext, handleSettingsLogin]);
+    }, [user, loginContext, handleSettingsLogin, setLoginContext]);
 
     // Process offline queue when coming back online
     useEffect(() => {
