@@ -1,29 +1,88 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Chrome, Mail, Loader2 } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { getTodayKey } from '../lib/db';
+import { useAuth } from '../contexts/AuthContext';
+import { hasCloudData, pullAllData, initialSync } from '../lib/sync';
+import { LoginPage } from './LoginPage';
 import type { ClassLevel } from '../data/exercises';
 
 const CLASS_LEVELS: { id: ClassLevel; label: string; emoji: string; desc: string }[] = [
     { id: 'プレ', label: 'プレバレエ', emoji: '🐣', desc: 'はじめてのバレエ' },
     { id: '初級', label: '初級', emoji: '🌱', desc: 'たのしくストレッチ' },
     { id: '中級', label: '中級', emoji: '🌸', desc: 'もっとやわらかく' },
-    { id: '上級', label: '上級', emoji: '⭐', desc: 'もっともっと上へ' },
+    { id: '上級', label: '上級', emoji: '⭐', desc: 'もっと上へ' },
 ];
+
+type OnboardingStep = 'welcome' | 'account' | 'emailLogin' | 'restoring' | 'name' | 'class' | 'swipe';
 
 export const Onboarding: React.FC = () => {
     const setOnboardingCompleted = useAppStore((state) => state.setOnboardingCompleted);
     const addUser = useAppStore((state) => state.addUser);
     const setSessionUserIds = useAppStore((state) => state.setSessionUserIds);
-    const [step, setStep] = useState<'welcome' | 'name' | 'class' | 'swipe'>('welcome');
+    const [step, setStep] = useState<OnboardingStep>('welcome');
     const [userName, setUserName] = useState('');
     const [selectedClass, setSelectedClass] = useState<ClassLevel | null>(null);
+    const [restoreError, setRestoreError] = useState<string | null>(null);
+
+    const { user, signInWithGoogle, loginContext, setLoginContext } = useAuth();
+
+    // Handle OAuth redirect return: if user is logged in and context is 'onboarding'
+    useEffect(() => {
+        if (user && loginContext === 'onboarding' && step !== 'restoring' && step !== 'emailLogin') {
+            handlePostLogin(user.id);
+        }
+    }, [user, loginContext]);
+
+    const handlePostLogin = async (accountId: string) => {
+        setStep('restoring');
+        setRestoreError(null);
+        try {
+            const cloudExists = await hasCloudData(accountId);
+            if (cloudExists) {
+                const result = await pullAllData(accountId);
+                if (result.success && result.hadData) {
+                    // onboardingCompleted is now true from cloud data.
+                    // App.tsx gate will automatically switch to MainLayout.
+                    setLoginContext(null);
+                    return;
+                }
+            }
+            // No cloud data or empty → continue onboarding
+            setLoginContext(null);
+            setStep('name');
+        } catch (err) {
+            console.error('[onboarding] Post-login restore failed:', err);
+            setRestoreError('復元に失敗しました。もう一度お試しください。');
+            setLoginContext(null);
+            setStep('account');
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        setLoginContext('onboarding');
+        const { error } = await signInWithGoogle();
+        if (error) {
+            setLoginContext(null);
+            // OAuth redirects, so errors here are rare (e.g., popup blocked)
+        }
+        // Google OAuth triggers a redirect. On return, the useEffect above handles it.
+    };
+
+    const handleEmailLoginSuccess = () => {
+        // Email login succeeded (no redirect). User is now logged in.
+        if (user) {
+            handlePostLogin(user.id);
+        }
+        // If user isn't set yet, the useEffect will pick it up
+    };
 
     const handleClassSelect = (level: ClassLevel) => {
         setSelectedClass(level);
     };
 
-    const handleFinish = () => {
+    const handleFinish = async () => {
         addUser({
             name: userName.trim() || 'ゲスト',
             classLevel: selectedClass || '初級',
@@ -43,7 +102,39 @@ export const Onboarding: React.FC = () => {
         }
 
         setOnboardingCompleted(true);
+
+        // If logged in, push the new data to cloud
+        if (user) {
+            const freshState = useAppStore.getState();
+            initialSync(freshState.users, {
+                onboardingCompleted: freshState.onboardingCompleted,
+                soundVolume: freshState.soundVolume,
+                ttsEnabled: freshState.ttsEnabled,
+                bgmEnabled: freshState.bgmEnabled,
+                hapticEnabled: freshState.hapticEnabled,
+                notificationsEnabled: freshState.notificationsEnabled,
+                notificationTime: freshState.notificationTime,
+            }).catch(console.warn);
+        }
     };
+
+    // If showing the email login page
+    if (step === 'emailLogin') {
+        return (
+            <div style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 100,
+                background: 'linear-gradient(165deg, #FFF5F0 0%, #E8F8F0 100%)',
+                overflow: 'auto',
+            }}>
+                <LoginPage
+                    onBack={() => setStep('account')}
+                    onLoginSuccess={handleEmailLoginSuccess}
+                />
+            </div>
+        );
+    }
 
     return (
         <div style={{
@@ -109,7 +200,7 @@ export const Onboarding: React.FC = () => {
                         </p>
 
                         <button
-                            onClick={() => setStep('name')}
+                            onClick={() => setStep('account')}
                             style={{
                                 marginTop: 16,
                                 padding: '14px 48px',
@@ -129,7 +220,185 @@ export const Onboarding: React.FC = () => {
                     </motion.div>
                 )}
 
-                {/* Step 2: Name Input */}
+                {/* Step 2: Account (login or skip) */}
+                {step === 'account' && (
+                    <motion.div
+                        key="account"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -30 }}
+                        transition={{ duration: 0.5 }}
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 16,
+                            padding: '0 32px',
+                            maxWidth: 360,
+                            width: '100%',
+                            textAlign: 'center',
+                        }}
+                    >
+                        <h2 style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 22,
+                            fontWeight: 700,
+                            color: '#2D3436',
+                        }}>
+                            アカウント
+                        </h2>
+                        <p style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 13,
+                            color: '#8395A7',
+                            lineHeight: 1.6,
+                            marginTop: -4,
+                        }}>
+                            ログインするとデータが<br />クラウドに保存されます
+                        </p>
+
+                        {restoreError && (
+                            <p style={{
+                                fontSize: 13,
+                                color: '#E74C3C',
+                                margin: 0,
+                            }}>
+                                {restoreError}
+                            </p>
+                        )}
+
+                        {/* Google login */}
+                        <button
+                            onClick={handleGoogleLogin}
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                                padding: '14px 16px',
+                                borderRadius: 14,
+                                border: '1px solid rgba(0,0,0,0.1)',
+                                background: 'white',
+                                fontSize: 15,
+                                fontWeight: 600,
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                cursor: 'pointer',
+                                color: '#333',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                            }}
+                        >
+                            <Chrome size={18} />
+                            Google でログイン
+                        </button>
+
+                        {/* Email login */}
+                        <button
+                            onClick={() => {
+                                setLoginContext('onboarding');
+                                setStep('emailLogin');
+                            }}
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 8,
+                                padding: '14px 16px',
+                                borderRadius: 14,
+                                border: '1px solid rgba(0,0,0,0.1)',
+                                background: 'white',
+                                fontSize: 15,
+                                fontWeight: 600,
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                cursor: 'pointer',
+                                color: '#333',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                            }}
+                        >
+                            <Mail size={18} />
+                            メールでログイン
+                        </button>
+
+                        {/* Divider */}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            width: '100%',
+                            color: '#CCC',
+                            fontSize: 12,
+                            margin: '4px 0',
+                        }}>
+                            <div style={{ flex: 1, height: 1, background: '#DDD' }} />
+                            <span style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>または</span>
+                            <div style={{ flex: 1, height: 1, background: '#DDD' }} />
+                        </div>
+
+                        {/* Skip */}
+                        <button
+                            onClick={() => setStep('name')}
+                            style={{
+                                width: '100%',
+                                padding: '14px 16px',
+                                borderRadius: 14,
+                                border: 'none',
+                                background: 'rgba(0,0,0,0.04)',
+                                fontSize: 15,
+                                fontWeight: 600,
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                cursor: 'pointer',
+                                color: '#8395A7',
+                            }}
+                        >
+                            ログインせずに始める
+                        </button>
+                        <p style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 11,
+                            color: '#B2BEC3',
+                            marginTop: -8,
+                        }}>
+                            あとから設定で追加できます
+                        </p>
+                    </motion.div>
+                )}
+
+                {/* Restoring: Loading spinner while pulling data */}
+                {step === 'restoring' && (
+                    <motion.div
+                        key="restoring"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -30 }}
+                        transition={{ duration: 0.5 }}
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 20,
+                            padding: '0 32px',
+                            maxWidth: 360,
+                            textAlign: 'center',
+                        }}
+                    >
+                        <Loader2
+                            size={40}
+                            color="#2BBAA0"
+                            style={{ animation: 'spin 1s linear infinite' }}
+                        />
+                        <p style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 16,
+                            fontWeight: 600,
+                            color: '#2D3436',
+                        }}>
+                            データを復元しています...
+                        </p>
+                    </motion.div>
+                )}
+
+                {/* Step 3: Name Input */}
                 {step === 'name' && (
                     <motion.div
                         key="name"
@@ -202,7 +471,7 @@ export const Onboarding: React.FC = () => {
                     </motion.div>
                 )}
 
-                {/* Step 3: Class selection (spec §10.4) */}
+                {/* Step 4: Class selection */}
                 {step === 'class' && (
                     <motion.div
                         key="class"
@@ -310,7 +579,7 @@ export const Onboarding: React.FC = () => {
                     </motion.div>
                 )}
 
-                {/* Step 3: Swipe tutorial (spec §10.3) */}
+                {/* Step 5: Tutorial & Start */}
                 {step === 'swipe' && (
                     <motion.div
                         key="swipe"

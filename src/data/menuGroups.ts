@@ -93,3 +93,12 @@ export async function deleteCustomGroup(id: string): Promise<void> {
         deleteMenuGroupRemote(id).catch(console.warn);
     }
 }
+
+// ─── Direct Write helpers (for cloud restore, bypass sync push) ──
+export async function saveCustomGroupDirect(group: MenuGroup): Promise<void> {
+    await groupsDB.setItem(group.id, { ...group, isPreset: false });
+}
+
+export async function clearGroupsDB(): Promise<void> {
+    await groupsDB.clear();
+}

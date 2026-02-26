@@ -189,3 +189,20 @@ export async function deleteCustomExercise(id: string): Promise<void> {
         deleteCustomExerciseRemote(id).catch(console.warn);
     }
 }
+
+// ─── Direct Write helpers (for cloud restore, bypass sync push) ──
+export async function saveSessionDirect(record: SessionRecord): Promise<void> {
+    await historyDB.setItem(record.id, record);
+}
+
+export async function saveCustomExerciseDirect(ex: CustomExercise): Promise<void> {
+    await customExercisesDB.setItem(ex.id, ex);
+}
+
+export async function clearHistoryDB(): Promise<void> {
+    await historyDB.clear();
+}
+
+export async function clearCustomExercisesDB(): Promise<void> {
+    await customExercisesDB.clear();
+}

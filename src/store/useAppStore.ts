@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ClassLevel } from '../data/exercises';
 import { getTodayKey } from '../lib/db';
-import { getAccountId, pushFamilyMember, deleteFamilyMember as syncDeleteFamilyMember, pushAppSettings } from '../lib/sync';
+import { getAccountId, isPulling, pushFamilyMember, deleteFamilyMember as syncDeleteFamilyMember, pushAppSettings } from '../lib/sync';
 
 export interface PastFuwafuwaRecord {
     id: string; // unique ID
@@ -301,6 +301,7 @@ export const useAppStore = create<AppState>()(
 // Subscribe to users changes and push to Supabase
 useAppStore.subscribe((state, prevState) => {
     if (!getAccountId()) return;
+    if (isPulling()) return; // Skip push-back during cloud restore
 
     // Sync user profile changes
     if (state.users !== prevState.users) {

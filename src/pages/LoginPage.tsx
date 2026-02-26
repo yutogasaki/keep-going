@@ -4,9 +4,10 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface LoginPageProps {
     onBack: () => void;
+    onLoginSuccess?: () => void;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
+export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) => {
     const { signIn, signUp, signInWithGoogle } = useAuth();
     const [isSignUp, setIsSignUp] = useState(false);
     const [email, setEmail] = useState('');
@@ -33,7 +34,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack }) => {
                 if (error) {
                     setError(error.message);
                 } else {
-                    onBack();
+                    (onLoginSuccess ?? onBack)();
                 }
             }
         } finally {
