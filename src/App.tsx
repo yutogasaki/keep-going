@@ -1,9 +1,14 @@
-import { useEffect } from 'react';
-import { MainLayout } from './layouts/MainLayout';
-import { Onboarding } from './pages/Onboarding';
+import { lazy, Suspense, useEffect } from 'react';
 import { useAppStore } from './store/useAppStore';
-
 import { PwaReloadPrompt } from './components/PwaReloadPrompt';
+
+const MainLayout = lazy(() =>
+    import('./layouts/MainLayout').then((module) => ({ default: module.MainLayout }))
+);
+
+const Onboarding = lazy(() =>
+    import('./pages/Onboarding').then((module) => ({ default: module.Onboarding }))
+);
 
 function App() {
     const hasCompletedOnboarding = useAppStore(state => state.onboardingCompleted);
@@ -21,7 +26,9 @@ function App() {
 
     return (
         <div className="app-container">
-            {hasCompletedOnboarding ? <MainLayout /> : <Onboarding />}
+            <Suspense fallback={null}>
+                {hasCompletedOnboarding ? <MainLayout /> : <Onboarding />}
+            </Suspense>
             <PwaReloadPrompt />
         </div>
     );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarDays, Flame, BookHeart, Clock, Calendar, Award } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
@@ -16,6 +16,7 @@ export const RecordPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const users = useAppStore(s => s.users);
     const sessionUserIds = useAppStore(s => s.sessionUserIds);
+    const sessionUserIdSet = useMemo(() => new Set(sessionUserIds), [sessionUserIds]);
     // Find who is currently active in this session view
     const currentViewUsers = users.filter(u => sessionUserIds.includes(u.id));
     const pastFuwafuwas = currentViewUsers.flatMap(u => u.pastFuwafuwas || []);
@@ -42,7 +43,7 @@ export const RecordPage: React.FC = () => {
         return unfiltered.filter(s => {
             if (isTogetherMode) {
                 // In together mode, include any session that involved at least one of the ALL users
-                return !s.userIds || s.userIds.some(id => users.map(u => u.id).includes(id));
+                return !s.userIds || s.userIds.some(id => sessionUserIdSet.has(id));
             } else {
                 // In individual mode, only include sessions strictly for this user
                 return !s.userIds || s.userIds.includes(sessionUserIds[0]);
@@ -77,11 +78,13 @@ export const RecordPage: React.FC = () => {
     // Today's Progress Calculations
     const activeUsers = users.filter((u) => sessionUserIds.includes(u.id));
     const dailyTargetMinutes = activeUsers.reduce((sum, u) => sum + (u.dailyTargetMinutes ?? 10), 0);
+    const fallbackTargetMinutes = users.length > 0 ? (users[0].dailyTargetMinutes ?? 10) : 10;
+    const effectiveTargetMinutes = activeUsers.length > 0 ? dailyTargetMinutes : fallbackTargetMinutes;
 
     const todayTotalSeconds = todaySessions.reduce((acc, s) => acc + s.totalSeconds, 0);
     const todayMinutes = Math.floor(todayTotalSeconds / 60);
     const todayExerciseCount = todaySessions.reduce((acc, s) => acc + s.exerciseIds.length, 0);
-    const targetSeconds = dailyTargetMinutes * 60;
+    const targetSeconds = Math.max(1, effectiveTargetMinutes * 60);
     const progressPercent = Math.min(100, Math.round((todayTotalSeconds / targetSeconds) * 100));
 
     // Progress ring calculations

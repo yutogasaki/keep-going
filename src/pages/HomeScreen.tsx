@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAllSessions, getTodayKey, type SessionRecord } from '../lib/db';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
@@ -7,6 +8,11 @@ import { FuwafuwaCharacter } from '../components/FuwafuwaCharacter';
 import { MagicTank } from '../components/MagicTank';
 import { useAppStore, type UserProfileStore } from '../store/useAppStore';
 import { calculateFuwafuwaStatus } from '../lib/fuwafuwa';
+import { audio } from '../lib/audio';
+
+type SwipePage =
+    | { kind: 'user'; id: string; name: string; user: UserProfileStore }
+    | { kind: 'together'; id: 'TOGETHER'; name: 'みんなで！' };
 
 export const HomeScreen: React.FC = () => {
     const [allSessions, setAllSessions] = useState<SessionRecord[]>([]);
@@ -23,13 +29,14 @@ export const HomeScreen: React.FC = () => {
     // Calculate today's total trained seconds for the Magic Tank based on the CURRENT swipe selection (sessionUserIds)
     const todayStr = getTodayKey();
     const isTogetherMode = sessionUserIds.length > 1;
+    const sessionUserIdSet = useMemo(() => new Set(sessionUserIds), [sessionUserIds]);
 
     const todaySessions = allSessions.filter(s => {
         if (s.date !== todayStr) return false;
         // In together mode, sum ALL sessions that involve ANY of the users to show family total.
         // In individual mode, sum ONLY sessions that involve this specific user.
         if (isTogetherMode) {
-            return !s.userIds || s.userIds.some(id => users.map(u => u.id).includes(id));
+            return !s.userIds || s.userIds.some(id => sessionUserIdSet.has(id));
         } else {
             return !s.userIds || s.userIds.includes(sessionUserIds[0]);
         }
@@ -68,37 +75,33 @@ export const HomeScreen: React.FC = () => {
             consumeUserMagicEnergy(u.id, uTarget, todayStr);
         });
 
-        import('canvas-confetti').then((confetti) => {
-            const duration = 3000;
-            const end = Date.now() + duration;
+        const duration = 3000;
+        const end = Date.now() + duration;
 
-            const frame = () => {
-                confetti.default({
-                    particleCount: 5,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'] // matches tank colors
-                });
-                confetti.default({
-                    particleCount: 5,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
-                    colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E']
-                });
+        const frame = () => {
+            confetti({
+                particleCount: 5,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 },
+                colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'] // matches tank colors
+            });
+            confetti({
+                particleCount: 5,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 },
+                colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E']
+            });
 
-                if (Date.now() < end) {
-                    requestAnimationFrame(frame);
-                }
-            };
-            frame();
-        });
+            if (Date.now() < end) {
+                requestAnimationFrame(frame);
+            }
+        };
+        frame();
 
         // Let's also play a happy sound
-        import('../lib/audio').then(({ audio }) => {
-            audio.playSuccess();
-        });
+        audio.playSuccess();
     };
 
     useEffect(() => {
@@ -125,7 +128,7 @@ export const HomeScreen: React.FC = () => {
 
             if (!status.isSayonara && !(user.notifiedFuwafuwaStages || []).includes(currentStage)) {
                 updateUser(user.id, { notifiedFuwafuwaStages: [...(user.notifiedFuwafuwaStages || []), currentStage] });
-                if (currentStage === 0) shouldTriggerModal = 'egg';
+                if (currentStage === 1) shouldTriggerModal = 'egg';
                 else if (currentStage === 2) shouldTriggerModal = 'fairy';
                 else if (currentStage === 3) shouldTriggerModal = 'adult';
             }
@@ -137,19 +140,28 @@ export const HomeScreen: React.FC = () => {
     }, [allSessions, users, updateUser, setActiveMilestoneModal]);
 
     // Define the swipeable pages based on users
-    const swipePages = [...users];
-    if (users.length >= 2) {
-        // Automatically add "Together" page if 2 or more users exist
-        swipePages.push({ id: 'TOGETHER', name: 'みんなで！', classLevel: '初級' } as any);
-    }
+    const swipePages = useMemo<SwipePage[]>(() => {
+        const pages: SwipePage[] = users.map(user => ({
+            kind: 'user',
+            id: user.id,
+            name: user.name,
+            user,
+        }));
+
+        if (users.length >= 2) {
+            pages.push({ kind: 'together', id: 'TOGETHER', name: 'みんなで！' });
+        }
+
+        return pages;
+    }, [users]);
 
     const [currentPageIndex, setCurrentPageIndex] = useState(() => {
         // Initialize to match sessionUserIds if possible (e.g. returning from Menu)
         if (sessionUserIds.length > 1) {
-            const idx = swipePages.findIndex(p => p.id === 'TOGETHER');
+            const idx = swipePages.findIndex(p => p.kind === 'together');
             return Math.max(0, idx);
         } else if (sessionUserIds.length === 1) {
-            const idx = swipePages.findIndex(p => p.id === sessionUserIds[0]);
+            const idx = swipePages.findIndex(p => p.kind === 'user' && p.user.id === sessionUserIds[0]);
             return Math.max(0, idx);
         }
         return 0;
@@ -158,7 +170,7 @@ export const HomeScreen: React.FC = () => {
 
     // Sync sessionUserIds whenever swipe page changes
     useEffect(() => {
-        if (users.length === 0) return;
+        if (swipePages.length === 0) return;
         const page = swipePages[currentPageIndex];
         if (!page) {
             // Safety fallback
@@ -166,28 +178,34 @@ export const HomeScreen: React.FC = () => {
             return;
         }
 
-        if (page.id === 'TOGETHER') {
-            setSessionUserIds(users.map(u => u.id));
-        } else {
-            setSessionUserIds([page.id]);
+        const nextSessionUserIds = page.kind === 'together'
+            ? users.map(u => u.id)
+            : [page.user.id];
+
+        const unchanged =
+            nextSessionUserIds.length === sessionUserIds.length &&
+            nextSessionUserIds.every((id, idx) => id === sessionUserIds[idx]);
+
+        if (!unchanged) {
+            setSessionUserIds(nextSessionUserIds);
         }
-    }, [currentPageIndex]); // Removed users from dependency to prevent infinite loops
+    }, [currentPageIndex, swipePages, users, sessionUserIds, setSessionUserIds]);
 
     // Reverse sync: Update currentPageIndex when sessionUserIds change externally (e.g. from badge tap)
     useEffect(() => {
-        if (users.length === 0) return;
+        if (swipePages.length === 0) return;
 
         let targetIndex = 0;
         if (sessionUserIds.length > 1) {
-            targetIndex = swipePages.findIndex(p => p.id === 'TOGETHER');
+            targetIndex = swipePages.findIndex(p => p.kind === 'together');
         } else if (sessionUserIds.length === 1) {
-            targetIndex = swipePages.findIndex(p => p.id === sessionUserIds[0]);
+            targetIndex = swipePages.findIndex(p => p.kind === 'user' && p.user.id === sessionUserIds[0]);
         }
 
         if (targetIndex !== -1 && targetIndex !== currentPageIndex) {
             setCurrentPageIndex(targetIndex);
         }
-    }, [sessionUserIds]);
+    }, [sessionUserIds, swipePages, currentPageIndex]);
 
     const handleDragEnd = (_event: any, info: any) => {
         const threshold = 50; // pixels
@@ -355,8 +373,8 @@ export const HomeScreen: React.FC = () => {
                         style={{ display: 'flex', width: '100%', alignItems: 'center' }}
                     >
                         {swipePages.map((page, index) => {
-                            const isTogetherPage = page.id === 'TOGETHER';
-                            const renderUsers = isTogetherPage ? users : [page as any as UserProfileStore];
+                            const isTogetherPage = page.kind === 'together';
+                            const renderUsers = isTogetherPage ? users : [page.user];
 
                             return (
                                 <div key={page.id} style={{
@@ -467,4 +485,3 @@ export const HomeScreen: React.FC = () => {
         </div>
     );
 };
-

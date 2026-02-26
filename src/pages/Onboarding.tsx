@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
+import { getTodayKey } from '../lib/db';
 import type { ClassLevel } from '../data/exercises';
 
 const CLASS_LEVELS: { id: ClassLevel; label: string; emoji: string; desc: string }[] = [
@@ -26,7 +27,7 @@ export const Onboarding: React.FC = () => {
         addUser({
             name: userName.trim() || 'ゲスト',
             classLevel: selectedClass || '初級',
-            fuwafuwaBirthDate: new Date().toISOString().split('T')[0],
+            fuwafuwaBirthDate: getTodayKey(),
             fuwafuwaType: Math.floor(Math.random() * 10),
             fuwafuwaCycleCount: 1,
             fuwafuwaName: null,

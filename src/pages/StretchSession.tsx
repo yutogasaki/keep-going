@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Volume2, VolumeX, Play, Pause, SkipForward } from 'lucide-react';
@@ -17,23 +17,28 @@ export const StretchSession: React.FC = () => {
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const sessionExerciseIds = useAppStore((state) => state.sessionExerciseIds);
 
-    const currentUsers = users.filter(u => sessionUserIds.includes(u.id));
-    const classLevel = currentUsers.length > 0
-        ? currentUsers.reduce((min, u) => {
+    const currentUsers = users.filter((u) => sessionUserIds.includes(u.id));
+    const contextUsers = currentUsers.length > 0 ? currentUsers : users.slice(0, 1);
+    const classLevel = contextUsers.length > 0
+        ? contextUsers.reduce((min, u) => {
             const weights: Record<'プレ' | '初級' | '中級' | '上級', number> = { 'プレ': 0, '初級': 1, '中級': 2, '上級': 3 };
             return weights[u.classLevel] < weights[min] ? u.classLevel : min;
-        }, currentUsers[0].classLevel)
+        }, contextUsers[0].classLevel)
         : '初級';
 
-    const dailyTargetMinutes = currentUsers.reduce((sum, u) => sum + (u.dailyTargetMinutes ?? 10), 0);
-    const globalExcludedIds = Array.from(new Set(currentUsers.flatMap(u => u.excludedExercises || ['C01', 'C02'])));
-    const globalRequiredIds = Array.from(new Set(currentUsers.flatMap(u => u.requiredExercises || ['S01', 'S02', 'S07'])));
+    const dailyTargetMinutes = contextUsers.reduce((sum, u) => sum + (u.dailyTargetMinutes ?? 10), 0);
+    const globalExcludedIds = Array.from(new Set(contextUsers.flatMap((u) => u.excludedExercises || ['C01', 'C02'])));
+    const globalRequiredIds = Array.from(new Set(contextUsers.flatMap((u) => u.requiredExercises || ['S01', 'S02', 'S07'])));
+    const sessionUserKey = sessionUserIds.join('|');
+    const excludedIdsKey = [...globalExcludedIds].sort().join('|');
+    const requiredIdsKey = [...globalRequiredIds].sort().join('|');
 
     const [isLoading, setIsLoading] = useState(true);
     const [sessionExercises, setSessionExercises] = useState<Exercise[]>([]);
 
     useEffect(() => {
         const loadSession = async () => {
+            setIsLoading(true);
             try {
                 const customExList = await getCustomExercises();
                 // Combine presets and custom
@@ -42,20 +47,20 @@ export const StretchSession: React.FC = () => {
                 if (!sessionExerciseIds) {
                     const allSessions = await getAllSessions();
 
-                    // Count historcal usage overall for all sessions (to prioritize unplayed ones)
-                    const historcalCounts: Record<string, number> = {};
-                    allSessions.forEach((s: SessionRecord) => {
-                        if (!s.userIds || s.userIds.some((u: string) => sessionUserIds.includes(u))) {
-                            s.exerciseIds.forEach((id: string) => {
-                                historcalCounts[id] = (historcalCounts[id] || 0) + 1;
+                    // Count historical usage overall for all sessions (to prioritize unplayed ones)
+                    const historicalCounts: Record<string, number> = {};
+                    allSessions.forEach((s) => {
+                        if (!s.userIds || s.userIds.some((u) => sessionUserIds.includes(u))) {
+                            s.exerciseIds.forEach((id) => {
+                                historicalCounts[id] = (historicalCounts[id] || 0) + 1;
                             });
                         }
                     });
 
-                    const todaySessions = allSessions.filter((s: SessionRecord) => s.date === getTodayKey());
+                    const todaySessions = allSessions.filter((s) => s.date === getTodayKey());
                     // Exclude exercises that were completely done or skipped today, PLUS user global exclusions
                     const todayExcludedIds = Array.from(new Set([
-                        ...todaySessions.flatMap((s: SessionRecord) => [...s.exerciseIds, ...s.skippedIds]),
+                        ...todaySessions.flatMap((s) => [...s.exerciseIds, ...s.skippedIds]),
                         ...globalExcludedIds
                     ]));
 
@@ -63,8 +68,8 @@ export const StretchSession: React.FC = () => {
                         excludedIds: todayExcludedIds,
                         requiredIds: globalRequiredIds,
                         targetSeconds: dailyTargetMinutes * 60,
-                        customPool: customExList as any as Exercise[],
-                        historcalCounts
+                        customPool: customExList,
+                        historicalCounts,
                     }));
                     return;
                 }
@@ -83,7 +88,7 @@ export const StretchSession: React.FC = () => {
             }
         };
         loadSession();
-    }, [sessionExerciseIds, classLevel]);
+    }, [sessionExerciseIds, classLevel, dailyTargetMinutes, sessionUserKey, excludedIdsKey, requiredIdsKey]);
     const [isCounting, setIsCounting] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(true);
@@ -92,6 +97,7 @@ export const StretchSession: React.FC = () => {
     const [completedIds, setCompletedIds] = useState<string[]>([]);
     const [skippedIds, setSkippedIds] = useState<string[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
+    const wasPlayingBeforeHiddenRef = useRef(false);
 
     // Handle BGM Playback based on playing/counting state
     useEffect(() => {
@@ -201,7 +207,7 @@ export const StretchSession: React.FC = () => {
         } else {
             if (currentSide !== 'left') setCurrentSide('left');
         }
-    }, [timeLeft, hasLRSplit, currentExercise, halfTime]);
+    }, [timeLeft, hasLRSplit, currentExercise, halfTime, currentSide]);
 
     // Reset side when moving to new exercise
     useEffect(() => {
@@ -308,20 +314,22 @@ export const StretchSession: React.FC = () => {
     useEffect(() => {
         const handleVisibility = () => {
             if (document.visibilityState === 'hidden') {
+                wasPlayingBeforeHiddenRef.current = isPlaying && !isCounting && !isTransitioning && !isBigBreak && !isCompleted;
                 setIsPlaying(false);
             } else if (document.visibilityState === 'visible') {
                 // Resume with countdown
-                if (currentExercise && isPlaying) {
+                if (currentExercise && wasPlayingBeforeHiddenRef.current) {
                     // Only speak and trigger countdown if we were actually playing before
                     setIsCounting(true);
                     setIsTransitioning(false);
-                    audio.speak(`再開します。`);
+                    audio.speak('再開します。');
                 }
+                wasPlayingBeforeHiddenRef.current = false;
             }
         };
         document.addEventListener('visibilitychange', handleVisibility);
         return () => document.removeEventListener('visibilitychange', handleVisibility);
-    }, [currentExercise]);
+    }, [currentExercise, isPlaying, isCounting, isTransitioning, isBigBreak, isCompleted]);
 
     const goToNext = () => {
         setIsTransitioning(false);

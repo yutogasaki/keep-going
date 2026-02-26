@@ -70,11 +70,17 @@ export function getExercisesByClass(classLevel: ClassLevel): Exercise[] {
 // Default Session target duration in seconds (10 minutes)
 export const DEFAULT_SESSION_TARGET_SECONDS = 600;
 
+export type SessionPoolExercise =
+    Pick<Exercise, 'id' | 'name' | 'sec' | 'emoji'>
+    & Partial<Omit<Exercise, 'id' | 'name' | 'sec' | 'emoji'>>;
+
 export interface GenerateSessionOptions {
     excludedIds?: string[];
     requiredIds?: string[];
     targetSeconds?: number;
-    customPool?: Exercise[];
+    customPool?: SessionPoolExercise[];
+    historicalCounts?: Record<string, number>;
+    // Backward compatibility for existing callsites with typo.
     historcalCounts?: Record<string, number>;
 }
 
@@ -86,18 +92,25 @@ export function generateSession(classLevel: ClassLevel, options: GenerateSession
         requiredIds = [],
         targetSeconds = DEFAULT_SESSION_TARGET_SECONDS,
         customPool = [],
-        historcalCounts = {}
+        historicalCounts = {},
+        historcalCounts = {},
     } = options;
+
+    const usageCounts = Object.keys(historicalCounts).length > 0 ? historicalCounts : historcalCounts;
 
     const baseExercises = getExercisesByClass(classLevel);
     // Merge base exercises with custom exercises. Ensure custom exercises have 'main' phase and 'stretch' type as defaults.
-    const allAvailable = [...baseExercises, ...customPool.map(c => ({
-        ...c,
-        phase: c.phase || 'main',
-        type: c.type || 'stretch',
-        classes: c.classes || ['プレ', '初級', '中級', '上級'],
-        priority: c.priority || 'medium'
-    }))];
+    const allAvailable: Exercise[] = [
+        ...baseExercises,
+        ...customPool.map((c) => ({
+            ...c,
+            internal: c.internal || (c.hasSplit ? 'R30→L30' : 'single'),
+            phase: c.phase || 'main',
+            type: c.type || 'stretch',
+            classes: c.classes || ['プレ', '初級', '中級', '上級'],
+            priority: c.priority || 'medium',
+        })),
+    ];
 
     // Filter out excluded IDs (like those already done today)
     let filtered = allAvailable.filter(e => !excludedIds.includes(e.id));
@@ -119,7 +132,7 @@ export function generateSession(classLevel: ClassLevel, options: GenerateSession
 
     const getSortWeight = (e: Exercise) => {
         // Random slight variance + historical usage weight (lower usage = more likely)
-        return Math.random() + (historcalCounts[e.id] || 0) * 10;
+        return Math.random() + (usageCounts[e.id] || 0) * 10;
     };
 
     // 1. Pick Warmup (aim for 1-2, prioritize required)

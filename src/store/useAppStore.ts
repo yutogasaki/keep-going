@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { ClassLevel } from '../data/exercises';
+import { getTodayKey } from '../lib/db';
 
 export interface PastFuwafuwaRecord {
     id: string; // unique ID
@@ -128,7 +129,7 @@ export const useAppStore = create<AppState>()(
                 })
             })),
             resetUserFuwafuwa: (id, newType, activeDays, finalStage) => set((state) => {
-                const today = new Date().toISOString().split('T')[0];
+                const today = getTodayKey();
                 return {
                     users: state.users.map(u => {
                         if (u.id !== id) return u;
@@ -216,7 +217,7 @@ export const useAppStore = create<AppState>()(
                             id: crypto.randomUUID(),
                             name: persistedState.fuwafuwaName || 'ゲスト',
                             classLevel: persistedState.classLevel || '初級',
-                            fuwafuwaBirthDate: persistedState.fuwafuwaBirthDate || new Date().toISOString().split('T')[0],
+                            fuwafuwaBirthDate: persistedState.fuwafuwaBirthDate || getTodayKey(),
                             fuwafuwaType: persistedState.fuwafuwaType || Math.floor(Math.random() * 10),
                             fuwafuwaCycleCount: persistedState.fuwafuwaCycleCount || 1,
                             fuwafuwaName: persistedState.fuwafuwaName || null,

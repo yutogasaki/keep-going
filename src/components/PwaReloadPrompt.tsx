@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, X } from 'lucide-react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
@@ -17,6 +17,7 @@ const getAppVersion = () => {
 const APP_VERSION = getAppVersion();
 
 export const PwaReloadPrompt: React.FC = () => {
+    const swUpdateIntervalRef = useRef<number | null>(null);
     const {
         offlineReady: [offlineReady, setOfflineReady],
         needRefresh: [needRefresh, setNeedRefresh],
@@ -27,7 +28,11 @@ export const PwaReloadPrompt: React.FC = () => {
 
             // Periodically check for updates (every 1 hour)
             if (r) {
-                setInterval(() => {
+                if (swUpdateIntervalRef.current !== null) {
+                    window.clearInterval(swUpdateIntervalRef.current);
+                }
+
+                swUpdateIntervalRef.current = window.setInterval(() => {
                     console.log('Checking for SW updates...');
                     r.update();
                 }, 60 * 60 * 1000);
@@ -45,6 +50,15 @@ export const PwaReloadPrompt: React.FC = () => {
 
     // Custom Version Polling (Extra Safety)
     const [hasVersionMismatch, setHasVersionMismatch] = useState(false);
+
+    useEffect(() => {
+        return () => {
+            if (swUpdateIntervalRef.current !== null) {
+                window.clearInterval(swUpdateIntervalRef.current);
+                swUpdateIntervalRef.current = null;
+            }
+        };
+    }, []);
 
     useEffect(() => {
         // Only run polling if we have an injected APP_VERSION

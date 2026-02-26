@@ -33,23 +33,44 @@ const historyDB = localforage.createInstance({ name: 'keepgoing', storeName: 'hi
 const profileDB = localforage.createInstance({ name: 'keepgoing', storeName: 'profile' });
 const customExercisesDB = localforage.createInstance({ name: 'keepgoing', storeName: 'custom_exercises' });
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function formatDateKey(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function parseDateKey(dateKey: string): Date | null {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
+    if (!match) return null;
+
+    const year = Number(match[1]);
+    const month = Number(match[2]) - 1;
+    const day = Number(match[3]);
+
+    return new Date(year, month, day);
+}
+
+function shiftDateKey(dateKey: string, offsetDays: number): string {
+    const base = parseDateKey(dateKey);
+    if (!base) return dateKey;
+    return formatDateKey(new Date(base.getTime() + offsetDays * DAY_MS));
+}
+
 // "Today" is defined as 3:00 AM to next 3:00 AM (per spec)
 export function getTodayKey(): string {
     const now = new Date();
-    const adjusted = new Date(now.getTime() - 3 * 60 * 60 * 1000); // subtract 3 hours
-    const year = adjusted.getFullYear();
-    const month = String(adjusted.getMonth() + 1).padStart(2, '0');
-    const day = String(adjusted.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    // subtract 3 hours to match the app's day-boundary rule
+    const adjusted = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+    return formatDateKey(adjusted);
 }
 
 export function getDateKeyOffset(offsetDays: number): string {
     const now = new Date();
-    const adjusted = new Date(now.getTime() - 3 * 60 * 60 * 1000 + offsetDays * 24 * 60 * 60 * 1000);
-    const year = adjusted.getFullYear();
-    const month = String(adjusted.getMonth() + 1).padStart(2, '0');
-    const day = String(adjusted.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    const adjusted = new Date(now.getTime() - 3 * 60 * 60 * 1000 + offsetDays * DAY_MS);
+    return formatDateKey(adjusted);
 }
 
 export function calculateStreak(sessions: SessionRecord[]): number {
@@ -67,15 +88,12 @@ export function calculateStreak(sessions: SessionRecord[]): number {
     }
 
     let currentDate = dates[0] === today ? today : yesterday;
-    let index = dates[0] === today ? 0 : 0;
 
     // Count consecutive days backwards
-    for (let i = index; i < dates.length; i++) {
-        if (dates[i] === currentDate) {
+    for (const date of dates) {
+        if (date === currentDate) {
             streak++;
-            // Calculate previous day string
-            const prev = new Date(new Date(currentDate).getTime() - 24 * 60 * 60 * 1000);
-            currentDate = prev.toISOString().split('T')[0];
+            currentDate = shiftDateKey(currentDate, -1);
         } else {
             break;
         }
