@@ -296,6 +296,7 @@ export const UserManagementSection: React.FC<UserManagementSectionProps> = ({
                                                 fuwafuwaName: null,
                                                 pastFuwafuwas: [],
                                                 notifiedFuwafuwaStages: [],
+                                                chibifuwas: [],
                                             });
                                             setEditingUserId(null);
                                         }}

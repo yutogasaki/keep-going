@@ -43,6 +43,7 @@ export interface Database {
                     chibifuwas?: unknown[];
                 };
                 Update: Partial<Database['public']['Tables']['family_members']['Insert']>;
+                Relationships: [];
             };
             sessions: {
                 Row: {
@@ -67,6 +68,7 @@ export interface Database {
                     user_ids?: string[];
                 };
                 Update: Partial<Database['public']['Tables']['sessions']['Insert']>;
+                Relationships: [];
             };
             custom_exercises: {
                 Row: {
@@ -89,6 +91,7 @@ export interface Database {
                     creator_id?: string | null;
                 };
                 Update: Partial<Database['public']['Tables']['custom_exercises']['Insert']>;
+                Relationships: [];
             };
             menu_groups: {
                 Row: {
@@ -113,6 +116,7 @@ export interface Database {
                     creator_id?: string | null;
                 };
                 Update: Partial<Database['public']['Tables']['menu_groups']['Insert']>;
+                Relationships: [];
             };
             app_settings: {
                 Row: {
@@ -137,6 +141,7 @@ export interface Database {
                     notification_time?: string;
                 };
                 Update: Partial<Database['public']['Tables']['app_settings']['Insert']>;
+                Relationships: [];
             };
             challenges: {
                 Row: {
@@ -161,6 +166,7 @@ export interface Database {
                     reward_fuwafuwa_type: number;
                 };
                 Update: Partial<Database['public']['Tables']['challenges']['Insert']>;
+                Relationships: [];
             };
             challenge_completions: {
                 Row: {
@@ -177,6 +183,7 @@ export interface Database {
                     member_id: string;
                 };
                 Update: Partial<Database['public']['Tables']['challenge_completions']['Insert']>;
+                Relationships: [];
             };
             public_menus: {
                 Row: {
@@ -201,6 +208,14 @@ export interface Database {
                     download_count?: number;
                 };
                 Update: Partial<Database['public']['Tables']['public_menus']['Insert']>;
+                Relationships: [];
+            };
+        };
+        Views: Record<string, never>;
+        Functions: {
+            increment_download_count: {
+                Args: { menu_id: string };
+                Returns: undefined;
             };
         };
     };

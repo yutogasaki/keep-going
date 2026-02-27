@@ -90,7 +90,7 @@ export async function importMenu(publicMenu: PublicMenu): Promise<void> {
 
     // Increment download count via RPC
     if (supabase) {
-        await supabase.rpc('increment_download_count', { menu_id: publicMenu.id }).catch(console.warn);
+        await (supabase.rpc('increment_download_count', { menu_id: publicMenu.id }) as unknown as Promise<unknown>).catch(console.warn);
     }
 }
 

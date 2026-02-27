@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Cloud, CloudOff, LogOut, Loader2, UserPlus } from 'lucide-react';
+import { Cloud, LogOut, Loader2, UserPlus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LoginPage } from '../LoginPage';
 import { SyncConflictDialog } from '../../components/SyncConflictDialog';

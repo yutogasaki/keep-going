@@ -98,7 +98,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
             groups.set(level, []);
         }
         for (const s of individualStudents) {
-            const level = CLASS_ORDER.includes(s.classLevel) ? s.classLevel : 'その他';
+            const level = CLASS_ORDER.includes(s.classLevel as typeof CLASS_ORDER[number]) ? s.classLevel : 'その他';
             groups.get(level)!.push(s);
         }
         // Sort students within each class by last active date (most recent first)

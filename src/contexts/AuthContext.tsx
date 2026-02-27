@@ -246,12 +246,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        const sb = supabase;
+        sb.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
                 setUser(session.user);
             } else {
                 // No existing session → sign in anonymously
-                supabase.auth.signInAnonymously().then(({ error }) => {
+                sb.auth.signInAnonymously().then(({ error }) => {
                     if (error) console.warn('[auth] anonymous sign-in failed:', error);
                     // user will be set via onAuthStateChange
                 });
