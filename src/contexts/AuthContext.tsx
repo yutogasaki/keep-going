@@ -257,6 +257,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 });
             }
             setIsLoading(false);
+        }).catch((err) => {
+            console.warn('[auth] getSession failed:', err);
+            setIsLoading(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

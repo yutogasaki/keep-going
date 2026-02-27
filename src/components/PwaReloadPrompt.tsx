@@ -23,9 +23,7 @@ export const PwaReloadPrompt: React.FC = () => {
         needRefresh: [needRefresh, setNeedRefresh],
         updateServiceWorker,
     } = useRegisterSW({
-        onRegisteredSW(swUrl, r) {
-            console.log('SW Registered:', swUrl);
-
+        onRegisteredSW(_swUrl, r) {
             // Periodically check for updates (every 1 hour)
             if (r) {
                 if (swUpdateIntervalRef.current !== null) {
@@ -33,7 +31,6 @@ export const PwaReloadPrompt: React.FC = () => {
                 }
 
                 swUpdateIntervalRef.current = window.setInterval(() => {
-                    console.log('Checking for SW updates...');
                     r.update();
                 }, 60 * 60 * 1000);
             }
@@ -136,9 +133,8 @@ export const PwaReloadPrompt: React.FC = () => {
             try {
                 if ('serviceWorker' in navigator) {
                     const registrations = await navigator.serviceWorker.getRegistrations();
-                    for (let registration of registrations) {
+                    for (const registration of registrations) {
                         await registration.unregister();
-                        console.log('[PWA] Unregistered service worker');
                     }
                 }
 
@@ -147,7 +143,6 @@ export const PwaReloadPrompt: React.FC = () => {
                     const keys = await caches.keys();
                     for (const key of keys) {
                         await caches.delete(key);
-                        console.log(`[PWA] Cleared cache: ${key}`);
                     }
                 }
             } catch (err) {

@@ -292,6 +292,10 @@ export const useAppStore = create<AppState>()(
                 hapticEnabled: state.hapticEnabled,
                 notificationsEnabled: state.notificationsEnabled,
                 notificationTime: state.notificationTime,
+                debugFuwafuwaStage: state.debugFuwafuwaStage,
+                debugFuwafuwaType: state.debugFuwafuwaType,
+                debugActiveDays: state.debugActiveDays,
+                debugFuwafuwaScale: state.debugFuwafuwaScale,
             }),
         }
     )

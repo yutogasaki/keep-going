@@ -6,15 +6,7 @@ import { getTodayKey } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
 import { hasCloudData, pullAllData, initialSync } from '../lib/sync';
 import { LoginPage } from './LoginPage';
-import type { ClassLevel } from '../data/exercises';
-
-const CLASS_LEVELS: { id: ClassLevel; label: string; emoji: string; desc: string }[] = [
-    { id: 'プレ', label: 'プレバレエ', emoji: '🐣', desc: 'はじめてのバレエ' },
-    { id: '初級', label: '初級', emoji: '🌱', desc: 'たのしくストレッチ' },
-    { id: '中級', label: '中級', emoji: '🌸', desc: 'もっとやわらかく' },
-    { id: '上級', label: '上級', emoji: '⭐', desc: 'もっと上へ' },
-    { id: 'その他', label: 'その他', emoji: '🎵', desc: 'その他のクラス' },
-];
+import { CLASS_LEVELS, type ClassLevel } from '../data/exercises';
 
 type OnboardingStep = 'welcome' | 'account' | 'emailLogin' | 'restoring' | 'name' | 'class' | 'swipe';
 
@@ -36,7 +28,7 @@ export const Onboarding: React.FC = () => {
         if (user && !user.is_anonymous && loginContext === 'onboarding' && step !== 'restoring') {
             handlePostLogin(user.id);
         }
-    }, [user, loginContext]);
+    }, [user, loginContext, step]);
 
     const handlePostLogin = async (accountId: string) => {
         setStep('restoring');
@@ -75,7 +67,8 @@ export const Onboarding: React.FC = () => {
 
     const handleEmailLoginSuccess = () => {
         // Email login succeeded (no redirect). User is now logged in.
-        if (user) {
+        // Guard against double-fire: only proceed if not already restoring
+        if (user && step !== 'restoring') {
             handlePostLogin(user.id);
         }
         // If user isn't set yet, the useEffect will pick it up

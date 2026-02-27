@@ -2,6 +2,26 @@
 
 export type ExerciseType = 'stretch' | 'core';
 export type ClassLevel = 'プレ' | '初級' | '中級' | '上級' | 'その他';
+
+export interface ClassLevelInfo {
+    id: ClassLevel;
+    label: string;
+    emoji: string;
+    desc: string;
+}
+
+export const CLASS_LEVELS: ClassLevelInfo[] = [
+    { id: 'プレ', label: 'プレバレエ', emoji: '🐣', desc: 'はじめてのバレエ' },
+    { id: '初級', label: '初級', emoji: '🌱', desc: 'たのしくストレッチ' },
+    { id: '中級', label: '中級', emoji: '🌸', desc: 'もっとやわらかく' },
+    { id: '上級', label: '上級', emoji: '⭐', desc: 'もっと上へ' },
+    { id: 'その他', label: 'その他', emoji: '🎵', desc: 'その他のクラス' },
+];
+
+export const CLASS_EMOJI: Record<string, string> = Object.fromEntries(
+    CLASS_LEVELS.map(c => [c.id, c.emoji])
+);
+
 export type Priority = 'high' | 'medium';
 
 export type ExercisePhase = 'warmup' | 'main' | 'core';

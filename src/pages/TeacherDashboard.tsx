@@ -3,16 +3,9 @@ import { ArrowLeft, Flame, Users, RefreshCw, Loader2, ChevronDown, Clock, Calend
 import { fetchAllStudents, calculateStreak, type StudentSummary, type StudentSession } from '../lib/teacher';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
 import { getTodayKey, getDateKeyOffset, type SessionRecord } from '../lib/db';
+import { CLASS_LEVELS, CLASS_EMOJI } from '../data/exercises';
 
-const CLASS_EMOJI: Record<string, string> = {
-    'プレ': '🐣',
-    '初級': '🌱',
-    '中級': '🌸',
-    '上級': '⭐',
-    'その他': '🎵',
-};
-
-const CLASS_ORDER = ['プレ', '初級', '中級', '上級', 'その他'];
+const CLASS_ORDER = CLASS_LEVELS.map(c => c.id);
 
 // ─── Individual student (flattened from account) ─────
 
@@ -39,9 +32,14 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
 
     const load = useCallback(async () => {
         setLoading(true);
-        const data = await fetchAllStudents();
-        setStudents(data);
-        setLoading(false);
+        try {
+            const data = await fetchAllStudents();
+            setStudents(data);
+        } catch (err) {
+            console.warn('[teacher] Failed to load students:', err);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
     useEffect(() => { load(); }, [load]);

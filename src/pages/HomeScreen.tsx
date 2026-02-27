@@ -108,7 +108,7 @@ export const HomeScreen: React.FC = () => {
         const load = () => {
             getAllSessions().then(sessions => {
                 setAllSessions(sessions);
-            });
+            }).catch(console.warn);
         };
         load();
         // Refresh every 5 seconds to pick up new sessions
