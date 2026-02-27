@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ArrowLeft, Flame, Users, RefreshCw, Loader2, ChevronDown, Clock, Calendar, TrendingUp } from 'lucide-react';
-import { fetchAllStudents, type StudentSummary } from '../lib/teacher';
+import { ArrowLeft, Flame, Users, RefreshCw, Loader2, ChevronDown, Clock, Calendar } from 'lucide-react';
+import { fetchAllStudents, calculateStreak, type StudentSummary, type StudentSession } from '../lib/teacher';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
 import { getTodayKey, getDateKeyOffset, type SessionRecord } from '../lib/db';
 
@@ -9,7 +9,23 @@ const CLASS_EMOJI: Record<string, string> = {
     '初級': '🌱',
     '中級': '🌸',
     '上級': '⭐',
+    'その他': '🎵',
 };
+
+const CLASS_ORDER = ['プレ', '初級', '中級', '上級', 'その他'];
+
+// ─── Individual student (flattened from account) ─────
+
+interface IndividualStudent {
+    memberId: string;
+    name: string;
+    classLevel: string;
+    accountId: string;
+    sessions: StudentSession[];
+    streak: number;
+    totalSessions: number;
+    lastActiveDate: string | null;
+}
 
 interface TeacherDashboardProps {
     onBack: () => void;
@@ -18,7 +34,8 @@ interface TeacherDashboardProps {
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) => {
     const [students, setStudents] = useState<StudentSummary[]>([]);
     const [loading, setLoading] = useState(true);
-    const [expandedAccount, setExpandedAccount] = useState<string | null>(null);
+    const [expandedClass, setExpandedClass] = useState<string | null>(null);
+    const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -29,28 +46,76 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
 
     useEffect(() => { load(); }, [load]);
 
+    // Flatten to individual students
+    const individualStudents = useMemo(() => {
+        const result: IndividualStudent[] = [];
+        for (const summary of students) {
+            for (const member of summary.members) {
+                const memberSessions = summary.sessions.filter(s =>
+                    s.userIds.length === 0 || s.userIds.includes(member.id)
+                );
+                result.push({
+                    memberId: member.id,
+                    name: member.name,
+                    classLevel: member.classLevel,
+                    accountId: summary.accountId,
+                    sessions: memberSessions,
+                    streak: calculateStreak(memberSessions),
+                    totalSessions: memberSessions.length,
+                    lastActiveDate: memberSessions.length > 0 ? memberSessions[0].date : null,
+                });
+            }
+        }
+        return result;
+    }, [students]);
+
+    // Group by class
+    const studentsByClass = useMemo(() => {
+        const groups = new Map<string, IndividualStudent[]>();
+        for (const level of CLASS_ORDER) {
+            groups.set(level, []);
+        }
+        for (const s of individualStudents) {
+            const level = CLASS_ORDER.includes(s.classLevel) ? s.classLevel : 'その他';
+            groups.get(level)!.push(s);
+        }
+        // Sort students within each class by last active date (most recent first)
+        for (const [, list] of groups) {
+            list.sort((a, b) => (b.lastActiveDate ?? '').localeCompare(a.lastActiveDate ?? ''));
+        }
+        return [...groups.entries()].filter(([, list]) => list.length > 0);
+    }, [individualStudents]);
+
     const today = getTodayKey();
-    const activeToday = students.filter(s => s.lastActiveDate === today).length;
+    const activeToday = individualStudents.filter(s => s.lastActiveDate === today).length;
 
     // Weekly summary (last 7 days)
     const weeklyStats = useMemo(() => {
-        if (students.length === 0) return null;
+        if (individualStudents.length === 0) return null;
         const weekDates = new Set(
             Array.from({ length: 7 }, (_, i) => getDateKeyOffset(-i))
         );
-        let activeStudents = 0;
+        let activeCount = 0;
         let totalMinutes = 0;
         let totalSessions = 0;
-        for (const s of students) {
+        for (const s of individualStudents) {
             const weekSessions = s.sessions.filter(sess => weekDates.has(sess.date));
-            if (weekSessions.length > 0) activeStudents++;
+            if (weekSessions.length > 0) activeCount++;
             totalSessions += weekSessions.length;
             totalMinutes += weekSessions.reduce((sum, sess) => sum + sess.totalSeconds, 0);
         }
         totalMinutes = Math.floor(totalMinutes / 60);
-        const rate = students.length > 0 ? Math.round((activeStudents / students.length) * 100) : 0;
-        return { activeStudents, totalMinutes, totalSessions, rate };
-    }, [students]);
+        const rate = individualStudents.length > 0
+            ? Math.round((activeCount / individualStudents.length) * 100) : 0;
+        return { activeCount, totalMinutes, totalSessions, rate };
+    }, [individualStudents]);
+
+    // Auto-expand the first non-empty class on load
+    useEffect(() => {
+        if (!loading && studentsByClass.length > 0 && expandedClass === null) {
+            setExpandedClass(studentsByClass[0][0]);
+        }
+    }, [loading, studentsByClass, expandedClass]);
 
     return (
         <div style={{
@@ -118,7 +183,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
             </div>
 
             {/* Summary stats */}
-            {!loading && students.length > 0 && (
+            {!loading && individualStudents.length > 0 && (
                 <>
                     <div style={{
                         display: 'flex',
@@ -128,7 +193,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                     }}>
                         <StatCard
                             icon={<Users size={16} color="#6C5CE7" />}
-                            value={students.length}
+                            value={individualStudents.length}
                             label="生徒数"
                             bgColor="#F3EEFF"
                         />
@@ -170,7 +235,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                                 <WeeklyStat
                                     label="練習率"
                                     value={`${weeklyStats.rate}%`}
-                                    sub={`${weeklyStats.activeStudents}/${students.length}人`}
+                                    sub={`${weeklyStats.activeCount}/${individualStudents.length}人`}
                                     color={weeklyStats.rate >= 70 ? '#2BBAA0' : weeklyStats.rate >= 40 ? '#FDCB6E' : '#E17055'}
                                 />
                                 <WeeklyStat
@@ -187,7 +252,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                                 />
                                 <WeeklyStat
                                     label="平均ストリーク"
-                                    value={`${students.length > 0 ? Math.round(students.reduce((s, st) => s + st.streak, 0) / students.length * 10) / 10 : 0}`}
+                                    value={`${individualStudents.length > 0 ? Math.round(individualStudents.reduce((s, st) => s + st.streak, 0) / individualStudents.length * 10) / 10 : 0}`}
                                     sub="日"
                                     color="#E17055"
                                 />
@@ -197,7 +262,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                 </>
             )}
 
-            {/* Student cards */}
+            {/* Class → Student hierarchy */}
             <div style={{
                 padding: '0 20px',
                 display: 'flex',
@@ -223,7 +288,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                             読み込み中...
                         </p>
                     </div>
-                ) : students.length === 0 ? (
+                ) : individualStudents.length === 0 ? (
                     <div className="card" style={{
                         textAlign: 'center',
                         padding: 40,
@@ -238,13 +303,18 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                         </p>
                     </div>
                 ) : (
-                    students.map(student => (
-                        <StudentCard
-                            key={student.accountId}
-                            student={student}
-                            expanded={expandedAccount === student.accountId}
-                            onToggle={() => setExpandedAccount(
-                                expandedAccount === student.accountId ? null : student.accountId
+                    studentsByClass.map(([classLevel, classStudents]) => (
+                        <ClassSection
+                            key={classLevel}
+                            classLevel={classLevel}
+                            students={classStudents}
+                            expanded={expandedClass === classLevel}
+                            onToggle={() => setExpandedClass(
+                                expandedClass === classLevel ? null : classLevel
+                            )}
+                            expandedStudent={expandedStudent}
+                            onToggleStudent={(id) => setExpandedStudent(
+                                expandedStudent === id ? null : id
                             )}
                         />
                     ))
@@ -347,13 +417,107 @@ const WeeklyStat: React.FC<{
     </div>
 );
 
+// ─── ClassSection ────────────────────────────────────
+
+const ClassSection: React.FC<{
+    classLevel: string;
+    students: IndividualStudent[];
+    expanded: boolean;
+    onToggle: () => void;
+    expandedStudent: string | null;
+    onToggleStudent: (id: string) => void;
+}> = ({ classLevel, students, expanded, onToggle, expandedStudent, onToggleStudent }) => {
+    const emoji = CLASS_EMOJI[classLevel] ?? '🎵';
+    const activeToday = students.filter(s => s.lastActiveDate === getTodayKey()).length;
+
+    return (
+        <div className="card" style={{ overflow: 'hidden' }}>
+            {/* Class header */}
+            <button
+                onClick={onToggle}
+                style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                }}
+            >
+                <span style={{ fontSize: 20 }}>{emoji}</span>
+                <span style={{
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 16,
+                    fontWeight: 800,
+                    color: '#2D3436',
+                    flex: 1,
+                }}>
+                    {classLevel}
+                </span>
+                <span style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 13,
+                    color: '#8395A7',
+                    marginRight: 4,
+                }}>
+                    {students.length}人
+                </span>
+                {activeToday > 0 && (
+                    <span style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 11,
+                        color: '#E17055',
+                        background: '#FFF3E0',
+                        padding: '2px 6px',
+                        borderRadius: 10,
+                    }}>
+                        🔥{activeToday}
+                    </span>
+                )}
+                <ChevronDown
+                    size={16}
+                    color="#B2BEC3"
+                    style={{
+                        transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.2s',
+                        flexShrink: 0,
+                    }}
+                />
+            </button>
+
+            {/* Student list */}
+            {expanded && (
+                <div style={{
+                    borderTop: '1px solid #F0F3F5',
+                    display: 'flex',
+                    flexDirection: 'column',
+                }}>
+                    {students.map((student, idx) => (
+                        <StudentCard
+                            key={student.memberId}
+                            student={student}
+                            expanded={expandedStudent === student.memberId}
+                            onToggle={() => onToggleStudent(student.memberId)}
+                            showBorder={idx > 0}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
 // ─── StudentCard ─────────────────────────────────────
 
 const StudentCard: React.FC<{
-    student: StudentSummary;
+    student: IndividualStudent;
     expanded: boolean;
     onToggle: () => void;
-}> = ({ student, expanded, onToggle }) => {
+    showBorder: boolean;
+}> = ({ student, expanded, onToggle, showBorder }) => {
     // Convert to SessionRecord[] for ActivityHeatmap
     const heatmapSessions: SessionRecord[] = student.sessions.map(s => ({
         id: s.id,
@@ -365,7 +529,7 @@ const StudentCard: React.FC<{
         userIds: s.userIds,
     }));
 
-    // Recent sessions for expanded view (last 10, grouped by date)
+    // Recent sessions for expanded view (grouped by date)
     const recentByDate = new Map<string, number>();
     for (const s of student.sessions.slice(0, 30)) {
         recentByDate.set(s.date, (recentByDate.get(s.date) ?? 0) + s.totalSeconds);
@@ -373,45 +537,41 @@ const StudentCard: React.FC<{
     const recentDates = [...recentByDate.entries()].slice(0, 7);
 
     return (
-        <div className="card" style={{ overflow: 'hidden' }}>
+        <div style={{
+            borderTop: showBorder ? '1px solid #F0F3F5' : 'none',
+        }}>
             {/* Main row */}
             <button
                 onClick={onToggle}
                 style={{
                     width: '100%',
-                    padding: '16px 16px 12px',
+                    padding: '12px 16px 10px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 10,
+                    gap: 8,
                     border: 'none',
                     background: 'transparent',
                     cursor: 'pointer',
                     textAlign: 'left',
                 }}
             >
-                {/* Name + class + stats row */}
+                {/* Name + stats row */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
                     width: '100%',
                 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        {student.members.map((m, i) => (
-                            <span
-                                key={m.id}
-                                style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 15,
-                                    fontWeight: 700,
-                                    color: '#2D3436',
-                                }}
-                            >
-                                {i > 0 && <span style={{ color: '#B2BEC3', margin: '0 4px' }}>/</span>}
-                                {CLASS_EMOJI[m.classLevel] ?? ''} {m.name}
-                            </span>
-                        ))}
-                    </div>
+                    <span style={{
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: '#2D3436',
+                        flex: 1,
+                        minWidth: 0,
+                    }}>
+                        {student.name}
+                    </span>
 
                     {/* Streak badge */}
                     {student.streak > 0 && (
@@ -419,15 +579,15 @@ const StudentCard: React.FC<{
                             display: 'flex',
                             alignItems: 'center',
                             gap: 3,
-                            padding: '3px 8px',
+                            padding: '2px 7px',
                             borderRadius: 20,
                             background: '#FFF3E0',
                             flexShrink: 0,
                         }}>
-                            <Flame size={13} color="#E17055" />
+                            <Flame size={12} color="#E17055" />
                             <span style={{
                                 fontFamily: "'JetBrains Mono', monospace",
-                                fontSize: 12,
+                                fontSize: 11,
                                 fontWeight: 700,
                                 color: '#E17055',
                             }}>
@@ -439,7 +599,7 @@ const StudentCard: React.FC<{
                     {/* Total sessions */}
                     <div style={{
                         fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 12,
+                        fontSize: 11,
                         color: '#8395A7',
                         flexShrink: 0,
                     }}>
@@ -447,7 +607,7 @@ const StudentCard: React.FC<{
                     </div>
 
                     <ChevronDown
-                        size={16}
+                        size={14}
                         color="#B2BEC3"
                         style={{
                             transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -465,10 +625,11 @@ const StudentCard: React.FC<{
             {expanded && recentDates.length > 0 && (
                 <div style={{
                     borderTop: '1px solid #F0F3F5',
-                    padding: '12px 16px',
+                    padding: '10px 16px',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 6,
+                    gap: 5,
+                    background: '#FAFBFC',
                 }}>
                     <div style={{
                         fontFamily: "'Noto Sans JP', sans-serif",

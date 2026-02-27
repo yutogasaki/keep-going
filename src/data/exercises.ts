@@ -1,7 +1,7 @@
 // Stretch & Core exercise master data from specification
 
 export type ExerciseType = 'stretch' | 'core';
-export type ClassLevel = 'プレ' | '初級' | '中級' | '上級';
+export type ClassLevel = 'プレ' | '初級' | '中級' | '上級' | 'その他';
 export type Priority = 'high' | 'medium';
 
 export type ExercisePhase = 'warmup' | 'main' | 'core';
@@ -64,7 +64,8 @@ export function getExerciseColor(id: string): string {
 
 // Get exercises by class level
 export function getExercisesByClass(classLevel: ClassLevel): Exercise[] {
-    return EXERCISES.filter(e => e.classes.includes(classLevel));
+    const level = classLevel === 'その他' ? '初級' as ClassLevel : classLevel;
+    return EXERCISES.filter(e => e.classes.includes(level));
 }
 
 // Default Session target duration in seconds (10 minutes)

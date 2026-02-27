@@ -13,6 +13,7 @@ const CLASS_LEVELS: { id: ClassLevel; label: string; emoji: string; desc: string
     { id: '初級', label: '初級', emoji: '🌱', desc: 'たのしくストレッチ' },
     { id: '中級', label: '中級', emoji: '🌸', desc: 'もっとやわらかく' },
     { id: '上級', label: '上級', emoji: '⭐', desc: 'もっと上へ' },
+    { id: 'その他', label: 'その他', emoji: '🎵', desc: 'その他のクラス' },
 ];
 
 type OnboardingStep = 'welcome' | 'account' | 'emailLogin' | 'restoring' | 'name' | 'class' | 'swipe';

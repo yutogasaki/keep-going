@@ -20,6 +20,7 @@ const CLASS_LEVELS: { id: ClassLevel; label: string; emoji: string }[] = [
     { id: '初級', label: '初級', emoji: '🌱' },
     { id: '中級', label: '中級', emoji: '🌸' },
     { id: '上級', label: '上級', emoji: '⭐' },
+    { id: 'その他', label: 'その他', emoji: '🎵' },
 ];
 
 export const UserManagementSection: React.FC<UserManagementSectionProps> = ({

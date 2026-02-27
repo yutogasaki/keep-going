@@ -117,7 +117,7 @@ function shiftDateKey(dateKey: string, offsetDays: number): string {
     return formatDateKey(new Date(base.getTime() + offsetDays * DAY_MS));
 }
 
-function calculateStreak(sessions: { date: string }[]): number {
+export function calculateStreak(sessions: { date: string }[]): number {
     if (sessions.length === 0) return 0;
 
     const dates = [...new Set(sessions.map(s => s.date))].sort().reverse();
