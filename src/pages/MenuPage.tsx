@@ -135,6 +135,7 @@ export const MenuPage: React.FC = () => {
                 classLevel={classLevel}
                 initial={editGroup}
                 currentUserId={sessionUserIds.length === 1 ? sessionUserIds[0] : undefined}
+                authorName={currentUsers[0]?.name ?? 'ゲスト'}
                 onSave={handleCreatedGroup}
                 onCancel={() => { setShowCreateGroup(false); setEditGroup(null); }}
             />

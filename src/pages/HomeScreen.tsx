@@ -65,8 +65,6 @@ export const HomeScreen: React.FC = () => {
 
     const todaySessions = useMemo(() => allSessions.filter(s => {
         if (s.date !== todayStr) return false;
-        // In together mode, sum ALL sessions that involve ANY of the users to show family total.
-        // In individual mode, sum ONLY sessions that involve this specific user.
         if (isTogetherMode) {
             return !s.userIds || s.userIds.some(id => sessionUserIdSet.has(id));
         } else {
@@ -78,7 +76,6 @@ export const HomeScreen: React.FC = () => {
     // Calculate total target time based on active session users
     const activeUsers = users.filter(u => sessionUserIds.includes(u.id));
     const totalTargetMinutes = activeUsers.reduce((sum, u) => sum + (u.dailyTargetMinutes || 10), 0);
-    // If no users are selected yet but users exist, default to the first user's target (or 10 min)
     const fallbackTargetMinutes = users.length > 0 ? (users[0].dailyTargetMinutes || 10) : 10;
 
     const targetSeconds = (activeUsers.length > 0 ? totalTargetMinutes : fallbackTargetMinutes) * 60;
@@ -95,14 +92,9 @@ export const HomeScreen: React.FC = () => {
 
     // Confetti logic for Magic Tank reset
     const handleTankReset = () => {
-        // Only reset if we actually reached the target
         if (displaySeconds < targetSeconds) return;
 
-        // Consume the energy 
         activeUsers.forEach(u => {
-            // Give proportional consumption to each active user based on their own target, 
-            // or just give all the consumption equally if simple? Actually `targetSeconds` is sum of all targets.
-            // Simplified: just consume each user's target amount from them.
             const uTarget = (u.dailyTargetMinutes || 10) * 60;
             consumeUserMagicEnergy(u.id, uTarget, todayStr);
         });
@@ -116,7 +108,7 @@ export const HomeScreen: React.FC = () => {
                 angle: 60,
                 spread: 55,
                 origin: { x: 0 },
-                colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'] // matches tank colors
+                colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E']
             });
             confetti({
                 particleCount: 5,
@@ -132,7 +124,6 @@ export const HomeScreen: React.FC = () => {
         };
         frame();
 
-        // Let's also play a happy sound
         audio.playSuccess();
     };
 
@@ -143,7 +134,6 @@ export const HomeScreen: React.FC = () => {
             }).catch(console.warn);
         };
         load();
-        // Refresh every 5 seconds, but only while page is visible
         let interval = setInterval(load, 5000);
         const handleVisibility = () => {
             clearInterval(interval);
@@ -260,7 +250,7 @@ export const HomeScreen: React.FC = () => {
                 rightElement={<CurrentContextBadge />}
             />
 
-            {/* Pagination Dots (Top) */}
+            {/* Milestone Modal */}
             <AnimatePresence>
                 {activeMilestoneModal && (
                     <div style={{
@@ -325,6 +315,7 @@ export const HomeScreen: React.FC = () => {
                     </div>
                 )}
             </AnimatePresence>
+
             {/* Premium Animated Background */}
             <motion.div
                 animate={{
@@ -372,164 +363,143 @@ export const HomeScreen: React.FC = () => {
                 alignItems: 'center',
                 width: '100%',
                 flex: 1,
-                paddingTop: 'min(2vh, 16px)',
-                paddingBottom: 90, // Ensure it clears the floating play button
+                paddingTop: 12,
+                paddingBottom: 90,
                 overflowY: 'auto',
                 WebkitOverflowScrolling: 'touch',
             }}>
-                {/* Magic Power Tank */}
-                <div style={{ height: 'min(10vh, 100px)', display: 'flex', alignItems: 'flex-end', paddingBottom: 'min(1vh, 8px)' }}>
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.3 }}
-                    >
+
+                {/* ─── Fuwafuwa White Card ─── */}
+                <div style={{
+                    width: 'calc(100% - 32px)',
+                    maxWidth: 400,
+                    background: 'rgba(255, 255, 255, 0.85)',
+                    backdropFilter: 'blur(12px)',
+                    borderRadius: 24,
+                    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
+                    border: '1px solid rgba(255, 255, 255, 0.9)',
+                    padding: '16px 0 20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                }}>
+                    {/* The Stars of the Show (Carousel) */}
+                    <div style={{ width: '100%', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
+                        <motion.div
+                            drag="x"
+                            dragConstraints={{ left: 0, right: 0 }}
+                            dragElastic={0.2}
+                            dragDirectionLock
+                            onDragEnd={handleDragEnd}
+                            animate={{ x: `calc(-${currentPageIndex * 100}%)` }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            style={{ display: 'flex', width: '100%', alignItems: 'center' }}
+                        >
+                            {swipePages.map((page, index) => {
+                                const isTogetherPage = page.kind === 'together';
+                                const renderUsers = isTogetherPage ? users : [page.user];
+
+                                return (
+                                    <div key={page.id} style={{
+                                        width: '100%',
+                                        flexShrink: 0,
+                                        padding: '0 20px',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: 8,
+                                        opacity: currentPageIndex === index ? 1 : 0.5,
+                                        transition: 'opacity 0.3s ease'
+                                    }}>
+                                        {/* User Name Badge */}
+                                        <div style={{
+                                            padding: '4px 14px',
+                                            borderRadius: 16,
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 13,
+                                            fontWeight: 700,
+                                            color: '#2D3436',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 6,
+                                        }}>
+                                            {page.kind === 'user' ? (
+                                                <UserAvatar
+                                                    avatarUrl={page.user.avatarUrl}
+                                                    name={page.name}
+                                                    size={22}
+                                                />
+                                            ) : '🌍'}
+                                            {page.name}
+                                        </div>
+
+                                        <div style={{
+                                            display: 'flex',
+                                            gap: isTogetherPage ? 12 : 0,
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            width: '100%'
+                                        }}>
+                                            {renderUsers.map((u) => (
+                                                <div key={u.id} style={{
+                                                    transform: isTogetherPage ? 'scale(0.85)' : 'scale(1)',
+                                                    position: 'relative'
+                                                }}>
+                                                    <FuwafuwaCharacter
+                                                        user={u}
+                                                        sessions={allSessions}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </motion.div>
+                    </div>
+
+                    {/* Pagination Dots */}
+                    {swipePages.length > 1 && (
+                        <div style={{
+                            display: 'flex',
+                            gap: 6,
+                            marginTop: 8,
+                            alignItems: 'center'
+                        }}>
+                            {swipePages.map((_, idx) => (
+                                <div
+                                    key={idx}
+                                    style={{
+                                        width: currentPageIndex === idx ? 20 : 6,
+                                        height: 6,
+                                        borderRadius: 3,
+                                        background: currentPageIndex === idx ? '#2BBAA0' : 'rgba(43, 186, 160, 0.25)',
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Magic Power Tank */}
+                    <div style={{ marginTop: 8 }}>
                         <MagicTank
                             currentSeconds={displaySeconds}
                             maxSeconds={targetSeconds}
                             onReset={handleTankReset}
                         />
-                    </motion.div>
-                </div>
-
-                {/* The Stars of the Show (Carousel) */}
-                <div style={{ width: '100%', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
-                    <motion.div
-                        drag="x"
-                        dragConstraints={{ left: 0, right: 0 }}
-                        dragElastic={0.2}
-                        dragDirectionLock
-                        onDragEnd={handleDragEnd}
-                        animate={{ x: `calc(-${currentPageIndex * 100}%)` }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        style={{ display: 'flex', width: '100%', alignItems: 'center' }}
-                    >
-                        {swipePages.map((page, index) => {
-                            const isTogetherPage = page.kind === 'together';
-                            const renderUsers = isTogetherPage ? users : [page.user];
-
-                            return (
-                                <div key={page.id} style={{
-                                    width: '100%',
-                                    flexShrink: 0,
-                                    padding: '0 20px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    gap: 'min(2vh, 16px)',
-                                    opacity: currentPageIndex === index ? 1 : 0.5,
-                                    transition: 'opacity 0.3s ease'
-                                }}>
-                                    {/* User Name Badge */}
-                                    <motion.div
-                                        initial={{ opacity: 0, y: -10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: 0.2 }}
-                                        style={{
-                                            background: 'rgba(255,255,255,0.85)',
-                                            padding: '6px 16px',
-                                            borderRadius: 20,
-                                            fontFamily: "'Noto Sans JP', sans-serif",
-                                            fontSize: 14,
-                                            fontWeight: 700,
-                                            color: '#2D3436',
-                                            boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                                            marginBottom: '1vh',
-                                            backdropFilter: 'blur(10px)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 8,
-                                        }}
-                                    >
-                                        {page.kind === 'user' ? (
-                                            <UserAvatar
-                                                avatarUrl={page.user.avatarUrl}
-                                                name={page.name}
-                                                size={24}
-                                            />
-                                        ) : '🌍'}
-                                        {page.name}
-                                    </motion.div>
-
-                                    <div style={{
-                                        display: 'flex',
-                                        gap: isTogetherPage ? 12 : 0,
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        width: '100%'
-                                    }}>
-                                        {renderUsers.map((u) => (
-                                            <div key={u.id} style={{
-                                                transform: isTogetherPage ? 'scale(0.85)' : 'scale(1)',
-                                                position: 'relative'
-                                            }}>
-                                                <FuwafuwaCharacter
-                                                    user={u}
-                                                    sessions={allSessions}
-                                                />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </motion.div>
-                </div>
-
-                {/* Pagination Dots */}
-                {swipePages.length > 1 && (
-                    <div style={{
-                        display: 'flex',
-                        gap: 8,
-                        marginTop: 'min(3vh, 24px)',
-                        alignItems: 'center'
-                    }}>
-                        {swipePages.map((_, idx) => (
-                            <div
-                                key={idx}
-                                style={{
-                                    width: currentPageIndex === idx ? 24 : 8,
-                                    height: 8,
-                                    borderRadius: 4,
-                                    background: currentPageIndex === idx ? '#2BBAA0' : 'rgba(43, 186, 160, 0.3)',
-                                    transition: 'all 0.3s ease'
-                                }}
-                            />
-                        ))}
                     </div>
-                )}
-
-                {/* Subtle instruction text */}
-                {swipePages.length > 1 && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 0.8 }}
-                        transition={{ delay: 2, duration: 2 }}
-                        style={{
-                            marginTop: 'min(2vh, 16px)',
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: '#636e72',
-                            letterSpacing: 2,
-                            background: 'rgba(255, 255, 255, 0.5)',
-                            padding: '6px 16px',
-                            borderRadius: 20,
-                        }}
-                    >
-                        スワイプしてえらんでね
-                    </motion.div>
-                )}
+                </div>
 
                 {/* ─── Challenge Section ─── */}
                 {filteredChallenges.length > 0 && (
                     <div style={{
                         width: '100%',
-                        padding: '0 20px',
-                        marginTop: 24,
+                        padding: '0 16px',
+                        marginTop: 20,
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: 8,
+                        gap: 10,
                     }}>
                         <span style={{
                             fontFamily: "'Noto Sans JP', sans-serif",
@@ -554,8 +524,8 @@ export const HomeScreen: React.FC = () => {
                 {/* ─── Popular Menus Section ─── */}
                 <div style={{
                     width: '100%',
-                    padding: '0 20px',
-                    marginTop: filteredChallenges.length > 0 ? 20 : 24,
+                    padding: '0 16px',
+                    marginTop: 20,
                 }}>
                     <PopularMenusRow
                         onOpenBrowser={() => setMenuBrowserOpen(true)}

@@ -104,6 +104,10 @@ interface AppState {
     // Milestones
     activeMilestoneModal: 'egg' | 'fairy' | 'adult' | null;
     setActiveMilestoneModal: (modal: 'egg' | 'fairy' | 'adult' | null) => void;
+
+    // Challenge participation
+    joinedChallengeIds: string[];
+    joinChallenge: (id: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -209,11 +213,18 @@ export const useAppStore = create<AppState>()(
             setDebugFuwafuwaScale: (scale) => set({ debugFuwafuwaScale: scale }),
 
             activeMilestoneModal: null,
-            setActiveMilestoneModal: (modal) => set({ activeMilestoneModal: modal })
+            setActiveMilestoneModal: (modal) => set({ activeMilestoneModal: modal }),
+
+            joinedChallengeIds: [],
+            joinChallenge: (id) => set((state) => ({
+                joinedChallengeIds: state.joinedChallengeIds.includes(id)
+                    ? state.joinedChallengeIds
+                    : [...state.joinedChallengeIds, id]
+            })),
         }),
         {
             name: 'keepgoing-app-state',
-            version: 8, // Bumped to 8 for chibifuwas
+            version: 9, // Bumped to 9 for joinedChallengeIds
             migrate: (persistedState: any, version: number) => {
                 if (version === 0) {
                     if (persistedState.requiredExercises && !persistedState.requiredExercises.includes('S07')) {
@@ -302,6 +313,9 @@ export const useAppStore = create<AppState>()(
                         }));
                     }
                 }
+                if (version < 9) {
+                    persistedState.joinedChallengeIds = persistedState.joinedChallengeIds ?? [];
+                }
                 return persistedState as AppState;
             },
             partialize: (state) => ({
@@ -317,6 +331,7 @@ export const useAppStore = create<AppState>()(
                 debugFuwafuwaType: state.debugFuwafuwaType,
                 debugActiveDays: state.debugActiveDays,
                 debugFuwafuwaScale: state.debugFuwafuwaScale,
+                joinedChallengeIds: state.joinedChallengeIds,
             }),
         }
     )

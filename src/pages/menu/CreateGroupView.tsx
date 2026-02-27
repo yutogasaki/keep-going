@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { Globe, Plus } from 'lucide-react';
 import { calculateTotalSeconds, getExerciseById, getExercisesByClass, type ClassLevel } from '../../data/exercises';
 import { saveCustomGroup, type MenuGroup } from '../../data/menuGroups';
+import { publishMenu } from '../../lib/publicMenus';
+import { getAccountId } from '../../lib/sync';
 
 const EMOJI_OPTIONS = ['🌸', '💪', '🦵', '🩰', '⭐', '🌈', '🔥', '💃', '🧘', '🎯', '✨', '🌙'];
 
@@ -11,12 +13,18 @@ export const CreateGroupView: React.FC<{
     classLevel: string;
     initial: MenuGroup | null;
     currentUserId?: string;
+    authorName?: string;
     onSave: () => void;
     onCancel: () => void;
-}> = ({ classLevel, initial, currentUserId, onSave, onCancel }) => {
+}> = ({ classLevel, initial, currentUserId, authorName, onSave, onCancel }) => {
     const [name, setName] = useState(initial?.name || '');
     const [emoji, setEmoji] = useState(initial?.emoji || '🌸');
+    const [description, setDescription] = useState(initial?.description || '');
     const [selectedIds, setSelectedIds] = useState<string[]>(initial?.exerciseIds || []);
+    const [isPublic, setIsPublic] = useState(false);
+
+    const isLoggedIn = !!getAccountId();
+    const isEditing = !!initial;
 
     const availableExercises = getExercisesByClass(classLevel as ClassLevel);
     const totalSec = calculateTotalSeconds(selectedIds);
@@ -32,12 +40,22 @@ export const CreateGroupView: React.FC<{
             id: initial?.id || `custom-${Date.now()}`,
             name: name.trim(),
             emoji,
-            description: '',
+            description: description.trim(),
             exerciseIds: selectedIds,
             isPreset: false,
             creatorId: currentUserId,
         };
         await saveCustomGroup(group);
+
+        // Publish if toggle is on (new menus only)
+        if (isPublic && !isEditing && isLoggedIn && authorName) {
+            try {
+                await publishMenu(group, authorName);
+            } catch (err) {
+                console.warn('[CreateGroupView] publish failed:', err);
+            }
+        }
+
         onSave();
     };
 
@@ -51,7 +69,7 @@ export const CreateGroupView: React.FC<{
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            padding: '64px 20px 100px 20px', // Avoid overlap with CurrentContextBadge
+            padding: '64px 20px 100px 20px',
             gap: 20,
             overflowY: 'auto',
         }}>
@@ -148,6 +166,42 @@ export const CreateGroupView: React.FC<{
                         outline: 'none',
                         boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)',
                         transition: 'all 0.2s',
+                    }}
+                />
+            </div>
+
+            {/* Description input */}
+            <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
+                <label style={{
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#2D3436',
+                    display: 'block',
+                    marginBottom: 12,
+                }}>
+                    せつめい
+                    <span style={{ fontWeight: 400, color: '#B2BEC3', marginLeft: 6, fontSize: 11 }}>じゆう</span>
+                </label>
+                <textarea
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    placeholder="メニューの説明やコメント"
+                    rows={3}
+                    style={{
+                        width: '100%',
+                        padding: '14px 20px',
+                        borderRadius: 16,
+                        border: '1px solid rgba(0,0,0,0.05)',
+                        background: '#F8F9FA',
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 14,
+                        color: '#2D3436',
+                        outline: 'none',
+                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)',
+                        transition: 'all 0.2s',
+                        resize: 'none',
+                        lineHeight: 1.6,
                     }}
                 />
             </div>
@@ -340,6 +394,65 @@ export const CreateGroupView: React.FC<{
                     })}
                 </div>
             </div>
+
+            {/* Publish toggle (only for new menus when logged in) */}
+            {isLoggedIn && !isEditing && (
+                <div className="card" style={{
+                    padding: '16px 20px',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Globe size={18} color={isPublic ? '#0984E3' : '#B2BEC3'} />
+                        <div>
+                            <div style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 14,
+                                fontWeight: 700,
+                                color: '#2D3436',
+                            }}>
+                                みんなに公開する
+                            </div>
+                            <div style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 11,
+                                color: '#8395A7',
+                            }}>
+                                他の人がこのメニューをもらえるようになります
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setIsPublic(!isPublic)}
+                        style={{
+                            width: 48,
+                            height: 28,
+                            borderRadius: 14,
+                            border: 'none',
+                            background: isPublic ? '#0984E3' : '#DFE6E9',
+                            cursor: 'pointer',
+                            position: 'relative',
+                            transition: 'background 0.2s',
+                            flexShrink: 0,
+                        }}
+                    >
+                        <div style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: '50%',
+                            background: 'white',
+                            position: 'absolute',
+                            top: 3,
+                            left: isPublic ? 23 : 3,
+                            transition: 'left 0.2s',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
+                        }} />
+                    </button>
+                </div>
+            )}
 
             {/* Save button */}
             <motion.button
