@@ -18,6 +18,8 @@ export interface Database {
                     required_exercises: string[];
                     consumed_magic_date: string | null;
                     consumed_magic_seconds: number;
+                    avatar_url: string | null;
+                    chibifuwas: unknown[];
                     created_at: string;
                     updated_at: string;
                 };
@@ -37,6 +39,8 @@ export interface Database {
                     required_exercises?: string[];
                     consumed_magic_date?: string | null;
                     consumed_magic_seconds?: number;
+                    avatar_url?: string | null;
+                    chibifuwas?: unknown[];
                 };
                 Update: Partial<Database['public']['Tables']['family_members']['Insert']>;
             };
@@ -133,6 +137,70 @@ export interface Database {
                     notification_time?: string;
                 };
                 Update: Partial<Database['public']['Tables']['app_settings']['Insert']>;
+            };
+            challenges: {
+                Row: {
+                    id: string;
+                    title: string;
+                    exercise_id: string;
+                    target_count: number;
+                    start_date: string;
+                    end_date: string;
+                    created_by: string;
+                    reward_fuwafuwa_type: number;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    title: string;
+                    exercise_id: string;
+                    target_count: number;
+                    start_date: string;
+                    end_date: string;
+                    created_by: string;
+                    reward_fuwafuwa_type: number;
+                };
+                Update: Partial<Database['public']['Tables']['challenges']['Insert']>;
+            };
+            challenge_completions: {
+                Row: {
+                    id: string;
+                    challenge_id: string;
+                    account_id: string;
+                    member_id: string;
+                    completed_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    challenge_id: string;
+                    account_id: string;
+                    member_id: string;
+                };
+                Update: Partial<Database['public']['Tables']['challenge_completions']['Insert']>;
+            };
+            public_menus: {
+                Row: {
+                    id: string;
+                    name: string;
+                    emoji: string;
+                    description: string | null;
+                    exercise_ids: string[];
+                    author_name: string;
+                    account_id: string;
+                    download_count: number;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    name: string;
+                    emoji: string;
+                    description?: string | null;
+                    exercise_ids?: string[];
+                    author_name: string;
+                    account_id: string;
+                    download_count?: number;
+                };
+                Update: Partial<Database['public']['Tables']['public_menus']['Insert']>;
             };
         };
     };
