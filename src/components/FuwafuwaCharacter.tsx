@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, useAnimation, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
-import { calculateFuwafuwaStatus } from '../lib/fuwafuwa';
+import { calculateFuwafuwaStatus, pickNextFuwafuwaType } from '../lib/fuwafuwa';
 import { getTodayKey, type SessionRecord } from '../lib/db';
 import { Heart, Edit2 } from 'lucide-react';
 
@@ -65,8 +65,9 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
     };
 
     const handleNewEggTransition = () => {
-        // Reset and create new egg
-        resetUserFuwafuwa(user.id, Math.floor(Math.random() * 10), departingInfo?.activeDays || status.activeDays, departingInfo?.stage || status.stage);
+        // Reset and create new egg with unique type selection
+        const nextType = pickNextFuwafuwaType(user.pastFuwafuwas || [], user.fuwafuwaType);
+        resetUserFuwafuwa(user.id, nextType, departingInfo?.activeDays || status.activeDays, departingInfo?.stage || status.stage);
         controls.set({ opacity: 1, scale: 0.5, y: 0 });
         setSayonaraModal('welcome');
     };
@@ -469,145 +470,167 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
             {/* Sayonara → New Egg Transition Modal */}
             {sayonaraModal && createPortal(
                 <AnimatePresence mode="wait">
-                    {sayonaraModal === 'farewell' && departingInfo && (
-                        <motion.div
-                            key="farewell"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.5 }}
-                            style={{
-                                position: 'fixed',
-                                inset: 0,
-                                background: 'linear-gradient(180deg, #FFF5F5 0%, #FFF0F5 50%, #F8F0FF 100%)',
-                                zIndex: 200,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                padding: 32,
-                            }}
-                        >
-                            {/* Floating particles background */}
-                            {[...Array(8)].map((_, i) => (
+                    {sayonaraModal === 'farewell' && departingInfo && (() => {
+                        const isAdult = departingInfo.stage === 3;
+                        return (
+                            <motion.div
+                                key="farewell"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.5 }}
+                                style={{
+                                    position: 'fixed',
+                                    inset: 0,
+                                    background: isAdult
+                                        ? 'linear-gradient(180deg, #FFFBEB 0%, #FFF8E1 50%, #FFF3E0 100%)'
+                                        : 'linear-gradient(180deg, #FFF5F5 0%, #FFF0F5 50%, #F8F0FF 100%)',
+                                    zIndex: 200,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: 32,
+                                }}
+                            >
+                                {/* Floating particles background */}
+                                {[...Array(8)].map((_, i) => (
+                                    <motion.div
+                                        key={i}
+                                        animate={{
+                                            y: [0, -30, 0],
+                                            x: [0, (i % 2 ? 10 : -10), 0],
+                                            opacity: [0.3, 0.7, 0.3],
+                                        }}
+                                        transition={{
+                                            duration: 3 + i * 0.5,
+                                            repeat: Infinity,
+                                            delay: i * 0.3,
+                                        }}
+                                        style={{
+                                            position: 'absolute',
+                                            fontSize: 20,
+                                            left: `${10 + (i * 12) % 80}%`,
+                                            top: `${15 + (i * 17) % 60}%`,
+                                            pointerEvents: 'none',
+                                        }}
+                                    >
+                                        {isAdult
+                                            ? ['🏠', '✨', '🌟', '🎀', '💫', '🌈', '⭐', '🎉'][i]
+                                            : ['🌸', '✨', '💫', '🍃', '🌙', '💖', '⭐', '🦋'][i]
+                                        }
+                                    </motion.div>
+                                ))}
+
+                                {/* Departing character */}
                                 <motion.div
-                                    key={i}
-                                    animate={{
-                                        y: [0, -30, 0],
-                                        x: [0, (i % 2 ? 10 : -10), 0],
-                                        opacity: [0.3, 0.7, 0.3],
-                                    }}
-                                    transition={{
-                                        duration: 3 + i * 0.5,
-                                        repeat: Infinity,
-                                        delay: i * 0.3,
-                                    }}
+                                    initial={{ scale: 1, y: 0 }}
+                                    animate={{ scale: [1, 1.05, 1], y: [0, -5, 0] }}
+                                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                                     style={{
-                                        position: 'absolute',
-                                        fontSize: 20,
-                                        left: `${10 + (i * 12) % 80}%`,
-                                        top: `${15 + (i * 17) % 60}%`,
-                                        pointerEvents: 'none',
+                                        width: 120,
+                                        height: 120,
+                                        borderRadius: '50%',
+                                        overflow: 'hidden',
+                                        border: isAdult
+                                            ? '4px solid rgba(255, 215, 0, 0.6)'
+                                            : '4px solid rgba(255,255,255,0.9)',
+                                        boxShadow: isAdult
+                                            ? '0 12px 40px rgba(255, 215, 0, 0.25)'
+                                            : '0 12px 40px rgba(232, 67, 147, 0.2)',
+                                        marginBottom: 24,
                                     }}
                                 >
-                                    {['🌸', '✨', '💫', '🍃', '🌙', '💖', '⭐', '🦋'][i]}
+                                    <img
+                                        src={`/ikimono/${departingInfo.type}-${departingInfo.stage}.png`}
+                                        alt="departing fuwafuwa"
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                    />
                                 </motion.div>
-                            ))}
 
-                            {/* Departing character */}
-                            <motion.div
-                                initial={{ scale: 1, y: 0 }}
-                                animate={{ scale: [1, 1.05, 1], y: [0, -5, 0] }}
-                                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                                style={{
-                                    width: 120,
-                                    height: 120,
-                                    borderRadius: '50%',
-                                    overflow: 'hidden',
-                                    border: '4px solid rgba(255,255,255,0.9)',
-                                    boxShadow: '0 12px 40px rgba(232, 67, 147, 0.2)',
-                                    marginBottom: 24,
-                                }}
-                            >
-                                <img
-                                    src={`/ikimono/${departingInfo.type}-${departingInfo.stage}.png`}
-                                    alt="departing fuwafuwa"
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                />
+                                <motion.h2
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.3 }}
+                                    style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 22,
+                                        fontWeight: 800,
+                                        color: '#2D3436',
+                                        margin: '0 0 8px',
+                                        textAlign: 'center',
+                                    }}
+                                >
+                                    {isAdult
+                                        ? <>{departingInfo.name || 'ふわふわ'}は<br />お部屋にいくよ！</>
+                                        : <>{departingInfo.name || 'ふわふわ'}、<br />バイバイまたね！</>
+                                    }
+                                </motion.h2>
+
+                                <motion.p
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.6 }}
+                                    style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 14,
+                                        color: '#8395A7',
+                                        textAlign: 'center',
+                                        lineHeight: 1.8,
+                                        margin: '0 0 8px',
+                                    }}
+                                >
+                                    {departingInfo.activeDays}日間、いっしょにがんばったね。
+                                </motion.p>
+
+                                <motion.p
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ delay: 0.9 }}
+                                    style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 13,
+                                        color: '#B2BEC3',
+                                        textAlign: 'center',
+                                        lineHeight: 1.6,
+                                        margin: '0 0 32px',
+                                    }}
+                                >
+                                    {isAdult
+                                        ? 'いつでも お部屋で会えるよ。'
+                                        : 'またいつか会えるかも。'
+                                    }
+                                </motion.p>
+
+                                <motion.button
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 1.2 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={handleNewEggTransition}
+                                    style={{
+                                        padding: '16px 40px',
+                                        borderRadius: 99,
+                                        border: 'none',
+                                        background: isAdult
+                                            ? 'linear-gradient(135deg, #F59E0B, #FBBF24)'
+                                            : 'linear-gradient(135deg, #E84393, #FD79A8)',
+                                        color: 'white',
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 16,
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        boxShadow: isAdult
+                                            ? '0 8px 24px rgba(245, 158, 11, 0.3)'
+                                            : '0 8px 24px rgba(232, 67, 147, 0.3)',
+                                        letterSpacing: 2,
+                                    }}
+                                >
+                                    {isAdult ? 'いってらっしゃい！' : 'バイバイ！'}
+                                </motion.button>
                             </motion.div>
-
-                            <motion.h2
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.3 }}
-                                style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 22,
-                                    fontWeight: 800,
-                                    color: '#2D3436',
-                                    margin: '0 0 8px',
-                                    textAlign: 'center',
-                                }}
-                            >
-                                {departingInfo.name || 'ふわふわ'}と<br />おわかれの時間です
-                            </motion.h2>
-
-                            <motion.p
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.6 }}
-                                style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 14,
-                                    color: '#8395A7',
-                                    textAlign: 'center',
-                                    lineHeight: 1.8,
-                                    margin: '0 0 8px',
-                                }}
-                            >
-                                {departingInfo.activeDays}日間、いっしょにがんばったね。
-                            </motion.p>
-
-                            <motion.p
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.9 }}
-                                style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 13,
-                                    color: '#B2BEC3',
-                                    textAlign: 'center',
-                                    lineHeight: 1.6,
-                                    margin: '0 0 32px',
-                                }}
-                            >
-                                おもいでは ずっと こころのなかに。
-                            </motion.p>
-
-                            <motion.button
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 1.2 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={handleNewEggTransition}
-                                style={{
-                                    padding: '16px 40px',
-                                    borderRadius: 99,
-                                    border: 'none',
-                                    background: 'linear-gradient(135deg, #E84393, #FD79A8)',
-                                    color: 'white',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 16,
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    boxShadow: '0 8px 24px rgba(232, 67, 147, 0.3)',
-                                    letterSpacing: 2,
-                                }}
-                            >
-                                ありがとう、バイバイ
-                            </motion.button>
-                        </motion.div>
-                    )}
+                        );
+                    })()}
 
                     {sayonaraModal === 'welcome' && (
                         <motion.div

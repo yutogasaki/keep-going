@@ -1,5 +1,6 @@
 import { getTodayKey } from './db';
 import type { SessionRecord } from './db';
+import type { PastFuwafuwaRecord } from '../store/useAppStore';
 
 // 28 days cycle
 export const FUWAFUWA_CYCLE_DAYS = 28;
@@ -31,57 +32,82 @@ export function calculateFuwafuwaStatus(
     const diffTime = Math.abs(today.getTime() - birth.getTime());
     const daysAlive = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; // 1-indexed
 
-    // If day 29 or more, it's sayonara time (waiting for reset)
-    if (daysAlive > FUWAFUWA_CYCLE_DAYS) {
-        return { stage: 3, scale: 1, isSayonara: true, daysAlive, activeDays: 0 };
-    }
-
-    // Calculate active days since birth
+    // Calculate active days since birth (always needed, even for sayonara)
     const sessionsSinceBirth = sessions.filter(s => s.date >= birthDate && s.date <= getTodayKey());
     const uniqueActiveDates = new Set(sessionsSinceBirth.map(s => s.date));
     const activeDays = uniqueActiveDates.size;
 
+    // Determine final stage based on activity
     let stage = 1;
     let scale = 1.0;
 
+    if (activeDays >= EVOLVE_TO_ADULT_THRESHOLD) {
+        stage = 3;
+    } else if (activeDays >= EVOLVE_TO_FAIRY_THRESHOLD) {
+        stage = 2;
+        if (activeDays <= 5) scale = 0.5;
+        else if (activeDays <= 8) scale = 0.75;
+        else scale = 1.0;
+    }
+
+    // If day 29 or more, it's sayonara time (return actual stage for farewell branching)
+    if (daysAlive > FUWAFUWA_CYCLE_DAYS) {
+        return { stage, scale: 1, isSayonara: true, daysAlive, activeDays };
+    }
+
+    // Within cycle: apply time-gated evolution rules
     if (daysAlive <= 7) {
-        // Week 1: Egg
+        // Week 1: always Egg regardless of activeDays
         stage = 1;
+        scale = 1.0;
     } else if (daysAlive <= 21) {
-        // Week 2-3: Fairy
-        // Only evolve to Fairy if activeDays >= EVOLVE_TO_FAIRY_THRESHOLD
+        // Week 2-3: Fairy possible
         if (activeDays >= EVOLVE_TO_FAIRY_THRESHOLD) {
             stage = 2;
-            // Fairy has 3 distinct sizes. Active days in week 2-3 determines size.
-            // Minimum active days to be here is 3. Max active days possible at day 21 is 21.
-            // Let's say: 
-            // 3-5 days: small (0.5)
-            // 6-8 days: medium (0.75)
-            // 9+ days: large (1.0)
-            if (activeDays <= 5) {
-                scale = 0.5;
-            } else if (activeDays <= 8) {
-                scale = 0.75;
-            } else {
-                scale = 1.0;
-            }
+            if (activeDays <= 5) scale = 0.5;
+            else if (activeDays <= 8) scale = 0.75;
+            else scale = 1.0;
         } else {
-            // Didn't try hard enough, stay as Egg
             stage = 1;
+            scale = 1.0;
         }
     } else {
-        // Week 4: Adult
+        // Week 4: Adult possible
         if (activeDays >= EVOLVE_TO_ADULT_THRESHOLD) {
             stage = 3;
+            scale = 1.0;
         } else if (activeDays >= EVOLVE_TO_FAIRY_THRESHOLD) {
-            // Reached fairy, but didn't reach adult
             stage = 2;
-            scale = 1.0; // Max fairy size
+            scale = 1.0;
         } else {
-            // Stayed as egg the whole time
             stage = 1;
+            scale = 1.0;
         }
     }
 
     return { stage, scale, isSayonara: false, daysAlive, activeDays };
+}
+
+/**
+ * 過去に来たことのないタイプからランダムに選ぶ。
+ * 全種制覇した場合は currentType 以外からランダム。
+ */
+export function pickNextFuwafuwaType(
+    pastFuwafuwas: PastFuwafuwaRecord[],
+    currentType: number,
+): number {
+    const allTypes = Array.from({ length: 10 }, (_, i) => i);
+    const usedTypes = new Set([
+        currentType,
+        ...pastFuwafuwas.map(fw => fw.type),
+    ]);
+    const available = allTypes.filter(t => !usedTypes.has(t));
+
+    if (available.length === 0) {
+        // 全種制覇 → currentType以外からランダム
+        const reset = allTypes.filter(t => t !== currentType);
+        return reset[Math.floor(Math.random() * reset.length)];
+    }
+
+    return available[Math.floor(Math.random() * available.length)];
 }

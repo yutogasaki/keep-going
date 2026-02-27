@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CalendarDays, Flame, BookHeart, Clock, Calendar, Award } from 'lucide-react';
+import { CalendarDays, Flame, Home, Clock, Calendar, Award } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { getAllSessions, getSessionsByDate, getTodayKey, type SessionRecord } from '../lib/db';
@@ -19,7 +19,8 @@ export const RecordPage: React.FC = () => {
     const sessionUserIdSet = useMemo(() => new Set(sessionUserIds), [sessionUserIds]);
     // Find who is currently active in this session view
     const currentViewUsers = users.filter(u => sessionUserIds.includes(u.id));
-    const pastFuwafuwas = currentViewUsers.flatMap(u => u.pastFuwafuwas || []);
+    // お部屋には成体（finalStage === 3）のふわふわのみ表示
+    const pastFuwafuwas = currentViewUsers.flatMap(u => u.pastFuwafuwas || []).filter(fw => fw.finalStage === 3);
 
     useEffect(() => {
         const load = () => {
@@ -157,8 +158,8 @@ export const RecordPage: React.FC = () => {
                             gap: 6
                         }}
                     >
-                        <BookHeart size={16} />
-                        思い出のアルバム
+                        <Home size={16} />
+                        お部屋
                     </button>
                 </div>
 
@@ -470,13 +471,13 @@ export const RecordPage: React.FC = () => {
                                     color: '#8395A7',
                                     fontFamily: "'Noto Sans JP', sans-serif",
                                 }}>
-                                    <BookHeart size={48} color="#FFEAA7" style={{ margin: '0 auto 16px' }} />
+                                    <Home size={48} color="#FFEAA7" style={{ margin: '0 auto 16px' }} />
                                     <div style={{ fontSize: 16, fontWeight: 700, color: '#2D3436', marginBottom: 8 }}>
-                                        まだ思い出はありません
+                                        まだ お部屋にはだれもいません
                                     </div>
                                     <div style={{ fontSize: 13, lineHeight: 1.6 }}>
-                                        ふわふわとのお別れの日が来ると、<br />
-                                        ここに記録が残ります。
+                                        ふわふわを成体まで育てると、<br />
+                                        ここに引っ越してくるよ。
                                     </div>
                                 </div>
                             ) : (
@@ -510,7 +511,7 @@ export const RecordPage: React.FC = () => {
                                             border: '2px solid rgba(255,154,158,0.2)',
                                         }}>
                                             <img
-                                                src={`/ ikimono / ${fw.type} -${fw.finalStage}.png`}
+                                                src={`/ikimono/${fw.type}-${fw.finalStage}.png`}
                                                 alt="Fuwafuwa"
                                                 style={{ width: '85%', height: '85%', objectFit: 'cover' }}
                                             />
