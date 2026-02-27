@@ -26,8 +26,8 @@ export const MenuPage: React.FC = () => {
     const currentUsers = users.filter(u => sessionUserIds.includes(u.id));
     const classLevel = currentUsers.length > 0
         ? currentUsers.reduce((min, u) => {
-            const weights: Record<'プレ' | '初級' | '中級' | '上級', number> = { 'プレ': 0, '初級': 1, '中級': 2, '上級': 3 };
-            return weights[u.classLevel] < weights[min] ? u.classLevel : min;
+            const weights: Record<string, number> = { 'プレ': 0, '初級': 1, '中級': 2, '上級': 3, 'その他': 1 };
+            return (weights[u.classLevel] ?? 1) < (weights[min] ?? 1) ? u.classLevel : min;
         }, currentUsers[0].classLevel)
         : '初級';
     const startSessionWithExercises = useAppStore(s => s.startSessionWithExercises);

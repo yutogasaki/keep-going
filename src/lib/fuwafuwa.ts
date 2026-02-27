@@ -28,8 +28,11 @@ export function calculateFuwafuwaStatus(
     const today = new Date(getTodayKey());
     const birth = new Date(birthDate);
 
-    // Calculate days difference
-    const diffTime = Math.abs(today.getTime() - birth.getTime());
+    // Calculate days difference (guard against future birth dates)
+    const diffTime = today.getTime() - birth.getTime();
+    if (diffTime < 0) {
+        return { stage: 1, scale: 1, isSayonara: false, daysAlive: 0, activeDays: 0 };
+    }
     const daysAlive = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; // 1-indexed
 
     // Calculate active days since birth (always needed, even for sayonara)

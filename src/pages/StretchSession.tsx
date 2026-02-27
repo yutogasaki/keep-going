@@ -21,12 +21,12 @@ export const StretchSession: React.FC = () => {
     const contextUsers = currentUsers.length > 0 ? currentUsers : users.slice(0, 1);
     const classLevel = contextUsers.length > 0
         ? contextUsers.reduce((min, u) => {
-            const weights: Record<'プレ' | '初級' | '中級' | '上級', number> = { 'プレ': 0, '初級': 1, '中級': 2, '上級': 3 };
-            return weights[u.classLevel] < weights[min] ? u.classLevel : min;
+            const weights: Record<string, number> = { 'プレ': 0, '初級': 1, '中級': 2, '上級': 3, 'その他': 1 };
+            return (weights[u.classLevel] ?? 1) < (weights[min] ?? 1) ? u.classLevel : min;
         }, contextUsers[0].classLevel)
         : '初級';
 
-    const dailyTargetMinutes = contextUsers.reduce((sum, u) => sum + (u.dailyTargetMinutes ?? 10), 0);
+    const dailyTargetMinutes = Math.max(...contextUsers.map(u => u.dailyTargetMinutes ?? 10));
     const globalExcludedIds = Array.from(new Set(contextUsers.flatMap((u) => u.excludedExercises || ['C01', 'C02'])));
     const globalRequiredIds = Array.from(new Set(contextUsers.flatMap((u) => u.requiredExercises || ['S01', 'S02', 'S07'])));
     const sessionUserKey = sessionUserIds.join('|');
@@ -98,19 +98,6 @@ export const StretchSession: React.FC = () => {
     const [skippedIds, setSkippedIds] = useState<string[]>([]);
     const [isCompleted, setIsCompleted] = useState(false);
     const wasPlayingBeforeHiddenRef = useRef(false);
-
-    // Handle BGM Playback based on playing/counting state
-    useEffect(() => {
-        if (!isLoading && !isCounting && isPlaying && !isCompleted) {
-            audio.startBGM(2.0); // 2-second fade in
-        } else {
-            audio.stopBGM(1.0); // 1-second fade out when paused/stopped
-        }
-
-        return () => {
-            audio.stopBGM(1.0);
-        };
-    }, [isLoading, isCounting, isPlaying, isCompleted]);
 
     // Transition state
     const [isTransitioning, setIsTransitioning] = useState(false);
@@ -205,9 +192,9 @@ export const StretchSession: React.FC = () => {
             const timer = setTimeout(() => setShowSideSwitch(false), 2000);
             return () => clearTimeout(timer);
         } else {
-            if (currentSide !== 'left') setCurrentSide('left');
+            setCurrentSide('left');
         }
-    }, [timeLeft, hasLRSplit, currentExercise, halfTime, currentSide]);
+    }, [timeLeft, hasLRSplit, currentExercise, halfTime, isTransitioning, isCounting, isPointFlex]);
 
     // Reset side when moving to new exercise
     useEffect(() => {
@@ -244,9 +231,11 @@ export const StretchSession: React.FC = () => {
         endSession();
     }, [saveSessionData, endSession]);
 
-    // Keep ref in sync so goToNext can call it without stale closure
+    // Keep refs in sync to avoid stale closures in timers
     const saveSessionDataRef = useRef<() => Promise<void>>(saveSessionData);
     saveSessionDataRef.current = saveSessionData;
+    const goToNextRef = useRef<() => void>(() => {});
+    const completionTimerRef = useRef<number | null>(null);
 
     // Main playback timer
     useEffect(() => {
@@ -304,12 +293,12 @@ export const StretchSession: React.FC = () => {
         return () => clearTimeout(timer);
     }, [timeLeft, isCounting, isPlaying, isTransitioning, isBigBreak, totalRunningTime, currentExercise, currentIndex, sessionExercises]);
 
-    // Transition timer
+    // Transition timer (uses ref to avoid stale closure on goToNext)
     useEffect(() => {
         if (!isTransitioning) return;
         if (transitionTime <= 0) {
             audio.playGo();
-            goToNext();
+            goToNextRef.current();
             return;
         }
         if (transitionTime > 0 && transitionTime <= 3) {
@@ -340,6 +329,13 @@ export const StretchSession: React.FC = () => {
         return () => document.removeEventListener('visibilitychange', handleVisibility);
     }, [currentExercise, isPlaying, isCounting, isTransitioning, isBigBreak, isCompleted]);
 
+    // Cleanup completion timer on unmount
+    useEffect(() => {
+        return () => {
+            if (completionTimerRef.current) clearTimeout(completionTimerRef.current);
+        };
+    }, []);
+
     const goToNext = () => {
         setIsTransitioning(false);
         const nextIdx = currentIndex + 1;
@@ -358,13 +354,14 @@ export const StretchSession: React.FC = () => {
             setIsPlaying(false);
             // Save session data immediately (prevent data loss), then navigate after 3 seconds
             saveSessionDataRef.current();
-            setTimeout(() => endSession(), 3000);
+            completionTimerRef.current = window.setTimeout(() => endSession(), 3000);
             return;
         }
         setCurrentIndex(nextIdx);
         setTimeLeft(sessionExercises[nextIdx].sec);
         setIsPlaying(true);
     };
+    goToNextRef.current = goToNext;
 
     // Up swipe = skip/next (spec §1.4: skip is just "changing the flow")
     const handleSwipeUp = () => {
@@ -854,7 +851,7 @@ export const StretchSession: React.FC = () => {
 
                 {/* Transition Overlay */}
                 <AnimatePresence>
-                    {isTransitioning && (
+                    {isTransitioning && currentIndex + 1 < sessionExercises.length && (
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -891,10 +888,10 @@ export const StretchSession: React.FC = () => {
                                 marginBottom: 16,
                             }}>
                                 <ExerciseIcon
-                                    id={sessionExercises[(currentIndex + 1) % sessionExercises.length].id}
-                                    emoji={sessionExercises[(currentIndex + 1) % sessionExercises.length].emoji}
+                                    id={sessionExercises[currentIndex + 1].id}
+                                    emoji={sessionExercises[currentIndex + 1].emoji}
                                     size={48}
-                                    color={getExerciseColor(sessionExercises[(currentIndex + 1) % sessionExercises.length].type)}
+                                    color={getExerciseColor(sessionExercises[currentIndex + 1].type)}
                                 />
                             </div>
                             <h2 style={{
@@ -903,9 +900,9 @@ export const StretchSession: React.FC = () => {
                                 fontWeight: 700,
                                 color: '#2D4741',
                             }}>
-                                {sessionExercises[(currentIndex + 1) % sessionExercises.length].name}
+                                {sessionExercises[currentIndex + 1].name}
                             </h2>
-                            {sessionExercises[(currentIndex + 1) % sessionExercises.length].hasSplit && (
+                            {sessionExercises[currentIndex + 1].hasSplit && (
                                 <div style={{
                                     fontFamily: "'Noto Sans JP', sans-serif",
                                     fontSize: 14,

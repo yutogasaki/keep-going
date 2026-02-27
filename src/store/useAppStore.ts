@@ -66,7 +66,6 @@ interface AppState {
     sessionUserIds: string[]; // Who is actually about to train (based on HomeScreen swipe)
     setSessionUserIds: (ids: string[]) => void;
     isInSession: boolean;
-    sessionReturnedFromTab: boolean; // flag: user came back from another tab
     sessionExerciseIds: string[] | null; // null = auto-generate
     startSession: () => void;
     startSessionWithExercises: (ids: string[]) => void;
@@ -75,8 +74,6 @@ interface AppState {
     // App State (persisted)
     onboardingCompleted: boolean;
     setOnboardingCompleted: (completed: boolean) => void;
-    hasSeenMenuTip: boolean;
-    setHasSeenMenuTip: (seen: boolean) => void;
 
     // Settings (persisted)
     soundVolume: number;
@@ -182,17 +179,13 @@ export const useAppStore = create<AppState>()(
             },
 
             isInSession: false,
-            sessionReturnedFromTab: false,
             sessionExerciseIds: null,
-            startSession: () => set({ isInSession: true, sessionReturnedFromTab: false, sessionExerciseIds: null }),
-            startSessionWithExercises: (ids) => set({ isInSession: true, sessionReturnedFromTab: false, sessionExerciseIds: ids }),
-            endSession: () => set({ isInSession: false, sessionReturnedFromTab: false, sessionExerciseIds: null }),
+            startSession: () => set({ isInSession: true, sessionExerciseIds: null }),
+            startSessionWithExercises: (ids) => set({ isInSession: true, sessionExerciseIds: ids }),
+            endSession: () => set({ isInSession: false, sessionExerciseIds: null }),
 
             onboardingCompleted: false,
             setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
-            hasSeenMenuTip: false,
-            setHasSeenMenuTip: (seen) => set({ hasSeenMenuTip: seen }),
-
             soundVolume: 1.0,
             setSoundVolume: (vol) => set({ soundVolume: vol }),
             ttsEnabled: true,

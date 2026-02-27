@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
-import { calculateTotalSeconds, getExerciseById, getExercisesByClass } from '../../data/exercises';
+import { calculateTotalSeconds, getExerciseById, getExercisesByClass, type ClassLevel } from '../../data/exercises';
 import { saveCustomGroup, type MenuGroup } from '../../data/menuGroups';
 
 const EMOJI_OPTIONS = ['🌸', '💪', '🦵', '🩰', '⭐', '🌈', '🔥', '💃', '🧘', '🎯', '✨', '🌙'];
@@ -18,7 +18,7 @@ export const CreateGroupView: React.FC<{
     const [emoji, setEmoji] = useState(initial?.emoji || '🌸');
     const [selectedIds, setSelectedIds] = useState<string[]>(initial?.exerciseIds || []);
 
-    const availableExercises = getExercisesByClass(classLevel as any);
+    const availableExercises = getExercisesByClass(classLevel as ClassLevel);
     const totalSec = calculateTotalSeconds(selectedIds);
     const minutes = Math.ceil(totalSec / 60);
 

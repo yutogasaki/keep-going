@@ -72,9 +72,8 @@ export async function processQueue(): Promise<void> {
                 const { error } = await supabase.from(entry.table as any).upsert(entry.payload as any);
                 if (error) throw error;
             } else if (entry.operation === 'delete') {
-                const { id: _id, ...filters } = entry.payload;
                 let query = supabase.from(entry.table as any).delete();
-                for (const [key, value] of Object.entries(filters)) {
+                for (const [key, value] of Object.entries(entry.payload)) {
                     query = query.eq(key, value as any);
                 }
                 const { error } = await query;

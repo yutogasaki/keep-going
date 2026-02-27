@@ -72,7 +72,6 @@ export const EXERCISE_COLORS: Record<string, string> = {
     S06: '#FFD9E8',
     S07: '#D9F5FF',
     S08: '#E8E5D4',
-    S09: '#F5D5E8',
     S10: '#E8F5D9',
     C01: '#D4E8F5',
     C02: '#E5D9FF',
@@ -101,8 +100,6 @@ export interface GenerateSessionOptions {
     targetSeconds?: number;
     customPool?: SessionPoolExercise[];
     historicalCounts?: Record<string, number>;
-    // Backward compatibility for existing callsites with typo.
-    historcalCounts?: Record<string, number>;
 }
 
 // Generate a session (list of exercises) for a class
@@ -114,10 +111,9 @@ export function generateSession(classLevel: ClassLevel, options: GenerateSession
         targetSeconds = DEFAULT_SESSION_TARGET_SECONDS,
         customPool = [],
         historicalCounts = {},
-        historcalCounts = {},
     } = options;
 
-    const usageCounts = Object.keys(historicalCounts).length > 0 ? historicalCounts : historcalCounts;
+    const usageCounts = historicalCounts;
 
     const baseExercises = getExercisesByClass(classLevel);
     // Merge base exercises with custom exercises. Ensure custom exercises have 'main' phase and 'stretch' type as defaults.

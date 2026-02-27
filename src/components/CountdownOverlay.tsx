@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { audio } from '../lib/audio';
 import { Exercise } from '../data/exercises';
@@ -10,6 +10,7 @@ interface CountdownOverlayProps {
 
 export const CountdownOverlay: React.FC<CountdownOverlayProps> = ({ onComplete, firstExercise }) => {
     const [count, setCount] = useState(5);
+    const completedRef = useRef(false);
 
     useEffect(() => {
         // Init audio mapping to the tap that mounted this component
@@ -19,11 +20,13 @@ export const CountdownOverlay: React.FC<CountdownOverlayProps> = ({ onComplete, 
     useEffect(() => {
         if (count > 0 && count <= 3) {
             audio.playTick();
-        } else if (count === 0) {
+        } else if (count === 0 && !completedRef.current) {
+            completedRef.current = true;
             audio.playGo();
             onComplete();
             return;
         }
+        if (count <= 0) return;
         const timer = setTimeout(() => setCount(c => c - 1), 1000);
         return () => clearTimeout(timer);
     }, [count, onComplete]);

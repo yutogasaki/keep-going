@@ -7,11 +7,6 @@ class AudioEngine {
     private ctx: AudioContext | null = null;
     private isMuted: boolean = false;
 
-    // BGM properties
-    private bgmGain: GainNode | null = null;
-    private isBgmPlaying: boolean = false;
-    private synBgmOscillators: OscillatorNode[] = [];
-
     // Initialize context only on user interaction
     public init() {
         if (!this.ctx) {
@@ -24,55 +19,10 @@ class AudioEngine {
 
     public toggleMute() {
         this.isMuted = !this.isMuted;
-
-        // Handle BGM volume on mute toggle
-        if (this.isBgmPlaying && this.bgmGain && this.ctx) {
-            const now = this.ctx.currentTime;
-            this.bgmGain.gain.cancelScheduledValues(now);
-            if (this.isMuted || useAppStore.getState().soundVolume === 0) {
-                this.bgmGain.gain.linearRampToValueAtTime(0, now + 0.5);
-            } else {
-                const vol = useAppStore.getState().soundVolume * 0.3; // Default BGM volume ratio
-                this.bgmGain.gain.linearRampToValueAtTime(vol, now + 0.5);
-            }
-        }
     }
 
     public getMuted() {
         return this.isMuted;
-    }
-
-    // --- Synthetic BGM Methods ---
-    // Generates a soft, breathing ambient drone using Web Audio API
-
-    public async startBGM(_fadeTime: number = 2.0) {
-        // Disabled synthetic drone BGM as requested by user ("bobobobo" sound is unpleasant during training)
-        return;
-    }
-
-    public stopBGM(fadeTime: number = 2.0) {
-        if (!this.isBgmPlaying || !this.bgmGain || !this.ctx) return;
-
-        const now = this.ctx.currentTime;
-        this.bgmGain.gain.cancelScheduledValues(now);
-        this.bgmGain.gain.setValueAtTime(this.bgmGain.gain.value, now);
-        this.bgmGain.gain.linearRampToValueAtTime(0, now + fadeTime);
-
-        const oscsToStop = this.synBgmOscillators;
-        setTimeout(() => {
-            try {
-                oscsToStop.forEach((osc: OscillatorNode) => {
-                    osc.stop();
-                    osc.disconnect();
-                });
-            } catch (e) {
-                // Ignore errors if already stopped
-            }
-        }, fadeTime * 1000 + 100);
-
-        this.synBgmOscillators = [];
-        this.isBgmPlaying = false;
-        this.bgmGain = null;
     }
 
     // Initialize TTS engine (needed for iOS Safari)

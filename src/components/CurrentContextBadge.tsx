@@ -27,7 +27,7 @@ export const CurrentContextBadge: React.FC = () => {
         // Define the cycle order: User 0 -> User 1 -> ... -> Together -> User 0
         const swipePages = [...users];
         if (users.length >= 2) {
-            swipePages.push({ id: 'TOGETHER', name: 'みんなで！', classLevel: '初級' } as any);
+            swipePages.push({ id: 'TOGETHER', name: 'みんなで！' } as Pick<(typeof swipePages)[number], 'id' | 'name'>);
         }
 
         // Find current index

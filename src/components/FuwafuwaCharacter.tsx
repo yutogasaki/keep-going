@@ -26,6 +26,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const particleIdCounter = useRef(0);
     const rippleIdCounter = useRef(0);
+    const particleTimers = useRef<number[]>([]);
 
     // Debug Overrides (subscribed early so they can be used in effects)
     const debugStage = useAppStore(s => s.debugFuwafuwaStage);
@@ -37,6 +38,14 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
     const displayType = debugType !== null ? debugType : fuwafuwaType;
     const displayActiveDays = debugActiveDays !== null ? debugActiveDays : status.activeDays;
     const displayScale = debugScale !== null ? debugScale : status.scale;
+
+    // Cleanup particle timers on unmount
+    useEffect(() => {
+        const timers = particleTimers;
+        return () => {
+            timers.current.forEach(t => clearTimeout(t));
+        };
+    }, []);
 
     useEffect(() => {
         if (!fuwafuwaBirthDate) {
@@ -99,10 +108,12 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
             y: (Math.random() - 0.5) * 60,
             emoji: emojis[Math.floor(Math.random() * emojis.length)]
         }));
+        const newIds = new Set(newParticles.map(p => p.id));
         setParticles(prev => [...prev, ...newParticles]);
-        setTimeout(() => {
-            setParticles(prev => prev.filter(p => !newParticles.find(np => np.id === p.id)));
+        const timer = window.setTimeout(() => {
+            setParticles(prev => prev.filter(p => !newIds.has(p.id)));
         }, 1500);
+        particleTimers.current.push(timer);
 
         // Random Tsun-Tsun Animations
         const rand = Math.random();

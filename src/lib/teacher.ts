@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { formatDateKey, shiftDateKey } from './db';
 
 // ─── Types ───────────────────────────────────────────
 
@@ -99,23 +100,7 @@ export async function fetchAllStudents(): Promise<StudentSummary[]> {
     return results;
 }
 
-// ─── Streak calculation (mirrors db.ts logic) ────────
-
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-function formatDateKey(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
-function shiftDateKey(dateKey: string, offsetDays: number): string {
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
-    if (!match) return dateKey;
-    const base = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-    return formatDateKey(new Date(base.getTime() + offsetDays * DAY_MS));
-}
+// ─── Streak calculation (uses shared utilities from db.ts) ────
 
 export function calculateStreak(sessions: { date: string }[]): number {
     if (sessions.length === 0) return 0;

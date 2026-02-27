@@ -51,7 +51,7 @@ export const HomeScreen: React.FC = () => {
     const isTogetherMode = sessionUserIds.length > 1;
     const sessionUserIdSet = useMemo(() => new Set(sessionUserIds), [sessionUserIds]);
 
-    const todaySessions = allSessions.filter(s => {
+    const todaySessions = useMemo(() => allSessions.filter(s => {
         if (s.date !== todayStr) return false;
         // In together mode, sum ALL sessions that involve ANY of the users to show family total.
         // In individual mode, sum ONLY sessions that involve this specific user.
@@ -60,7 +60,7 @@ export const HomeScreen: React.FC = () => {
         } else {
             return !s.userIds || s.userIds.includes(sessionUserIds[0]);
         }
-    });
+    }), [allSessions, todayStr, isTogetherMode, sessionUserIdSet, sessionUserIds]);
     const todaySeconds = todaySessions.reduce((acc, curr) => acc + curr.totalSeconds, 0);
 
     // Calculate total target time based on active session users

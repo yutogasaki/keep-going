@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy } from 'lucide-react';
 import type { Challenge, ChallengeCompletion } from '../lib/challenges';
@@ -22,16 +22,21 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
     const addChibifuwa = useAppStore(state => state.addChibifuwa);
 
     const [progress, setProgress] = useState(0);
-    const [checking, setChecking] = useState(false);
+    const checkingRef = useRef(false);
 
-    // Which user IDs to check progress for (based on current session context)
-    const activeUserIds = sessionUserIds.length > 0 ? sessionUserIds : users.map(u => u.id);
+    // Stabilize derived arrays with useMemo
+    const activeUserIds = useMemo(
+        () => sessionUserIds.length > 0 ? sessionUserIds : users.map(u => u.id),
+        [sessionUserIds, users]
+    );
 
-    // Check if already completed by any active user
-    const completedUserIds = new Set(
-        completions
-            .filter(c => c.challengeId === challenge.id)
-            .map(c => c.memberId)
+    const completedUserIds = useMemo(
+        () => new Set(
+            completions
+                .filter(c => c.challengeId === challenge.id)
+                .map(c => c.memberId)
+        ),
+        [completions, challenge.id]
     );
     const allCompleted = activeUserIds.every(uid => completedUserIds.has(uid));
 
@@ -46,12 +51,12 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
             if (!cancelled) setProgress(count);
         });
         return () => { cancelled = true; };
-    }, [challenge.exerciseId, challenge.startDate, challenge.endDate, activeUserIds.join(',')]);
+    }, [challenge.exerciseId, challenge.startDate, challenge.endDate, activeUserIds]);
 
     // Auto-check completion when progress reaches target
     useEffect(() => {
-        if (progress >= challenge.targetCount && !allCompleted && !checking) {
-            setChecking(true);
+        if (progress >= challenge.targetCount && !allCompleted && !checkingRef.current) {
+            checkingRef.current = true;
             (async () => {
                 for (const userId of activeUserIds) {
                     if (!completedUserIds.has(userId)) {
@@ -64,10 +69,10 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
                     }
                 }
                 onCompleted();
-                setChecking(false);
+                checkingRef.current = false;
             })();
         }
-    }, [progress, challenge.targetCount, allCompleted]);
+    }, [progress, challenge, allCompleted, activeUserIds, completedUserIds, addChibifuwa, onCompleted]);
 
     const exercise = EXERCISES.find(e => e.id === challenge.exerciseId);
     const emoji = exercise?.emoji || '🎯';

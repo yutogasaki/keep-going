@@ -34,16 +34,14 @@ const historyDB = localforage.createInstance({ name: 'keepgoing', storeName: 'hi
 const profileDB = localforage.createInstance({ name: 'keepgoing', storeName: 'profile' });
 const customExercisesDB = localforage.createInstance({ name: 'keepgoing', storeName: 'custom_exercises' });
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-function formatDateKey(date: Date): string {
+export function formatDateKey(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
 
-function parseDateKey(dateKey: string): Date | null {
+export function parseDateKey(dateKey: string): Date | null {
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
     if (!match) return null;
 
@@ -54,10 +52,11 @@ function parseDateKey(dateKey: string): Date | null {
     return new Date(year, month, day);
 }
 
-function shiftDateKey(dateKey: string, offsetDays: number): string {
+export function shiftDateKey(dateKey: string, offsetDays: number): string {
     const base = parseDateKey(dateKey);
     if (!base) return dateKey;
-    return formatDateKey(new Date(base.getTime() + offsetDays * DAY_MS));
+    base.setDate(base.getDate() + offsetDays);
+    return formatDateKey(base);
 }
 
 // "Today" is defined as 3:00 AM to next 3:00 AM (per spec)
@@ -70,7 +69,8 @@ export function getTodayKey(): string {
 
 export function getDateKeyOffset(offsetDays: number): string {
     const now = new Date();
-    const adjusted = new Date(now.getTime() - 3 * 60 * 60 * 1000 + offsetDays * DAY_MS);
+    const adjusted = new Date(now.getTime() - 3 * 60 * 60 * 1000);
+    adjusted.setDate(adjusted.getDate() + offsetDays);
     return formatDateKey(adjusted);
 }
 
@@ -128,7 +128,7 @@ export async function getAllSessions(): Promise<SessionRecord[]> {
     return sessions.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 }
 
-export async function getRecentDays(_days: number): Promise<Map<string, SessionRecord[]>> {
+export async function getRecentDays(): Promise<Map<string, SessionRecord[]>> {
     const map = new Map<string, SessionRecord[]>();
     const all = await getAllSessions();
 

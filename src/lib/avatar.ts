@@ -20,7 +20,8 @@ export async function resizeImage(
             const canvas = document.createElement('canvas');
             canvas.width = maxSize;
             canvas.height = maxSize;
-            const ctx = canvas.getContext('2d')!;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) { reject(new Error('Failed to get canvas 2d context')); return; }
             ctx.drawImage(img, sx, sy, min, min, 0, 0, maxSize, maxSize);
 
             canvas.toBlob(
