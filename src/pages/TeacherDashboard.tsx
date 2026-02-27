@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Flame, Users, RefreshCw, Loader2, ChevronDown, Clock } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { ArrowLeft, Flame, Users, RefreshCw, Loader2, ChevronDown, Clock, Calendar, TrendingUp } from 'lucide-react';
 import { fetchAllStudents, type StudentSummary } from '../lib/teacher';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
-import { getTodayKey, type SessionRecord } from '../lib/db';
+import { getTodayKey, getDateKeyOffset, type SessionRecord } from '../lib/db';
 
 const CLASS_EMOJI: Record<string, string> = {
     'プレ': '🐣',
@@ -31,6 +31,26 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
 
     const today = getTodayKey();
     const activeToday = students.filter(s => s.lastActiveDate === today).length;
+
+    // Weekly summary (last 7 days)
+    const weeklyStats = useMemo(() => {
+        if (students.length === 0) return null;
+        const weekDates = new Set(
+            Array.from({ length: 7 }, (_, i) => getDateKeyOffset(-i))
+        );
+        let activeStudents = 0;
+        let totalMinutes = 0;
+        let totalSessions = 0;
+        for (const s of students) {
+            const weekSessions = s.sessions.filter(sess => weekDates.has(sess.date));
+            if (weekSessions.length > 0) activeStudents++;
+            totalSessions += weekSessions.length;
+            totalMinutes += weekSessions.reduce((sum, sess) => sum + sess.totalSeconds, 0);
+        }
+        totalMinutes = Math.floor(totalMinutes / 60);
+        const rate = students.length > 0 ? Math.round((activeStudents / students.length) * 100) : 0;
+        return { activeStudents, totalMinutes, totalSessions, rate };
+    }, [students]);
 
     return (
         <div style={{
@@ -99,25 +119,82 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
 
             {/* Summary stats */}
             {!loading && students.length > 0 && (
-                <div style={{
-                    display: 'flex',
-                    gap: 10,
-                    padding: '0 20px',
-                    marginBottom: 16,
-                }}>
-                    <StatCard
-                        icon={<Users size={16} color="#6C5CE7" />}
-                        value={students.length}
-                        label="生徒数"
-                        bgColor="#F3EEFF"
-                    />
-                    <StatCard
-                        icon={<Flame size={16} color="#E17055" />}
-                        value={activeToday}
-                        label="今日の活動"
-                        bgColor="#FFEDE8"
-                    />
-                </div>
+                <>
+                    <div style={{
+                        display: 'flex',
+                        gap: 10,
+                        padding: '0 20px',
+                        marginBottom: 12,
+                    }}>
+                        <StatCard
+                            icon={<Users size={16} color="#6C5CE7" />}
+                            value={students.length}
+                            label="生徒数"
+                            bgColor="#F3EEFF"
+                        />
+                        <StatCard
+                            icon={<Flame size={16} color="#E17055" />}
+                            value={activeToday}
+                            label="今日の活動"
+                            bgColor="#FFEDE8"
+                        />
+                    </div>
+
+                    {/* Weekly summary card */}
+                    {weeklyStats && (
+                        <div className="card" style={{
+                            margin: '0 20px 16px',
+                            padding: '16px 20px',
+                        }}>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                marginBottom: 12,
+                            }}>
+                                <Calendar size={14} color="#2BBAA0" />
+                                <span style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 13,
+                                    fontWeight: 700,
+                                    color: '#2D3436',
+                                }}>
+                                    今週のまとめ
+                                </span>
+                            </div>
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 1fr',
+                                gap: 10,
+                            }}>
+                                <WeeklyStat
+                                    label="練習率"
+                                    value={`${weeklyStats.rate}%`}
+                                    sub={`${weeklyStats.activeStudents}/${students.length}人`}
+                                    color={weeklyStats.rate >= 70 ? '#2BBAA0' : weeklyStats.rate >= 40 ? '#FDCB6E' : '#E17055'}
+                                />
+                                <WeeklyStat
+                                    label="合計セッション"
+                                    value={`${weeklyStats.totalSessions}`}
+                                    sub="回"
+                                    color="#6C5CE7"
+                                />
+                                <WeeklyStat
+                                    label="合計練習時間"
+                                    value={`${weeklyStats.totalMinutes}`}
+                                    sub="分"
+                                    color="#0984E3"
+                                />
+                                <WeeklyStat
+                                    label="平均ストリーク"
+                                    value={`${students.length > 0 ? Math.round(students.reduce((s, st) => s + st.streak, 0) / students.length * 10) / 10 : 0}`}
+                                    sub="日"
+                                    color="#E17055"
+                                />
+                            </div>
+                        </div>
+                    )}
+                </>
             )}
 
             {/* Student cards */}
@@ -221,6 +298,51 @@ const StatCard: React.FC<{
             }}>
                 {label}
             </div>
+        </div>
+    </div>
+);
+
+// ─── WeeklyStat ──────────────────────────────────────
+
+const WeeklyStat: React.FC<{
+    label: string;
+    value: string;
+    sub: string;
+    color: string;
+}> = ({ label, value, sub, color }) => (
+    <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+    }}>
+        <div style={{
+            fontFamily: "'Noto Sans JP', sans-serif",
+            fontSize: 11,
+            color: '#8395A7',
+        }}>
+            {label}
+        </div>
+        <div style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: 3,
+        }}>
+            <span style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 22,
+                fontWeight: 700,
+                color,
+                lineHeight: 1,
+            }}>
+                {value}
+            </span>
+            <span style={{
+                fontFamily: "'Noto Sans JP', sans-serif",
+                fontSize: 11,
+                color: '#8395A7',
+            }}>
+                {sub}
+            </span>
         </div>
     </div>
 );
