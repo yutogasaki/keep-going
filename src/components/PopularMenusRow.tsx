@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Clock, Download } from 'lucide-react';
 import { fetchRecommendedMenus, type PublicMenu } from '../lib/publicMenus';
-import { EXERCISES } from '../data/exercises';
+import { EXERCISES, calculateTotalSeconds } from '../data/exercises';
 
 interface PopularMenusRowProps {
     onOpenBrowser: () => void;
@@ -56,27 +56,26 @@ export const PopularMenusRow: React.FC<PopularMenusRowProps> = ({ onOpenBrowser,
                 </button>
             </div>
 
-            {/* Horizontal scroll — 3 cards */}
+            {/* Vertical stack — 3 wide cards */}
             <div style={{
                 display: 'flex',
-                gap: 10,
-                overflowX: 'auto',
-                paddingBottom: 4,
-                WebkitOverflowScrolling: 'touch',
-                scrollbarWidth: 'none',
+                flexDirection: 'column',
+                gap: 8,
             }}>
                 {menus.map(menu => {
-                    const exercisePreview = menu.exerciseIds
+                    const exerciseNames = menu.exerciseIds
                         .slice(0, 3)
-                        .map(id => EXERCISES.find(e => e.id === id)?.emoji || '')
-                        .join('');
+                        .map(id => EXERCISES.find(e => e.id === id)?.name || id);
+                    const remaining = menu.exerciseIds.length - 3;
+                    const totalSec = calculateTotalSeconds(menu.exerciseIds);
+                    const minutes = Math.ceil(totalSec / 60);
 
                     return (
                         <button
                             key={menu.id}
                             onClick={() => onMenuTap(menu)}
                             style={{
-                                minWidth: 120,
+                                width: '100%',
                                 padding: '12px 14px',
                                 borderRadius: 14,
                                 border: 'none',
@@ -85,31 +84,64 @@ export const PopularMenusRow: React.FC<PopularMenusRowProps> = ({ onOpenBrowser,
                                 cursor: 'pointer',
                                 textAlign: 'left',
                                 display: 'flex',
-                                flexDirection: 'column',
-                                gap: 4,
-                                flexShrink: 0,
+                                alignItems: 'center',
+                                gap: 12,
                             }}
                         >
-                            <span style={{ fontSize: 20 }}>{menu.emoji}</span>
-                            <span style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 12,
-                                fontWeight: 700,
-                                color: '#2D3436',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                maxWidth: 100,
+                            <span style={{ fontSize: 24, flexShrink: 0 }}>{menu.emoji}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 13,
+                                    fontWeight: 700,
+                                    color: '#2D3436',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                }}>
+                                    {menu.name}
+                                </div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 11,
+                                    color: '#8395A7',
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                }}>
+                                    {exerciseNames.join('、')}{remaining > 0 ? `、+${remaining}` : ''}
+                                </div>
+                            </div>
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'flex-end',
+                                gap: 2,
+                                flexShrink: 0,
                             }}>
-                                {menu.name}
-                            </span>
-                            <span style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 10,
-                                color: '#8395A7',
-                            }}>
-                                {exercisePreview} · {menu.downloadCount}回
-                            </span>
+                                <span style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 10,
+                                    color: '#B2BEC3',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 3,
+                                }}>
+                                    <Clock size={10} />
+                                    {minutes}分
+                                </span>
+                                <span style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 10,
+                                    color: '#B2BEC3',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 3,
+                                }}>
+                                    <Download size={10} />
+                                    {menu.downloadCount}
+                                </span>
+                            </div>
                         </button>
                     );
                 })}

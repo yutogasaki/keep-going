@@ -25,14 +25,17 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
     const joinedChallengeIds = useAppStore(state => state.joinedChallengeIds);
     const joinChallenge = useAppStore(state => state.joinChallenge);
 
-    const isJoined = joinedChallengeIds.includes(challenge.id);
-
     const [progress, setProgress] = useState(0);
     const checkingRef = useRef(false);
 
     const activeUserIds = useMemo(
         () => sessionUserIds.length > 0 ? sessionUserIds : users.map(u => u.id),
         [sessionUserIds, users]
+    );
+
+    // Per-user join check: joined if ANY active user has joined
+    const isJoined = activeUserIds.some(uid =>
+        (joinedChallengeIds[uid] || []).includes(challenge.id)
     );
 
     const completedUserIds = useMemo(
@@ -226,7 +229,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
                 </div>
                 <motion.button
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => joinChallenge(challenge.id)}
+                    onClick={() => activeUserIds.forEach(uid => joinChallenge(uid, challenge.id))}
                     style={{
                         marginTop: 12,
                         width: '100%',

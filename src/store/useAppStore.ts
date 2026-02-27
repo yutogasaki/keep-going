@@ -105,9 +105,9 @@ interface AppState {
     activeMilestoneModal: 'egg' | 'fairy' | 'adult' | null;
     setActiveMilestoneModal: (modal: 'egg' | 'fairy' | 'adult' | null) => void;
 
-    // Challenge participation
-    joinedChallengeIds: string[];
-    joinChallenge: (id: string) => void;
+    // Challenge participation (per-user)
+    joinedChallengeIds: Record<string, string[]>;
+    joinChallenge: (userId: string, challengeId: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -215,16 +215,21 @@ export const useAppStore = create<AppState>()(
             activeMilestoneModal: null,
             setActiveMilestoneModal: (modal) => set({ activeMilestoneModal: modal }),
 
-            joinedChallengeIds: [],
-            joinChallenge: (id) => set((state) => ({
-                joinedChallengeIds: state.joinedChallengeIds.includes(id)
-                    ? state.joinedChallengeIds
-                    : [...state.joinedChallengeIds, id]
-            })),
+            joinedChallengeIds: {},
+            joinChallenge: (userId, challengeId) => set((state) => {
+                const userIds = state.joinedChallengeIds[userId] || [];
+                if (userIds.includes(challengeId)) return state;
+                return {
+                    joinedChallengeIds: {
+                        ...state.joinedChallengeIds,
+                        [userId]: [...userIds, challengeId],
+                    },
+                };
+            }),
         }),
         {
             name: 'keepgoing-app-state',
-            version: 9, // Bumped to 9 for joinedChallengeIds
+            version: 10, // Bumped to 10 for per-user joinedChallengeIds
             migrate: (persistedState: any, version: number) => {
                 if (version === 0) {
                     if (persistedState.requiredExercises && !persistedState.requiredExercises.includes('S07')) {
@@ -315,6 +320,19 @@ export const useAppStore = create<AppState>()(
                 }
                 if (version < 9) {
                     persistedState.joinedChallengeIds = persistedState.joinedChallengeIds ?? [];
+                }
+                if (version < 10) {
+                    // Migrate joinedChallengeIds from string[] to Record<string, string[]>
+                    const oldIds: string[] = Array.isArray(persistedState.joinedChallengeIds)
+                        ? persistedState.joinedChallengeIds
+                        : [];
+                    const newRecord: Record<string, string[]> = {};
+                    if (oldIds.length > 0 && persistedState.users && Array.isArray(persistedState.users)) {
+                        for (const u of persistedState.users) {
+                            newRecord[u.id] = [...oldIds];
+                        }
+                    }
+                    persistedState.joinedChallengeIds = newRecord;
                 }
                 return persistedState as AppState;
             },
