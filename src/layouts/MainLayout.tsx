@@ -1,5 +1,4 @@
 import React, { lazy, Suspense } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 import { Footer } from '../components/Footer';
 
@@ -38,6 +37,13 @@ const PageFallback: React.FC = () => (
     </div>
 );
 
+const tabs = [
+    { key: 'home', Component: HomeScreen },
+    { key: 'record', Component: RecordPage },
+    { key: 'menu', Component: MenuPage },
+    { key: 'settings', Component: SettingsPage },
+] as const;
+
 export const MainLayout: React.FC = () => {
     const currentTab = useAppStore((state) => state.currentTab);
     const isInSession = useAppStore((state) => state.isInSession);
@@ -53,25 +59,24 @@ export const MainLayout: React.FC = () => {
                 flexDirection: 'column',
                 overflow: 'hidden',
             }}>
-                {/* Dynamic Main Content based on Tab */}
+                {/* Tab Content — all pages stay mounted, only active one is visible */}
                 <main style={{ flex: 1, height: '100%', width: '100%', overflow: 'hidden', position: 'relative' }}>
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={currentTab}
-                            initial={{ opacity: 0, y: 15 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -15 }}
-                            transition={{ duration: 0.25, ease: 'easeOut' }}
-                            style={{ width: '100%', height: '100%', position: 'absolute' }}
+                    {tabs.map(({ key, Component }) => (
+                        <div
+                            key={key}
+                            style={{
+                                width: '100%',
+                                height: '100%',
+                                position: 'absolute',
+                                visibility: currentTab === key ? 'visible' : 'hidden',
+                                pointerEvents: currentTab === key ? 'auto' : 'none',
+                            }}
                         >
                             <Suspense fallback={<PageFallback />}>
-                                {currentTab === 'home' && <HomeScreen />}
-                                {currentTab === 'record' && <RecordPage />}
-                                {currentTab === 'menu' && <MenuPage />}
-                                {currentTab === 'settings' && <SettingsPage />}
+                                <Component />
                             </Suspense>
-                        </motion.div>
-                    </AnimatePresence>
+                        </div>
+                    ))}
                 </main>
 
                 {/* Bottom Navigation */}

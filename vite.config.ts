@@ -27,55 +27,50 @@ export default defineConfig({
       }
     },
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       includeAssets: ['audio/bgm.mp3'],
       manifest: false, // Use existing public/manifest.json
       workbox: {
         globPatterns: ['**/*.{js,css,ico,png,svg,woff,woff2}'],
-        // We explicitly remove html from globPatterns so it is not precached with CacheFirst.
-        // We will define runtimeCaching for index.html as NetworkFirst.
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
         navigateFallback: 'index.html',
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
-          // 1. Force NetworkFirst for index.html so we always get the latest version
           {
             urlPattern: ({ request, url }) => request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html',
             handler: 'NetworkFirst',
             options: {
-              cacheName: `html-cache-${appVersion}`,
+              cacheName: 'html-cache',
               expiration: {
                 maxEntries: 1,
-                maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
+                maxAgeSeconds: 60 * 60 * 24 * 7,
               },
               cacheableResponse: {
                 statuses: [0, 200],
               },
             },
           },
-          // 2. StaleWhileRevalidate for JS/CSS assets
           {
             urlPattern: /\.(?:js|css)$/i,
             handler: 'StaleWhileRevalidate',
             options: {
-              cacheName: `assets-cache-${appVersion}`,
+              cacheName: 'assets-cache',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 Days
+                maxAgeSeconds: 60 * 60 * 24 * 30,
               },
             },
           },
-          // 3. CacheFirst for Images and Fonts
           {
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|woff|woff2|eot|ttf|otf)$/i,
             handler: 'CacheFirst',
             options: {
-              cacheName: `media-cache-${appVersion}`,
+              cacheName: 'media-cache',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 60, // 60 Days
+                maxAgeSeconds: 60 * 60 * 24 * 60,
               },
             },
           },

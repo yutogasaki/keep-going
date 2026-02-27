@@ -32,7 +32,7 @@ export const PwaReloadPrompt: React.FC = () => {
 
                 swUpdateIntervalRef.current = window.setInterval(() => {
                     r.update();
-                }, 60 * 60 * 1000);
+                }, 10 * 60 * 1000);
             }
         },
         onRegisterError(error) {
