@@ -295,12 +295,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // signInWithGoogle: link identity for anonymous, or OAuth for non-anonymous
     const signInWithGoogle = useCallback(async () => {
         if (!supabase) return { error: { message: 'Supabase not configured' } as AuthError };
+        const redirectTo = window.location.origin;
         if (user?.is_anonymous) {
-            // Link Google identity to anonymous account (preserves same auth.uid)
-            const { error } = await supabase.auth.linkIdentity({ provider: 'google' });
+            // Try to link Google identity to anonymous account (preserves same auth.uid)
+            const { error } = await supabase.auth.linkIdentity({
+                provider: 'google',
+                options: { redirectTo },
+            });
+            if (error) {
+                // linkIdentity can fail if the Google identity is already linked to another user.
+                // Fall back to regular OAuth sign-in (creates/uses existing Google account).
+                const { error: oauthError } = await supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { redirectTo },
+                });
+                return { error: oauthError };
+            }
             return { error };
         }
-        const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo },
+        });
         return { error };
     }, [user]);
 

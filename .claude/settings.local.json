@@ -15,7 +15,23 @@
       "Bash(py:*)",
       "Bash(ls:*)",
       "WebFetch(domain:keep-going-three.vercel.app)",
-      "Bash(git -C \"C:/Users/yutog/claude/keep-goiing2\" diff src/data/exercises.ts)"
+      "Bash(git -C \"C:/Users/yutog/claude/keep-goiing2\" diff src/data/exercises.ts)",
+      "Bash(head -50 /Users/yutogasaki/Projects/keep-going/docs/keep_going_core_experience_specification_v1\\\\\\(1\\\\\\).md)",
+      "Bash(grep -n \"createClient\\\\|supabaseClient\\\\|initializeApp\\\\|firebase\" /Users/yutogasaki/Projects/keep-going/src/lib/*.ts)",
+      "Bash(git log --all --oneline --grep=\"supabase\\\\|firebase\\\\|auth\" --ignore-case)",
+      "Bash(git log -p --all -S \"supabase\\\\|firebase\" --all-match)",
+      "Bash(find /Users/yutogasaki/Projects/keep-going -name \"package.json\" -exec grep -l \"supabase\" {} ;)",
+      "Bash(grep -n \"public_menus\\\\|challenges\\\\|avatar\\\\|chibifuwa\" /Users/yutogasaki/Projects/keep-going/docs/*.md)",
+      "Bash(git -C /Users/yutogasaki/Projects/keep-going log --oneline --all)",
+      "Bash(grep -n \"avatar\" /Users/yutogasaki/Projects/keep-going/docs/*.md)",
+      "Bash(grep -n \"issue\\\\|bug\\\\|TODO\\\\|FIXME\\\\|XXX\\\\|HACK\" /Users/yutogasaki/Projects/keep-going/src/pages/*.tsx)",
+      "Bash(grep -r \"display.*none\\\\|visibility.*hidden\\\\|opacity.*0\\\\|position.*absolute\" /Users/yutogasaki/Projects/keep-going/src/pages/*.tsx)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(lsof -i :5173 -P)",
+      "Bash(npm ls framer-motion)",
+      "Bash(lsof -ti:5173)",
+      "Bash(xargs kill -9)",
+      "Bash(curl -s http://localhost:5173/)"
     ]
   }
 }

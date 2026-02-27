@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ArrowLeft, Flame, Users, RefreshCw, Loader2, ChevronDown, Clock, Calendar, Plus, Trash2, Trophy } from 'lucide-react';
+import { ArrowLeft, Flame, Users, RefreshCw, Loader2, ChevronDown, Clock, Calendar, Plus, Trash2, Trophy, Pencil } from 'lucide-react';
 import { fetchAllStudents, calculateStreak, type StudentSummary, type StudentSession } from '../lib/teacher';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
 import { getTodayKey, getDateKeyOffset, type SessionRecord } from '../lib/db';
 import { CLASS_LEVELS, CLASS_EMOJI, EXERCISES } from '../data/exercises';
-import { fetchAllChallenges, createChallenge, deleteChallenge, type Challenge } from '../lib/challenges';
+import { fetchAllChallenges, createChallenge, updateChallenge, deleteChallenge, type Challenge } from '../lib/challenges';
 import { useAuth } from '../contexts/AuthContext';
 
 const CLASS_ORDER = CLASS_LEVELS.map(c => c.id);
@@ -426,29 +426,82 @@ const ChallengeManagement: React.FC<{
         return `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
     });
     const [rewardType, setRewardType] = useState(0);
+    const [classLevels, setClassLevels] = useState<string[]>([]);
     const [submitting, setSubmitting] = useState(false);
+    const [editingId, setEditingId] = useState<string | null>(null);
 
-    const handleCreate = async () => {
+    const resetForm = () => {
+        setTitle('');
+        setExerciseId('S01');
+        setTargetCount(20);
+        const d = new Date();
+        setStartDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`);
+        const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+        setEndDate(`${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`);
+        setRewardType(0);
+        setClassLevels([]);
+        setEditingId(null);
+    };
+
+    const startEdit = (ch: Challenge) => {
+        setTitle(ch.title);
+        setExerciseId(ch.exerciseId);
+        setTargetCount(ch.targetCount);
+        setStartDate(ch.startDate);
+        setEndDate(ch.endDate);
+        setRewardType(ch.rewardFuwafuwaType);
+        setClassLevels(ch.classLevels);
+        setEditingId(ch.id);
+        setShowCreateForm(true);
+    };
+
+    const toggleClassLevel = (level: string) => {
+        setClassLevels(prev =>
+            prev.includes(level)
+                ? prev.filter(l => l !== level)
+                : [...prev, level]
+        );
+    };
+
+    const handleSubmit = async () => {
         if (!title.trim()) return;
         setSubmitting(true);
         try {
-            await createChallenge({
-                title: title.trim(),
-                exerciseId,
-                targetCount,
-                startDate,
-                endDate,
-                createdBy: teacherEmail,
-                rewardFuwafuwaType: rewardType,
-            });
-            setTitle('');
+            if (editingId) {
+                await updateChallenge(editingId, {
+                    title: title.trim(),
+                    exerciseId,
+                    targetCount,
+                    startDate,
+                    endDate,
+                    rewardFuwafuwaType: rewardType,
+                    classLevels,
+                });
+            } else {
+                await createChallenge({
+                    title: title.trim(),
+                    exerciseId,
+                    targetCount,
+                    startDate,
+                    endDate,
+                    createdBy: teacherEmail,
+                    rewardFuwafuwaType: rewardType,
+                    classLevels,
+                });
+            }
+            resetForm();
             setShowCreateForm(false);
             onCreated();
         } catch (err) {
-            console.warn('[teacher] Failed to create challenge:', err);
+            console.warn('[teacher] Failed to save challenge:', err);
         } finally {
             setSubmitting(false);
         }
+    };
+
+    const handleCancel = () => {
+        resetForm();
+        setShowCreateForm(false);
     };
 
     const handleDelete = async (id: string) => {
@@ -486,7 +539,7 @@ const ChallengeManagement: React.FC<{
             {/* Create button */}
             {!showCreateForm && (
                 <button
-                    onClick={() => setShowCreateForm(true)}
+                    onClick={() => { resetForm(); setShowCreateForm(true); }}
                     style={{
                         padding: '12px 0',
                         borderRadius: 12,
@@ -508,7 +561,7 @@ const ChallengeManagement: React.FC<{
                 </button>
             )}
 
-            {/* Create form */}
+            {/* Create / Edit form */}
             {showCreateForm && (
                 <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div style={{ ...labelStyle }}>タイトル</div>
@@ -556,6 +609,37 @@ const ChallengeManagement: React.FC<{
                     </div>
 
                     <div>
+                        <div style={labelStyle}>対象クラス（未選択＝全クラス）</div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {CLASS_LEVELS.map(cl => {
+                                const selected = classLevels.includes(cl.id);
+                                return (
+                                    <button
+                                        key={cl.id}
+                                        onClick={() => toggleClassLevel(cl.id)}
+                                        style={{
+                                            padding: '6px 12px',
+                                            borderRadius: 20,
+                                            border: selected ? '2px solid #2BBAA0' : '1px solid #E0E0E0',
+                                            background: selected ? '#E8F8F0' : '#FFF',
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                            color: selected ? '#2BBAA0' : '#8395A7',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                        }}
+                                    >
+                                        {cl.emoji} {cl.id}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div>
                         <div style={labelStyle}>ちびふわタイプ（報酬）</div>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                             {Array.from({ length: 10 }, (_, i) => (
@@ -583,7 +667,7 @@ const ChallengeManagement: React.FC<{
 
                     <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                         <button
-                            onClick={() => setShowCreateForm(false)}
+                            onClick={handleCancel}
                             style={{
                                 flex: 1,
                                 padding: '10px 0',
@@ -600,7 +684,7 @@ const ChallengeManagement: React.FC<{
                             キャンセル
                         </button>
                         <button
-                            onClick={handleCreate}
+                            onClick={handleSubmit}
                             disabled={!title.trim() || submitting}
                             style={{
                                 flex: 1,
@@ -615,7 +699,7 @@ const ChallengeManagement: React.FC<{
                                 cursor: title.trim() ? 'pointer' : 'default',
                             }}
                         >
-                            {submitting ? '作成中...' : '作成'}
+                            {submitting ? (editingId ? '保存中...' : '作成中...') : (editingId ? '保存' : '作成')}
                         </button>
                     </div>
                 </div>
@@ -657,6 +741,7 @@ const ChallengeManagement: React.FC<{
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: 6,
+                                        flexWrap: 'wrap',
                                     }}>
                                         {ch.title}
                                         {isActive && (
@@ -676,11 +761,65 @@ const ChallengeManagement: React.FC<{
                                         fontFamily: "'Noto Sans JP', sans-serif",
                                         fontSize: 11,
                                         color: '#8395A7',
+                                        marginTop: 2,
                                     }}>
                                         {exercise?.name ?? ch.exerciseId}を{ch.targetCount}回 ・
                                         {ch.startDate.slice(5).replace('-', '/')} 〜 {ch.endDate.slice(5).replace('-', '/')}
                                     </div>
+                                    {/* Class level badges */}
+                                    <div style={{
+                                        display: 'flex',
+                                        gap: 4,
+                                        flexWrap: 'wrap',
+                                        marginTop: 4,
+                                    }}>
+                                        {ch.classLevels.length === 0 ? (
+                                            <span style={{
+                                                fontSize: 10,
+                                                padding: '1px 6px',
+                                                borderRadius: 6,
+                                                background: '#F0F3F5',
+                                                color: '#8395A7',
+                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                fontWeight: 600,
+                                            }}>
+                                                全クラス
+                                            </span>
+                                        ) : (
+                                            ch.classLevels.map(cl => (
+                                                <span key={cl} style={{
+                                                    fontSize: 10,
+                                                    padding: '1px 6px',
+                                                    borderRadius: 6,
+                                                    background: '#F3EEFF',
+                                                    color: '#6C5CE7',
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontWeight: 600,
+                                                }}>
+                                                    {CLASS_EMOJI[cl] ?? ''}{cl}
+                                                </span>
+                                            ))
+                                        )}
+                                    </div>
                                 </div>
+                                <button
+                                    onClick={() => startEdit(ch)}
+                                    style={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: 8,
+                                        border: 'none',
+                                        background: '#F0F3F5',
+                                        color: '#8395A7',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <Pencil size={14} />
+                                </button>
                                 <button
                                     onClick={() => handleDelete(ch.id)}
                                     style={{

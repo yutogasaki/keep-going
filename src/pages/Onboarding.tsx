@@ -60,7 +60,8 @@ export const Onboarding: React.FC = () => {
         const { error } = await signInWithGoogle();
         if (error) {
             setLoginContext(null);
-            // OAuth redirects, so errors here are rare (e.g., popup blocked)
+            setRestoreError('Googleログインに失敗しました。もう一度お試しください。');
+            console.warn('[onboarding] Google login error:', error.message);
         }
         // Google OAuth triggers a redirect. On return, the useEffect above handles it.
     };

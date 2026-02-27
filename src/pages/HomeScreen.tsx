@@ -42,6 +42,18 @@ export const HomeScreen: React.FC = () => {
         fetchMyCompletions().then(setCompletions).catch(console.warn);
     }, []);
 
+    // Filter challenges by current user's class level
+    const filteredChallenges = useMemo(() => {
+        const activeClassLevels = new Set<string>();
+        for (const uid of sessionUserIds) {
+            const user = users.find(u => u.id === uid);
+            if (user?.classLevel) activeClassLevels.add(user.classLevel);
+        }
+        return challenges.filter(ch =>
+            ch.classLevels.length === 0 || ch.classLevels.some(cl => activeClassLevels.has(cl))
+        );
+    }, [challenges, sessionUserIds, users]);
+
     useEffect(() => {
         loadChallenges();
     }, [loadChallenges]);
@@ -186,77 +198,53 @@ export const HomeScreen: React.FC = () => {
         return pages;
     }, [users]);
 
-    const [currentPageIndex, setCurrentPageIndex] = useState(() => {
-        // Initialize to match sessionUserIds if possible (e.g. returning from Menu)
+    // Derive currentPageIndex from sessionUserIds (single source of truth)
+    const currentPageIndex = useMemo(() => {
+        if (swipePages.length === 0) return 0;
         if (sessionUserIds.length > 1) {
             const idx = swipePages.findIndex(p => p.kind === 'together');
-            return Math.max(0, idx);
+            return idx === -1 ? 0 : idx;
         } else if (sessionUserIds.length === 1) {
-            const idx = swipePages.findIndex(p => p.kind === 'user' && p.user.id === sessionUserIds[0]);
-            return Math.max(0, idx);
+            const idx = swipePages.findIndex(
+                p => p.kind === 'user' && p.user.id === sessionUserIds[0]
+            );
+            return idx === -1 ? 0 : idx;
         }
         return 0;
-    });
+    }, [sessionUserIds, swipePages]);
 
 
-    // Sync sessionUserIds whenever swipe page changes
+    // Initialize sessionUserIds if empty (e.g. page refresh) and clean up stale IDs (e.g. user deleted)
     useEffect(() => {
-        if (swipePages.length === 0) return;
-        const page = swipePages[currentPageIndex];
-        if (!page) {
-            // Safety fallback
-            if (currentPageIndex !== 0) setCurrentPageIndex(0);
+        if (users.length === 0) return;
+        if (sessionUserIds.length === 0) {
+            setSessionUserIds([users[0].id]);
             return;
         }
-
-        const nextSessionUserIds = page.kind === 'together'
-            ? users.map(u => u.id)
-            : [page.user.id];
-
-        const unchanged =
-            nextSessionUserIds.length === sessionUserIds.length &&
-            nextSessionUserIds.every((id, idx) => id === sessionUserIds[idx]);
-
-        if (!unchanged) {
-            setSessionUserIds(nextSessionUserIds);
+        const userIdSet = new Set(users.map(u => u.id));
+        const validIds = sessionUserIds.filter(id => userIdSet.has(id));
+        if (validIds.length !== sessionUserIds.length) {
+            setSessionUserIds(validIds.length > 0 ? validIds : [users[0].id]);
         }
-    }, [currentPageIndex, swipePages, users, sessionUserIds, setSessionUserIds]);
+    }, [users, sessionUserIds, setSessionUserIds]);
 
-    // Reverse sync: Update currentPageIndex when sessionUserIds change externally (e.g. from badge tap)
-    useEffect(() => {
-        if (swipePages.length === 0) return;
-
-        let targetIndex = 0;
-        if (sessionUserIds.length > 1) {
-            targetIndex = swipePages.findIndex(p => p.kind === 'together');
-        } else if (sessionUserIds.length === 1) {
-            targetIndex = swipePages.findIndex(p => p.kind === 'user' && p.user.id === sessionUserIds[0]);
+    const handleDragEnd = useCallback((_event: any, info: any) => {
+        const threshold = 50;
+        let newIndex = currentPageIndex;
+        if (info.offset.x < -threshold && currentPageIndex < swipePages.length - 1) {
+            newIndex = currentPageIndex + 1;
+        } else if (info.offset.x > threshold && currentPageIndex > 0) {
+            newIndex = currentPageIndex - 1;
         }
-
-        // Fallback to 0 if target user not found (e.g. deleted user, stale sessionUserIds)
-        if (targetIndex === -1) {
-            targetIndex = 0;
-            // Reset stale sessionUserIds to match the fallback page
-            const fallbackPage = swipePages[0];
-            if (fallbackPage?.kind === 'user') {
-                setSessionUserIds([fallbackPage.user.id]);
-            } else if (fallbackPage?.kind === 'together') {
+        if (newIndex !== currentPageIndex) {
+            const page = swipePages[newIndex];
+            if (page.kind === 'together') {
                 setSessionUserIds(users.map(u => u.id));
+            } else {
+                setSessionUserIds([page.user.id]);
             }
         }
-        if (targetIndex !== currentPageIndex) {
-            setCurrentPageIndex(targetIndex);
-        }
-    }, [sessionUserIds, swipePages, currentPageIndex]);
-
-    const handleDragEnd = (_event: any, info: any) => {
-        const threshold = 50; // pixels
-        if (info.offset.x < -threshold && currentPageIndex < swipePages.length - 1) {
-            setCurrentPageIndex(prev => prev + 1);
-        } else if (info.offset.x > threshold && currentPageIndex > 0) {
-            setCurrentPageIndex(prev => prev - 1);
-        }
-    };
+    }, [currentPageIndex, swipePages, users, setSessionUserIds]);
 
     return (
         <div style={{
@@ -405,11 +393,12 @@ export const HomeScreen: React.FC = () => {
                 </div>
 
                 {/* The Stars of the Show (Carousel) */}
-                <div style={{ width: '100%', overflow: 'hidden', position: 'relative' }}>
+                <div style={{ width: '100%', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
                     <motion.div
                         drag="x"
                         dragConstraints={{ left: 0, right: 0 }}
                         dragElastic={0.2}
+                        dragDirectionLock
                         onDragEnd={handleDragEnd}
                         animate={{ x: `calc(-${currentPageIndex * 100}%)` }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
@@ -533,7 +522,7 @@ export const HomeScreen: React.FC = () => {
                 )}
 
                 {/* ─── Challenge Section ─── */}
-                {challenges.length > 0 && (
+                {filteredChallenges.length > 0 && (
                     <div style={{
                         width: '100%',
                         padding: '0 20px',
@@ -551,7 +540,7 @@ export const HomeScreen: React.FC = () => {
                         }}>
                             チャレンジ
                         </span>
-                        {challenges.map(ch => (
+                        {filteredChallenges.map(ch => (
                             <ChallengeCard
                                 key={ch.id}
                                 challenge={ch}
@@ -566,7 +555,7 @@ export const HomeScreen: React.FC = () => {
                 <div style={{
                     width: '100%',
                     padding: '0 20px',
-                    marginTop: challenges.length > 0 ? 20 : 24,
+                    marginTop: filteredChallenges.length > 0 ? 20 : 24,
                 }}>
                     <PopularMenusRow
                         onOpenBrowser={() => setMenuBrowserOpen(true)}

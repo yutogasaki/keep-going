@@ -3,6 +3,7 @@ import { useAppStore } from './store/useAppStore';
 import { PwaReloadPrompt } from './components/PwaReloadPrompt';
 import { SyncToast } from './components/SyncToast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const MainLayout = lazy(() =>
     import('./layouts/MainLayout').then((module) => ({ default: module.MainLayout }))
@@ -18,7 +19,20 @@ function AppContent() {
 
     return (
         <div className="app-container">
-            <Suspense fallback={null}>
+            <Suspense fallback={
+                <div style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    color: '#8395A7',
+                    fontSize: 14,
+                }}>
+                    読み込み中...
+                </div>
+            }>
                 {hasCompletedOnboarding ? <MainLayout /> : <Onboarding />}
             </Suspense>
             <PwaReloadPrompt />
@@ -40,9 +54,11 @@ function App() {
     }, []);
 
     return (
-        <AuthProvider>
-            <AppContent />
-        </AuthProvider>
+        <ErrorBoundary>
+            <AuthProvider>
+                <AppContent />
+            </AuthProvider>
+        </ErrorBoundary>
     );
 }
 

@@ -11,6 +11,7 @@ export interface Challenge {
     endDate: string;        // YYYY-MM-DD
     createdBy: string;      // teacher email
     rewardFuwafuwaType: number;
+    classLevels: string[];  // empty = all classes
     createdAt: string;
 }
 
@@ -69,6 +70,7 @@ function mapChallenge(row: any): Challenge {
         endDate: row.end_date,
         createdBy: row.created_by,
         rewardFuwafuwaType: row.reward_fuwafuwa_type,
+        classLevels: row.class_levels ?? [],
         createdAt: row.created_at,
     };
 }
@@ -83,6 +85,7 @@ export async function createChallenge(data: {
     endDate: string;
     createdBy: string;
     rewardFuwafuwaType: number;
+    classLevels: string[];
 }): Promise<void> {
     if (!supabase) return;
 
@@ -94,7 +97,32 @@ export async function createChallenge(data: {
         end_date: data.endDate,
         created_by: data.createdBy,
         reward_fuwafuwa_type: data.rewardFuwafuwaType,
+        class_levels: data.classLevels,
     });
+
+    if (error) throw error;
+}
+
+export async function updateChallenge(id: string, data: {
+    title: string;
+    exerciseId: string;
+    targetCount: number;
+    startDate: string;
+    endDate: string;
+    rewardFuwafuwaType: number;
+    classLevels: string[];
+}): Promise<void> {
+    if (!supabase) return;
+
+    const { error } = await supabase.from('challenges').update({
+        title: data.title,
+        exercise_id: data.exerciseId,
+        target_count: data.targetCount,
+        start_date: data.startDate,
+        end_date: data.endDate,
+        reward_fuwafuwa_type: data.rewardFuwafuwaType,
+        class_levels: data.classLevels,
+    }).eq('id', id);
 
     if (error) throw error;
 }

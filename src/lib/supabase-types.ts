@@ -153,6 +153,7 @@ export interface Database {
                     end_date: string;
                     created_by: string;
                     reward_fuwafuwa_type: number;
+                    class_levels: string[];
                     created_at: string;
                 };
                 Insert: {
@@ -164,6 +165,7 @@ export interface Database {
                     end_date: string;
                     created_by: string;
                     reward_fuwafuwa_type: number;
+                    class_levels?: string[];
                 };
                 Update: Partial<Database['public']['Tables']['challenges']['Insert']>;
                 Relationships: [];

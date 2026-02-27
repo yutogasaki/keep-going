@@ -4,7 +4,7 @@ import { Trophy } from 'lucide-react';
 import type { Challenge, ChallengeCompletion } from '../lib/challenges';
 import { countExerciseInPeriod, markChallengeComplete } from '../lib/challenges';
 import { useAppStore } from '../store/useAppStore';
-import { EXERCISES } from '../data/exercises';
+import { EXERCISES, CLASS_EMOJI } from '../data/exercises';
 
 interface ChallengeCardProps {
     challenge: Challenge;
@@ -120,6 +120,23 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
                     }}>
                         {dateLabel} ・ {exerciseName}を{challenge.targetCount}回
                     </div>
+                    {challenge.classLevels.length > 0 && (
+                        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 2 }}>
+                            {challenge.classLevels.map(cl => (
+                                <span key={cl} style={{
+                                    fontSize: 9,
+                                    padding: '1px 5px',
+                                    borderRadius: 4,
+                                    background: 'rgba(108, 92, 231, 0.1)',
+                                    color: '#6C5CE7',
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontWeight: 600,
+                                }}>
+                                    {CLASS_EMOJI[cl] ?? ''}{cl}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
                 {allCompleted && (
                     <Trophy size={18} color="#FFD700" />
