@@ -6,6 +6,9 @@ import { ExerciseIcon } from '../components/ExerciseIcon';
 import { getExercisesByClass, DEFAULT_SESSION_TARGET_SECONDS } from '../data/exercises';
 import { getPresetsForClass, getCustomGroups, deleteCustomGroup, type MenuGroup } from '../data/menuGroups';
 import { getCustomExercises, deleteCustomExercise, type CustomExercise } from '../lib/db';
+import { publishMenu } from '../lib/publicMenus';
+import { getAccountId } from '../lib/sync';
+import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
 import { audio } from '../lib/audio';
 import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
@@ -37,6 +40,7 @@ export const MenuPage: React.FC = () => {
     const [editGroup, setEditGroup] = useState<MenuGroup | null>(null);
     const [editEx, setEditEx] = useState<CustomExercise | null>(null);
     const [showCustomMenu, setShowCustomMenu] = useState(false);
+    const [showPublicBrowser, setShowPublicBrowser] = useState(false);
 
     const updateUserSettings = useAppStore(s => s.updateUserSettings);
 
@@ -111,6 +115,18 @@ export const MenuPage: React.FC = () => {
         setShowCreateEx(false);
         setEditEx(null);
         loadCustomData();
+    };
+
+    const handlePublishGroup = async (group: MenuGroup) => {
+        if (!getAccountId()) return;
+        const authorName = currentUsers[0]?.name ?? 'ゲスト';
+        try {
+            await publishMenu(group, authorName);
+            alert('メニューを公開しました！');
+        } catch (err) {
+            console.warn('[menu] publish failed:', err);
+            alert('公開に失敗しました');
+        }
     };
 
     if (showCreateGroup || editGroup) {
@@ -302,6 +318,7 @@ export const MenuPage: React.FC = () => {
                                         onTap={() => handleGroupTap(group)}
                                         onEdit={() => setEditGroup(group)}
                                         onDelete={() => handleDeleteGroup(group.id)}
+                                        onPublish={getAccountId() ? () => handlePublishGroup(group) : undefined}
                                         isCustom
                                     />
                                 ))}
@@ -352,6 +369,66 @@ export const MenuPage: React.FC = () => {
                                     color: '#8395A7',
                                     lineHeight: 1.4,
                                 }}>自分だけのくみあわせを作成</div>
+                            </div>
+                        </motion.button>
+                    </section>
+
+                    {/* みんなのメニュー section */}
+                    <section>
+                        <h2 style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: '#8395A7',
+                            marginBottom: 10,
+                            letterSpacing: 1,
+                        }}>
+                            みんなのメニュー
+                        </h2>
+                        <motion.button
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setShowPublicBrowser(true)}
+                            className="card"
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 16,
+                                padding: '16px 20px',
+                                border: 'none',
+                                background: 'white',
+                                cursor: 'pointer',
+                                textAlign: 'left',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                            }}
+                        >
+                            <div style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 14,
+                                background: 'linear-gradient(135deg, #E8F4FD, #BEE3F8)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                                boxShadow: '0 2px 8px rgba(190, 227, 248, 0.5)',
+                            }}>
+                                <span style={{ fontSize: 22 }}>🌍</span>
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 15,
+                                    fontWeight: 700,
+                                    color: '#2D3436',
+                                    marginBottom: 4,
+                                }}>みんなのメニューを見る</div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 12,
+                                    color: '#8395A7',
+                                    lineHeight: 1.4,
+                                }}>他の人が作ったメニューをもらおう</div>
                             </div>
                         </motion.button>
                     </section>
@@ -642,6 +719,11 @@ export const MenuPage: React.FC = () => {
                 onSetDailyTargetMinutes={setDailyTargetMinutes}
                 onSetExcludedExercises={setExcludedExercises}
                 onSetRequiredExercises={setRequiredExercises}
+            />
+
+            <PublicMenuBrowser
+                open={showPublicBrowser}
+                onClose={() => setShowPublicBrowser(false)}
             />
         </div>
     );

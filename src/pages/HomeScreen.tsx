@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAllSessions, getTodayKey, type SessionRecord } from '../lib/db';
@@ -10,6 +10,10 @@ import { useAppStore, type UserProfileStore } from '../store/useAppStore';
 import { calculateFuwafuwaStatus } from '../lib/fuwafuwa';
 import { audio } from '../lib/audio';
 import { UserAvatar } from '../components/UserAvatar';
+import { ChallengeCard } from '../components/ChallengeCard';
+import { PopularMenusRow } from '../components/PopularMenusRow';
+import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
+import { fetchActiveChallenges, fetchMyCompletions, type Challenge, type ChallengeCompletion } from '../lib/challenges';
 
 type SwipePage =
     | { kind: 'user'; id: string; name: string; user: UserProfileStore }
@@ -26,6 +30,21 @@ export const HomeScreen: React.FC = () => {
     const setActiveMilestoneModal = useAppStore(s => s.setActiveMilestoneModal);
 
     const consumeUserMagicEnergy = useAppStore(s => s.consumeUserMagicEnergy);
+    const startSessionWithExercises = useAppStore(s => s.startSessionWithExercises);
+
+    // Challenge & menu state
+    const [challenges, setChallenges] = useState<Challenge[]>([]);
+    const [completions, setCompletions] = useState<ChallengeCompletion[]>([]);
+    const [menuBrowserOpen, setMenuBrowserOpen] = useState(false);
+
+    const loadChallenges = useCallback(() => {
+        fetchActiveChallenges().then(setChallenges).catch(console.warn);
+        fetchMyCompletions().then(setCompletions).catch(console.warn);
+    }, []);
+
+    useEffect(() => {
+        loadChallenges();
+    }, [loadChallenges]);
 
     // Calculate today's total trained seconds for the Magic Tank based on the CURRENT swipe selection (sessionUserIds)
     const todayStr = getTodayKey();
@@ -343,11 +362,12 @@ export const HomeScreen: React.FC = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
                 width: '100%',
                 flex: 1,
                 paddingTop: 'min(2vh, 16px)',
-                paddingBottom: 90 // Ensure it clears the floating play button
+                paddingBottom: 90, // Ensure it clears the floating play button
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
             }}>
                 {/* Magic Power Tank */}
                 <div style={{ height: 'min(10vh, 100px)', display: 'flex', alignItems: 'flex-end', paddingBottom: 'min(1vh, 8px)' }}>
@@ -491,7 +511,55 @@ export const HomeScreen: React.FC = () => {
                         スワイプしてえらんでね
                     </motion.div>
                 )}
+
+                {/* ─── Challenge Section ─── */}
+                {challenges.length > 0 && (
+                    <div style={{
+                        width: '100%',
+                        padding: '0 20px',
+                        marginTop: 24,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                    }}>
+                        <span style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: '#636E72',
+                            padding: '0 4px',
+                        }}>
+                            チャレンジ
+                        </span>
+                        {challenges.map(ch => (
+                            <ChallengeCard
+                                key={ch.id}
+                                challenge={ch}
+                                completions={completions}
+                                onCompleted={loadChallenges}
+                            />
+                        ))}
+                    </div>
+                )}
+
+                {/* ─── Popular Menus Section ─── */}
+                <div style={{
+                    width: '100%',
+                    padding: '0 20px',
+                    marginTop: challenges.length > 0 ? 20 : 24,
+                }}>
+                    <PopularMenusRow
+                        onOpenBrowser={() => setMenuBrowserOpen(true)}
+                        onSelectMenu={(exerciseIds) => startSessionWithExercises(exerciseIds)}
+                    />
+                </div>
             </div>
+
+            {/* Public Menu Browser Modal */}
+            <PublicMenuBrowser
+                open={menuBrowserOpen}
+                onClose={() => setMenuBrowserOpen(false)}
+            />
         </div>
     );
 };

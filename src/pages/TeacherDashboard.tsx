@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ArrowLeft, Flame, Users, RefreshCw, Loader2, ChevronDown, Clock, Calendar } from 'lucide-react';
+import { ArrowLeft, Flame, Users, RefreshCw, Loader2, ChevronDown, Clock, Calendar, Plus, Trash2, Trophy } from 'lucide-react';
 import { fetchAllStudents, calculateStreak, type StudentSummary, type StudentSession } from '../lib/teacher';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
 import { getTodayKey, getDateKeyOffset, type SessionRecord } from '../lib/db';
-import { CLASS_LEVELS, CLASS_EMOJI } from '../data/exercises';
+import { CLASS_LEVELS, CLASS_EMOJI, EXERCISES } from '../data/exercises';
+import { fetchAllChallenges, createChallenge, deleteChallenge, type Challenge } from '../lib/challenges';
+import { useAuth } from '../contexts/AuthContext';
 
 const CLASS_ORDER = CLASS_LEVELS.map(c => c.id);
 
@@ -24,11 +26,20 @@ interface TeacherDashboardProps {
     onBack: () => void;
 }
 
+type DashboardTab = 'students' | 'challenges';
+
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) => {
+    const { user } = useAuth();
+    const [activeTab, setActiveTab] = useState<DashboardTab>('students');
     const [students, setStudents] = useState<StudentSummary[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedClass, setExpandedClass] = useState<string | null>(null);
     const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
+
+    // Challenge state
+    const [challenges, setChallenges] = useState<Challenge[]>([]);
+    const [challengesLoading, setChallengesLoading] = useState(false);
+    const [showCreateForm, setShowCreateForm] = useState(false);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -42,7 +53,20 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
         }
     }, []);
 
+    const loadChallenges = useCallback(async () => {
+        setChallengesLoading(true);
+        try {
+            const data = await fetchAllChallenges();
+            setChallenges(data);
+        } catch (err) {
+            console.warn('[teacher] Failed to load challenges:', err);
+        } finally {
+            setChallengesLoading(false);
+        }
+    }, []);
+
     useEffect(() => { load(); }, [load]);
+    useEffect(() => { if (activeTab === 'challenges') loadChallenges(); }, [activeTab, loadChallenges]);
 
     // Flatten to individual students
     const individualStudents = useMemo(() => {
@@ -128,7 +152,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                padding: '24px 20px 16px',
+                padding: '24px 20px 12px',
                 gap: 12,
             }}>
                 <button
@@ -157,11 +181,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                     margin: 0,
                     flex: 1,
                 }}>
-                    生徒一覧
+                    先生ダッシュボード
                 </h1>
                 <button
-                    onClick={load}
-                    disabled={loading}
+                    onClick={activeTab === 'students' ? load : loadChallenges}
+                    disabled={activeTab === 'students' ? loading : challengesLoading}
                     style={{
                         width: 36,
                         height: 36,
@@ -176,9 +200,63 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                         flexShrink: 0,
                     }}
                 >
-                    <RefreshCw size={16} style={loading ? { animation: 'spin 1s linear infinite' } : undefined} />
+                    <RefreshCw size={16} style={(loading || challengesLoading) ? { animation: 'spin 1s linear infinite' } : undefined} />
                 </button>
             </div>
+
+            {/* Tab bar */}
+            <div style={{
+                display: 'flex',
+                padding: '0 20px',
+                gap: 8,
+                marginBottom: 16,
+            }}>
+                {([
+                    { id: 'students' as DashboardTab, label: '生徒一覧', icon: <Users size={14} /> },
+                    { id: 'challenges' as DashboardTab, label: 'チャレンジ', icon: <Trophy size={14} /> },
+                ]).map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        style={{
+                            flex: 1,
+                            padding: '10px 0',
+                            borderRadius: 12,
+                            border: 'none',
+                            background: activeTab === tab.id ? '#2BBAA0' : '#F0F3F5',
+                            color: activeTab === tab.id ? '#FFF' : '#8395A7',
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            transition: 'all 0.2s',
+                        }}
+                    >
+                        {tab.icon}
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+
+            {/* ─── Challenges Tab ─── */}
+            {activeTab === 'challenges' && (
+                <ChallengeManagement
+                    challenges={challenges}
+                    loading={challengesLoading}
+                    showCreateForm={showCreateForm}
+                    setShowCreateForm={setShowCreateForm}
+                    teacherEmail={user?.email ?? ''}
+                    onCreated={loadChallenges}
+                    onDeleted={loadChallenges}
+                />
+            )}
+
+            {/* ─── Students Tab ─── */}
+            {activeTab === 'students' && <>
 
             {/* Summary stats */}
             {!loading && individualStudents.length > 0 && (
@@ -318,6 +396,314 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                     ))
                 )}
             </div>
+
+            </>}
+        </div>
+    );
+};
+
+// ─── ChallengeManagement ─────────────────────────────
+
+const ChallengeManagement: React.FC<{
+    challenges: Challenge[];
+    loading: boolean;
+    showCreateForm: boolean;
+    setShowCreateForm: (show: boolean) => void;
+    teacherEmail: string;
+    onCreated: () => void;
+    onDeleted: () => void;
+}> = ({ challenges, loading, showCreateForm, setShowCreateForm, teacherEmail, onCreated, onDeleted }) => {
+    const [title, setTitle] = useState('');
+    const [exerciseId, setExerciseId] = useState('S01');
+    const [targetCount, setTargetCount] = useState(20);
+    const [startDate, setStartDate] = useState(() => {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+    });
+    const [endDate, setEndDate] = useState(() => {
+        const d = new Date();
+        const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+        return `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
+    });
+    const [rewardType, setRewardType] = useState(0);
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleCreate = async () => {
+        if (!title.trim()) return;
+        setSubmitting(true);
+        try {
+            await createChallenge({
+                title: title.trim(),
+                exerciseId,
+                targetCount,
+                startDate,
+                endDate,
+                createdBy: teacherEmail,
+                rewardFuwafuwaType: rewardType,
+            });
+            setTitle('');
+            setShowCreateForm(false);
+            onCreated();
+        } catch (err) {
+            console.warn('[teacher] Failed to create challenge:', err);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        try {
+            await deleteChallenge(id);
+            onDeleted();
+        } catch (err) {
+            console.warn('[teacher] Failed to delete challenge:', err);
+        }
+    };
+
+    const today = getTodayKey();
+
+    const inputStyle: React.CSSProperties = {
+        width: '100%',
+        padding: '10px 12px',
+        borderRadius: 10,
+        border: '1px solid #E0E0E0',
+        fontFamily: "'Noto Sans JP', sans-serif",
+        fontSize: 14,
+        outline: 'none',
+        boxSizing: 'border-box',
+    };
+
+    const labelStyle: React.CSSProperties = {
+        fontFamily: "'Noto Sans JP', sans-serif",
+        fontSize: 12,
+        fontWeight: 700,
+        color: '#636E72',
+        marginBottom: 4,
+    };
+
+    return (
+        <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* Create button */}
+            {!showCreateForm && (
+                <button
+                    onClick={() => setShowCreateForm(true)}
+                    style={{
+                        padding: '12px 0',
+                        borderRadius: 12,
+                        border: '2px dashed #B2BEC3',
+                        background: 'transparent',
+                        color: '#8395A7',
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                    }}
+                >
+                    <Plus size={16} />
+                    チャレンジを作成
+                </button>
+            )}
+
+            {/* Create form */}
+            {showCreateForm && (
+                <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ ...labelStyle }}>タイトル</div>
+                    <input
+                        value={title}
+                        onChange={e => setTitle(e.target.value)}
+                        placeholder="例: 前後開脚チャレンジ月間"
+                        style={inputStyle}
+                    />
+
+                    <div style={{ display: 'flex', gap: 12 }}>
+                        <div style={{ flex: 1 }}>
+                            <div style={labelStyle}>エクササイズ</div>
+                            <select
+                                value={exerciseId}
+                                onChange={e => setExerciseId(e.target.value)}
+                                style={{ ...inputStyle, appearance: 'auto' }}
+                            >
+                                {EXERCISES.map(ex => (
+                                    <option key={ex.id} value={ex.id}>{ex.emoji} {ex.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div style={{ width: 80 }}>
+                            <div style={labelStyle}>目標回数</div>
+                            <input
+                                type="number"
+                                value={targetCount}
+                                onChange={e => setTargetCount(Number(e.target.value))}
+                                min={1}
+                                style={inputStyle}
+                            />
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 12 }}>
+                        <div style={{ flex: 1 }}>
+                            <div style={labelStyle}>開始日</div>
+                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={inputStyle} />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={labelStyle}>終了日</div>
+                            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={inputStyle} />
+                        </div>
+                    </div>
+
+                    <div>
+                        <div style={labelStyle}>ちびふわタイプ（報酬）</div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {Array.from({ length: 10 }, (_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={() => setRewardType(i)}
+                                    style={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: 10,
+                                        border: rewardType === i ? '2px solid #2BBAA0' : '1px solid #E0E0E0',
+                                        background: rewardType === i ? '#E8F8F0' : '#FFF',
+                                        fontFamily: "'JetBrains Mono', monospace",
+                                        fontSize: 14,
+                                        fontWeight: 700,
+                                        color: rewardType === i ? '#2BBAA0' : '#8395A7',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    {i}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                        <button
+                            onClick={() => setShowCreateForm(false)}
+                            style={{
+                                flex: 1,
+                                padding: '10px 0',
+                                borderRadius: 10,
+                                border: '1px solid #E0E0E0',
+                                background: '#FFF',
+                                color: '#8395A7',
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 14,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                            }}
+                        >
+                            キャンセル
+                        </button>
+                        <button
+                            onClick={handleCreate}
+                            disabled={!title.trim() || submitting}
+                            style={{
+                                flex: 1,
+                                padding: '10px 0',
+                                borderRadius: 10,
+                                border: 'none',
+                                background: title.trim() ? '#2BBAA0' : '#B2BEC3',
+                                color: '#FFF',
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 14,
+                                fontWeight: 700,
+                                cursor: title.trim() ? 'pointer' : 'default',
+                            }}
+                        >
+                            {submitting ? '作成中...' : '作成'}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Challenge list */}
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: 48, color: '#8395A7' }}>
+                    <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
+                    <p style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, margin: '12px 0 0' }}>
+                        読み込み中...
+                    </p>
+                </div>
+            ) : challenges.length === 0 ? (
+                <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+                    <p style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, color: '#8395A7', margin: 0 }}>
+                        チャレンジがありません
+                    </p>
+                </div>
+            ) : (
+                challenges.map(ch => {
+                    const exercise = EXERCISES.find(e => e.id === ch.exerciseId);
+                    const isActive = ch.startDate <= today && ch.endDate >= today;
+                    const isPast = ch.endDate < today;
+
+                    return (
+                        <div key={ch.id} className="card" style={{
+                            padding: '14px 16px',
+                            opacity: isPast ? 0.5 : 1,
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <span style={{ fontSize: 22 }}>{exercise?.emoji ?? '🎯'}</span>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 14,
+                                        fontWeight: 700,
+                                        color: '#2D3436',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                    }}>
+                                        {ch.title}
+                                        {isActive && (
+                                            <span style={{
+                                                fontSize: 10,
+                                                padding: '2px 6px',
+                                                borderRadius: 6,
+                                                background: '#E8F8F0',
+                                                color: '#2BBAA0',
+                                                fontWeight: 700,
+                                            }}>
+                                                開催中
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 11,
+                                        color: '#8395A7',
+                                    }}>
+                                        {exercise?.name ?? ch.exerciseId}を{ch.targetCount}回 ・
+                                        {ch.startDate.slice(5).replace('-', '/')} 〜 {ch.endDate.slice(5).replace('-', '/')}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleDelete(ch.id)}
+                                    style={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: 8,
+                                        border: 'none',
+                                        background: '#FFF0F0',
+                                        color: '#E17055',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })
+            )}
         </div>
     );
 };

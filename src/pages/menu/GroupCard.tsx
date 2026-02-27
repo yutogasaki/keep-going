@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, Clock, Edit2, Play, Trash2 } from 'lucide-react';
+import { ChevronDown, Clock, Edit2, Play, Trash2, Upload } from 'lucide-react';
 import { ExerciseIcon } from '../../components/ExerciseIcon';
 import { calculateTotalSeconds, getExerciseById } from '../../data/exercises';
 import type { MenuGroup } from '../../data/menuGroups';
@@ -12,10 +12,11 @@ interface GroupCardProps {
     onTap: () => void;
     onEdit?: () => void;
     onDelete?: () => void;
+    onPublish?: () => void;
     isCustom?: boolean;
 }
 
-export const GroupCard: React.FC<GroupCardProps> = ({ group, index, creatorName, onTap, onEdit, onDelete, isCustom }) => {
+export const GroupCard: React.FC<GroupCardProps> = ({ group, index, creatorName, onTap, onEdit, onDelete, onPublish, isCustom }) => {
     const [expanded, setExpanded] = useState(false);
     const totalSec = calculateTotalSeconds(group.exerciseIds);
     const minutes = Math.ceil(totalSec / 60);
@@ -213,6 +214,27 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, index, creatorName,
                                         <Trash2 size={12} />
                                         さくじょ
                                     </button>
+                                    {onPublish && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onPublish(); }}
+                                            style={{
+                                                padding: '6px 12px',
+                                                borderRadius: 8,
+                                                border: 'none',
+                                                background: 'rgba(9, 132, 227, 0.08)',
+                                                cursor: 'pointer',
+                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                fontSize: 12,
+                                                color: '#0984E3',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 4,
+                                            }}
+                                        >
+                                            <Upload size={12} />
+                                            こうかい
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>

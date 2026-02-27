@@ -13,6 +13,13 @@ export interface PastFuwafuwaRecord {
     sayonaraDate: string;
 }
 
+export interface ChibifuwaRecord {
+    id: string;
+    type: number;           // ふわふわタイプ番号
+    challengeTitle: string; // 獲得元チャレンジ名
+    earnedDate: string;     // YYYY-MM-DD
+}
+
 export interface UserProfileStore {
     id: string;
     name: string;
@@ -32,6 +39,8 @@ export interface UserProfileStore {
     consumedMagicSeconds?: number;
     // Profile photo
     avatarUrl?: string;
+    // Chibifuwa collection
+    chibifuwas: ChibifuwaRecord[];
 }
 
 type TabId = 'home' | 'record' | 'menu' | 'settings';
@@ -39,13 +48,14 @@ type TabId = 'home' | 'record' | 'menu' | 'settings';
 interface AppState {
     // Users
     users: UserProfileStore[];
-    addUser: (user: Omit<UserProfileStore, 'id' | 'dailyTargetMinutes' | 'excludedExercises' | 'requiredExercises'>) => void;
+    addUser: (user: Omit<UserProfileStore, 'id' | 'dailyTargetMinutes' | 'excludedExercises' | 'requiredExercises' | 'chibifuwas'>) => void;
     updateUser: (id: string, updates: Partial<UserProfileStore>) => void;
     deleteUser: (id: string) => void;
     // user-specific update helpers
     updateUserSettings: (id: string, updates: Partial<Pick<UserProfileStore, 'dailyTargetMinutes' | 'excludedExercises' | 'requiredExercises'>>) => void;
     consumeUserMagicEnergy: (id: string, seconds: number, date: string) => void;
     resetUserFuwafuwa: (id: string, newType: number, activeDays: number, finalStage: number) => void;
+    addChibifuwa: (userId: string, record: Omit<ChibifuwaRecord, 'id'>) => void;
 
     // Navigation
     currentTab: TabId;
@@ -111,7 +121,8 @@ export const useAppStore = create<AppState>()(
                     id: crypto.randomUUID(),
                     dailyTargetMinutes: 10,
                     excludedExercises: ['C01', 'C02'],
-                    requiredExercises: ['S01', 'S02', 'S07']
+                    requiredExercises: ['S01', 'S02', 'S07'],
+                    chibifuwas: []
                 }]
             })),
             updateUser: (id, updates) => set((state) => ({
@@ -130,6 +141,12 @@ export const useAppStore = create<AppState>()(
                     const prevSeconds = u.consumedMagicDate === date ? (u.consumedMagicSeconds || 0) : 0;
                     return { ...u, consumedMagicDate: date, consumedMagicSeconds: prevSeconds + seconds };
                 })
+            })),
+            addChibifuwa: (userId, record) => set((state) => ({
+                users: state.users.map(u => u.id === userId
+                    ? { ...u, chibifuwas: [...(u.chibifuwas || []), { ...record, id: crypto.randomUUID() }] }
+                    : u
+                )
             })),
             resetUserFuwafuwa: (id, newType, activeDays, finalStage) => set((state) => {
                 const today = getTodayKey();
@@ -203,7 +220,7 @@ export const useAppStore = create<AppState>()(
         }),
         {
             name: 'keepgoing-app-state',
-            version: 7, // Bumped to 7 for avatarUrl
+            version: 8, // Bumped to 8 for chibifuwas
             migrate: (persistedState: any, version: number) => {
                 if (version === 0) {
                     if (persistedState.requiredExercises && !persistedState.requiredExercises.includes('S07')) {
@@ -284,6 +301,14 @@ export const useAppStore = create<AppState>()(
                     }
                 }
                 // version 7: avatarUrl (optional, no migration needed)
+                if (version < 8) {
+                    if (persistedState.users && Array.isArray(persistedState.users)) {
+                        persistedState.users = persistedState.users.map((u: any) => ({
+                            ...u,
+                            chibifuwas: u.chibifuwas ?? [],
+                        }));
+                    }
+                }
                 return persistedState as AppState;
             },
             partialize: (state) => ({
