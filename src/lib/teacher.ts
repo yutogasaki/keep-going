@@ -7,6 +7,7 @@ export interface StudentMember {
     id: string;
     name: string;
     classLevel: string;
+    avatarUrl?: string;
 }
 
 export interface StudentSession {
@@ -43,7 +44,7 @@ export async function fetchAllStudents(): Promise<StudentSummary[]> {
     if (!supabase) return [];
 
     const [membersRes, sessionsRes] = await Promise.all([
-        supabase.from('family_members').select('id, account_id, name, class_level'),
+        supabase.from('family_members').select('id, account_id, name, class_level, avatar_url'),
         supabase
             .from('sessions')
             .select('id, account_id, date, started_at, total_seconds, user_ids')
@@ -76,6 +77,7 @@ export async function fetchAllStudents(): Promise<StudentSummary[]> {
                 id: m.id,
                 name: m.name,
                 classLevel: m.class_level,
+                avatarUrl: m.avatar_url || undefined,
             })),
             sessions: acctSessions.slice(0, 100).map(s => ({
                 id: s.id,

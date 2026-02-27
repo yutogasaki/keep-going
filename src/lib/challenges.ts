@@ -44,6 +44,25 @@ export async function fetchActiveChallenges(): Promise<Challenge[]> {
     return (data ?? []).map(mapChallenge);
 }
 
+export async function fetchPastChallenges(): Promise<Challenge[]> {
+    if (!supabase) return [];
+
+    const today = new Date().toISOString().split('T')[0];
+    const { data, error } = await supabase
+        .from('challenges')
+        .select('*')
+        .lt('end_date', today)
+        .order('end_date', { ascending: false })
+        .limit(20);
+
+    if (error) {
+        console.warn('[challenges] fetchPastChallenges failed:', error);
+        return [];
+    }
+
+    return (data ?? []).map(mapChallenge);
+}
+
 export async function fetchAllChallenges(): Promise<Challenge[]> {
     if (!supabase) return [];
 

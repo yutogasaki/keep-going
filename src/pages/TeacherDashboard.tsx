@@ -6,6 +6,7 @@ import { getTodayKey, getDateKeyOffset, type SessionRecord } from '../lib/db';
 import { CLASS_LEVELS, CLASS_EMOJI, EXERCISES } from '../data/exercises';
 import { fetchAllChallenges, createChallenge, updateChallenge, deleteChallenge, type Challenge } from '../lib/challenges';
 import { useAuth } from '../contexts/AuthContext';
+import { UserAvatar } from '../components/UserAvatar';
 
 const CLASS_ORDER = CLASS_LEVELS.map(c => c.id);
 
@@ -15,6 +16,7 @@ interface IndividualStudent {
     memberId: string;
     name: string;
     classLevel: string;
+    avatarUrl?: string;
     accountId: string;
     sessions: StudentSession[];
     streak: number;
@@ -80,6 +82,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                     memberId: member.id,
                     name: member.name,
                     classLevel: member.classLevel,
+                    avatarUrl: member.avatarUrl,
                     accountId: summary.accountId,
                     sessions: memberSessions,
                     streak: calculateStreak(memberSessions),
@@ -1085,6 +1088,11 @@ const StudentCard: React.FC<{
                     gap: 8,
                     width: '100%',
                 }}>
+                    <UserAvatar
+                        avatarUrl={student.avatarUrl}
+                        name={student.name}
+                        size={28}
+                    />
                     <span style={{
                         fontFamily: "'Noto Sans JP', sans-serif",
                         fontSize: 14,

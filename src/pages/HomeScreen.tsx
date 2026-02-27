@@ -9,11 +9,13 @@ import { MagicTank } from '../components/MagicTank';
 import { useAppStore, type UserProfileStore } from '../store/useAppStore';
 import { calculateFuwafuwaStatus } from '../lib/fuwafuwa';
 import { audio } from '../lib/audio';
-import { UserAvatar } from '../components/UserAvatar';
 import { ChallengeCard } from '../components/ChallengeCard';
 import { PopularMenusRow } from '../components/PopularMenusRow';
 import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
-import { fetchActiveChallenges, fetchMyCompletions, type Challenge, type ChallengeCompletion } from '../lib/challenges';
+import { MenuDetailSheet } from '../components/MenuDetailSheet';
+import { type PublicMenu } from '../lib/publicMenus';
+import { ChevronDown } from 'lucide-react';
+import { fetchActiveChallenges, fetchPastChallenges, fetchMyCompletions, type Challenge, type ChallengeCompletion } from '../lib/challenges';
 
 type SwipePage =
     | { kind: 'user'; id: string; name: string; user: UserProfileStore }
@@ -34,11 +36,15 @@ export const HomeScreen: React.FC = () => {
 
     // Challenge & menu state
     const [challenges, setChallenges] = useState<Challenge[]>([]);
+    const [pastChallenges, setPastChallenges] = useState<Challenge[]>([]);
     const [completions, setCompletions] = useState<ChallengeCompletion[]>([]);
+    const [pastExpanded, setPastExpanded] = useState(false);
     const [menuBrowserOpen, setMenuBrowserOpen] = useState(false);
+    const [selectedPublicMenu, setSelectedPublicMenu] = useState<PublicMenu | null>(null);
 
     const loadChallenges = useCallback(() => {
         fetchActiveChallenges().then(setChallenges).catch(console.warn);
+        fetchPastChallenges().then(setPastChallenges).catch(console.warn);
         fetchMyCompletions().then(setCompletions).catch(console.warn);
     }, []);
 
@@ -73,21 +79,41 @@ export const HomeScreen: React.FC = () => {
     }), [allSessions, todayStr, isTogetherMode, sessionUserIdSet, sessionUserIds]);
     const todaySeconds = todaySessions.reduce((acc, curr) => acc + curr.totalSeconds, 0);
 
-    // Calculate total target time based on active session users
+    // Calculate target time — in together mode, use individual user's target (not summed)
     const activeUsers = users.filter(u => sessionUserIds.includes(u.id));
-    const totalTargetMinutes = activeUsers.reduce((sum, u) => sum + (u.dailyTargetMinutes || 10), 0);
-    const fallbackTargetMinutes = users.length > 0 ? (users[0].dailyTargetMinutes || 10) : 10;
+    const singleUserTargetMinutes = activeUsers.length > 0
+        ? (activeUsers[0].dailyTargetMinutes || 10)
+        : (users.length > 0 ? (users[0].dailyTargetMinutes || 10) : 10);
 
-    const targetSeconds = (activeUsers.length > 0 ? totalTargetMinutes : fallbackTargetMinutes) * 60;
+    // For single-user mode or as overall target: use the active user's target
+    const targetSeconds = singleUserTargetMinutes * 60;
 
-    // Calculate consumed seconds for today
+    // Per-user magic energy calculations (for individual tanks in together mode)
+    const perUserMagic = useMemo(() => {
+        return activeUsers.map(u => {
+            const userSessions = allSessions.filter(s => {
+                if (s.date !== todayStr) return false;
+                return !s.userIds || s.userIds.includes(u.id);
+            });
+            const trained = userSessions.reduce((acc, s) => acc + s.totalSeconds, 0);
+            const consumed = u.consumedMagicDate === todayStr ? (u.consumedMagicSeconds || 0) : 0;
+            const userTarget = (u.dailyTargetMinutes || 10) * 60;
+            return {
+                userId: u.id,
+                userName: u.name,
+                displaySeconds: Math.max(0, trained - consumed),
+                targetSeconds: userTarget,
+            };
+        });
+    }, [activeUsers, allSessions, todayStr]);
+
+    // Overall display (single-user mode uses first user's values)
     const consumedSeconds = activeUsers.reduce((sum, u) => {
         if (u.consumedMagicDate === todayStr) {
             return sum + (u.consumedMagicSeconds || 0);
         }
         return sum;
     }, 0);
-
     const displaySeconds = Math.max(0, todaySeconds - consumedSeconds);
 
     // Confetti logic for Magic Tank reset
@@ -383,6 +409,50 @@ export const HomeScreen: React.FC = () => {
                     flexDirection: 'column',
                     alignItems: 'center',
                 }}>
+                    {/* Magic Power Tank — above fuwafuwa */}
+                    {isTogetherMode ? (
+                        <div style={{
+                            display: 'flex',
+                            gap: 16,
+                            justifyContent: 'center',
+                            alignItems: 'flex-start',
+                            marginBottom: 8,
+                        }}>
+                            {perUserMagic.map(um => (
+                                <div key={um.userId} style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    transform: 'scale(0.75)',
+                                    transformOrigin: 'top center',
+                                }}>
+                                    <MagicTank
+                                        currentSeconds={um.displaySeconds}
+                                        maxSeconds={um.targetSeconds}
+                                        onReset={handleTankReset}
+                                    />
+                                    <span style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 11,
+                                        fontWeight: 600,
+                                        color: '#8395A7',
+                                        marginTop: -4,
+                                    }}>
+                                        {um.userName}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div style={{ marginBottom: 8 }}>
+                            <MagicTank
+                                currentSeconds={displaySeconds}
+                                maxSeconds={targetSeconds}
+                                onReset={handleTankReset}
+                            />
+                        </div>
+                    )}
+
                     {/* The Stars of the Show (Carousel) */}
                     <div style={{ width: '100%', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
                         <motion.div
@@ -411,28 +481,6 @@ export const HomeScreen: React.FC = () => {
                                         opacity: currentPageIndex === index ? 1 : 0.5,
                                         transition: 'opacity 0.3s ease'
                                     }}>
-                                        {/* User Name Badge */}
-                                        <div style={{
-                                            padding: '4px 14px',
-                                            borderRadius: 16,
-                                            fontFamily: "'Noto Sans JP', sans-serif",
-                                            fontSize: 13,
-                                            fontWeight: 700,
-                                            color: '#2D3436',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 6,
-                                        }}>
-                                            {page.kind === 'user' ? (
-                                                <UserAvatar
-                                                    avatarUrl={page.user.avatarUrl}
-                                                    name={page.name}
-                                                    size={22}
-                                                />
-                                            ) : '🌍'}
-                                            {page.name}
-                                        </div>
-
                                         <div style={{
                                             display: 'flex',
                                             gap: isTogetherPage ? 12 : 0,
@@ -480,15 +528,6 @@ export const HomeScreen: React.FC = () => {
                             ))}
                         </div>
                     )}
-
-                    {/* Magic Power Tank */}
-                    <div style={{ marginTop: 8 }}>
-                        <MagicTank
-                            currentSeconds={displaySeconds}
-                            maxSeconds={targetSeconds}
-                            onReset={handleTankReset}
-                        />
-                    </div>
                 </div>
 
                 {/* ─── Challenge Section ─── */}
@@ -521,6 +560,62 @@ export const HomeScreen: React.FC = () => {
                     </div>
                 )}
 
+                {/* ─── Past Challenges Section ─── */}
+                {pastChallenges.length > 0 && (
+                    <div style={{
+                        width: '100%',
+                        padding: '0 16px',
+                        marginTop: filteredChallenges.length > 0 ? 10 : 20,
+                    }}>
+                        <button
+                            onClick={() => setPastExpanded(!pastExpanded)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '4px 4px',
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: '#B2BEC3',
+                            }}
+                        >
+                            <ChevronDown
+                                size={14}
+                                style={{
+                                    transform: pastExpanded ? 'rotate(180deg)' : 'rotate(0)',
+                                    transition: 'transform 0.2s ease',
+                                }}
+                            />
+                            おわったチャレンジ（{pastChallenges.length}）
+                        </button>
+                        <AnimatePresence>
+                            {pastExpanded && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}
+                                >
+                                    {pastChallenges.map(ch => (
+                                        <ChallengeCard
+                                            key={ch.id}
+                                            challenge={ch}
+                                            completions={completions}
+                                            onCompleted={loadChallenges}
+                                            expired
+                                        />
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                )}
+
                 {/* ─── Popular Menus Section ─── */}
                 <div style={{
                     width: '100%',
@@ -529,7 +624,7 @@ export const HomeScreen: React.FC = () => {
                 }}>
                     <PopularMenusRow
                         onOpenBrowser={() => setMenuBrowserOpen(true)}
-                        onSelectMenu={(exerciseIds) => startSessionWithExercises(exerciseIds)}
+                        onMenuTap={setSelectedPublicMenu}
                     />
                 </div>
             </div>
@@ -538,6 +633,16 @@ export const HomeScreen: React.FC = () => {
             <PublicMenuBrowser
                 open={menuBrowserOpen}
                 onClose={() => setMenuBrowserOpen(false)}
+            />
+
+            {/* Menu Detail Sheet (from Popular row) */}
+            <MenuDetailSheet
+                menu={selectedPublicMenu}
+                onClose={() => setSelectedPublicMenu(null)}
+                onTry={(exerciseIds) => {
+                    setSelectedPublicMenu(null);
+                    startSessionWithExercises(exerciseIds);
+                }}
             />
         </div>
     );

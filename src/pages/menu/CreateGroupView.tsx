@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Globe, Plus } from 'lucide-react';
 import { calculateTotalSeconds, getExerciseById, getExercisesByClass, type ClassLevel } from '../../data/exercises';
 import { saveCustomGroup, type MenuGroup } from '../../data/menuGroups';
-import { publishMenu } from '../../lib/publicMenus';
+import { publishMenu, unpublishMenu } from '../../lib/publicMenus';
 import { getAccountId } from '../../lib/sync';
 
 const EMOJI_OPTIONS = ['🌸', '💪', '🦵', '🩰', '⭐', '🌈', '🔥', '💃', '🧘', '🎯', '✨', '🌙'];
@@ -14,9 +14,10 @@ export const CreateGroupView: React.FC<{
     initial: MenuGroup | null;
     currentUserId?: string;
     authorName?: string;
+    publishedMenuId?: string;
     onSave: () => void;
     onCancel: () => void;
-}> = ({ classLevel, initial, currentUserId, authorName, onSave, onCancel }) => {
+}> = ({ classLevel, initial, currentUserId, authorName, publishedMenuId, onSave, onCancel }) => {
     const [name, setName] = useState(initial?.name || '');
     const [emoji, setEmoji] = useState(initial?.emoji || '🌸');
     const [description, setDescription] = useState(initial?.description || '');
@@ -53,6 +54,19 @@ export const CreateGroupView: React.FC<{
                 await publishMenu(group, authorName);
             } catch (err) {
                 console.warn('[CreateGroupView] publish failed:', err);
+            }
+        }
+
+        // If editing a published menu, offer to re-publish
+        if (isEditing && publishedMenuId && isLoggedIn && authorName) {
+            const shouldRepublish = confirm('公開版も更新しますか？');
+            if (shouldRepublish) {
+                try {
+                    await unpublishMenu(publishedMenuId);
+                    await publishMenu(group, authorName);
+                } catch (err) {
+                    console.warn('[CreateGroupView] re-publish failed:', err);
+                }
             }
         }
 

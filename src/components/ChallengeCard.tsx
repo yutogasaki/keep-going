@@ -10,12 +10,14 @@ interface ChallengeCardProps {
     challenge: Challenge;
     completions: ChallengeCompletion[];
     onCompleted: () => void;
+    expired?: boolean;
 }
 
 export const ChallengeCard: React.FC<ChallengeCardProps> = ({
     challenge,
     completions,
     onCompleted,
+    expired,
 }) => {
     const sessionUserIds = useAppStore(state => state.sessionUserIds);
     const users = useAppStore(state => state.users);
@@ -97,6 +99,67 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
     const today = new Date();
     const endDate = new Date(challenge.endDate + 'T23:59:59');
     const daysLeft = Math.max(0, Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)));
+
+    // ─── Expired mode (past challenge) ───
+    if (expired) {
+        const wasCompleted = activeUserIds.some(uid => completedUserIds.has(uid));
+        return (
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                style={{
+                    background: wasCompleted
+                        ? 'linear-gradient(135deg, #FFF9E6, #FFF3CC)'
+                        : 'rgba(245, 245, 245, 0.9)',
+                    borderRadius: 16,
+                    padding: '12px 16px',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                    border: wasCompleted
+                        ? '1px solid rgba(255, 215, 0, 0.3)'
+                        : '1px solid rgba(0,0,0,0.05)',
+                    opacity: wasCompleted ? 1 : 0.6,
+                }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 20 }}>{emoji}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: wasCompleted ? '#333' : '#999',
+                        }}>
+                            {challenge.title}
+                        </div>
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 11,
+                            color: '#aaa',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                        }}>
+                            {exerciseName}を{challenge.targetCount}回
+                            <span style={{ color: '#ccc' }}>|</span>
+                            {dateLabel}
+                        </div>
+                    </div>
+                    {wasCompleted ? (
+                        <Trophy size={18} color="#FFD700" />
+                    ) : (
+                        <span style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 10,
+                            color: '#B2BEC3',
+                            fontWeight: 600,
+                        }}>
+                            みかんりょう
+                        </span>
+                    )}
+                </div>
+            </motion.div>
+        );
+    }
 
     // ─── Invite mode (not joined) ───
     if (!isJoined) {

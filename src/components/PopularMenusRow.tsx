@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { fetchPopularMenus, type PublicMenu } from '../lib/publicMenus';
+import { fetchRecommendedMenus, type PublicMenu } from '../lib/publicMenus';
 import { EXERCISES } from '../data/exercises';
 
 interface PopularMenusRowProps {
     onOpenBrowser: () => void;
-    onSelectMenu: (exerciseIds: string[]) => void;
+    onMenuTap: (menu: PublicMenu) => void;
 }
 
-export const PopularMenusRow: React.FC<PopularMenusRowProps> = ({ onOpenBrowser, onSelectMenu }) => {
+export const PopularMenusRow: React.FC<PopularMenusRowProps> = ({ onOpenBrowser, onMenuTap }) => {
     const [menus, setMenus] = useState<PublicMenu[]>([]);
 
     useEffect(() => {
-        fetchPopularMenus(5).then(setMenus).catch(console.warn);
+        fetchRecommendedMenus().then(setMenus).catch(console.warn);
     }, []);
 
     if (menus.length === 0) return null;
@@ -56,7 +56,7 @@ export const PopularMenusRow: React.FC<PopularMenusRowProps> = ({ onOpenBrowser,
                 </button>
             </div>
 
-            {/* Horizontal scroll */}
+            {/* Horizontal scroll — 3 cards */}
             <div style={{
                 display: 'flex',
                 gap: 10,
@@ -68,13 +68,13 @@ export const PopularMenusRow: React.FC<PopularMenusRowProps> = ({ onOpenBrowser,
                 {menus.map(menu => {
                     const exercisePreview = menu.exerciseIds
                         .slice(0, 3)
-                        .map(id => EXERCISES.find(e => e.id === id)?.emoji || '🎯')
+                        .map(id => EXERCISES.find(e => e.id === id)?.emoji || '')
                         .join('');
 
                     return (
                         <button
                             key={menu.id}
-                            onClick={() => onSelectMenu(menu.exerciseIds)}
+                            onClick={() => onMenuTap(menu)}
                             style={{
                                 minWidth: 120,
                                 padding: '12px 14px',
@@ -108,7 +108,7 @@ export const PopularMenusRow: React.FC<PopularMenusRowProps> = ({ onOpenBrowser,
                                 fontSize: 10,
                                 color: '#8395A7',
                             }}>
-                                {exercisePreview} ・ {menu.downloadCount}回
+                                {exercisePreview} · {menu.downloadCount}回
                             </span>
                         </button>
                     );

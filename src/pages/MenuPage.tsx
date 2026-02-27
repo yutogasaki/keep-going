@@ -6,7 +6,7 @@ import { ExerciseIcon } from '../components/ExerciseIcon';
 import { getExercisesByClass, DEFAULT_SESSION_TARGET_SECONDS } from '../data/exercises';
 import { getPresetsForClass, getCustomGroups, deleteCustomGroup, type MenuGroup } from '../data/menuGroups';
 import { getCustomExercises, deleteCustomExercise, type CustomExercise } from '../lib/db';
-import { publishMenu } from '../lib/publicMenus';
+import { publishMenu, unpublishMenu, fetchMyPublishedMenus, type PublicMenu } from '../lib/publicMenus';
 import { getAccountId } from '../lib/sync';
 import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
 import { audio } from '../lib/audio';
@@ -41,6 +41,7 @@ export const MenuPage: React.FC = () => {
     const [editEx, setEditEx] = useState<CustomExercise | null>(null);
     const [showCustomMenu, setShowCustomMenu] = useState(false);
     const [showPublicBrowser, setShowPublicBrowser] = useState(false);
+    const [myPublishedMenus, setMyPublishedMenus] = useState<PublicMenu[]>([]);
 
     const updateUserSettings = useAppStore(s => s.updateUserSettings);
 
@@ -88,6 +89,11 @@ export const MenuPage: React.FC = () => {
             if (isTogetherMode) return true;
             return !e.creatorId || e.creatorId === currentUserId;
         }));
+
+        // Load published menus for download count display
+        if (getAccountId()) {
+            fetchMyPublishedMenus().then(setMyPublishedMenus).catch(console.warn);
+        }
     };
 
     const handleGroupTap = (group: MenuGroup) => {
@@ -123,19 +129,42 @@ export const MenuPage: React.FC = () => {
         try {
             await publishMenu(group, authorName);
             alert('メニューを公開しました！');
+            loadCustomData();
         } catch (err) {
             console.warn('[menu] publish failed:', err);
             alert('公開に失敗しました');
         }
     };
 
+    const handleUnpublishGroup = async (group: MenuGroup) => {
+        // Find the published version matching this local menu
+        const published = findPublishedMenu(group);
+        if (!published) return;
+        try {
+            await unpublishMenu(published.id);
+            alert('メニューを非公開にしました');
+            loadCustomData();
+        } catch (err) {
+            console.warn('[menu] unpublish failed:', err);
+            alert('非公開に失敗しました');
+        }
+    };
+
+    const findPublishedMenu = (group: MenuGroup): PublicMenu | undefined => {
+        return myPublishedMenus.find(pm =>
+            pm.name === group.name && pm.exerciseIds.join(',') === group.exerciseIds.join(',')
+        );
+    };
+
     if (showCreateGroup || editGroup) {
+        const publishedId = editGroup ? findPublishedMenu(editGroup)?.id : undefined;
         return (
             <CreateGroupView
                 classLevel={classLevel}
                 initial={editGroup}
                 currentUserId={sessionUserIds.length === 1 ? sessionUserIds[0] : undefined}
                 authorName={currentUsers[0]?.name ?? 'ゲスト'}
+                publishedMenuId={publishedId}
                 onSave={handleCreatedGroup}
                 onCancel={() => { setShowCreateGroup(false); setEditGroup(null); }}
             />
@@ -310,19 +339,25 @@ export const MenuPage: React.FC = () => {
                         </h2>
                         {customGroups.length > 0 && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 10 }}>
-                                {customGroups.map((group, i) => (
-                                    <GroupCard
-                                        key={group.id}
-                                        group={group}
-                                        index={i}
-                                        creatorName={sessionUserIds.length > 1 ? getCreatorName(group.creatorId) : undefined}
-                                        onTap={() => handleGroupTap(group)}
-                                        onEdit={() => setEditGroup(group)}
-                                        onDelete={() => handleDeleteGroup(group.id)}
-                                        onPublish={getAccountId() ? () => handlePublishGroup(group) : undefined}
-                                        isCustom
-                                    />
-                                ))}
+                                {customGroups.map((group, i) => {
+                                    const published = findPublishedMenu(group);
+                                    return (
+                                        <GroupCard
+                                            key={group.id}
+                                            group={group}
+                                            index={i}
+                                            creatorName={sessionUserIds.length > 1 ? getCreatorName(group.creatorId) : undefined}
+                                            onTap={() => handleGroupTap(group)}
+                                            onEdit={() => setEditGroup(group)}
+                                            onDelete={() => handleDeleteGroup(group.id)}
+                                            onPublish={getAccountId() ? () => handlePublishGroup(group) : undefined}
+                                            onUnpublish={() => handleUnpublishGroup(group)}
+                                            isCustom
+                                            isPublished={!!published}
+                                            downloadCount={published?.downloadCount}
+                                        />
+                                    );
+                                })}
                             </div>
                         )}
                         <motion.button

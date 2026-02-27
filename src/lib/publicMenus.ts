@@ -52,6 +52,70 @@ export async function fetchPopularMenus(limit = 10): Promise<PublicMenu[]> {
     return (data ?? []).map(mapPublicMenu);
 }
 
+// ─── Fetch recommended menus (algorithm: trending + newest + popular) ──
+
+export async function fetchRecommendedMenus(): Promise<PublicMenu[]> {
+    if (!supabase) return [];
+
+    // Fetch 3 categories in parallel
+    const [trendingRes, newestRes, popularRes] = await Promise.all([
+        // Trending: recently created with high downloads
+        supabase.from('public_menus').select('*')
+            .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+            .order('download_count', { ascending: false })
+            .limit(5),
+        // Newest
+        supabase.from('public_menus').select('*')
+            .order('created_at', { ascending: false })
+            .limit(5),
+        // All-time popular
+        supabase.from('public_menus').select('*')
+            .order('download_count', { ascending: false })
+            .limit(5),
+    ]);
+
+    const trending = (trendingRes.data ?? []).map(mapPublicMenu);
+    const newest = (newestRes.data ?? []).map(mapPublicMenu);
+    const popular = (popularRes.data ?? []).map(mapPublicMenu);
+
+    // Pick one from each category, deduplicating
+    const result: PublicMenu[] = [];
+    const seenIds = new Set<string>();
+    const seenKeys = new Set<string>();
+
+    const addOne = (list: PublicMenu[]) => {
+        for (const menu of list) {
+            const key = `${menu.name}|${menu.exerciseIds.join(',')}`;
+            if (!seenIds.has(menu.id) && !seenKeys.has(key)) {
+                result.push(menu);
+                seenIds.add(menu.id);
+                seenKeys.add(key);
+                return;
+            }
+        }
+    };
+
+    addOne(trending);
+    addOne(newest);
+    addOne(popular);
+
+    // If we don't have 3 yet, fill from any remaining
+    for (const list of [trending, newest, popular]) {
+        if (result.length >= 3) break;
+        for (const menu of list) {
+            const key = `${menu.name}|${menu.exerciseIds.join(',')}`;
+            if (!seenIds.has(menu.id) && !seenKeys.has(key)) {
+                result.push(menu);
+                seenIds.add(menu.id);
+                seenKeys.add(key);
+                if (result.length >= 3) break;
+            }
+        }
+    }
+
+    return result;
+}
+
 // ─── Fetch my published menus ───────────────────────
 
 export async function fetchMyPublishedMenus(): Promise<PublicMenu[]> {

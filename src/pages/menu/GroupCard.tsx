@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, Clock, Edit2, Play, Trash2, Upload } from 'lucide-react';
+import { ChevronDown, Clock, Download, Edit2, EyeOff, Play, Trash2, Upload } from 'lucide-react';
 import { ExerciseIcon } from '../../components/ExerciseIcon';
 import { calculateTotalSeconds, getExerciseById } from '../../data/exercises';
 import type { MenuGroup } from '../../data/menuGroups';
@@ -13,10 +13,13 @@ interface GroupCardProps {
     onEdit?: () => void;
     onDelete?: () => void;
     onPublish?: () => void;
+    onUnpublish?: () => void;
     isCustom?: boolean;
+    isPublished?: boolean;
+    downloadCount?: number;
 }
 
-export const GroupCard: React.FC<GroupCardProps> = ({ group, index, creatorName, onTap, onEdit, onDelete, onPublish, isCustom }) => {
+export const GroupCard: React.FC<GroupCardProps> = ({ group, index, creatorName, onTap, onEdit, onDelete, onPublish, onUnpublish, isCustom, isPublished, downloadCount }) => {
     const [expanded, setExpanded] = useState(false);
     const totalSec = calculateTotalSeconds(group.exerciseIds);
     const minutes = Math.ceil(totalSec / 60);
@@ -174,8 +177,22 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, index, creatorName,
                                     );
                                 })}
                             </div>
+                            {isCustom && isPublished && downloadCount != null && (
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                    marginTop: 8,
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 11,
+                                    color: '#0984E3',
+                                }}>
+                                    <Download size={11} />
+                                    {downloadCount}人がつかってるよ
+                                </div>
+                            )}
                             {isCustom && (
-                                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                                <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                                     <button
                                         onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
                                         style={{
@@ -214,7 +231,27 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, index, creatorName,
                                         <Trash2 size={12} />
                                         さくじょ
                                     </button>
-                                    {onPublish && (
+                                    {isPublished ? (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onUnpublish?.(); }}
+                                            style={{
+                                                padding: '6px 12px',
+                                                borderRadius: 8,
+                                                border: 'none',
+                                                background: 'rgba(225, 112, 85, 0.08)',
+                                                cursor: 'pointer',
+                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                fontSize: 12,
+                                                color: '#E17055',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 4,
+                                            }}
+                                        >
+                                            <EyeOff size={12} />
+                                            ひこうかい
+                                        </button>
+                                    ) : onPublish && (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); onPublish(); }}
                                             style={{
