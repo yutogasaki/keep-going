@@ -202,10 +202,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Clean up stale context if onboarding is already completed
         if (loginContext === 'onboarding') {
             setLoginContext(null);
+            return;
         }
 
-        // For settings-based login (or unknown context), run conflict-aware sync
-        handleSettingsLogin(user.id);
+        // Only run conflict-aware sync for explicit settings login (not page reload)
+        if (loginContext === 'settings') {
+            handleSettingsLogin(user.id);
+        }
+        // loginContext === null (page reload): data already synced from previous session,
+        // ongoing sync handled by store subscription + processQueue
     }, [user, loginContext, handleSettingsLogin, setLoginContext]);
 
     // Process offline queue when coming back online

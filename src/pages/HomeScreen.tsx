@@ -202,7 +202,9 @@ export const HomeScreen: React.FC = () => {
             targetIndex = swipePages.findIndex(p => p.kind === 'user' && p.user.id === sessionUserIds[0]);
         }
 
-        if (targetIndex !== -1 && targetIndex !== currentPageIndex) {
+        // Fallback to 0 if target user not found (e.g. deleted user, stale sessionUserIds)
+        if (targetIndex === -1) targetIndex = 0;
+        if (targetIndex !== currentPageIndex) {
             setCurrentPageIndex(targetIndex);
         }
     }, [sessionUserIds, swipePages, currentPageIndex]);
