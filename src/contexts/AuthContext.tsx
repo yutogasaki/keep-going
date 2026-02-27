@@ -21,6 +21,7 @@ interface AuthContextValue {
     user: User | null;
     isLoading: boolean;
     isSyncing: boolean;
+    isAnonymous: boolean;
     loginContext: LoginContext;
     setLoginContext: (ctx: LoginContext) => void;
     conflictScenario: ConflictScenario | null;
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [isAnonymous, setIsAnonymous] = useState(false);
     const [isTeacher, setIsTeacher] = useState(false);
     const [loginContext, setLoginContextState] = useState<LoginContext>(() => {
         const saved = sessionStorage.getItem(LOGIN_CONTEXT_KEY);
@@ -52,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [conflictScenario, setConflictScenario] = useState<ConflictScenario | null>(null);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const hasSyncedRef = useRef(false);
+    const prevUserIdRef = useRef<string | null>(null);
 
     const setLoginContext = useCallback((ctx: LoginContext) => {
         setLoginContextState(ctx);
@@ -168,15 +171,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!user) {
             setAccountId(null);
             setIsTeacher(false);
+            setIsAnonymous(false);
             hasSyncedRef.current = false;
+            prevUserIdRef.current = null;
             return;
         }
 
+        // Reset sync flag when user identity changes (e.g. anonymous → real account via signIn)
+        if (prevUserIdRef.current !== null && prevUserIdRef.current !== user.id) {
+            hasSyncedRef.current = false;
+        }
+        prevUserIdRef.current = user.id;
+
         setAccountId(user.id);
+        setIsAnonymous(user.is_anonymous ?? false);
         setIsTeacher(checkIsTeacher(user.email));
 
         if (hasSyncedRef.current) return;
         hasSyncedRef.current = true;
+
+        // Anonymous users: skip conflict-aware sync (data syncs via store subscription + onboarding initialSync)
+        if (user.is_anonymous) return;
 
         // #4/#5: Only skip sync for onboarding if actually in onboarding
         const isOnboarding = loginContext === 'onboarding'
@@ -208,6 +223,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => clearInterval(interval);
     }, [user]);
 
+    // Auth initialization: check session, fallback to anonymous auth
     useEffect(() => {
         if (!supabase) {
             setIsLoading(false);
@@ -215,40 +231,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         supabase.auth.getSession().then(({ data: { session } }) => {
-            setUser(session?.user ?? null);
+            if (session?.user) {
+                setUser(session.user);
+            } else {
+                // No existing session → sign in anonymously
+                supabase.auth.signInAnonymously().then(({ error }) => {
+                    if (error) console.warn('[auth] anonymous sign-in failed:', error);
+                    // user will be set via onAuthStateChange
+                });
+            }
             setIsLoading(false);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
+            const u = session?.user ?? null;
+            setUser(u);
+            setIsAnonymous(u?.is_anonymous ?? false);
         });
 
         return () => subscription.unsubscribe();
     }, []);
 
+    // signUp: upgrade anonymous → real account, or create new account
     const signUp = useCallback(async (email: string, password: string) => {
         if (!supabase) return { error: { message: 'Supabase not configured' } as AuthError };
+        if (user?.is_anonymous) {
+            // Upgrade anonymous account (preserves same auth.uid and all data)
+            const { error } = await supabase.auth.updateUser({ email, password });
+            if (!error) setIsAnonymous(false);
+            return { error };
+        }
         const { error } = await supabase.auth.signUp({ email, password });
         return { error };
-    }, []);
+    }, [user]);
 
+    // signIn: sign into existing account (replaces anonymous session)
     const signIn = useCallback(async (email: string, password: string) => {
         if (!supabase) return { error: { message: 'Supabase not configured' } as AuthError };
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         return { error };
     }, []);
 
+    // signInWithGoogle: link identity for anonymous, or OAuth for non-anonymous
     const signInWithGoogle = useCallback(async () => {
         if (!supabase) return { error: { message: 'Supabase not configured' } as AuthError };
+        if (user?.is_anonymous) {
+            // Link Google identity to anonymous account (preserves same auth.uid)
+            const { error } = await supabase.auth.linkIdentity({ provider: 'google' });
+            return { error };
+        }
         const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
         return { error };
-    }, []);
+    }, [user]);
 
     const signOut = useCallback(async () => {
         if (!supabase) return;
         await supabase.auth.signOut();
         await clearSyncQueue();
         setToastMessage('ログアウトしました');
+        // Re-create anonymous session after signout
+        supabase.auth.signInAnonymously().then(({ error }) => {
+            if (error) console.warn('[auth] anonymous re-sign-in failed:', error);
+        });
     }, []);
 
     return (
@@ -256,6 +300,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             user,
             isLoading,
             isSyncing,
+            isAnonymous,
             isTeacher,
             loginContext,
             setLoginContext,

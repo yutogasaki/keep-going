@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Cloud, CloudOff, LogOut, Loader2 } from 'lucide-react';
+import { Cloud, CloudOff, LogOut, Loader2, UserPlus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LoginPage } from '../LoginPage';
 import { SyncConflictDialog } from '../../components/SyncConflictDialog';
 
 export const AccountSection: React.FC = () => {
-    const { user, isSyncing, signOut, conflictScenario, resolveConflict, cancelLogin, setLoginContext } = useAuth();
+    const { user, isAnonymous, isSyncing, signOut, conflictScenario, resolveConflict, cancelLogin, setLoginContext } = useAuth();
     const [showLogin, setShowLogin] = useState(false);
 
     if (showLogin) {
@@ -14,6 +14,8 @@ export const AccountSection: React.FC = () => {
             onLoginSuccess={() => setShowLogin(false)}
         />;
     }
+
+    const isRealAccount = user && !isAnonymous;
 
     return (
         <>
@@ -25,8 +27,8 @@ export const AccountSection: React.FC = () => {
                 />
             )}
 
-            {user ? (
-                // Logged in state
+            {isRealAccount ? (
+                // Real account (logged in with email/Google)
                 <div className="card" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
                     <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -74,25 +76,35 @@ export const AccountSection: React.FC = () => {
                     </div>
                 </div>
             ) : (
-                // Not logged in
+                // Anonymous user or no Supabase
                 <div className="card" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
                     <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <CloudOff size={16} color="#8395A7" />
+                            <Cloud size={16} color={isAnonymous ? '#2BBAA0' : '#8395A7'} />
                             <span style={{ fontSize: 14, fontWeight: 600 }}>アカウント</span>
                         </div>
                     </div>
                     <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        <p style={{ fontSize: 13, color: '#8395A7', margin: 0, lineHeight: 1.5 }}>
-                            ログインするとデータがクラウドにバックアップされます。
-                            ログインしなくてもアプリは使えます。
-                        </p>
+                        {isAnonymous ? (
+                            <div style={{ fontSize: 12, color: '#8395A7', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Cloud size={12} />
+                                データは自動で保存されています
+                            </div>
+                        ) : (
+                            <p style={{ fontSize: 13, color: '#8395A7', margin: 0, lineHeight: 1.5 }}>
+                                ログインするとデータがクラウドにバックアップされます。
+                            </p>
+                        )}
                         <button
                             onClick={() => {
                                 setLoginContext('settings');
                                 setShowLogin(true);
                             }}
                             style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 6,
                                 padding: '10px 16px',
                                 borderRadius: 10,
                                 border: 'none',
@@ -103,8 +115,14 @@ export const AccountSection: React.FC = () => {
                                 cursor: 'pointer',
                             }}
                         >
-                            ログイン / アカウント作成
+                            <UserPlus size={16} />
+                            {isAnonymous ? 'アカウント登録する' : 'ログイン / アカウント作成'}
                         </button>
+                        {isAnonymous && (
+                            <p style={{ fontSize: 11, color: '#B2BEC3', margin: 0, lineHeight: 1.4 }}>
+                                登録すると他のデバイスでもデータが使えます
+                            </p>
+                        )}
                     </div>
                 </div>
             )}

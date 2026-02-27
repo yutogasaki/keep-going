@@ -31,8 +31,9 @@ export const Onboarding: React.FC = () => {
 
     // Handle post-login: OAuth redirect return OR async email auth state change
     // step !== 'restoring' prevents double-fire (handlePostLogin sets step='restoring')
+    // Skip for anonymous users (auto-logged-in, no cloud restore needed)
     useEffect(() => {
-        if (user && loginContext === 'onboarding' && step !== 'restoring') {
+        if (user && !user.is_anonymous && loginContext === 'onboarding' && step !== 'restoring') {
             handlePostLogin(user.id);
         }
     }, [user, loginContext]);
