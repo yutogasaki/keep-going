@@ -27,7 +27,7 @@ export const Footer: React.FC = () => {
                 bottom: 0,
                 left: 0,
                 right: 0,
-                height: 72,
+                height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
                 paddingBottom: 'env(safe-area-inset-bottom, 0px)',
                 background: 'rgba(255, 255, 255, 0.85)',
                 backdropFilter: 'blur(16px)',
