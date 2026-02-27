@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
+import { useAuth } from '../contexts/AuthContext';
 import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { AccountSection } from './settings/AccountSection';
+import { TeacherSection } from './settings/TeacherSection';
+import { TeacherDashboard } from './TeacherDashboard';
 import { UserManagementSection } from './settings/UserManagementSection';
 import { SoundNotificationSettingsSection } from './settings/SoundNotificationSettingsSection';
 import { HelpCenterSection } from './settings/HelpCenterSection';
@@ -15,6 +18,12 @@ export const SettingsPage: React.FC = () => {
     const addUser = useAppStore(s => s.addUser);
     const updateUser = useAppStore(s => s.updateUser);
     const deleteUser = useAppStore(s => s.deleteUser);
+    const { isTeacher } = useAuth();
+    const [showTeacherDashboard, setShowTeacherDashboard] = useState(false);
+
+    if (showTeacherDashboard) {
+        return <TeacherDashboard onBack={() => setShowTeacherDashboard(false)} />;
+    }
 
     return (
         <div style={{
@@ -68,6 +77,10 @@ export const SettingsPage: React.FC = () => {
 
             <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <AccountSection />
+
+                {isTeacher && (
+                    <TeacherSection onEnterDashboard={() => setShowTeacherDashboard(true)} />
+                )}
 
                 <UserManagementSection
                     users={users}

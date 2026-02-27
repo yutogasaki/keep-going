@@ -12,6 +12,7 @@ import {
     clearSyncQueue,
     type ConflictScenario,
 } from '../lib/sync';
+import { checkIsTeacher } from '../lib/teacher';
 import { useAppStore } from '../store/useAppStore';
 
 export type LoginContext = 'onboarding' | 'settings' | null;
@@ -25,6 +26,7 @@ interface AuthContextValue {
     conflictScenario: ConflictScenario | null;
     resolveConflict: (choice: 'cloud' | 'local') => Promise<void>;
     cancelLogin: () => Promise<void>;
+    isTeacher: boolean;
     toastMessage: string | null;
     clearToast: () => void;
     signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
@@ -41,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [isTeacher, setIsTeacher] = useState(false);
     const [loginContext, setLoginContextState] = useState<LoginContext>(() => {
         const saved = sessionStorage.getItem(LOGIN_CONTEXT_KEY);
         if (saved === 'onboarding' || saved === 'settings') return saved;
@@ -164,11 +167,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (!user) {
             setAccountId(null);
+            setIsTeacher(false);
             hasSyncedRef.current = false;
             return;
         }
 
         setAccountId(user.id);
+        setIsTeacher(checkIsTeacher(user.email));
 
         if (hasSyncedRef.current) return;
         hasSyncedRef.current = true;
@@ -251,6 +256,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             user,
             isLoading,
             isSyncing,
+            isTeacher,
             loginContext,
             setLoginContext,
             conflictScenario,

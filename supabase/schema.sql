@@ -111,3 +111,29 @@ create trigger family_members_updated_at before update on family_members
   for each row execute function update_updated_at();
 create trigger app_settings_updated_at before update on app_settings
   for each row execute function update_updated_at();
+
+-- ─── 先生モード ──────────────────────────────────────
+
+-- 先生判定関数（メールアドレスをここで変更する）
+create or replace function is_teacher()
+returns boolean
+language sql
+security definer
+stable
+as $$
+  select coalesce(
+    (select email from auth.users where id = auth.uid()) = any(array[
+      'yu.togasaki@gmail.com',
+      'ayami.ballet.studio@gmail.com'
+    ]),
+    false
+  );
+$$;
+
+-- 先生は全生徒の family_members を SELECT できる
+create policy "Teachers can read all family_members" on family_members
+  for select using (is_teacher());
+
+-- 先生は全生徒の sessions を SELECT できる
+create policy "Teachers can read all sessions" on sessions
+  for select using (is_teacher());
