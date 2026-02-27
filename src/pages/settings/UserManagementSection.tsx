@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { ChevronRight, Edit2, Trash2, UserPlus, Users } from 'lucide-react';
+import { Camera, ChevronRight, Edit2, Loader2, Trash2, UserPlus, Users } from 'lucide-react';
 import { CLASS_LEVELS, type ClassLevel } from '../../data/exercises';
 import { getTodayKey } from '../../lib/db';
 import type { UserProfileStore } from '../../store/useAppStore';
+import { UserAvatar } from '../../components/UserAvatar';
+import { resizeImage, uploadAvatar } from '../../lib/avatar';
+import { getAccountId } from '../../lib/sync';
 
 type NewUserInput = Omit<UserProfileStore, 'id' | 'dailyTargetMinutes' | 'excludedExercises' | 'requiredExercises'>;
 
@@ -26,6 +29,30 @@ export const UserManagementSection: React.FC<UserManagementSectionProps> = ({
     const [editName, setEditName] = useState('');
     const [editClass, setEditClass] = useState<ClassLevel>('初級');
     const [deleteConfirmUserId, setDeleteConfirmUserId] = useState<string | null>(null);
+    const [uploadingUserId, setUploadingUserId] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const pendingUploadUserIdRef = useRef<string | null>(null);
+
+    const handleAvatarUpload = async (userId: string, file?: File | null) => {
+        if (!file) return;
+        const accountId = getAccountId();
+        if (!accountId) return;
+        if (!navigator.onLine) {
+            alert('写真をアップロードするにはインターネット接続が必要です');
+            return;
+        }
+        setUploadingUserId(userId);
+        try {
+            const resized = await resizeImage(file);
+            const url = await uploadAvatar(accountId, userId, resized);
+            onUpdateUser(userId, { avatarUrl: url });
+        } catch (err) {
+            console.warn('[avatar] upload failed:', err);
+            alert('写真のアップロードに失敗しました');
+        } finally {
+            setUploadingUserId(null);
+        }
+    };
 
     return (
         <div className="card" style={{ padding: 0, overflow: 'hidden', flexShrink: 0 }}>
@@ -133,6 +160,38 @@ export const UserManagementSection: React.FC<UserManagementSectionProps> = ({
                                         </div>
                                     ) : (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                            {/* Avatar with upload */}
+                                            <div
+                                                onClick={() => {
+                                                    pendingUploadUserIdRef.current = u.id;
+                                                    fileInputRef.current?.click();
+                                                }}
+                                                style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}
+                                            >
+                                                {uploadingUserId === u.id ? (
+                                                    <div style={{
+                                                        width: 40, height: 40, borderRadius: '50%',
+                                                        background: '#F0F3F5',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    }}>
+                                                        <Loader2 size={18} color="#2BBAA0" style={{ animation: 'spin 1s linear infinite' }} />
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <UserAvatar avatarUrl={u.avatarUrl} name={u.name} size={40} />
+                                                        <div style={{
+                                                            position: 'absolute', bottom: -2, right: -2,
+                                                            width: 18, height: 18, borderRadius: '50%',
+                                                            background: '#2BBAA0', color: 'white',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            border: '2px solid white',
+                                                        }}>
+                                                            <Camera size={9} />
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ fontFamily: "'Noto Sans JP'", fontSize: 15, fontWeight: 700, color: '#2D3436', display: 'flex', alignItems: 'center', gap: 6 }}>
                                                     {u.name}
@@ -251,6 +310,22 @@ export const UserManagementSection: React.FC<UserManagementSectionProps> = ({
                     </div>
                 </motion.div>
             )}
+
+            {/* Hidden file input shared across all avatar uploads */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                    const userId = pendingUploadUserIdRef.current;
+                    if (userId) {
+                        handleAvatarUpload(userId, e.target.files?.[0]);
+                    }
+                    e.target.value = '';
+                    pendingUploadUserIdRef.current = null;
+                }}
+            />
 
             {deleteConfirmUserId && createPortal(
                 <div style={{

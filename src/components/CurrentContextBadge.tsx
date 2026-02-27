@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, User } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
+import { UserAvatar } from './UserAvatar';
 
 export const CurrentContextBadge: React.FC = () => {
     const sessionUserIds = useAppStore(state => state.sessionUserIds);
@@ -73,7 +74,11 @@ export const CurrentContextBadge: React.FC = () => {
                 {isTogetherMode ? (
                     <Users size={14} color="#0984E3" />
                 ) : (
-                    <User size={14} color="#2BBAA0" />
+                    <UserAvatar
+                        avatarUrl={users.find(u => u.id === sessionUserIds[0])?.avatarUrl}
+                        name={displayText}
+                        size={20}
+                    />
                 )}
                 <span style={{
                     fontFamily: "'Noto Sans JP', sans-serif",

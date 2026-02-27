@@ -30,6 +30,8 @@ export interface UserProfileStore {
     // Tank Reset state
     consumedMagicDate?: string;
     consumedMagicSeconds?: number;
+    // Profile photo
+    avatarUrl?: string;
 }
 
 type TabId = 'home' | 'record' | 'menu' | 'settings';
@@ -201,7 +203,7 @@ export const useAppStore = create<AppState>()(
         }),
         {
             name: 'keepgoing-app-state',
-            version: 6, // Bumped to 6 for consumedMagicSeconds
+            version: 7, // Bumped to 7 for avatarUrl
             migrate: (persistedState: any, version: number) => {
                 if (version === 0) {
                     if (persistedState.requiredExercises && !persistedState.requiredExercises.includes('S07')) {
@@ -281,6 +283,7 @@ export const useAppStore = create<AppState>()(
                         }));
                     }
                 }
+                // version 7: avatarUrl (optional, no migration needed)
                 return persistedState as AppState;
             },
             partialize: (state) => ({

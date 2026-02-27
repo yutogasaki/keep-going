@@ -139,6 +139,7 @@ export async function pushFamilyMember(user: UserProfileStore): Promise<void> {
         required_exercises: user.requiredExercises,
         consumed_magic_date: user.consumedMagicDate ?? null,
         consumed_magic_seconds: user.consumedMagicSeconds ?? 0,
+        avatar_url: user.avatarUrl ?? null,
     };
 
     if (!supabase || !isOnline()) {
@@ -447,6 +448,7 @@ export async function pullAllData(accountId: string): Promise<PullResult> {
             requiredExercises: fm.required_exercises as string[],
             consumedMagicDate: fm.consumed_magic_date ?? undefined,
             consumedMagicSeconds: fm.consumed_magic_seconds ?? 0,
+            avatarUrl: fm.avatar_url ?? undefined,
         }));
 
         const sessions: SessionRecord[] = (sessionsRes.data ?? []).map(s => ({

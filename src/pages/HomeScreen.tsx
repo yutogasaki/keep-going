@@ -9,6 +9,7 @@ import { MagicTank } from '../components/MagicTank';
 import { useAppStore, type UserProfileStore } from '../store/useAppStore';
 import { calculateFuwafuwaStatus } from '../lib/fuwafuwa';
 import { audio } from '../lib/audio';
+import { UserAvatar } from '../components/UserAvatar';
 
 type SwipePage =
     | { kind: 'user'; id: string; name: string; user: UserProfileStore }
@@ -411,7 +412,14 @@ export const HomeScreen: React.FC = () => {
                                             gap: 8,
                                         }}
                                     >
-                                        {isTogetherPage ? '🌍' : '👤'} {page.name}
+                                        {page.kind === 'user' ? (
+                                            <UserAvatar
+                                                avatarUrl={page.user.avatarUrl}
+                                                name={page.name}
+                                                size={24}
+                                            />
+                                        ) : '🌍'}
+                                        {page.name}
                                     </motion.div>
 
                                     <div style={{
