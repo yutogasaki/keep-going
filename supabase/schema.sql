@@ -87,6 +87,7 @@ create table challenges (
   end_date text not null,
   created_by text not null,
   reward_fuwafuwa_type int not null,
+  class_levels text[] not null default '{}',
   created_at timestamptz default now()
 );
 
