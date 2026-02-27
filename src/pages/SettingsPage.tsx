@@ -7,6 +7,7 @@ import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { AccountSection } from './settings/AccountSection';
 import { TeacherSection } from './settings/TeacherSection';
 import { TeacherDashboard } from './TeacherDashboard';
+import { DeveloperDashboard } from './DeveloperDashboard';
 import { UserManagementSection } from './settings/UserManagementSection';
 import { SoundNotificationSettingsSection } from './settings/SoundNotificationSettingsSection';
 import { HelpCenterSection } from './settings/HelpCenterSection';
@@ -18,11 +19,15 @@ export const SettingsPage: React.FC = () => {
     const addUser = useAppStore(s => s.addUser);
     const updateUser = useAppStore(s => s.updateUser);
     const deleteUser = useAppStore(s => s.deleteUser);
-    const { isTeacher } = useAuth();
+    const { isTeacher, isDeveloper } = useAuth();
     const [showTeacherDashboard, setShowTeacherDashboard] = useState(false);
+    const [showDeveloperDashboard, setShowDeveloperDashboard] = useState(false);
 
     if (showTeacherDashboard) {
         return <TeacherDashboard onBack={() => setShowTeacherDashboard(false)} />;
+    }
+    if (showDeveloperDashboard) {
+        return <DeveloperDashboard onBack={() => setShowDeveloperDashboard(false)} />;
     }
 
     return (
@@ -80,6 +85,26 @@ export const SettingsPage: React.FC = () => {
 
                 {isTeacher && (
                     <TeacherSection onEnterDashboard={() => setShowTeacherDashboard(true)} />
+                )}
+
+                {isDeveloper && (
+                    <div style={{
+                        background: 'linear-gradient(135deg, #1a1a2e, #16213e)',
+                        borderRadius: 16, padding: 16,
+                    }}>
+                        <button
+                            onClick={() => setShowDeveloperDashboard(true)}
+                            style={{
+                                width: '100%', padding: '12px 16px', borderRadius: 10,
+                                border: 'none', background: 'rgba(255,255,255,0.15)',
+                                color: '#fff', fontWeight: 700, fontSize: 14,
+                                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', gap: 8,
+                            }}
+                        >
+                            Developer Dashboard
+                        </button>
+                    </div>
                 )}
 
                 <UserManagementSection

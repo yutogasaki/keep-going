@@ -38,18 +38,27 @@ export async function publishMenu(menu: MenuGroup, authorName: string): Promise<
 export async function fetchPopularMenus(limit = 10): Promise<PublicMenu[]> {
     if (!supabase) return [];
 
+    // Try RPC first (filters out suspended accounts), fallback to direct query
     const { data, error } = await supabase
+        .rpc('fetch_active_public_menus', { sort_by: 'download_count', max_count: limit });
+
+    if (!error && data) {
+        return data.map(mapPublicMenu);
+    }
+
+    // Fallback: direct query (RPC not yet deployed)
+    const { data: fallback, error: fallbackErr } = await supabase
         .from('public_menus')
         .select('*')
         .order('download_count', { ascending: false })
         .limit(limit);
 
-    if (error) {
-        console.warn('[publicMenus] fetchPopularMenus failed:', error);
+    if (fallbackErr) {
+        console.warn('[publicMenus] fetchPopularMenus failed:', fallbackErr);
         return [];
     }
 
-    return (data ?? []).map(mapPublicMenu);
+    return (fallback ?? []).map(mapPublicMenu);
 }
 
 // ─── Fetch recommended menus (algorithm: trending + newest + popular) ──
@@ -57,26 +66,30 @@ export async function fetchPopularMenus(limit = 10): Promise<PublicMenu[]> {
 export async function fetchRecommendedMenus(): Promise<PublicMenu[]> {
     if (!supabase) return [];
 
-    // Fetch 3 categories in parallel
-    const [trendingRes, newestRes, popularRes] = await Promise.all([
-        // Trending: recently created with high downloads
-        supabase.from('public_menus').select('*')
-            .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-            .order('download_count', { ascending: false })
-            .limit(5),
-        // Newest
-        supabase.from('public_menus').select('*')
-            .order('created_at', { ascending: false })
-            .limit(5),
-        // All-time popular
-        supabase.from('public_menus').select('*')
-            .order('download_count', { ascending: false })
-            .limit(5),
+    // Try RPC first, fallback to direct queries
+    const [popularRes, newestRes] = await Promise.all([
+        supabase.rpc('fetch_active_public_menus', { sort_by: 'download_count', max_count: 10 }),
+        supabase.rpc('fetch_active_public_menus', { sort_by: 'created_at', max_count: 5 }),
     ]);
 
-    const trending = (trendingRes.data ?? []).map(mapPublicMenu);
-    const newest = (newestRes.data ?? []).map(mapPublicMenu);
-    const popular = (popularRes.data ?? []).map(mapPublicMenu);
+    let popular: PublicMenu[];
+    let newest: PublicMenu[];
+
+    if (!popularRes.error && popularRes.data) {
+        popular = popularRes.data.map(mapPublicMenu);
+        newest = (newestRes.data ?? []).map(mapPublicMenu);
+    } else {
+        // Fallback: direct queries (RPC not yet deployed)
+        const [popFb, newFb] = await Promise.all([
+            supabase.from('public_menus').select('*').order('download_count', { ascending: false }).limit(10),
+            supabase.from('public_menus').select('*').order('created_at', { ascending: false }).limit(5),
+        ]);
+        popular = (popFb.data ?? []).map(mapPublicMenu);
+        newest = (newFb.data ?? []).map(mapPublicMenu);
+    }
+    // Trending: filter popular list for recently created
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const trending = popular.filter(m => m.createdAt >= oneWeekAgo);
 
     // Pick one from each category, deduplicating
     const result: PublicMenu[] = [];

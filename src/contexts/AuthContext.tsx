@@ -12,7 +12,7 @@ import {
     clearSyncQueue,
     type ConflictScenario,
 } from '../lib/sync';
-import { checkIsTeacher } from '../lib/teacher';
+import { checkIsTeacher, checkIsDeveloper } from '../lib/teacher';
 import { useAppStore } from '../store/useAppStore';
 
 export type LoginContext = 'onboarding' | 'settings' | null;
@@ -28,6 +28,7 @@ interface AuthContextValue {
     resolveConflict: (choice: 'cloud' | 'local') => Promise<void>;
     cancelLogin: () => Promise<void>;
     isTeacher: boolean;
+    isDeveloper: boolean;
     toastMessage: string | null;
     clearToast: () => void;
     signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
@@ -47,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isSyncing, setIsSyncing] = useState(false);
     const [isAnonymous, setIsAnonymous] = useState(false);
     const [isTeacher, setIsTeacher] = useState(false);
+    const [isDeveloper, setIsDeveloper] = useState(false);
     const [loginContext, setLoginContextState] = useState<LoginContext>(() => {
         const saved = sessionStorage.getItem(LOGIN_CONTEXT_KEY);
         if (saved === 'onboarding' || saved === 'settings') return saved;
@@ -182,6 +184,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!user) {
             setAccountId(null);
             setIsTeacher(false);
+            setIsDeveloper(false);
             setIsAnonymous(false);
             hasSyncedRef.current = false;
             prevUserIdRef.current = null;
@@ -197,6 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccountId(user.id);
         setIsAnonymous(user.is_anonymous ?? false);
         setIsTeacher(checkIsTeacher(user.email));
+        setIsDeveloper(checkIsDeveloper(user.email));
 
         if (hasSyncedRef.current) return;
         hasSyncedRef.current = true;
@@ -339,6 +343,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             isSyncing,
             isAnonymous,
             isTeacher,
+            isDeveloper,
             loginContext,
             setLoginContext,
             conflictScenario,

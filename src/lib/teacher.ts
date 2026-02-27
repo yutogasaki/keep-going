@@ -38,18 +38,27 @@ export function checkIsTeacher(email: string | undefined): boolean {
     return !!email && TEACHER_EMAILS.includes(email);
 }
 
+// ─── Developer check ─────────────────────────────────
+
+const DEVELOPER_EMAILS = ['yu.togasaki@gmail.com'];
+
+export function checkIsDeveloper(email: string | undefined): boolean {
+    return !!email && DEVELOPER_EMAILS.includes(email);
+}
+
 // ─── Fetch all students ──────────────────────────────
 
 export async function fetchAllStudents(): Promise<StudentSummary[]> {
     if (!supabase) return [];
 
-    const [membersRes, sessionsRes] = await Promise.all([
+    const [membersRes, sessionsRes, settingsRes] = await Promise.all([
         supabase.from('family_members').select('id, account_id, name, class_level, avatar_url'),
         supabase
             .from('sessions')
             .select('id, account_id, date, started_at, total_seconds, user_ids')
             .order('date', { ascending: false })
             .limit(5000),
+        supabase.from('app_settings').select('account_id, suspended'),
     ]);
 
     if (membersRes.error || sessionsRes.error) {
@@ -60,8 +69,15 @@ export async function fetchAllStudents(): Promise<StudentSummary[]> {
     const members = membersRes.data ?? [];
     const sessions = sessionsRes.data ?? [];
 
-    // Group by account_id
-    const accountIds = new Set(members.map(m => m.account_id));
+    // Filter out suspended accounts
+    const suspendedIds = new Set(
+        (settingsRes.data ?? []).filter(s => s.suspended).map(s => s.account_id)
+    );
+
+    // Group by account_id (exclude suspended)
+    const accountIds = new Set(
+        members.map(m => m.account_id).filter(id => !suspendedIds.has(id))
+    );
     const results: StudentSummary[] = [];
 
     for (const accountId of accountIds) {

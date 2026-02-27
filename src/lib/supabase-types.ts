@@ -128,6 +128,7 @@ export interface Database {
                     haptic_enabled: boolean;
                     notifications_enabled: boolean;
                     notification_time: string;
+                    suspended: boolean;
                     updated_at: string;
                 };
                 Insert: {
@@ -139,6 +140,7 @@ export interface Database {
                     haptic_enabled?: boolean;
                     notifications_enabled?: boolean;
                     notification_time?: string;
+                    suspended?: boolean;
                 };
                 Update: Partial<Database['public']['Tables']['app_settings']['Insert']>;
                 Relationships: [];
@@ -218,6 +220,22 @@ export interface Database {
             increment_download_count: {
                 Args: { menu_id: string };
                 Returns: undefined;
+            };
+            is_developer: {
+                Args: Record<string, never>;
+                Returns: boolean;
+            };
+            suspend_account: {
+                Args: { target_account_id: string; is_suspended: boolean };
+                Returns: undefined;
+            };
+            delete_account_data: {
+                Args: { target_account_id: string };
+                Returns: undefined;
+            };
+            fetch_active_public_menus: {
+                Args: { sort_by?: string; max_count?: number };
+                Returns: Database['public']['Tables']['public_menus']['Row'][];
             };
         };
     };

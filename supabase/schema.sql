@@ -74,6 +74,7 @@ create table app_settings (
   haptic_enabled boolean default true,
   notifications_enabled boolean default false,
   notification_time text default '21:00',
+  suspended boolean default false,
   updated_at timestamptz default now()
 );
 
@@ -210,3 +211,77 @@ begin
   update public_menus set download_count = download_count + 1 where id = menu_id;
 end;
 $$ language plpgsql security definer;
+
+-- ─── 開発者モード ────────────────────────────────────
+
+-- 開発者判定関数
+create or replace function is_developer()
+returns boolean
+language sql
+security definer
+stable
+as $$
+  select coalesce(
+    (select email from auth.users where id = auth.uid()) = 'yu.togasaki@gmail.com',
+    false
+  );
+$$;
+
+-- 先生・開発者は app_settings を全アカウント分 SELECT できる
+create policy "Teachers can read all app_settings" on app_settings
+  for select using (is_teacher());
+create policy "Developers can read all app_settings" on app_settings
+  for select using (is_developer());
+create policy "Developers can read all custom_exercises" on custom_exercises
+  for select using (is_developer());
+create policy "Developers can read all menu_groups" on menu_groups
+  for select using (is_developer());
+create policy "Developers can read all challenge_completions" on challenge_completions
+  for select using (is_developer());
+
+-- 休止トグル RPC（開発者のみ）
+create or replace function suspend_account(target_account_id uuid, is_suspended boolean)
+returns void as $$
+begin
+  if not is_developer() then
+    raise exception 'Unauthorized: only developers can suspend accounts';
+  end if;
+  insert into app_settings (account_id, suspended)
+  values (target_account_id, is_suspended)
+  on conflict (account_id)
+  do update set suspended = is_suspended, updated_at = now();
+end;
+$$ language plpgsql security definer;
+
+-- データ削除 RPC（開発者のみ）
+create or replace function delete_account_data(target_account_id uuid)
+returns void as $$
+begin
+  if not is_developer() then
+    raise exception 'Unauthorized: only developers can delete account data';
+  end if;
+  delete from challenge_completions where account_id = target_account_id;
+  delete from public_menus where account_id = target_account_id;
+  delete from app_settings where account_id = target_account_id;
+  delete from menu_groups where account_id = target_account_id;
+  delete from custom_exercises where account_id = target_account_id;
+  delete from sessions where account_id = target_account_id;
+  delete from family_members where account_id = target_account_id;
+end;
+$$ language plpgsql security definer;
+
+-- 公開メニュー取得 RPC（休止アカウント除外）
+create or replace function fetch_active_public_menus(
+  sort_by text default 'download_count',
+  max_count int default 10
+)
+returns setof public_menus as $$
+  select pm.* from public_menus pm
+  where pm.account_id not in (
+    select account_id from app_settings where suspended = true
+  )
+  order by
+    case when sort_by = 'download_count' then pm.download_count end desc nulls last,
+    case when sort_by = 'created_at' then extract(epoch from pm.created_at) end desc nulls last
+  limit max_count;
+$$ language sql security definer stable;
