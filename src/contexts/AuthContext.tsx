@@ -39,6 +39,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const LOGIN_CONTEXT_KEY = 'keepgoing_login_context';
+const SYNCED_ACCOUNT_KEY = 'keepgoing_synced_account';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
@@ -86,11 +87,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const handleSettingsLogin = useCallback(async (accountId: string) => {
         setIsSyncing(true);
         try {
+            // Skip conflict detection if already synced with this account before
+            const previouslySynced = localStorage.getItem(SYNCED_ACCOUNT_KEY) === accountId;
+            if (previouslySynced) {
+                // Just merge append-only data (no conflict dialog)
+                await mergeAppendData(accountId);
+                return;
+            }
+
             const scenario = await detectConflict(accountId);
 
             if (scenario === 'conflict') {
                 setConflictScenario(scenario);
-                // User will choose via resolveConflict - don't clear isSyncing yet
                 return;
             }
 
@@ -109,11 +117,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     notificationsEnabled: state.notificationsEnabled,
                     notificationTime: state.notificationTime,
                 });
-                // #8: Also merge append-only data on push
                 await mergeAppendData(accountId);
                 setToastMessage('同期が完了しました');
             }
-            // 'nothing' -> no action needed
+
+            // Mark this account as synced
+            localStorage.setItem(SYNCED_ACCOUNT_KEY, accountId);
         } catch (err) {
             console.warn('[auth] handleSettingsLogin failed:', err);
             setToastMessage('同期に失敗しました');
@@ -149,6 +158,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 await mergeAppendData(user.id);
                 setToastMessage('このデバイスのデータで同期しました');
             }
+            // Mark as synced so conflict dialog doesn't show again
+            localStorage.setItem(SYNCED_ACCOUNT_KEY, user.id);
         } catch (err) {
             console.warn('[auth] resolveConflict failed:', err);
             setToastMessage('同期に失敗しました');
@@ -293,6 +304,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!supabase) return;
         await supabase.auth.signOut();
         await clearSyncQueue();
+        localStorage.removeItem(SYNCED_ACCOUNT_KEY);
         setToastMessage('ログアウトしました');
         // Re-create anonymous session after signout
         supabase.auth.signInAnonymously().then(({ error }) => {
