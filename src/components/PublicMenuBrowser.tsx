@@ -14,6 +14,7 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
     const [loading, setLoading] = useState(true);
     const [importingId, setImportingId] = useState<string | null>(null);
     const [importedIds, setImportedIds] = useState<Set<string>>(new Set());
+    const [errorId, setErrorId] = useState<string | null>(null);
 
     useEffect(() => {
         if (!open) return;
@@ -26,11 +27,14 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
 
     const handleImport = async (menu: PublicMenu) => {
         setImportingId(menu.id);
+        setErrorId(null);
         try {
             await importMenu(menu);
             setImportedIds(prev => new Set([...prev, menu.id]));
         } catch (err) {
             console.warn('[publicMenus] import failed:', err);
+            setErrorId(menu.id);
+            setTimeout(() => setErrorId(prev => prev === menu.id ? null : prev), 3000);
         } finally {
             setImportingId(null);
         }
@@ -152,6 +156,7 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
                                         menu={menu}
                                         importing={importingId === menu.id}
                                         imported={importedIds.has(menu.id)}
+                                        error={errorId === menu.id}
                                         onImport={() => handleImport(menu)}
                                     />
                                 ))
@@ -170,8 +175,9 @@ const PublicMenuCard: React.FC<{
     menu: PublicMenu;
     importing: boolean;
     imported: boolean;
+    error?: boolean;
     onImport: () => void;
-}> = ({ menu, importing, imported, onImport }) => {
+}> = ({ menu, importing, imported, error, onImport }) => {
     // Resolve exercise names for preview
     const exerciseNames = menu.exerciseIds
         .slice(0, 4)
@@ -211,8 +217,8 @@ const PublicMenuCard: React.FC<{
                         padding: '8px 14px',
                         borderRadius: 10,
                         border: 'none',
-                        background: imported ? '#E8F8F0' : '#2BBAA0',
-                        color: imported ? '#2BBAA0' : '#FFF',
+                        background: error ? '#FFE0E0' : imported ? '#E8F8F0' : '#2BBAA0',
+                        color: error ? '#E84393' : imported ? '#2BBAA0' : '#FFF',
                         fontFamily: "'Noto Sans JP', sans-serif",
                         fontSize: 12,
                         fontWeight: 700,
@@ -225,6 +231,8 @@ const PublicMenuCard: React.FC<{
                 >
                     {importing ? (
                         <Loader2 size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                    ) : error ? (
+                        '失敗…'
                     ) : imported ? (
                         '追加済み'
                     ) : (

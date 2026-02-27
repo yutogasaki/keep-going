@@ -34,9 +34,20 @@ export const RecordPage: React.FC = () => {
         };
         load();
 
-        // Refresh every 5 seconds
-        const interval = setInterval(load, 5000);
-        return () => clearInterval(interval);
+        // Refresh every 5 seconds, but only while page is visible
+        let interval = setInterval(load, 5000);
+        const handleVisibility = () => {
+            clearInterval(interval);
+            if (document.visibilityState === 'visible') {
+                load();
+                interval = setInterval(load, 5000);
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibility);
+        };
     }, [sessionUserIds]); // Re-fetch/re-filter when context changes
 
     const filterSessionsByContext = (unfiltered: SessionRecord[]) => {

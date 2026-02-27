@@ -215,8 +215,8 @@ export const StretchSession: React.FC = () => {
         setShowSideSwitch(false);
     }, [currentIndex, hasLRSplit]);
 
-    // Save session on end
-    const handleEndSession = useCallback(async () => {
+    // Save session data (without navigating away)
+    const saveSessionData = useCallback(async () => {
         let finalRunningTime = totalRunningTime;
 
         // If it's an auto-generated session (omakase) and fully completed, force 100% of the daily target
@@ -236,8 +236,17 @@ export const StretchSession: React.FC = () => {
             };
             await saveSession(record);
         }
+    }, [completedIds, skippedIds, totalRunningTime, startedAt, sessionUserIds, sessionExerciseIds, isCompleted, dailyTargetMinutes]);
+
+    // Save + navigate away
+    const handleEndSession = useCallback(async () => {
+        await saveSessionData();
         endSession();
-    }, [completedIds, skippedIds, totalRunningTime, startedAt, endSession, sessionUserIds, sessionExerciseIds, isCompleted, dailyTargetMinutes]);
+    }, [saveSessionData, endSession]);
+
+    // Keep ref in sync so goToNext can call it without stale closure
+    const saveSessionDataRef = useRef<() => Promise<void>>(saveSessionData);
+    saveSessionDataRef.current = saveSessionData;
 
     // Main playback timer
     useEffect(() => {
@@ -347,8 +356,9 @@ export const StretchSession: React.FC = () => {
             });
             setIsCompleted(true);
             setIsPlaying(false);
-            // Auto-end after 3 seconds
-            setTimeout(() => handleEndSession(), 3000);
+            // Save session data immediately (prevent data loss), then navigate after 3 seconds
+            saveSessionDataRef.current();
+            setTimeout(() => endSession(), 3000);
             return;
         }
         setCurrentIndex(nextIdx);

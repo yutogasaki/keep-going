@@ -131,9 +131,20 @@ export const HomeScreen: React.FC = () => {
             }).catch(console.warn);
         };
         load();
-        // Refresh every 5 seconds to pick up new sessions
-        const interval = setInterval(load, 5000);
-        return () => clearInterval(interval);
+        // Refresh every 5 seconds, but only while page is visible
+        let interval = setInterval(load, 5000);
+        const handleVisibility = () => {
+            clearInterval(interval);
+            if (document.visibilityState === 'visible') {
+                load();
+                interval = setInterval(load, 5000);
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener('visibilitychange', handleVisibility);
+        };
     }, []);
 
     useEffect(() => {
@@ -223,7 +234,16 @@ export const HomeScreen: React.FC = () => {
         }
 
         // Fallback to 0 if target user not found (e.g. deleted user, stale sessionUserIds)
-        if (targetIndex === -1) targetIndex = 0;
+        if (targetIndex === -1) {
+            targetIndex = 0;
+            // Reset stale sessionUserIds to match the fallback page
+            const fallbackPage = swipePages[0];
+            if (fallbackPage?.kind === 'user') {
+                setSessionUserIds([fallbackPage.user.id]);
+            } else if (fallbackPage?.kind === 'together') {
+                setSessionUserIds(users.map(u => u.id));
+            }
+        }
         if (targetIndex !== currentPageIndex) {
             setCurrentPageIndex(targetIndex);
         }

@@ -35,7 +35,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
 
     const displayStage = debugStage !== null ? debugStage : status.stage;
     const displayType = debugType !== null ? debugType : fuwafuwaType;
-    const displayActiveDays = debugActiveDays !== null ? debugActiveDays : (debugStage !== null ? debugStage * 10 : status.activeDays);
+    const displayActiveDays = debugActiveDays !== null ? debugActiveDays : status.activeDays;
     const displayScale = debugScale !== null ? debugScale : status.scale;
 
     useEffect(() => {

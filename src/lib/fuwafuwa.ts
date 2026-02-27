@@ -37,25 +37,18 @@ export function calculateFuwafuwaStatus(
     const uniqueActiveDates = new Set(sessionsSinceBirth.map(s => s.date));
     const activeDays = uniqueActiveDates.size;
 
-    // Determine final stage based on activity
-    let stage = 1;
-    let scale = 1.0;
-
-    if (activeDays >= EVOLVE_TO_ADULT_THRESHOLD) {
-        stage = 3;
-    } else if (activeDays >= EVOLVE_TO_FAIRY_THRESHOLD) {
-        stage = 2;
-        if (activeDays <= 5) scale = 0.5;
-        else if (activeDays <= 8) scale = 0.75;
-        else scale = 1.0;
-    }
-
-    // If day 29 or more, it's sayonara time (return actual stage for farewell branching)
+    // If day 29 or more, it's sayonara time (stage based purely on activeDays)
     if (daysAlive > FUWAFUWA_CYCLE_DAYS) {
+        let stage = 1;
+        if (activeDays >= EVOLVE_TO_ADULT_THRESHOLD) stage = 3;
+        else if (activeDays >= EVOLVE_TO_FAIRY_THRESHOLD) stage = 2;
         return { stage, scale: 1, isSayonara: true, daysAlive, activeDays };
     }
 
     // Within cycle: apply time-gated evolution rules
+    let stage = 1;
+    let scale = 1.0;
+
     if (daysAlive <= 7) {
         // Week 1: always Egg regardless of activeDays
         stage = 1;

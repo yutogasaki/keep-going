@@ -433,25 +433,45 @@ export async function pullAllData(accountId: string): Promise<PullResult> {
             return { success: true, hadData: false };
         }
 
-        // 2. Map cloud data to local types
-        const users: UserProfileStore[] = families.map(fm => ({
-            id: fm.id,
-            name: fm.name,
-            classLevel: fm.class_level as ClassLevel,
-            fuwafuwaBirthDate: fm.fuwafuwa_birth_date,
-            fuwafuwaType: fm.fuwafuwa_type,
-            fuwafuwaCycleCount: fm.fuwafuwa_cycle_count,
-            fuwafuwaName: fm.fuwafuwa_name,
-            pastFuwafuwas: (fm.past_fuwafuwas ?? []) as PastFuwafuwaRecord[],
-            notifiedFuwafuwaStages: (fm.notified_fuwafuwa_stages ?? []) as number[],
-            dailyTargetMinutes: fm.daily_target_minutes,
-            excludedExercises: fm.excluded_exercises as string[],
-            requiredExercises: fm.required_exercises as string[],
-            consumedMagicDate: fm.consumed_magic_date ?? undefined,
-            consumedMagicSeconds: fm.consumed_magic_seconds ?? 0,
-            avatarUrl: fm.avatar_url ?? undefined,
-            chibifuwas: (fm.chibifuwas ?? []) as import('../store/useAppStore').ChibifuwaRecord[],
-        }));
+        // 2. Map cloud data to local types (merge pastFuwafuwas/chibifuwas by ID to prevent data loss)
+        const localUsers = _getStoreState?.().users ?? [];
+        const users: UserProfileStore[] = families.map(fm => {
+            const localUser = localUsers.find(u => u.id === fm.id);
+            const cloudPast = (fm.past_fuwafuwas ?? []) as PastFuwafuwaRecord[];
+            const localPast = localUser?.pastFuwafuwas ?? [];
+            const mergedPast = [...cloudPast];
+            const pastIds = new Set(cloudPast.map(p => p.id));
+            for (const lp of localPast) {
+                if (!pastIds.has(lp.id)) mergedPast.push(lp);
+            }
+
+            const cloudChibi = (fm.chibifuwas ?? []) as import('../store/useAppStore').ChibifuwaRecord[];
+            const localChibi = localUser?.chibifuwas ?? [];
+            const mergedChibi = [...cloudChibi];
+            const chibiIds = new Set(cloudChibi.map(c => c.id));
+            for (const lc of localChibi) {
+                if (!chibiIds.has(lc.id)) mergedChibi.push(lc);
+            }
+
+            return {
+                id: fm.id,
+                name: fm.name,
+                classLevel: fm.class_level as ClassLevel,
+                fuwafuwaBirthDate: fm.fuwafuwa_birth_date,
+                fuwafuwaType: fm.fuwafuwa_type,
+                fuwafuwaCycleCount: fm.fuwafuwa_cycle_count,
+                fuwafuwaName: fm.fuwafuwa_name,
+                pastFuwafuwas: mergedPast,
+                notifiedFuwafuwaStages: (fm.notified_fuwafuwa_stages ?? []) as number[],
+                dailyTargetMinutes: fm.daily_target_minutes,
+                excludedExercises: fm.excluded_exercises as string[],
+                requiredExercises: fm.required_exercises as string[],
+                consumedMagicDate: fm.consumed_magic_date ?? undefined,
+                consumedMagicSeconds: fm.consumed_magic_seconds ?? 0,
+                avatarUrl: fm.avatar_url ?? undefined,
+                chibifuwas: mergedChibi,
+            };
+        });
 
         const sessions: SessionRecord[] = (sessionsRes.data ?? []).map(s => ({
             id: s.id,
@@ -504,16 +524,18 @@ export async function pullAllData(accountId: string): Promise<PullResult> {
 
         // 4. Write to Zustand (triggers persist to localStorage automatically)
         if (!_setStoreState) throw new Error('Store accessor not registered');
+        const localState = _getStoreState?.() ?? {};
+        // Merge settings: use cloud values if available, otherwise preserve local values
         _setStoreState({
             users,
             sessionUserIds: [users[0]?.id].filter(Boolean),
-            onboardingCompleted: cloudSettings?.onboarding_completed ?? true,
-            soundVolume: cloudSettings?.sound_volume ?? 1.0,
-            ttsEnabled: cloudSettings?.tts_enabled ?? true,
-            bgmEnabled: cloudSettings?.bgm_enabled ?? true,
-            hapticEnabled: cloudSettings?.haptic_enabled ?? true,
-            notificationsEnabled: cloudSettings?.notifications_enabled ?? false,
-            notificationTime: cloudSettings?.notification_time ?? '21:00',
+            onboardingCompleted: cloudSettings?.onboarding_completed ?? (localState as any).onboardingCompleted ?? true,
+            soundVolume: cloudSettings?.sound_volume ?? (localState as any).soundVolume ?? 1.0,
+            ttsEnabled: cloudSettings?.tts_enabled ?? (localState as any).ttsEnabled ?? true,
+            bgmEnabled: cloudSettings?.bgm_enabled ?? (localState as any).bgmEnabled ?? true,
+            hapticEnabled: cloudSettings?.haptic_enabled ?? (localState as any).hapticEnabled ?? true,
+            notificationsEnabled: cloudSettings?.notifications_enabled ?? (localState as any).notificationsEnabled ?? false,
+            notificationTime: cloudSettings?.notification_time ?? (localState as any).notificationTime ?? '21:00',
         });
 
         console.log('[sync] Pull complete.');
@@ -530,41 +552,35 @@ export async function pullAllData(accountId: string): Promise<PullResult> {
 export async function mergeAppendData(accountId: string): Promise<void> {
     if (!supabase || !accountId) return;
 
-    // 1. Sessions: push local-only to cloud
+    // 1. Sessions: bidirectional merge in single fetch
     const localSessions = await getAllSessions();
-    if (localSessions.length > 0) {
-        const { data: cloudSessions } = await supabase
-            .from('sessions')
-            .select('id')
-            .eq('account_id', accountId);
-        const cloudSessionIds = new Set((cloudSessions ?? []).map((s: any) => s.id));
+    const { data: cloudSessions } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('account_id', accountId);
 
-        for (const session of localSessions) {
-            if (!cloudSessionIds.has(session.id)) {
-                await pushSession(session);
-            }
+    const cloudSessionIds = new Set((cloudSessions ?? []).map((s: any) => s.id));
+    const localSessionIds = new Set(localSessions.map(s => s.id));
+
+    // Push local-only to cloud
+    for (const session of localSessions) {
+        if (!cloudSessionIds.has(session.id)) {
+            await pushSession(session);
         }
+    }
 
-        // Also pull cloud-only sessions into local
-        if (cloudSessions && cloudSessions.length > 0) {
-            const localIds = new Set(localSessions.map(s => s.id));
-            const { data: fullCloudSessions } = await supabase
-                .from('sessions')
-                .select('*')
-                .eq('account_id', accountId);
-            for (const cs of fullCloudSessions ?? []) {
-                if (!localIds.has(cs.id)) {
-                    await saveSessionDirect({
-                        id: cs.id,
-                        date: cs.date,
-                        startedAt: cs.started_at,
-                        totalSeconds: cs.total_seconds,
-                        exerciseIds: cs.exercise_ids as string[],
-                        skippedIds: cs.skipped_ids as string[],
-                        userIds: cs.user_ids as string[],
-                    });
-                }
-            }
+    // Pull cloud-only to local
+    for (const cs of cloudSessions ?? []) {
+        if (!localSessionIds.has(cs.id)) {
+            await saveSessionDirect({
+                id: cs.id,
+                date: cs.date,
+                startedAt: cs.started_at,
+                totalSeconds: cs.total_seconds,
+                exerciseIds: cs.exercise_ids as string[],
+                skippedIds: cs.skipped_ids as string[],
+                userIds: cs.user_ids as string[],
+            });
         }
     }
 
