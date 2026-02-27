@@ -48,7 +48,9 @@ export const MenuPage: React.FC = () => {
     // Advanced settings state (derived from current user or aggregated)
     const isTogetherMode = sessionUserIds.length > 1;
 
-    const dailyTargetMinutes = currentUsers.reduce((sum, u) => sum + (u.dailyTargetMinutes ?? 10), 0);
+    const dailyTargetMinutes = isTogetherMode
+        ? Math.max(...currentUsers.map(u => u.dailyTargetMinutes ?? 10))
+        : (currentUsers[0]?.dailyTargetMinutes ?? 10);
     const excludedExercises = Array.from(new Set(currentUsers.flatMap((u) => u.excludedExercises || ['C01', 'C02'])));
     const requiredExercises = Array.from(new Set(currentUsers.flatMap((u) => u.requiredExercises || ['S01', 'S02', 'S07'])));
 
@@ -299,7 +301,10 @@ export const MenuPage: React.FC = () => {
                             marginTop: 12,
                             textAlign: 'center',
                         }}>
-                            ★ 必須にした種目は、ホーム画面のおまかせメニューに必ず入ります<br />（おまかせで約{Math.ceil(DEFAULT_SESSION_TARGET_SECONDS / 60)}分）
+                            {isTogetherMode
+                                ? '個人モードに切りかえると設定を変更できます'
+                                : <>★ 必須にした種目は、ホーム画面のおまかせメニューに必ず入ります<br />（おまかせで約{Math.ceil(DEFAULT_SESSION_TARGET_SECONDS / 60)}分）</>
+                            }
                         </p>
                     </div>
 
