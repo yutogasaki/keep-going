@@ -1,4 +1,4 @@
-# ⚙ KeepGoing｜Logic & Data Specification v2.0
+# ⚙ KeepGoing｜Logic & Data Specification v3.0
 
 ---
 
@@ -344,12 +344,16 @@
 
 | 方式 | 詳細 |
 |------|------|
+| 匿名認証 | supabase.auth.signInAnonymously（初回起動時に自動実行） |
 | メール/パスワード | supabase.auth.signInWithPassword / signUp |
 | Google OAuth | supabase.auth.signInWithOAuth({ provider: 'google' }) |
 | 必須/任意 | 任意（未ログインでも全機能利用可） |
 
-- 新規登録時はメール確認リンクを送付。確認前はログイン不可
-- ログアウト後はローカルデータを保持（クラウド同期のみ停止）
+- 初回起動時に自動的に匿名認証を実行（ユーザーに意識させない）
+- アカウント登録時は匿名アカウントから実アカウントへアップグレード（`updateUser` で同一UIDを維持）
+- Google OAuth登録時は `linkIdentity` で匿名アカウントにGoogleアイデンティティをリンク（失敗時はフォールバックで通常OAuth）
+- 新規メール登録時はメール確認リンクを送付。確認前はログイン不可
+- ログアウト後は匿名アカウントを再作成し、ローカルデータを保持
 
 ---
 
@@ -361,7 +365,10 @@
 | `sessions` | SessionRecord（セッション履歴） | uuid |
 | `custom_exercises` | CustomExercise（カスタム種目） | (id, account_id) |
 | `menu_groups` | MenuGroup（カスタムメニューグループ） | (id, account_id) |
-| `app_settings` | アプリ設定（音量・通知等） | account_id（1件のみ）|
+| `app_settings` | アプリ設定（音量・通知・suspended等） | account_id（1件のみ）|
+| `challenges` | チャレンジ定義（管理者が作成、全ユーザー閲覧可） | uuid |
+| `challenge_completions` | チャレンジ達成記録 | uuid |
+| `public_menus` | 公開メニュー（全ユーザー閲覧可） | uuid |
 
 ---
 
@@ -397,19 +404,170 @@
 ### 11.6 セキュリティ（RLS）
 
 - 全テーブルに Row Level Security を有効化
-- ポリシー：`auth.uid() = account_id` のレコードのみ操作可能
+- 基本ポリシー：`auth.uid() = account_id` のレコードのみ操作可能
 - クライアント側で account_id を偽装してもサーバー側で拒否される
 
+**特殊アクセス関数**：
+- `is_teacher()`: 先生メール判定。先生は `family_members`, `sessions`, `app_settings` を全アカウント閲覧可
+- `is_developer()`: 開発者メール判定。開発者は全テーブルを全アカウント閲覧可
+
+**テーブル別の公開ポリシー**：
+- `challenges`: 全ユーザー閲覧可（`using(true)`）。作成は `is_teacher()` のみ
+- `challenge_completions`: 自分の達成記録のみ操作可。先生/開発者は全件閲覧可
+- `public_menus`: 全ユーザー閲覧可（`using(true)`）。作成/削除は自分のレコードのみ
+
+**RPC関数（security definer）**：
+- `increment_download_count(menu_id)`: 公開メニューのDLカウント+1
+- `fetch_active_public_menus(sort_by, max_count)`: 休止アカウントを除外した公開メニュー一覧（`app_settings.suspended` を内部JOINしてフィルタ）
+- `suspend_account(target_account_id, is_suspended)`: アカウント休止/解除（`is_developer()` チェック）
+- `delete_account_data(target_account_id)`: アカウントの全データ削除（`is_developer()` チェック）
+
 ---
 
-### 11.7 Pull（リストア）
+### 11.7 Pull（リストア）と競合解決
 
-- 現時点では新端末ログイン時のクラウドからのデータ取得（pull）は未実装
-- ローカルデータが存在しない端末ではクラウドデータを取得してローカルに復元する機能が将来必要
+**リストア**: 新端末ログイン時にクラウドからデータを取得してローカルに復元する（実装済み）。
+
+**競合検出（detectConflict）**：
+ログイン時にクラウドとローカルの両方にデータが存在するかを判定し、3パターンに分岐する。
+
+| パターン | 条件 | 処理 |
+|---------|------|------|
+| `no_conflict_pull` | クラウドにデータあり、ローカルにデータなし | クラウドからpull |
+| `no_conflict_push` | ローカルにデータあり、クラウドにデータなし | ローカルからpush |
+| `conflict` | 両方にデータあり | ユーザーに選択を求める |
+
+**競合解決ダイアログ**：
+- 「クラウドのデータを使う」→ クラウドからpull
+- 「このデバイスのデータを使う」→ ローカルからpush
+- 一度解決したアカウントは `SYNCED_ACCOUNT_KEY` で記録し、次回以降は競合ダイアログをスキップ
+
+**Append-onlyデータのマージ**：
+- セッション履歴、カスタム種目、カスタムメニューは競合解決後にマージ（重複排除付き）
 
 ---
 
-## 12. 除外事項
+## 12. チャレンジ機能
+
+### 12.1 概要
+
+期間限定の種目達成目標。管理者（先生）が作成し、ユーザーが参加する。進捗はセッション履歴から自動計算される。
+
+---
+
+### 12.2 テーブル定義
+
+**`challenges`テーブル**：
+
+| カラム | 型 | 説明 |
+|--------|------|------|
+| id | uuid | 主キー |
+| title | text | チャレンジ名 |
+| exercise_id | text | 対象種目ID |
+| target_count | int | 目標回数 |
+| start_date | date | 開始日 |
+| end_date | date | 終了日 |
+| created_by | uuid | 作成者のaccount_id |
+| reward_fuwafuwa_type | int | 報酬のちびふわふわタイプ |
+| class_levels | text[] | 対象クラスレベル（例: `['初級','中級']`） |
+| created_at | timestamptz | 作成日時 |
+
+**`challenge_completions`テーブル**：
+
+| カラム | 型 | 説明 |
+|--------|------|------|
+| id | uuid | 主キー |
+| challenge_id | uuid | チャレンジID |
+| account_id | uuid | 達成者のaccount_id |
+| member_id | text | 達成したメンバーのID |
+| completed_at | timestamptz | 達成日時 |
+
+---
+
+### 12.3 進捗計算ロジック
+
+- セッション履歴（`sessions.exercise_ids`）からチャレンジ対象種目（`exercise_id`）の実施回数を集計
+- チャレンジ期間内（`start_date` 〜 `end_date`）のセッションのみカウント
+- `target_count` に到達 → 自動的に `challenge_completions` に記録
+
+---
+
+### 12.4 参加ロジック
+
+- ユーザーごとに `joinedChallengeIds: Record<userId, challengeId[]>` をローカル（Zustand persist）で管理
+- みんなでモード時は全アクティブユーザーを一括参加
+- クラスレベルフィルタ: ユーザーの `classLevel` が `challenges.class_levels` に含まれるもののみ表示
+
+---
+
+### 12.5 達成報酬
+
+- 達成時に `reward_fuwafuwa_type` に対応するちびふわふわを `family_members.chibifuwas` 配列に追加
+- ちびふわふわはふわふわ（育成キャラクター）とは別の小さなコレクションアイテム
+
+---
+
+## 13. 公開メニュー
+
+### 13.1 概要
+
+ユーザーが作成したメニューグループを他のユーザーに公開・共有する仕組み。
+
+---
+
+### 13.2 テーブル定義
+
+**`public_menus`テーブル**：
+
+| カラム | 型 | 説明 |
+|--------|------|------|
+| id | uuid | 主キー |
+| name | text | メニュー名 |
+| emoji | text | メニューアイコン |
+| description | text | メニューの説明 |
+| exercise_ids | text[] | 含まれる種目IDリスト |
+| author_name | text | 公開者の名前 |
+| account_id | uuid | 公開者のaccount_id |
+| download_count | int | ダウンロード数（初期値0） |
+| created_at | timestamptz | 公開日時 |
+
+---
+
+### 13.3 公開・非公開ロジック
+
+- メニュー作成時に公開トグルがオンの場合、`public_menus` にINSERT
+- 既存メニューの公開/非公開はメニューカードのボタンで切替
+- 非公開にする場合は `public_menus` から該当レコードをDELETE（自分のaccount_idのみ）
+
+---
+
+### 13.4 インポートロジック
+
+- 他のユーザーの公開メニューを「かしてもらう」でローカルに保存
+- ローカルでは `imported-{publicMenuId}` のIDで `menu_groups` に保存
+- インポート時に `increment_download_count` RPCでDLカウントを+1
+
+---
+
+### 13.5 おすすめアルゴリズム
+
+- **トレンド**: 1週間以内に作成された人気メニュー（DL数順）
+- **最新**: 作成日時が新しいメニュー
+- **人気**: DL数が多いメニュー
+- 各カテゴリから1件ずつ選出し、重複排除（メニュー名+種目リストの一致で判定）
+- 合計3件をホーム画面のおすすめ行に表示
+
+---
+
+### 13.6 休止アカウントフィルタ
+
+- `app_settings.suspended = true` のアカウントが公開したメニューは一般ユーザーの画面に表示しない
+- `fetch_active_public_menus` RPC が `security definer` で `app_settings` を内部JOINして実現
+- RPC未デプロイ時はフォールバックとして直接クエリ（フィルタなし）を実行
+
+---
+
+## 14. 除外事項
 
 - UIレイアウト・文言
 - 体験の意味づけ・感情設計
@@ -425,6 +583,7 @@
 | v1.1 | 軽微な修正 |
 | v2.0 | Core/UI仕様v7との整合。「セッション」→「体験」「流れ」に用語統一。延長ロジック削除（継続は同じ構造の繰り返し）。種別をSTRETCH/COREに整理。用語定義・責任範囲の表追加。「今日」の定義追加（朝3時〜翌朝3時）。区切り時間明記（小5分/大15分）。状態管理（タブ移動・バックグラウンド・再生位置・履歴保持・遡り制限）追加。種目マスターのクラス表記を明示化。体幹にInternal列追加。サイドプランク60秒（R30→L30）に修正。番号体系整理。変更履歴追加。 |
 | v2.1 | §11 クラウド同期・認証を追加。Supabaseテーブル定義・同期フロー・オフラインキュー・RLS・Pull未実装の明記。§11（除外事項）→§12に繰り下げ。 |
+| v3.0 | §11.2 匿名認証・アカウントアップグレード・Google OAuth linkIdentity追記。§11.3 challenges/challenge_completions/public_menusテーブル追加。§11.6 RLSにis_teacher()/is_developer()・RPC関数・テーブル別公開ポリシー追加。§11.7 Pull実装済みに更新、競合検出・解決フロー追記。§12 チャレンジ機能（テーブル定義・進捗計算・参加・達成報酬）新規追加。§13 公開メニュー（テーブル定義・公開/非公開・インポート・おすすめアルゴリズム・休止フィルタ）新規追加。 |
 
 ---
 
