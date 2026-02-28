@@ -83,7 +83,7 @@ export const CreateGroupView: React.FC<{
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            padding: '64px 20px 100px 20px',
+            padding: '64px 20px 32px 20px',
             gap: 20,
             overflowY: 'auto',
         }}>
@@ -475,7 +475,7 @@ export const CreateGroupView: React.FC<{
                 disabled={!name.trim() || selectedIds.length === 0}
                 style={{
                     position: 'sticky',
-                    bottom: 16,
+                    bottom: 0,
                     padding: '16px 0',
                     borderRadius: 16,
                     border: 'none',

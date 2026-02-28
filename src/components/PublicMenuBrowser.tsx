@@ -116,7 +116,7 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
                             <div style={{
                                 flex: 1,
                                 overflowY: 'auto',
-                                padding: '0 20px 20px',
+                                padding: '0 20px 80px',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: 10,
@@ -221,10 +221,22 @@ const BrowserMenuCard: React.FC<{
                 </div>
             </div>
 
+            {menu.description ? (
+                <div style={{
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 12,
+                    color: '#636E72',
+                    lineHeight: 1.5,
+                    marginBottom: 4,
+                }}>
+                    {menu.description}
+                </div>
+            ) : null}
+
             <div style={{
                 fontFamily: "'Noto Sans JP', sans-serif",
                 fontSize: 11,
-                color: '#636E72',
+                color: '#8395A7',
                 lineHeight: 1.6,
             }}>
                 {exerciseNames.join('、')}{remaining > 0 ? `、+${remaining}` : ''}

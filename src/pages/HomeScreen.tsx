@@ -416,27 +416,30 @@ export const HomeScreen: React.FC = () => {
                             gap: 16,
                             justifyContent: 'center',
                             alignItems: 'flex-start',
-                            marginBottom: 8,
+                            marginBottom: 16,
                         }}>
                             {perUserMagic.map(um => (
                                 <div key={um.userId} style={{
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
-                                    transform: 'scale(0.75)',
-                                    transformOrigin: 'top center',
                                 }}>
-                                    <MagicTank
-                                        currentSeconds={um.displaySeconds}
-                                        maxSeconds={um.targetSeconds}
-                                        onReset={handleTankReset}
-                                    />
+                                    <div style={{
+                                        transform: 'scale(0.75)',
+                                        transformOrigin: 'top center',
+                                        marginBottom: -33,
+                                    }}>
+                                        <MagicTank
+                                            currentSeconds={um.displaySeconds}
+                                            maxSeconds={um.targetSeconds}
+                                            onReset={handleTankReset}
+                                        />
+                                    </div>
                                     <span style={{
                                         fontFamily: "'Noto Sans JP', sans-serif",
                                         fontSize: 11,
                                         fontWeight: 600,
                                         color: '#8395A7',
-                                        marginTop: -4,
                                     }}>
                                         {um.userName}
                                     </span>
@@ -463,7 +466,7 @@ export const HomeScreen: React.FC = () => {
                             onDragEnd={handleDragEnd}
                             animate={{ x: `calc(-${currentPageIndex * 100}%)` }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            style={{ display: 'flex', width: '100%', alignItems: 'center' }}
+                            style={{ display: 'flex', width: '100%', alignItems: 'flex-start' }}
                         >
                             {swipePages.map((page, index) => {
                                 const isTogetherPage = page.kind === 'together';
@@ -485,12 +488,13 @@ export const HomeScreen: React.FC = () => {
                                             display: 'flex',
                                             gap: isTogetherPage ? 12 : 0,
                                             justifyContent: 'center',
-                                            alignItems: 'center',
+                                            alignItems: isTogetherPage ? 'flex-start' : 'center',
                                             width: '100%'
                                         }}>
                                             {renderUsers.map((u) => (
                                                 <div key={u.id} style={{
                                                     transform: isTogetherPage ? 'scale(0.85)' : 'scale(1)',
+                                                    transformOrigin: isTogetherPage ? 'top center' : undefined,
                                                     position: 'relative'
                                                 }}>
                                                     <FuwafuwaCharacter

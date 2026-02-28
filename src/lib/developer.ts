@@ -119,7 +119,6 @@ export async function deleteAccountData(accountId: string): Promise<void> {
 export function computeStats(accounts: AdminAccountSummary[]) {
     const now = new Date();
     const adjusted = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-    const today = formatDateKey(adjusted);
 
     // 30 days ago
     const thirtyDaysAgo = new Date(adjusted);
