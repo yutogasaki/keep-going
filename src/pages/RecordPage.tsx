@@ -21,6 +21,8 @@ export const RecordPage: React.FC = () => {
     const currentViewUsers = users.filter(u => sessionUserIds.includes(u.id));
     // お部屋には成体（finalStage === 3）のふわふわのみ表示
     const pastFuwafuwas = currentViewUsers.flatMap(u => u.pastFuwafuwas || []).filter(fw => fw.finalStage === 3);
+    // ちびふわコレクション
+    const chibifuwas = currentViewUsers.flatMap(u => u.chibifuwas || []);
 
     useEffect(() => {
         const load = () => {
@@ -468,15 +470,86 @@ export const RecordPage: React.FC = () => {
                             exit={{ opacity: 0, x: 20 }}
                             transition={{ duration: 0.3 }}
                             style={{
-                                display: 'grid',
-                                gridTemplateColumns: 'repeat(2, 1fr)',
-                                gap: 16,
-                                paddingTop: 8
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 20,
+                                paddingTop: 8,
                             }}
                         >
-                            {pastFuwafuwas.length === 0 ? (
+                            {/* ちびふわコレクション */}
+                            {chibifuwas.length > 0 && (
+                                <section>
+                                    <div style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 13,
+                                        fontWeight: 700,
+                                        color: '#8395A7',
+                                        marginBottom: 10,
+                                        letterSpacing: 1,
+                                    }}>
+                                        ちびふわコレクション
+                                    </div>
+                                    <div style={{
+                                        display: 'flex',
+                                        gap: 12,
+                                        flexWrap: 'wrap',
+                                    }}>
+                                        {chibifuwas.map((cb, i) => (
+                                            <motion.div
+                                                key={cb.id}
+                                                initial={{ opacity: 0, scale: 0.8 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ delay: i * 0.05 }}
+                                                style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    gap: 6,
+                                                    width: 72,
+                                                }}
+                                            >
+                                                <div style={{
+                                                    width: 56,
+                                                    height: 56,
+                                                    borderRadius: '50%',
+                                                    background: '#F0FDFA',
+                                                    border: '2px solid rgba(43,186,160,0.2)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    overflow: 'hidden',
+                                                }}>
+                                                    <img
+                                                        src={`/ikimono/${cb.type}-1.png`}
+                                                        alt="Chibifuwa"
+                                                        style={{ width: '70%', height: '70%', objectFit: 'cover' }}
+                                                    />
+                                                </div>
+                                                <div style={{
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontSize: 10,
+                                                    fontWeight: 600,
+                                                    color: '#2D3436',
+                                                    textAlign: 'center',
+                                                    lineHeight: 1.3,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: 'vertical' as const,
+                                                    maxWidth: '100%',
+                                                }}>
+                                                    {cb.challengeTitle}
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* 成体ふわふわ */}
+                            {pastFuwafuwas.length === 0 && chibifuwas.length === 0 ? (
                                 <div style={{
-                                    gridColumn: '1 / -1',
                                     textAlign: 'center',
                                     padding: '48px 20px',
                                     color: '#8395A7',
@@ -491,86 +564,92 @@ export const RecordPage: React.FC = () => {
                                         ここに引っ越してくるよ。
                                     </div>
                                 </div>
-                            ) : (
-                                pastFuwafuwas.map((fw, i) => (
-                                    <motion.div
-                                        key={fw.id}
-                                        className="card card-sm"
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: i * 0.1 }}
-                                        style={{
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'center',
-                                            padding: '16px',
-                                            gap: 12,
-                                            border: '1px solid rgba(232, 67, 147, 0.1)',
-                                            background: 'linear-gradient(135deg, #fff 0%, #FAFAFA 100%)',
-                                        }}
-                                    >
-                                        <div style={{
-                                            width: 80,
-                                            height: 80,
-                                            borderRadius: '50%',
-                                            background: '#fff',
-                                            boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            overflow: 'hidden',
-                                            border: '2px solid rgba(255,154,158,0.2)',
-                                        }}>
-                                            <img
-                                                src={`/ikimono/${fw.type}-${fw.finalStage}.png`}
-                                                alt="Fuwafuwa"
-                                                style={{ width: '85%', height: '85%', objectFit: 'cover' }}
-                                            />
-                                        </div>
-                                        <div style={{
-                                            textAlign: 'center',
-                                            width: '100%',
-                                        }}>
-                                            <div style={{
-                                                fontFamily: "'Noto Sans JP', sans-serif",
-                                                fontWeight: 800,
-                                                fontSize: 14,
-                                                color: '#2D3436',
-                                                marginBottom: 4,
-                                                whiteSpace: 'nowrap',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis'
-                                            }}>
-                                                {fw.name || 'なまえなし'}
-                                            </div>
-                                            <div style={{
+                            ) : pastFuwafuwas.length > 0 ? (
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(2, 1fr)',
+                                    gap: 16,
+                                }}>
+                                    {pastFuwafuwas.map((fw, i) => (
+                                        <motion.div
+                                            key={fw.id}
+                                            className="card card-sm"
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ delay: i * 0.1 }}
+                                            style={{
                                                 display: 'flex',
-                                                justifyContent: 'center',
+                                                flexDirection: 'column',
                                                 alignItems: 'center',
-                                                gap: 4,
-                                                fontSize: 11,
-                                                color: '#E84393',
-                                                fontFamily: "'Noto Sans JP', sans-serif",
-                                                fontWeight: 600,
-                                                background: 'rgba(232, 67, 147, 0.08)',
-                                                padding: '4px 8px',
-                                                borderRadius: 12,
+                                                padding: '16px',
+                                                gap: 12,
+                                                border: '1px solid rgba(232, 67, 147, 0.1)',
+                                                background: 'linear-gradient(135deg, #fff 0%, #FAFAFA 100%)',
+                                            }}
+                                        >
+                                            <div style={{
+                                                width: 80,
+                                                height: 80,
+                                                borderRadius: '50%',
+                                                background: '#fff',
+                                                boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                overflow: 'hidden',
+                                                border: '2px solid rgba(255,154,158,0.2)',
                                             }}>
-                                                <Award size={12} />
-                                                頑張り度: {fw.activeDays}日
+                                                <img
+                                                    src={`/ikimono/${fw.type}-${fw.finalStage}.png`}
+                                                    alt="Fuwafuwa"
+                                                    style={{ width: '85%', height: '85%', objectFit: 'cover' }}
+                                                />
                                             </div>
                                             <div style={{
-                                                fontSize: 10,
-                                                color: '#B2BEC3',
-                                                marginTop: 8,
-                                                fontFamily: "'Outfit', sans-serif",
+                                                textAlign: 'center',
+                                                width: '100%',
                                             }}>
-                                                {formatDate(fw.sayonaraDate)}
+                                                <div style={{
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontWeight: 800,
+                                                    fontSize: 14,
+                                                    color: '#2D3436',
+                                                    marginBottom: 4,
+                                                    whiteSpace: 'nowrap',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis'
+                                                }}>
+                                                    {fw.name || 'なまえなし'}
+                                                </div>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    gap: 4,
+                                                    fontSize: 11,
+                                                    color: '#E84393',
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontWeight: 600,
+                                                    background: 'rgba(232, 67, 147, 0.08)',
+                                                    padding: '4px 8px',
+                                                    borderRadius: 12,
+                                                }}>
+                                                    <Award size={12} />
+                                                    頑張り度: {fw.activeDays}日
+                                                </div>
+                                                <div style={{
+                                                    fontSize: 10,
+                                                    color: '#B2BEC3',
+                                                    marginTop: 8,
+                                                    fontFamily: "'Outfit', sans-serif",
+                                                }}>
+                                                    {formatDate(fw.sayonaraDate)}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </motion.div>
-                                ))
-                            )}
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            ) : null}
                         </motion.div>
                     )}
                 </AnimatePresence>

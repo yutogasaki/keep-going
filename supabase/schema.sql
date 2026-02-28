@@ -285,3 +285,14 @@ returns setof public_menus as $$
     case when sort_by = 'created_at' then extract(epoch from pm.created_at) end desc nulls last
   limit max_count;
 $$ language sql security definer stable;
+
+-- 先生が個別の family_member を削除できる RPC（クリーンアップ用）
+create or replace function teacher_delete_family_member(target_member_id uuid)
+returns void as $$
+begin
+  if not is_teacher() then
+    raise exception 'Unauthorized: only teachers can delete family members';
+  end if;
+  delete from family_members where id = target_member_id;
+end;
+$$ language plpgsql security definer;

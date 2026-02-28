@@ -118,6 +118,16 @@ export async function fetchAllStudents(): Promise<StudentSummary[]> {
     return results;
 }
 
+// ─── Teacher: delete a family member (cleanup) ─────
+
+export async function teacherDeleteFamilyMember(memberId: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await (supabase.rpc as Function)('teacher_delete_family_member', {
+        target_member_id: memberId,
+    });
+    if (error) throw error;
+}
+
 // ─── Streak calculation (uses shared utilities from db.ts) ────
 
 export function calculateStreak(sessions: { date: string }[]): number {

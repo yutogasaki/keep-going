@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ArrowLeft, Flame, Users, RefreshCw, Loader2, ChevronDown, Clock, Calendar, Plus, Trash2, Trophy, Pencil } from 'lucide-react';
-import { fetchAllStudents, calculateStreak, type StudentSummary, type StudentSession } from '../lib/teacher';
+import { fetchAllStudents, calculateStreak, teacherDeleteFamilyMember, type StudentSummary, type StudentSession } from '../lib/teacher';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
 import { getTodayKey, getDateKeyOffset, type SessionRecord } from '../lib/db';
 import { CLASS_LEVELS, CLASS_EMOJI, EXERCISES } from '../data/exercises';
@@ -54,6 +54,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
             setLoading(false);
         }
     }, []);
+
+    const handleDeleteStudent = useCallback(async (memberId: string) => {
+        try {
+            await teacherDeleteFamilyMember(memberId);
+            load();
+        } catch (err) {
+            console.warn('[teacher] Failed to delete student:', err);
+        }
+    }, [load]);
 
     const loadChallenges = useCallback(async () => {
         setChallengesLoading(true);
@@ -395,6 +404,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                             onToggleStudent={(id) => setExpandedStudent(
                                 expandedStudent === id ? null : id
                             )}
+                            onDeleteStudent={handleDeleteStudent}
                         />
                     ))
                 )}
@@ -952,7 +962,8 @@ const ClassSection: React.FC<{
     onToggle: () => void;
     expandedStudent: string | null;
     onToggleStudent: (id: string) => void;
-}> = ({ classLevel, students, expanded, onToggle, expandedStudent, onToggleStudent }) => {
+    onDeleteStudent: (memberId: string) => void;
+}> = ({ classLevel, students, expanded, onToggle, expandedStudent, onToggleStudent, onDeleteStudent }) => {
     const emoji = CLASS_EMOJI[classLevel] ?? '🎵';
     const activeToday = students.filter(s => s.lastActiveDate === getTodayKey()).length;
 
@@ -1028,6 +1039,7 @@ const ClassSection: React.FC<{
                             expanded={expandedStudent === student.memberId}
                             onToggle={() => onToggleStudent(student.memberId)}
                             showBorder={idx > 0}
+                            onDelete={() => onDeleteStudent(student.memberId)}
                         />
                     ))}
                 </div>
@@ -1043,7 +1055,8 @@ const StudentCard: React.FC<{
     expanded: boolean;
     onToggle: () => void;
     showBorder: boolean;
-}> = ({ student, expanded, onToggle, showBorder }) => {
+    onDelete: () => void;
+}> = ({ student, expanded, onToggle, showBorder, onDelete }) => {
     // Convert to SessionRecord[] for ActivityHeatmap
     const heatmapSessions: SessionRecord[] = student.sessions.map(s => ({
         id: s.id,
@@ -1199,6 +1212,43 @@ const StudentCard: React.FC<{
                             </span>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Expanded: Delete button */}
+            {expanded && (
+                <div style={{
+                    borderTop: '1px solid #F0F3F5',
+                    padding: '8px 16px 12px',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    background: '#FAFBFC',
+                }}>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm(`「${student.name}」をダッシュボードから削除しますか？`)) {
+                                onDelete();
+                            }
+                        }}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            padding: '6px 12px',
+                            borderRadius: 8,
+                            border: 'none',
+                            background: '#FFF0F0',
+                            color: '#E17055',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            cursor: 'pointer',
+                        }}
+                    >
+                        <Trash2 size={12} />
+                        削除
+                    </button>
                 </div>
             )}
         </div>
