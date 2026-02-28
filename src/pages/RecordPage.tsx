@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CalendarDays, Flame, Home, Clock, Calendar, Award } from 'lucide-react';
+import { CalendarDays, Flame, Home, Clock, Calendar, Award, X } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { getAllSessions, getSessionsByDate, getTodayKey, type SessionRecord } from '../lib/db';
@@ -8,12 +9,15 @@ import { EXERCISES } from '../data/exercises';
 import { ExerciseIcon } from '../components/ExerciseIcon';
 import { useAppStore } from '../store/useAppStore';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
+import type { PastFuwafuwaRecord, ChibifuwaRecord } from '../store/useAppStore';
 
 export const RecordPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'record' | 'album'>('record');
     const [sessions, setSessions] = useState<SessionRecord[]>([]);
     const [todaySessions, setTodaySessions] = useState<SessionRecord[]>([]);
     const [loading, setLoading] = useState(true);
+    const [selectedFuwafuwa, setSelectedFuwafuwa] = useState<PastFuwafuwaRecord | null>(null);
+    const [selectedBadge, setSelectedBadge] = useState<ChibifuwaRecord | null>(null);
     const users = useAppStore(s => s.users);
     const sessionUserIds = useAppStore(s => s.sessionUserIds);
     const sessionUserIdSet = useMemo(() => new Set(sessionUserIds), [sessionUserIds]);
@@ -500,12 +504,14 @@ export const RecordPage: React.FC = () => {
                                                 initial={{ opacity: 0, scale: 0.8 }}
                                                 animate={{ opacity: 1, scale: 1 }}
                                                 transition={{ delay: i * 0.05 }}
+                                                onClick={() => setSelectedBadge(cb)}
                                                 style={{
                                                     display: 'flex',
                                                     flexDirection: 'column',
                                                     alignItems: 'center',
                                                     gap: 6,
                                                     width: 72,
+                                                    cursor: 'pointer',
                                                 }}
                                             >
                                                 <div style={{
@@ -575,6 +581,7 @@ export const RecordPage: React.FC = () => {
                                             initial={{ opacity: 0, scale: 0.9 }}
                                             animate={{ opacity: 1, scale: 1 }}
                                             transition={{ delay: i * 0.1 }}
+                                            onClick={() => setSelectedFuwafuwa(fw)}
                                             style={{
                                                 display: 'flex',
                                                 flexDirection: 'column',
@@ -583,6 +590,7 @@ export const RecordPage: React.FC = () => {
                                                 gap: 12,
                                                 border: '1px solid rgba(232, 67, 147, 0.1)',
                                                 background: 'linear-gradient(135deg, #fff 0%, #FAFAFA 100%)',
+                                                cursor: 'pointer',
                                             }}
                                         >
                                             <div style={{
@@ -591,16 +599,13 @@ export const RecordPage: React.FC = () => {
                                                 borderRadius: '50%',
                                                 background: '#fff',
                                                 boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
                                                 overflow: 'hidden',
                                                 border: '2px solid rgba(255,154,158,0.2)',
                                             }}>
                                                 <img
                                                     src={`/ikimono/${fw.type}-${fw.finalStage}.png`}
                                                     alt="Fuwafuwa"
-                                                    style={{ width: '85%', height: '85%', objectFit: 'cover' }}
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.05)', display: 'block' }}
                                                 />
                                             </div>
                                             <div style={{
@@ -652,6 +657,211 @@ export const RecordPage: React.FC = () => {
                     )}
                 </AnimatePresence>
             </div>
+
+            {/* ふわふわ詳細モーダル */}
+            <AnimatePresence>
+                {selectedFuwafuwa && createPortal(
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setSelectedFuwafuwa(null)}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            background: 'rgba(0,0,0,0.55)',
+                            zIndex: 300,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 24,
+                        }}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                            onClick={e => e.stopPropagation()}
+                            style={{
+                                background: '#fff',
+                                borderRadius: 24,
+                                padding: '32px 28px 28px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: 16,
+                                width: '100%',
+                                maxWidth: 280,
+                                boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+                            }}
+                        >
+                            <button
+                                onClick={() => setSelectedFuwafuwa(null)}
+                                style={{
+                                    position: 'absolute',
+                                    top: 12,
+                                    right: 12,
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    background: '#F8F9FA',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <X size={16} color="#636E72" />
+                            </button>
+                            <div style={{
+                                width: 160,
+                                height: 160,
+                                borderRadius: '50%',
+                                overflow: 'hidden',
+                                border: '3px solid rgba(255,154,158,0.4)',
+                                boxShadow: '0 8px 24px rgba(232,67,147,0.15)',
+                                background: '#fff',
+                            }}>
+                                <img
+                                    src={`/ikimono/${selectedFuwafuwa.type}-${selectedFuwafuwa.finalStage}.png`}
+                                    alt={selectedFuwafuwa.name || 'ふわふわ'}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.05)', display: 'block' }}
+                                />
+                            </div>
+                            <div style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 20,
+                                fontWeight: 800,
+                                color: '#2D3436',
+                                textAlign: 'center',
+                            }}>
+                                {selectedFuwafuwa.name || 'なまえなし'}
+                            </div>
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                fontSize: 13,
+                                color: '#E84393',
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontWeight: 600,
+                                background: 'rgba(232,67,147,0.08)',
+                                padding: '6px 14px',
+                                borderRadius: 20,
+                            }}>
+                                <Award size={14} />
+                                頑張り度: {selectedFuwafuwa.activeDays}日
+                            </div>
+                            <div style={{
+                                fontSize: 12,
+                                color: '#B2BEC3',
+                                fontFamily: "'Outfit', sans-serif",
+                            }}>
+                                {formatDate(selectedFuwafuwa.sayonaraDate)}
+                            </div>
+                        </motion.div>
+                    </motion.div>,
+                    document.body,
+                )}
+            </AnimatePresence>
+
+            {/* ちびふわバッジ詳細モーダル */}
+            <AnimatePresence>
+                {selectedBadge && createPortal(
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setSelectedBadge(null)}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            background: 'rgba(0,0,0,0.55)',
+                            zIndex: 300,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: 24,
+                        }}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+                            onClick={e => e.stopPropagation()}
+                            style={{
+                                background: '#fff',
+                                borderRadius: 24,
+                                padding: '32px 28px 28px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: 16,
+                                width: '100%',
+                                maxWidth: 280,
+                                boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
+                                position: 'relative',
+                            }}
+                        >
+                            <button
+                                onClick={() => setSelectedBadge(null)}
+                                style={{
+                                    position: 'absolute',
+                                    top: 12,
+                                    right: 12,
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    background: '#F8F9FA',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <X size={16} color="#636E72" />
+                            </button>
+                            <div style={{
+                                width: 160,
+                                height: 160,
+                                borderRadius: '50%',
+                                overflow: 'hidden',
+                                border: '3px solid rgba(255,200,0,0.4)',
+                                boxShadow: '0 8px 24px rgba(255,200,0,0.2)',
+                                background: '#fff',
+                            }}>
+                                <img
+                                    src={`/medal/${selectedBadge.type}.png`}
+                                    alt={selectedBadge.challengeTitle}
+                                    style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                                />
+                            </div>
+                            <div style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 16,
+                                fontWeight: 800,
+                                color: '#2D3436',
+                                textAlign: 'center',
+                                lineHeight: 1.5,
+                            }}>
+                                {selectedBadge.challengeTitle}
+                            </div>
+                            <div style={{
+                                fontSize: 12,
+                                color: '#B2BEC3',
+                                fontFamily: "'Outfit', sans-serif",
+                            }}>
+                                {formatDate(selectedBadge.earnedDate)}
+                            </div>
+                        </motion.div>
+                    </motion.div>,
+                    document.body,
+                )}
+            </AnimatePresence>
         </div>
     );
 };
