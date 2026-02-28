@@ -9,6 +9,7 @@ import { haptics } from '../lib/haptics';
 import { useAppStore } from '../store/useAppStore';
 import { getExerciseColor, generateSession, getReplacementExercise, EXERCISES, type Exercise } from '../data/exercises';
 import { ExerciseIcon } from '../components/ExerciseIcon';
+import { ExerciseName } from '../components/ExerciseName';
 import { saveSession, getTodayKey, getCustomExercises, getAllSessions, type SessionRecord } from '../lib/db';
 
 export const StretchSession: React.FC = () => {
@@ -27,7 +28,7 @@ export const StretchSession: React.FC = () => {
         : '初級';
 
     const dailyTargetMinutes = Math.max(...contextUsers.map(u => u.dailyTargetMinutes ?? 10));
-    const globalExcludedIds = Array.from(new Set(contextUsers.flatMap((u) => u.excludedExercises || ['C01', 'C02'])));
+    const globalExcludedIds = Array.from(new Set(contextUsers.flatMap((u) => u.excludedExercises || (u.classLevel === 'プレ' ? ['C01', 'C02'] : []))));
     const globalRequiredIds = Array.from(new Set(contextUsers.flatMap((u) => u.requiredExercises || ['S01', 'S02', 'S07'])));
     const sessionUserKey = sessionUserIds.join('|');
     const excludedIdsKey = [...globalExcludedIds].sort().join('|');
@@ -136,12 +137,12 @@ export const StretchSession: React.FC = () => {
 
     // Check if exercise has L/R split
     const hasLRSplit = currentExercise?.internal?.includes('→') || currentExercise?.hasSplit || false;
-    const isPointFlex = currentExercise?.internal === 'P10・F10×3';
+    const isPointFlex = currentExercise?.internal === 'P30・F30';
     const halfTime = currentExercise ? Math.floor(currentExercise.sec / 2) : 0;
 
     let phaseTimeLeft = 0;
     if (isPointFlex) {
-        phaseTimeLeft = (timeLeft - 1) % 10 + 1;
+        phaseTimeLeft = (timeLeft - 1) % 30 + 1;
     } else if (hasLRSplit && halfTime > 0) {
         phaseTimeLeft = (timeLeft - 1) % halfTime + 1;
     }
@@ -160,12 +161,12 @@ export const StretchSession: React.FC = () => {
         if (isCounting) return; // Prevent any "change" audio during the initial 5s countdown
 
         if (isPointFlex) {
-            // 10s intervals: 0-9 P, 10-19 F, 20-29 P, 30-39 F...
-            const intervalIndex = Math.floor(elapsed / 10);
+            // 30s intervals: 0-29 P, 30-59 F
+            const intervalIndex = Math.floor(elapsed / 30);
             const isPoint = intervalIndex % 2 === 0;
 
-            // Show switch notification exactly at the 10s boundaries
-            if (elapsed > 0 && elapsed % 10 === 0) {
+            // Show switch notification exactly at the 30s boundary
+            if (elapsed > 0 && elapsed % 30 === 0) {
                 audio.speak('チェンジ');
                 haptics.pulse();
                 setShowSideSwitch(true);
@@ -749,7 +750,7 @@ export const StretchSession: React.FC = () => {
                                 fontWeight: 700,
                                 color: '#2D4741',
                             }}>
-                                {currentExercise.name}
+                                <ExerciseName name={currentExercise.name} reading={currentExercise.reading} />
                             </h2>
 
                             {/* Interval Indicator (L/R or Point/Flex) */}
@@ -900,7 +901,7 @@ export const StretchSession: React.FC = () => {
                                 fontWeight: 700,
                                 color: '#2D4741',
                             }}>
-                                {sessionExercises[currentIndex + 1].name}
+                                <ExerciseName name={sessionExercises[currentIndex + 1].name} reading={sessionExercises[currentIndex + 1].reading} />
                             </h2>
                             {sessionExercises[currentIndex + 1].hasSplit && (
                                 <div style={{

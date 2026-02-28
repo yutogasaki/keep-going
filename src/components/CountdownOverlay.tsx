@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { audio } from '../lib/audio';
 import { Exercise } from '../data/exercises';
+import { ExerciseName } from './ExerciseName';
 
 interface CountdownOverlayProps {
     onComplete: () => void;
@@ -94,7 +95,7 @@ export const CountdownOverlay: React.FC<CountdownOverlayProps> = ({ onComplete, 
                             fontWeight: 700,
                             color: '#2D3436',
                         }}>
-                            {firstExercise.name}
+                            <ExerciseName name={firstExercise.name} reading={firstExercise.reading} />
                         </div>
                         {firstExercise.hasSplit && (
                             <div style={{

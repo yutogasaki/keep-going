@@ -11,6 +11,7 @@ import { DeveloperDashboard } from './DeveloperDashboard';
 import { UserManagementSection } from './settings/UserManagementSection';
 import { SoundNotificationSettingsSection } from './settings/SoundNotificationSettingsSection';
 import { HelpCenterSection } from './settings/HelpCenterSection';
+import { FeedbackSection } from './settings/FeedbackSection';
 import { AppInfoActionsSection } from './settings/AppInfoActionsSection';
 import { DeveloperDebugSection } from './settings/DeveloperDebugSection';
 
@@ -116,6 +117,7 @@ export const SettingsPage: React.FC = () => {
 
                 <SoundNotificationSettingsSection />
                 <HelpCenterSection />
+                <FeedbackSection />
                 <AppInfoActionsSection />
                 <DeveloperDebugSection />
             </div>

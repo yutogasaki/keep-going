@@ -121,7 +121,7 @@ export const useAppStore = create<AppState>()(
                     ...user,
                     id: crypto.randomUUID(),
                     dailyTargetMinutes: 10,
-                    excludedExercises: ['C01', 'C02'],
+                    excludedExercises: user.classLevel === 'プレ' ? ['C01', 'C02'] : [],
                     requiredExercises: ['S01', 'S02', 'S07'],
                     chibifuwas: []
                 }]

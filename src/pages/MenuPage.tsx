@@ -51,7 +51,7 @@ export const MenuPage: React.FC = () => {
     const dailyTargetMinutes = isTogetherMode
         ? Math.max(...currentUsers.map(u => u.dailyTargetMinutes ?? 10))
         : (currentUsers[0]?.dailyTargetMinutes ?? 10);
-    const excludedExercises = Array.from(new Set(currentUsers.flatMap((u) => u.excludedExercises || ['C01', 'C02'])));
+    const excludedExercises = Array.from(new Set(currentUsers.flatMap((u) => u.excludedExercises || (u.classLevel === 'プレ' ? ['C01', 'C02'] : []))));
     const requiredExercises = Array.from(new Set(currentUsers.flatMap((u) => u.requiredExercises || ['S01', 'S02', 'S07'])));
 
     const setDailyTargetMinutes = (mins: number) => {

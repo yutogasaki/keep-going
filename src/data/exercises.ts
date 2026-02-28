@@ -42,7 +42,7 @@ export interface Exercise {
 
 export const EXERCISES: Exercise[] = [
     // Stretches (Warmups)
-    { id: 'S07', name: 'ポイント＆フレックス', sec: 60, type: 'stretch', internal: 'P10・F10×3', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🦶', phase: 'warmup' },
+    { id: 'S07', name: 'ポイント＆フレックス', sec: 60, type: 'stretch', internal: 'P30・F30', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🦶', phase: 'warmup' },
     { id: 'S06', name: 'ゆりかご', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🛏️', phase: 'warmup' },
     { id: 'S08', name: 'どんぐり', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🌰', phase: 'warmup' },
     // Stretches (Main)
