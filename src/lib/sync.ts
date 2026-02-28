@@ -116,6 +116,8 @@ export async function pushSession(record: SessionRecord): Promise<void> {
     if (error) {
         console.warn('[sync] pushSession failed, queuing:', error);
         await enqueue({ table: 'sessions', operation: 'upsert', payload });
+    } else {
+        console.log('[sync] pushSession OK:', payload.id, 'date:', payload.date);
     }
 }
 

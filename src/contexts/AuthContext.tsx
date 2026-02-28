@@ -237,9 +237,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Only run conflict-aware sync for explicit settings login (not page reload)
         if (loginContext === 'settings') {
             handleSettingsLogin(user.id);
+        } else {
+            // Page reload: process any queued items immediately (don't wait 60s)
+            processQueue().catch(console.warn);
         }
-        // loginContext === null (page reload): data already synced from previous session,
-        // ongoing sync handled by store subscription + processQueue
     }, [user, loginContext, handleSettingsLogin, setLoginContext]);
 
     // Process offline queue when coming back online

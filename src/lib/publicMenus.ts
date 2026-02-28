@@ -215,19 +215,23 @@ export async function importMenu(publicMenu: PublicMenu): Promise<void> {
 }
 
 // ダウンロードカウント: 重複防止RPCのみ使用、失敗は無視
-function tryIncrementDownload(menuId: string): void {
+async function tryIncrementDownload(menuId: string): Promise<void> {
     if (!supabase) return;
     const accountId = getAccountId();
     if (!accountId) return;
 
-    // try_increment_download_count: menu_downloadsテーブルで重複チェック
-    // - 初回: INSERT成功 → カウント+1 → true
-    // - 2回目以降（削除後含む）: INSERT失敗(重複) → カウント変化なし → false
-    // - RPC未デプロイ: エラー → 無視（カウントは増えない）
-    (supabase.rpc as any)('try_increment_download_count', {
-        target_menu_id: menuId,
-        downloader_account_id: accountId,
-    }).catch(() => {});
+    try {
+        // try_increment_download_count: menu_downloadsテーブルで重複チェック
+        // - 初回: INSERT成功 → カウント+1 → true
+        // - 2回目以降（削除後含む）: INSERT失敗(重複) → カウント変化なし → false
+        // - RPC未デプロイ: エラー → 無視（カウントは増えない）
+        await (supabase.rpc as any)('try_increment_download_count', {
+            target_menu_id: menuId,
+            downloader_account_id: accountId,
+        });
+    } catch {
+        // ignore - download count is best-effort
+    }
 }
 
 // ─── Unpublish ──────────────────────────────────────
