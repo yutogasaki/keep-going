@@ -205,8 +205,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (hasSyncedRef.current) return;
         hasSyncedRef.current = true;
 
-        // Anonymous users: skip conflict-aware sync (data syncs via store subscription + onboarding initialSync)
-        if (user.is_anonymous) return;
+        // Anonymous users: run initial sync to push existing local data
+        if (user.is_anonymous) {
+            const state = useAppStore.getState();
+            if (state.users.length > 0) {
+                initialSync(state.users, {
+                    onboardingCompleted: state.onboardingCompleted,
+                    soundVolume: state.soundVolume,
+                    ttsEnabled: state.ttsEnabled,
+                    bgmEnabled: state.bgmEnabled,
+                    hapticEnabled: state.hapticEnabled,
+                    notificationsEnabled: state.notificationsEnabled,
+                    notificationTime: state.notificationTime,
+                }).catch(console.warn);
+            }
+            return;
+        }
 
         // #4/#5: Only skip sync for onboarding if actually in onboarding
         const isOnboarding = loginContext === 'onboarding'
