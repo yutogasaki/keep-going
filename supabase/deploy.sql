@@ -42,6 +42,14 @@ as $$
   );
 $$;
 
+-- ─── カラム型修正 ─────────────────────────────────────
+
+-- sessions.id を uuid → text に変更（ローカルの session-* 形式IDと互換性を持たせる）
+do $$ begin
+  alter table sessions alter column id type text using id::text;
+exception when others then null;
+end $$;
+
 -- ─── カラム追加（既に存在する場合はスキップ） ─────────
 
 -- app_settings に suspended カラム追加

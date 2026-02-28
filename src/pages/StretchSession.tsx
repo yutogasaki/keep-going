@@ -213,7 +213,7 @@ export const StretchSession: React.FC = () => {
 
         if (completedIds.length > 0 || finalRunningTime > 0) {
             const record: SessionRecord = {
-                id: `session-${Date.now()}`,
+                id: crypto.randomUUID(),
                 date: getTodayKey(),
                 startedAt,
                 totalSeconds: finalRunningTime,

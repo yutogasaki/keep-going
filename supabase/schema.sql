@@ -26,7 +26,7 @@ create table family_members (
 
 -- セッション履歴
 create table sessions (
-  id uuid primary key,
+  id text primary key,
   account_id uuid references auth.users not null,
   date text not null,
   started_at text not null,
