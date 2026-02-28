@@ -74,10 +74,18 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
     const individualStudents = useMemo(() => {
         const result: IndividualStudent[] = [];
         for (const summary of students) {
+            const memberIds = new Set(summary.members.map(m => m.id));
+            const isSingleMember = summary.members.length === 1;
             for (const member of summary.members) {
-                const memberSessions = summary.sessions.filter(s =>
-                    s.userIds.length === 0 || s.userIds.includes(member.id)
-                );
+                const memberSessions = summary.sessions.filter(s => {
+                    if (s.userIds.length === 0) return true;
+                    if (s.userIds.includes(member.id)) return true;
+                    // Orphaned sessions (user_ids don't match any current member):
+                    // attribute to sole member, or all members as fallback
+                    if (isSingleMember) return true;
+                    const hasAnyMatch = s.userIds.some(id => memberIds.has(id));
+                    return !hasAnyMatch;
+                });
                 result.push({
                     memberId: member.id,
                     name: member.name,

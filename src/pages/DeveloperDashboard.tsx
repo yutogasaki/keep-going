@@ -401,10 +401,17 @@ const AccountCard: React.FC<{
                         <div>
                             <span style={{ color: '#888' }}>メンバー</span>
                             <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                {account.members.map(m => {
-                                    const memberSessions = account.sessions.filter(s =>
-                                        s.userIds.length === 0 || s.userIds.includes(m.id)
-                                    );
+                                {(() => {
+                                    const memberIds = new Set(account.members.map(mm => mm.id));
+                                    const isSingleMember = account.members.length === 1;
+                                    return account.members.map(m => {
+                                    const memberSessions = account.sessions.filter(s => {
+                                        if (s.userIds.length === 0) return true;
+                                        if (s.userIds.includes(m.id)) return true;
+                                        if (isSingleMember) return true;
+                                        const hasAnyMatch = s.userIds.some(id => memberIds.has(id));
+                                        return !hasAnyMatch;
+                                    });
                                     const memberLastActive = memberSessions.length > 0 ? memberSessions[0].date : null;
                                     const memberStreak = calculateStreak(memberSessions);
                                     return (
@@ -430,7 +437,8 @@ const AccountCard: React.FC<{
                                             </div>
                                         </div>
                                     );
-                                })}
+                                });
+                                    })()}
                             </div>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
