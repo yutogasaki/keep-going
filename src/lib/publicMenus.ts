@@ -165,9 +165,20 @@ export async function importMenu(publicMenu: PublicMenu): Promise<void> {
 
     await saveCustomGroup(localMenu);
 
-    // Increment download count via RPC
+    // Increment download count (deduplicated per account)
     if (supabase) {
-        await (supabase.rpc('increment_download_count', { menu_id: publicMenu.id }) as unknown as Promise<unknown>).catch(console.warn);
+        const accountId = getAccountId();
+        if (accountId) {
+            await (supabase.rpc as any)('try_increment_download_count', {
+                target_menu_id: publicMenu.id,
+                downloader_account_id: accountId,
+            }).catch(console.warn);
+        } else {
+            // Fallback: old increment (no dedup)
+            await (supabase.rpc as any)('increment_download_count', {
+                menu_id: publicMenu.id,
+            }).catch(console.warn);
+        }
     }
 }
 

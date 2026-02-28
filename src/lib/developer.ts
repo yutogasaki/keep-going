@@ -114,6 +114,16 @@ export async function deleteAccountData(accountId: string): Promise<void> {
     if (error) throw error;
 }
 
+// ─── Delete individual family member (developer only) ──
+
+export async function developerDeleteFamilyMember(memberId: string): Promise<void> {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { error } = await (supabase.rpc as any)('teacher_delete_family_member', {
+        target_member_id: memberId,
+    });
+    if (error) throw error;
+}
+
 // ─── Stats helpers ───────────────────────────────────
 
 export function computeStats(accounts: AdminAccountSummary[]) {

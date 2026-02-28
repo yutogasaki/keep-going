@@ -187,10 +187,11 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
 
                         {/* Action Buttons */}
                         <div style={{
-                            padding: '12px 20px 24px',
+                            padding: '12px 20px calc(24px + env(safe-area-inset-bottom, 20px))',
                             display: 'flex',
                             gap: 10,
                             borderTop: '1px solid rgba(0,0,0,0.05)',
+                            paddingBottom: 80,
                         }}>
                             <button
                                 onClick={handleImport}

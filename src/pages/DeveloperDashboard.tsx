@@ -4,6 +4,7 @@ import {
     fetchAllAccountsForAdmin,
     suspendAccount,
     deleteAccountData,
+    developerDeleteFamilyMember,
     computeStats,
     type AdminAccountSummary,
 } from '../lib/developer';
@@ -13,7 +14,7 @@ interface DeveloperDashboardProps {
     onBack: () => void;
 }
 
-type FilterType = 'all' | 'inactive' | 'multi' | 'suspended';
+type FilterType = 'all' | 'inactive' | 'multi' | 'suspended' | 'temporary';
 
 export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }) => {
     const [accounts, setAccounts] = useState<AdminAccountSummary[]>([]);
@@ -37,10 +38,16 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
 
     useEffect(() => { load(); }, [load]);
 
-    // 30 days threshold
+    // Date thresholds
     const thirtyDaysAgoStr = useMemo(() => {
         const d = new Date();
         d.setDate(d.getDate() - 30);
+        return formatDateKey(d);
+    }, []);
+
+    const sevenDaysAgoStr = useMemo(() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 7);
         return formatDateKey(d);
     }, []);
 
@@ -53,10 +60,14 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                 return accounts.filter(a => a.members.length > 1);
             case 'suspended':
                 return accounts.filter(a => a.suspended);
+            case 'temporary':
+                return accounts.filter(a =>
+                    a.streak === 0 && (!a.lastActiveDate || a.lastActiveDate < sevenDaysAgoStr)
+                );
             default:
                 return accounts;
         }
-    }, [accounts, filter, thirtyDaysAgoStr]);
+    }, [accounts, filter, thirtyDaysAgoStr, sevenDaysAgoStr]);
 
     const stats = useMemo(() => computeStats(accounts), [accounts]);
 
@@ -156,6 +167,7 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                             ['inactive', `非アクティブ`],
                             ['multi', `複数メンバー`],
                             ['suspended', `休止中`],
+                            ['temporary', `テンポラリー候補`],
                         ] as [FilterType, string][]).map(([key, label]) => (
                             <button
                                 key={key}
@@ -197,6 +209,15 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                                     accountId: account.accountId,
                                     type: 'delete',
                                 })}
+                                onDeleteMember={async (memberId) => {
+                                    if (!window.confirm('このメンバーを削除しますか？')) return;
+                                    try {
+                                        await developerDeleteFamilyMember(memberId);
+                                        load();
+                                    } catch (err) {
+                                        alert('削除に失敗: ' + (err as Error).message);
+                                    }
+                                }}
                                 thirtyDaysAgoStr={thirtyDaysAgoStr}
                             />
                         ))}
@@ -299,8 +320,9 @@ const AccountCard: React.FC<{
     formatDate: (d: string | null) => string;
     onSuspend: () => void;
     onDelete: () => void;
+    onDeleteMember: (memberId: string) => void;
     thirtyDaysAgoStr: string;
-}> = ({ account, expanded, onToggle, daysAgo, formatDate, onSuspend, onDelete, thirtyDaysAgoStr }) => {
+}> = ({ account, expanded, onToggle, daysAgo, formatDate, onSuspend, onDelete, onDeleteMember, thirtyDaysAgoStr }) => {
     const isInactive = !account.lastActiveDate || account.lastActiveDate < thirtyDaysAgoStr;
 
     return (
@@ -375,9 +397,27 @@ const AccountCard: React.FC<{
                             <span style={{ color: '#888' }}>登録日</span>
                             <span>{formatDate(account.registeredAt)}</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div>
                             <span style={{ color: '#888' }}>メンバー</span>
-                            <span>{account.members.map(m => `${m.name} (${m.classLevel})`).join(', ')}</span>
+                            <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                {account.members.map(m => (
+                                    <div key={m.id} style={{
+                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        padding: '3px 6px', background: '#f8f8f8', borderRadius: 6,
+                                    }}>
+                                        <span style={{ flex: 1, fontSize: 12 }}>{m.name} ({m.classLevel})</span>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onDeleteMember(m.id); }}
+                                            style={{
+                                                background: 'none', border: 'none', cursor: 'pointer',
+                                                color: '#ccc', padding: 2, display: 'flex',
+                                            }}
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                             <span style={{ color: '#888' }}>ストリーク</span>

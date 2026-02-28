@@ -286,13 +286,48 @@ returns setof public_menus as $$
   limit max_count;
 $$ language sql security definer stable;
 
--- 先生が個別の family_member を削除できる RPC（クリーンアップ用）
+-- 先生/開発者が個別の family_member を削除できる RPC（クリーンアップ用）
 create or replace function teacher_delete_family_member(target_member_id uuid)
 returns void as $$
 begin
-  if not is_teacher() then
-    raise exception 'Unauthorized: only teachers can delete family members';
+  if not is_teacher() and not is_developer() then
+    raise exception 'Unauthorized: only teachers or developers can delete family members';
   end if;
   delete from family_members where id = target_member_id;
+end;
+$$ language plpgsql security definer;
+
+-- ─── ダウンロード重複防止 ──────────────────────────────
+
+-- メニューダウンロード記録テーブル
+create table menu_downloads (
+  menu_id uuid not null references public_menus(id) on delete cascade,
+  account_id uuid not null,
+  downloaded_at timestamptz default now(),
+  primary key (menu_id, account_id)
+);
+
+alter table menu_downloads enable row level security;
+create policy "Users can manage own downloads" on menu_downloads
+  for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
+
+-- ダウンロードカウントを重複なしでインクリメントする RPC
+create or replace function try_increment_download_count(target_menu_id uuid, downloader_account_id uuid)
+returns boolean as $$
+declare
+  was_inserted boolean;
+begin
+  insert into menu_downloads (menu_id, account_id)
+  values (target_menu_id, downloader_account_id)
+  on conflict do nothing;
+
+  get diagnostics was_inserted = row_count;
+
+  if was_inserted then
+    update public_menus set download_count = download_count + 1 where id = target_menu_id;
+    return true;
+  end if;
+
+  return false;
 end;
 $$ language plpgsql security definer;

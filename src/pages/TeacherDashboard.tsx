@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ArrowLeft, Flame, Users, RefreshCw, Loader2, ChevronDown, Clock, Calendar, Plus, Trash2, Trophy, Pencil } from 'lucide-react';
-import { fetchAllStudents, calculateStreak, teacherDeleteFamilyMember, type StudentSummary, type StudentSession } from '../lib/teacher';
+import { ArrowLeft, Flame, Users, RefreshCw, Loader2, ChevronDown, Calendar, Plus, Trash2, Trophy, Pencil } from 'lucide-react';
+import { fetchAllStudents, calculateStreak, type StudentSummary, type StudentSession } from '../lib/teacher';
 import { ActivityHeatmap } from '../components/ActivityHeatmap';
 import { getTodayKey, getDateKeyOffset, type SessionRecord } from '../lib/db';
 import { CLASS_LEVELS, CLASS_EMOJI, EXERCISES } from '../data/exercises';
@@ -54,15 +54,6 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
             setLoading(false);
         }
     }, []);
-
-    const handleDeleteStudent = useCallback(async (memberId: string) => {
-        try {
-            await teacherDeleteFamilyMember(memberId);
-            load();
-        } catch (err) {
-            console.warn('[teacher] Failed to delete student:', err);
-        }
-    }, [load]);
 
     const loadChallenges = useCallback(async () => {
         setChallengesLoading(true);
@@ -404,7 +395,6 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                             onToggleStudent={(id) => setExpandedStudent(
                                 expandedStudent === id ? null : id
                             )}
-                            onDeleteStudent={handleDeleteStudent}
                         />
                     ))
                 )}
@@ -962,8 +952,7 @@ const ClassSection: React.FC<{
     onToggle: () => void;
     expandedStudent: string | null;
     onToggleStudent: (id: string) => void;
-    onDeleteStudent: (memberId: string) => void;
-}> = ({ classLevel, students, expanded, onToggle, expandedStudent, onToggleStudent, onDeleteStudent }) => {
+}> = ({ classLevel, students, expanded, onToggle, expandedStudent, onToggleStudent }) => {
     const emoji = CLASS_EMOJI[classLevel] ?? '🎵';
     const activeToday = students.filter(s => s.lastActiveDate === getTodayKey()).length;
 
@@ -1039,7 +1028,6 @@ const ClassSection: React.FC<{
                             expanded={expandedStudent === student.memberId}
                             onToggle={() => onToggleStudent(student.memberId)}
                             showBorder={idx > 0}
-                            onDelete={() => onDeleteStudent(student.memberId)}
                         />
                     ))}
                 </div>
@@ -1055,8 +1043,7 @@ const StudentCard: React.FC<{
     expanded: boolean;
     onToggle: () => void;
     showBorder: boolean;
-    onDelete: () => void;
-}> = ({ student, expanded, onToggle, showBorder, onDelete }) => {
+}> = ({ student, expanded, onToggle, showBorder }) => {
     // Convert to SessionRecord[] for ActivityHeatmap
     const heatmapSessions: SessionRecord[] = student.sessions.map(s => ({
         id: s.id,
@@ -1140,14 +1127,17 @@ const StudentCard: React.FC<{
                         </div>
                     )}
 
-                    {/* Total sessions */}
+                    {/* Last active + total sessions */}
                     <div style={{
                         fontFamily: "'Noto Sans JP', sans-serif",
                         fontSize: 11,
                         color: '#8395A7',
                         flexShrink: 0,
                     }}>
-                        計{student.totalSessions}回
+                        {student.lastActiveDate
+                            ? formatDateShort(student.lastActiveDate)
+                            : '未使用'
+                        } · 計{student.totalSessions}回
                     </div>
 
                     <ChevronDown
@@ -1165,92 +1155,77 @@ const StudentCard: React.FC<{
                 <ActivityHeatmap sessions={heatmapSessions} daysToShow={14} />
             </button>
 
-            {/* Expanded: Recent sessions */}
-            {expanded && recentDates.length > 0 && (
-                <div style={{
-                    borderTop: '1px solid #F0F3F5',
-                    padding: '10px 16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 5,
-                    background: '#FAFBFC',
-                }}>
+            {/* Expanded: Recent sessions with bar chart */}
+            {expanded && recentDates.length > 0 && (() => {
+                const maxSec = Math.max(...recentDates.map(([, s]) => s));
+                return (
                     <div style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        color: '#8395A7',
-                        marginBottom: 2,
+                        borderTop: '1px solid #F0F3F5',
+                        padding: '10px 16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 5,
+                        background: '#FAFBFC',
                     }}>
-                        最近の練習
-                    </div>
-                    {recentDates.map(([date, totalSec]) => (
-                        <div
-                            key={date}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 8,
-                            }}
-                        >
-                            <Clock size={12} color="#B2BEC3" />
-                            <span style={{
-                                fontFamily: "'JetBrains Mono', monospace",
-                                fontSize: 12,
-                                color: '#636E72',
-                                width: 80,
-                            }}>
-                                {formatDateShort(date)}
-                            </span>
-                            <span style={{
-                                fontFamily: "'JetBrains Mono', monospace",
-                                fontSize: 12,
-                                fontWeight: 600,
-                                color: '#2BBAA0',
-                            }}>
-                                {Math.floor(totalSec / 60)}分
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* Expanded: Delete button */}
-            {expanded && (
-                <div style={{
-                    borderTop: '1px solid #F0F3F5',
-                    padding: '8px 16px 12px',
-                    display: 'flex',
-                    justifyContent: 'flex-end',
-                    background: '#FAFBFC',
-                }}>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm(`「${student.name}」をダッシュボードから削除しますか？`)) {
-                                onDelete();
-                            }
-                        }}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 4,
-                            padding: '6px 12px',
-                            borderRadius: 8,
-                            border: 'none',
-                            background: '#FFF0F0',
-                            color: '#E17055',
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
                             fontSize: 11,
                             fontWeight: 700,
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            cursor: 'pointer',
-                        }}
-                    >
-                        <Trash2 size={12} />
-                        削除
-                    </button>
-                </div>
-            )}
+                            color: '#8395A7',
+                            marginBottom: 2,
+                        }}>
+                            最近の練習
+                        </div>
+                        {recentDates.map(([date, totalSec]) => (
+                            <div
+                                key={date}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 8,
+                                }}
+                            >
+                                <span style={{
+                                    fontFamily: "'JetBrains Mono', monospace",
+                                    fontSize: 11,
+                                    color: '#636E72',
+                                    width: 36,
+                                    flexShrink: 0,
+                                }}>
+                                    {formatDateShort(date)}
+                                </span>
+                                <div style={{
+                                    flex: 1,
+                                    height: 14,
+                                    background: '#F0F3F5',
+                                    borderRadius: 7,
+                                    overflow: 'hidden',
+                                }}>
+                                    <div style={{
+                                        width: `${maxSec > 0 ? (totalSec / maxSec) * 100 : 0}%`,
+                                        height: '100%',
+                                        background: 'linear-gradient(90deg, #2BBAA0, #55E6C1)',
+                                        borderRadius: 7,
+                                        minWidth: 4,
+                                    }} />
+                                </div>
+                                <span style={{
+                                    fontFamily: "'JetBrains Mono', monospace",
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    color: '#2BBAA0',
+                                    width: 32,
+                                    textAlign: 'right',
+                                    flexShrink: 0,
+                                }}>
+                                    {Math.floor(totalSec / 60)}分
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                );
+            })()}
+
         </div>
     );
 };
