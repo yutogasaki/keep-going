@@ -534,11 +534,14 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
                                 ))}
 
                                 {/* Departing character */}
+                                {/* アニメーションとoverflow:hiddenを分離（iOS Safariのクリッピングバグ対策） */}
                                 <motion.div
                                     initial={{ scale: 1, y: 0 }}
                                     animate={{ scale: [1, 1.05, 1], y: [0, -5, 0] }}
                                     transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                                    style={{
+                                    style={{ marginBottom: 24 }}
+                                >
+                                    <div style={{
                                         width: 120,
                                         height: 120,
                                         borderRadius: '50%',
@@ -549,14 +552,14 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
                                         boxShadow: isAdult
                                             ? '0 12px 40px rgba(255, 215, 0, 0.25)'
                                             : '0 12px 40px rgba(232, 67, 147, 0.2)',
-                                        marginBottom: 24,
-                                    }}
-                                >
-                                    <img
-                                        src={`/ikimono/${departingInfo.type}-${departingInfo.stage}.png`}
-                                        alt="departing fuwafuwa"
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                    />
+                                        background: '#fff',
+                                    }}>
+                                        <img
+                                            src={`/ikimono/${departingInfo.type}-${departingInfo.stage}.png`}
+                                            alt="departing fuwafuwa"
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.05)', display: 'block' }}
+                                        />
+                                    </div>
                                 </motion.div>
 
                                 <motion.h2
@@ -689,31 +692,33 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
                             ))}
 
                             {/* New egg with grand entrance */}
+                            {/* アニメーションとoverflow:hiddenを分離（iOS Safariのクリッピングバグ対策） */}
                             <motion.div
                                 initial={{ scale: 0, rotate: -10 }}
                                 animate={{ scale: 1, rotate: 0 }}
                                 transition={{ type: 'spring', damping: 12, stiffness: 100, delay: 0.2 }}
-                                style={{
+                                style={{ marginBottom: 24 }}
+                            >
+                                <div style={{
                                     width: 130,
                                     height: 130,
                                     borderRadius: '50%',
                                     overflow: 'hidden',
                                     border: '4px solid rgba(255,255,255,0.95)',
                                     boxShadow: '0 16px 48px rgba(43, 186, 160, 0.25)',
-                                    marginBottom: 24,
                                     background: '#fff',
-                                }}
-                            >
-                                <motion.img
-                                    animate={{
-                                        scale: [1.05, 1.1, 1.05],
-                                        rotate: [0, 2, -2, 0],
-                                    }}
-                                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                                    src={`/ikimono/${user.fuwafuwaType}-1.png`}
-                                    alt="new egg"
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                />
+                                }}>
+                                    <motion.img
+                                        animate={{
+                                            scale: [1.05, 1.1, 1.05],
+                                            rotate: [0, 2, -2, 0],
+                                        }}
+                                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                                        src={`/ikimono/${user.fuwafuwaType}-1.png`}
+                                        alt="new egg"
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                    />
+                                </div>
                             </motion.div>
 
                             <motion.div

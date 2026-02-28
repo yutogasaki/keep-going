@@ -436,7 +436,7 @@ const ChallengeManagement: React.FC<{
         const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
         return `${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`;
     });
-    const [rewardType, setRewardType] = useState(0);
+    const [rewardType, setRewardType] = useState(() => Math.floor(Math.random() * 12));
     const [classLevels, setClassLevels] = useState<string[]>([]);
     const [submitting, setSubmitting] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -449,7 +449,7 @@ const ChallengeManagement: React.FC<{
         setStartDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`);
         const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0);
         setEndDate(`${lastDay.getFullYear()}-${String(lastDay.getMonth() + 1).padStart(2, '0')}-${String(lastDay.getDate()).padStart(2, '0')}`);
-        setRewardType(0);
+        setRewardType(Math.floor(Math.random() * 12));
         setClassLevels([]);
         setEditingId(null);
     };
@@ -651,26 +651,45 @@ const ChallengeManagement: React.FC<{
                     </div>
 
                     <div>
-                        <div style={labelStyle}>ちびふわタイプ（報酬）</div>
+                        <div style={{ ...labelStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span>バッジメダル（報酬）</span>
+                            <button
+                                onClick={() => setRewardType(Math.floor(Math.random() * 12))}
+                                style={{
+                                    fontSize: 11,
+                                    color: '#2BBAA0',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontWeight: 700,
+                                    padding: '2px 6px',
+                                }}
+                            >
+                                🔀 ランダム
+                            </button>
+                        </div>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                            {Array.from({ length: 10 }, (_, i) => (
+                            {Array.from({ length: 12 }, (_, i) => (
                                 <button
                                     key={i}
                                     onClick={() => setRewardType(i)}
                                     style={{
-                                        width: 36,
-                                        height: 36,
-                                        borderRadius: 10,
-                                        border: rewardType === i ? '2px solid #2BBAA0' : '1px solid #E0E0E0',
-                                        background: rewardType === i ? '#E8F8F0' : '#FFF',
-                                        fontFamily: "'JetBrains Mono', monospace",
-                                        fontSize: 14,
-                                        fontWeight: 700,
-                                        color: rewardType === i ? '#2BBAA0' : '#8395A7',
+                                        width: 48,
+                                        height: 48,
+                                        borderRadius: 12,
+                                        border: rewardType === i ? '2px solid #FFB800' : '1px solid #E0E0E0',
+                                        background: rewardType === i ? '#FFF9E6' : '#FFF',
+                                        padding: 2,
                                         cursor: 'pointer',
+                                        boxShadow: rewardType === i ? '0 0 0 2px rgba(255,184,0,0.2)' : 'none',
                                     }}
                                 >
-                                    {i}
+                                    <img
+                                        src={`/medal/${i}.png`}
+                                        alt={`medal ${i}`}
+                                        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                                    />
                                 </button>
                             ))}
                         </div>

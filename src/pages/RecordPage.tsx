@@ -476,7 +476,7 @@ export const RecordPage: React.FC = () => {
                                 paddingTop: 8,
                             }}
                         >
-                            {/* ちびふわコレクション */}
+                            {/* ちびふわバッジ */}
                             {chibifuwas.length > 0 && (
                                 <section>
                                     <div style={{
@@ -487,7 +487,7 @@ export const RecordPage: React.FC = () => {
                                         marginBottom: 10,
                                         letterSpacing: 1,
                                     }}>
-                                        ちびふわコレクション
+                                        ちびふわバッジ
                                     </div>
                                     <div style={{
                                         display: 'flex',
@@ -509,20 +509,18 @@ export const RecordPage: React.FC = () => {
                                                 }}
                                             >
                                                 <div style={{
-                                                    width: 56,
-                                                    height: 56,
+                                                    width: 64,
+                                                    height: 64,
                                                     borderRadius: '50%',
-                                                    background: '#F0FDFA',
-                                                    border: '2px solid rgba(43,186,160,0.2)',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
+                                                    background: '#fff',
+                                                    border: '2px solid rgba(255, 200, 0, 0.35)',
                                                     overflow: 'hidden',
+                                                    boxShadow: '0 2px 8px rgba(255, 200, 0, 0.15)',
                                                 }}>
                                                     <img
-                                                        src={`/ikimono/${cb.type}-1.png`}
-                                                        alt="Chibifuwa"
-                                                        style={{ width: '70%', height: '70%', objectFit: 'cover' }}
+                                                        src={`/medal/${cb.type}.png`}
+                                                        alt={cb.challengeTitle}
+                                                        style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
                                                     />
                                                 </div>
                                                 <div style={{
