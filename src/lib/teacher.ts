@@ -51,6 +51,11 @@ export function checkIsDeveloper(email: string | undefined): boolean {
 export async function fetchAllStudents(): Promise<StudentSummary[]> {
     if (!supabase) return [];
 
+    // Debug: verify auth context
+    const { data: sessionData } = await supabase.auth.getSession();
+    const currentEmail = sessionData?.session?.user?.email;
+    console.log('[teacher] auth email:', currentEmail, '| is_anonymous:', sessionData?.session?.user?.is_anonymous);
+
     const [membersRes, sessionsRes, settingsRes] = await Promise.all([
         supabase.from('family_members').select('id, account_id, name, class_level, avatar_url'),
         supabase
@@ -68,6 +73,18 @@ export async function fetchAllStudents(): Promise<StudentSummary[]> {
 
     const members = membersRes.data ?? [];
     const sessions = sessionsRes.data ?? [];
+    console.log('[teacher] fetched:', members.length, 'members,', sessions.length, 'sessions');
+
+    // Diagnostic: show per-account session counts
+    if (sessions.length === 0 && members.length > 0) {
+        console.warn('[teacher] WARNING: 0 sessions returned but', members.length, 'members exist. Check RLS policy "Teachers can read all sessions".');
+        const memberAccountIds = [...new Set(members.map((m: any) => m.account_id))];
+        console.warn('[teacher] member account_ids:', memberAccountIds.slice(0, 5));
+    } else if (sessions.length > 0) {
+        const sessionsByAccount = new Map<string, number>();
+        for (const s of sessions) sessionsByAccount.set(s.account_id, (sessionsByAccount.get(s.account_id) ?? 0) + 1);
+        console.log('[teacher] sessions per account:', Object.fromEntries(sessionsByAccount));
+    }
 
     // Filter out suspended accounts
     const suspendedIds = new Set(
