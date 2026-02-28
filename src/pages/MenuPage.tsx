@@ -765,6 +765,7 @@ export const MenuPage: React.FC = () => {
             <PublicMenuBrowser
                 open={showPublicBrowser}
                 onClose={() => setShowPublicBrowser(false)}
+                onImported={loadCustomData}
             />
         </div>
     );

@@ -8,12 +8,13 @@ interface MenuDetailSheetProps {
     menu: PublicMenu | null;
     onClose: () => void;
     onTry: (exerciseIds: string[]) => void;
+    onImported?: () => void;
 }
 
-export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose, onTry }) => {
+export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose, onTry, onImported }) => {
     const [importing, setImporting] = useState(false);
     const [imported, setImported] = useState(false);
-    const [error, setError] = useState(false);
+    const [error, setError] = useState<string | false>(false);
 
     const handleImport = async () => {
         if (!menu || importing) return;
@@ -23,12 +24,14 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
         try {
             await importMenu(menu);
             setImported(true);
+            onImported?.();
             // 2秒後にリセット → 再度「もらう」を押せるように
             setTimeout(() => setImported(false), 2000);
         } catch (err) {
-            console.warn('[MenuDetailSheet] import failed:', err);
-            setError(true);
-            setTimeout(() => setError(false), 3000);
+            console.error('[MenuDetailSheet] import failed:', err);
+            const msg = err instanceof Error ? err.message : '保存に失敗しました';
+            setError(msg);
+            setTimeout(() => setError(false), 5000);
         } finally {
             setImporting(false);
         }
@@ -224,7 +227,7 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
                                 {importing ? (
                                     <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
                                 ) : error ? (
-                                    '失敗…'
+                                    typeof error === 'string' ? `失敗: ${error.slice(0, 20)}` : '失敗…'
                                 ) : imported ? (
                                     '追加済み ✓'
                                 ) : (

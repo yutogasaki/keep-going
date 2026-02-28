@@ -9,17 +9,20 @@ import { useAppStore } from '../store/useAppStore';
 interface PublicMenuBrowserProps {
     open: boolean;
     onClose: () => void;
+    onImported?: () => void;
 }
 
-export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onClose }) => {
+export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onClose, onImported }) => {
     const [menus, setMenus] = useState<PublicMenu[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
     const [selectedMenu, setSelectedMenu] = useState<PublicMenu | null>(null);
     const startSessionWithExercises = useAppStore(s => s.startSessionWithExercises);
 
     useEffect(() => {
         if (!open) return;
         setLoading(true);
+        setError(false);
         fetchPopularMenus(20).then(data => {
             // Deduplicate by name + exerciseIds
             const seen = new Set<string>();
@@ -30,6 +33,10 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
                 return true;
             });
             setMenus(deduped);
+        }).catch(err => {
+            console.error('[PublicMenuBrowser] fetch failed:', err);
+            setError(true);
+        }).finally(() => {
             setLoading(false);
         });
     }, [open]);
@@ -136,6 +143,20 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
                                             読み込み中...
                                         </p>
                                     </div>
+                                ) : error ? (
+                                    <div style={{
+                                        textAlign: 'center',
+                                        padding: 48,
+                                        color: '#E84393',
+                                    }}>
+                                        <p style={{
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 14,
+                                            margin: 0,
+                                        }}>
+                                            読み込みに失敗しました
+                                        </p>
+                                    </div>
                                 ) : menus.length === 0 ? (
                                     <div style={{
                                         textAlign: 'center',
@@ -169,6 +190,7 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
             <MenuDetailSheet
                 menu={selectedMenu}
                 onClose={() => setSelectedMenu(null)}
+                onImported={onImported}
                 onTry={handleTry}
             />
         </>

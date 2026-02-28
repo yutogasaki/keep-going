@@ -200,10 +200,15 @@ export async function importMenu(publicMenu: PublicMenu): Promise<void> {
         name: publicMenu.name,
         emoji: publicMenu.emoji,
         description: `${publicMenu.authorName}さんのメニュー`,
-        exerciseIds: publicMenu.exerciseIds,
+        exerciseIds: [...publicMenu.exerciseIds],
         isPreset: false,
     };
-    await saveCustomGroup(localMenu);
+    try {
+        await saveCustomGroup(localMenu);
+    } catch (e) {
+        console.error('[importMenu] saveCustomGroup failed:', e, 'menu:', localMenu.id);
+        throw e;
+    }
 
     // 3. ダウンロードカウント（完全にfire-and-forget: awaitしない）
     tryIncrementDownload(publicMenu.id);
