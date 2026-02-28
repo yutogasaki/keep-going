@@ -1104,41 +1104,60 @@ const StudentCard: React.FC<{
                         {student.name}
                     </span>
 
-                    {/* Streak badge */}
-                    {student.streak > 0 && (
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 3,
-                            padding: '2px 7px',
-                            borderRadius: 20,
-                            background: '#FFF3E0',
-                            flexShrink: 0,
-                        }}>
-                            <Flame size={12} color="#E17055" />
-                            <span style={{
-                                fontFamily: "'JetBrains Mono', monospace",
-                                fontSize: 11,
-                                fontWeight: 700,
-                                color: '#E17055',
-                            }}>
-                                {student.streak}
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Last active + total sessions */}
+                    {/* Streak badge (always visible) */}
                     <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        padding: '2px 7px',
+                        borderRadius: 20,
+                        background: student.streak > 0 ? '#FFF3E0' : '#F0F3F5',
+                        flexShrink: 0,
+                    }}>
+                        <Flame size={12} color={student.streak > 0 ? '#E17055' : '#B2BEC3'} />
+                        <span style={{
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: student.streak > 0 ? '#E17055' : '#B2BEC3',
+                        }}>
+                            {student.streak}
+                        </span>
+                    </div>
+
+                    {/* Last active date */}
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3,
+                        padding: '2px 7px',
+                        borderRadius: 20,
+                        background: student.lastActiveDate === getTodayKey() ? '#E8F8F0' : '#F0F3F5',
+                        flexShrink: 0,
+                    }}>
+                        <Calendar size={11} color={student.lastActiveDate === getTodayKey() ? '#2BBAA0' : '#8395A7'} />
+                        <span style={{
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: student.lastActiveDate === getTodayKey() ? '#2BBAA0' : '#8395A7',
+                        }}>
+                            {student.lastActiveDate
+                                ? formatDateShort(student.lastActiveDate)
+                                : '未使用'
+                            }
+                        </span>
+                    </div>
+
+                    {/* Total sessions */}
+                    <span style={{
                         fontFamily: "'Noto Sans JP', sans-serif",
                         fontSize: 11,
                         color: '#8395A7',
                         flexShrink: 0,
                     }}>
-                        {student.lastActiveDate
-                            ? formatDateShort(student.lastActiveDate)
-                            : '未使用'
-                        } · 計{student.totalSessions}回
-                    </div>
+                        計{student.totalSessions}回
+                    </span>
 
                     <ChevronDown
                         size={14}

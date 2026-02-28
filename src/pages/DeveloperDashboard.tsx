@@ -8,6 +8,7 @@ import {
     computeStats,
     type AdminAccountSummary,
 } from '../lib/developer';
+import { calculateStreak } from '../lib/teacher';
 import { formatDateKey } from '../lib/db';
 
 interface DeveloperDashboardProps {
@@ -399,28 +400,41 @@ const AccountCard: React.FC<{
                         </div>
                         <div>
                             <span style={{ color: '#888' }}>メンバー</span>
-                            <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                {account.members.map(m => (
-                                    <div key={m.id} style={{
-                                        display: 'flex', alignItems: 'center', gap: 6,
-                                        padding: '3px 6px', background: '#f8f8f8', borderRadius: 6,
-                                    }}>
-                                        <span style={{ flex: 1, fontSize: 12 }}>{m.name} ({m.classLevel})</span>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); onDeleteMember(m.id); }}
-                                            style={{
-                                                background: 'none', border: 'none', cursor: 'pointer',
-                                                color: '#ccc', padding: 2, display: 'flex',
-                                            }}
-                                        >
-                                            <Trash2 size={12} />
-                                        </button>
-                                    </div>
-                                ))}
+                            <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                {account.members.map(m => {
+                                    const memberSessions = account.sessions.filter(s =>
+                                        s.userIds.length === 0 || s.userIds.includes(m.id)
+                                    );
+                                    const memberLastActive = memberSessions.length > 0 ? memberSessions[0].date : null;
+                                    const memberStreak = calculateStreak(memberSessions);
+                                    return (
+                                        <div key={m.id} style={{
+                                            padding: '6px 8px', background: '#f8f8f8', borderRadius: 8,
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                <span style={{ flex: 1, fontSize: 12, fontWeight: 600 }}>{m.name} ({m.classLevel})</span>
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); onDeleteMember(m.id); }}
+                                                    style={{
+                                                        background: 'none', border: 'none', cursor: 'pointer',
+                                                        color: '#ccc', padding: 2, display: 'flex',
+                                                    }}
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: 8, marginTop: 3, fontSize: 10, color: '#888' }}>
+                                                <span>🔥 {memberStreak}日</span>
+                                                <span>最終: {memberLastActive ? daysAgo(memberLastActive) : '未使用'}</span>
+                                                <span>{memberSessions.length}回</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#888' }}>ストリーク</span>
+                            <span style={{ color: '#888' }}>ストリーク（アカウント）</span>
                             <span>{account.streak}日</span>
                         </div>
                     </div>
@@ -467,7 +481,7 @@ const AccountCard: React.FC<{
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
                             }}
                         >
-                            <Trash2 size={12} />削除
+                            <Trash2 size={12} />アカウント削除
                         </button>
                     </div>
                 </div>
