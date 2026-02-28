@@ -1,6 +1,16 @@
 import { supabase } from './supabase';
 import { getAccountId } from './sync';
 import { saveCustomGroup, type MenuGroup } from '../data/menuGroups';
+import { getCustomExercises, saveCustomExercise, type CustomExercise } from './db';
+import { EXERCISES } from '../data/exercises';
+
+export interface CustomExerciseData {
+    id: string;
+    name: string;
+    sec: number;
+    emoji: string;
+    hasSplit?: boolean;
+}
 
 export interface PublicMenu {
     id: string;
@@ -8,6 +18,7 @@ export interface PublicMenu {
     emoji: string;
     description: string;
     exerciseIds: string[];
+    customExerciseData: CustomExerciseData[];
     authorName: string;
     accountId: string;
     downloadCount: number;
@@ -21,11 +32,24 @@ export async function publishMenu(menu: MenuGroup, authorName: string): Promise<
     const accountId = getAccountId();
     if (!accountId) return;
 
+    // 独自種目を抽出してデータを含める
+    const customIds = menu.exerciseIds.filter(id => !EXERCISES.find(e => e.id === id));
+    let customExerciseData: CustomExerciseData[] = [];
+    if (customIds.length > 0) {
+        const allCustom = await getCustomExercises();
+        const uniqueIds = [...new Set(customIds)];
+        customExerciseData = uniqueIds
+            .map(id => allCustom.find(ex => ex.id === id))
+            .filter((ex): ex is CustomExercise => !!ex)
+            .map(ex => ({ id: ex.id, name: ex.name, sec: ex.sec, emoji: ex.emoji, hasSplit: ex.hasSplit }));
+    }
+
     const { error } = await supabase.from('public_menus').insert({
         name: menu.name,
         emoji: menu.emoji,
         description: menu.description,
         exercise_ids: menu.exerciseIds,
+        custom_exercise_data: customExerciseData,
         author_name: authorName,
         account_id: accountId,
     });
@@ -153,7 +177,24 @@ export async function fetchMyPublishedMenus(): Promise<PublicMenu[]> {
 // ─── Import (download) a public menu ────────────────
 
 export async function importMenu(publicMenu: PublicMenu): Promise<void> {
-    // Save as a local custom menu
+    // 1. 独自種目を保存（ベストエフォート: 失敗してもインポートは続行）
+    if (publicMenu.customExerciseData?.length) {
+        for (const ex of publicMenu.customExerciseData) {
+            try {
+                await saveCustomExercise({
+                    id: ex.id,
+                    name: ex.name,
+                    sec: ex.sec,
+                    emoji: ex.emoji,
+                    hasSplit: ex.hasSplit,
+                });
+            } catch (e) {
+                console.warn('[importMenu] custom exercise save skipped:', e);
+            }
+        }
+    }
+
+    // 2. メニューをローカルに保存（これが唯一の必須処理）
     const localMenu: MenuGroup = {
         id: `imported-${publicMenu.id}`,
         name: publicMenu.name,
@@ -162,24 +203,26 @@ export async function importMenu(publicMenu: PublicMenu): Promise<void> {
         exerciseIds: publicMenu.exerciseIds,
         isPreset: false,
     };
-
     await saveCustomGroup(localMenu);
 
-    // Increment download count (deduplicated per account)
-    if (supabase) {
-        const accountId = getAccountId();
-        if (accountId) {
-            await (supabase.rpc as any)('try_increment_download_count', {
-                target_menu_id: publicMenu.id,
-                downloader_account_id: accountId,
-            }).catch(console.warn);
-        } else {
-            // Fallback: old increment (no dedup)
-            await (supabase.rpc as any)('increment_download_count', {
-                menu_id: publicMenu.id,
-            }).catch(console.warn);
-        }
-    }
+    // 3. ダウンロードカウント（完全にfire-and-forget: awaitしない）
+    tryIncrementDownload(publicMenu.id);
+}
+
+// ダウンロードカウント: 重複防止RPCのみ使用、失敗は無視
+function tryIncrementDownload(menuId: string): void {
+    if (!supabase) return;
+    const accountId = getAccountId();
+    if (!accountId) return;
+
+    // try_increment_download_count: menu_downloadsテーブルで重複チェック
+    // - 初回: INSERT成功 → カウント+1 → true
+    // - 2回目以降（削除後含む）: INSERT失敗(重複) → カウント変化なし → false
+    // - RPC未デプロイ: エラー → 無視（カウントは増えない）
+    (supabase.rpc as any)('try_increment_download_count', {
+        target_menu_id: menuId,
+        downloader_account_id: accountId,
+    }).catch(() => {});
 }
 
 // ─── Unpublish ──────────────────────────────────────
@@ -207,6 +250,7 @@ function mapPublicMenu(row: any): PublicMenu {
         emoji: row.emoji,
         description: row.description,
         exerciseIds: row.exercise_ids as string[],
+        customExerciseData: (row.custom_exercise_data as CustomExerciseData[]) ?? [],
         authorName: row.author_name,
         accountId: row.account_id,
         downloadCount: row.download_count,

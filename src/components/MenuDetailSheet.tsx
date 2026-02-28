@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Play, Loader2, Clock } from 'lucide-react';
 import { type PublicMenu, importMenu } from '../lib/publicMenus';
-import { EXERCISES, calculateTotalSeconds } from '../data/exercises';
+import { EXERCISES } from '../data/exercises';
 
 interface MenuDetailSheetProps {
     menu: PublicMenu | null;
@@ -16,12 +16,15 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
     const [error, setError] = useState(false);
 
     const handleImport = async () => {
-        if (!menu || importing || imported) return;
+        if (!menu || importing) return;
         setImporting(true);
         setError(false);
+        setImported(false);
         try {
             await importMenu(menu);
             setImported(true);
+            // 2秒後にリセット → 再度「もらう」を押せるように
+            setTimeout(() => setImported(false), 2000);
         } catch (err) {
             console.warn('[MenuDetailSheet] import failed:', err);
             setError(true);
@@ -44,7 +47,11 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
         setImporting(false);
     }, [menu?.id]);
 
-    const totalSec = menu ? calculateTotalSeconds(menu.exerciseIds) : 0;
+    const totalSec = menu ? menu.exerciseIds.reduce((total, id) => {
+        const ex = EXERCISES.find(e => e.id === id)
+            ?? menu.customExerciseData?.find(e => e.id === id);
+        return total + (ex?.sec || 0);
+    }, 0) : 0;
     const minutes = Math.ceil(totalSec / 60);
 
     return (
@@ -167,7 +174,8 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
                             </div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                                 {menu.exerciseIds.map((id, i) => {
-                                    const ex = EXERCISES.find(e => e.id === id);
+                                    const ex = EXERCISES.find(e => e.id === id)
+                                        ?? menu.customExerciseData?.find(e => e.id === id);
                                     if (!ex) return null;
                                     return (
                                         <span key={`${id}-${i}`} style={{
@@ -195,7 +203,7 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
                         }}>
                             <button
                                 onClick={handleImport}
-                                disabled={importing || imported}
+                                disabled={importing}
                                 style={{
                                     flex: 1,
                                     padding: '14px',
