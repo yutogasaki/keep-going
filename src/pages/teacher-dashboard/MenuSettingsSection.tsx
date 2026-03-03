@@ -20,7 +20,12 @@ import {
     type TeacherExercise,
     type TeacherMenu,
 } from '../../lib/teacherContent';
-import { MenuSettingsItemRow } from './menu-settings/MenuSettingsItemRow';
+import {
+    fetchAllTeacherItemOverrides,
+    upsertTeacherItemOverride,
+    type TeacherItemOverride,
+} from '../../lib/teacherItemOverrides';
+import { MenuSettingsItemCard } from './menu-settings/MenuSettingsItemCard';
 import { TeacherExerciseForm } from './menu-settings/TeacherExerciseForm';
 import { TeacherMenuForm } from './menu-settings/TeacherMenuForm';
 
@@ -31,22 +36,19 @@ interface MenuSettingsSectionProps {
     loading: boolean;
 }
 
-const NEXT_STATUS: Record<MenuSettingStatus, MenuSettingStatus> = {
-    optional: 'required',
-    required: 'excluded',
-    excluded: 'optional',
-};
-
 export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
     teacherEmail,
     loading: parentLoading,
 }) => {
     const [subTab, setSubTab] = useState<SubTab>('exercises');
     const [settings, setSettings] = useState<TeacherMenuSetting[]>([]);
+    const [overrides, setOverrides] = useState<TeacherItemOverride[]>([]);
     const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
     const [teacherMenus, setTeacherMenus] = useState<TeacherMenu[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
 
     // Form states
     const [showExerciseForm, setShowExerciseForm] = useState(false);
@@ -57,16 +59,20 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
     const loadAll = useCallback(async () => {
         setLoading(true);
         try {
-            const [s, te, tm] = await Promise.all([
+            const [s, te, tm, ov] = await Promise.all([
                 fetchAllTeacherMenuSettings(true),
                 fetchTeacherExercises(true),
                 fetchTeacherMenus(true),
+                fetchAllTeacherItemOverrides(true),
             ]);
             setSettings(s);
             setTeacherExercises(te);
             setTeacherMenus(tm);
+            setOverrides(ov);
+            setError(null);
         } catch (err) {
             console.warn('[MenuSettings] load failed:', err);
+            setError('データの読み込みに失敗しました。Supabase で deploy.sql を実行してテーブルを作成してください。');
         } finally {
             setLoading(false);
         }
@@ -76,7 +82,8 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
         loadAll();
     }, [loadAll]);
 
-    // Build lookup: itemId+itemType -> classLevel -> status
+    // ─── Status helpers ───
+
     const getStatus = (itemId: string, itemType: string, classLevel: string): MenuSettingStatus => {
         const found = settings.find(
             s => s.itemId === itemId && s.itemType === itemType && s.classLevel === classLevel
@@ -92,22 +99,32 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
         return result;
     };
 
-    const handleCycle = async (itemId: string, itemType: 'exercise' | 'menu_group', classLevel: string) => {
-        const current = getStatus(itemId, itemType, classLevel);
-        const next = NEXT_STATUS[current];
+    const getOverride = (itemId: string, itemType: string): TeacherItemOverride | undefined => {
+        return overrides.find(o => o.itemId === itemId && o.itemType === itemType);
+    };
+
+    // ─── Status change (direct, not cycling) ───
+
+    const handleStatusChange = async (
+        itemId: string,
+        itemType: 'exercise' | 'menu_group',
+        classLevel: string,
+        newStatus: MenuSettingStatus,
+    ) => {
+        setError(null);
 
         // Optimistic update
         setSettings(prev => {
             const filtered = prev.filter(
                 s => !(s.itemId === itemId && s.itemType === itemType && s.classLevel === classLevel)
             );
-            if (next !== 'optional') {
+            if (newStatus !== 'optional') {
                 filtered.push({
                     id: `temp-${Date.now()}`,
                     itemId,
                     itemType,
                     classLevel,
-                    status: next,
+                    status: newStatus,
                     createdBy: teacherEmail,
                 });
             }
@@ -115,18 +132,53 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
         });
 
         try {
-            await upsertTeacherMenuSetting(itemId, itemType, classLevel, next, teacherEmail);
+            await upsertTeacherMenuSetting(itemId, itemType, classLevel, newStatus, teacherEmail);
         } catch (err) {
-            console.warn('[MenuSettings] cycle failed:', err);
+            console.warn('[MenuSettings] status change failed:', err);
+            setError('保存に失敗しました。deploy.sql を実行してテーブルを作成してください。');
             loadAll();
         }
     };
 
+    // ─── Override save ───
+
+    const handleSaveOverrides = async (
+        itemId: string,
+        itemType: 'exercise' | 'menu_group',
+        nameOverride: string | null,
+        descriptionOverride: string | null,
+    ) => {
+        setError(null);
+        try {
+            await upsertTeacherItemOverride(itemId, itemType, nameOverride, descriptionOverride, teacherEmail);
+            // Optimistic update
+            setOverrides(prev => {
+                const filtered = prev.filter(o => !(o.itemId === itemId && o.itemType === itemType));
+                if (nameOverride || descriptionOverride) {
+                    filtered.push({
+                        id: `temp-${Date.now()}`,
+                        itemId,
+                        itemType: itemType as 'exercise' | 'menu_group',
+                        nameOverride,
+                        descriptionOverride,
+                        createdBy: teacherEmail,
+                    });
+                }
+                return filtered;
+            });
+        } catch (err) {
+            console.warn('[MenuSettings] save overrides failed:', err);
+            setError('上書き設定の保存に失敗しました。');
+        }
+    };
+
     // ─── Exercise CRUD ───
+
     const handleSaveExercise = async (data: {
         name: string; sec: number; emoji: string; hasSplit: boolean; description: string; classLevels: string[];
     }) => {
         setSubmitting(true);
+        setError(null);
         try {
             if (editingExercise) {
                 await updateTeacherExercise(editingExercise.id, data);
@@ -138,6 +190,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
             await loadAll();
         } catch (err) {
             console.warn('[MenuSettings] save exercise failed:', err);
+            setError('種目の保存に失敗しました。');
         } finally {
             setSubmitting(false);
         }
@@ -154,10 +207,12 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
     };
 
     // ─── Menu CRUD ───
+
     const handleSaveMenu = async (data: {
         name: string; emoji: string; description: string; exerciseIds: string[]; classLevels: string[];
     }) => {
         setSubmitting(true);
+        setError(null);
         try {
             if (editingMenu) {
                 await updateTeacherMenu(editingMenu.id, data);
@@ -169,6 +224,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
             await loadAll();
         } catch (err) {
             console.warn('[MenuSettings] save menu failed:', err);
+            setError('メニューの保存に失敗しました。');
         } finally {
             setSubmitting(false);
         }
@@ -183,6 +239,8 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
             console.warn('[MenuSettings] delete menu failed:', err);
         }
     };
+
+    // ─── Render ───
 
     if (parentLoading || loading) {
         return (
@@ -199,7 +257,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
     }
 
     return (
-        <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* Sub-tabs */}
             <div style={{ display: 'flex', gap: 8 }}>
                 {([
@@ -208,7 +266,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                 ]).map(tab => (
                     <button
                         key={tab.id}
-                        onClick={() => { setSubTab(tab.id); setShowExerciseForm(false); setShowMenuForm(false); }}
+                        onClick={() => { setSubTab(tab.id); setShowExerciseForm(false); setShowMenuForm(false); setExpandedItemId(null); }}
                         style={{
                             flex: 1,
                             padding: '8px 0',
@@ -227,6 +285,22 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     </button>
                 ))}
             </div>
+
+            {/* Error banner */}
+            {error && (
+                <div style={{
+                    padding: '10px 14px',
+                    borderRadius: 10,
+                    background: 'rgba(225, 112, 85, 0.1)',
+                    border: '1px solid rgba(225, 112, 85, 0.3)',
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 12,
+                    color: '#E17055',
+                    lineHeight: 1.5,
+                }}>
+                    {error}
+                </div>
+            )}
 
             {/* Create button */}
             <button
@@ -280,152 +354,133 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                 />
             )}
 
-            {/* Legend + class headers */}
-            <div className="card" style={{ padding: '12px 16px', overflow: 'hidden' }}>
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    marginBottom: 8,
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 11,
-                    color: '#8395A7',
-                }}>
-                    <span>★ 必須</span>
-                    <span>⚪ おまかせ</span>
-                    <span>✕ 除外</span>
-                </div>
+            {/* Legend */}
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                fontFamily: "'Noto Sans JP', sans-serif",
+                fontSize: 11,
+                color: '#8395A7',
+                padding: '4px 0',
+            }}>
+                <span style={{ color: '#2BBAA0' }}>★ 必須</span>
+                <span>⚪ おまかせ</span>
+                <span style={{ color: '#E17055' }}>✕ 除外</span>
+                <span style={{ color: '#8B5CF6' }}>👁 非表示</span>
+            </div>
 
-                {/* Class headers */}
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '6px 0',
-                    borderBottom: '2px solid rgba(0,0,0,0.08)',
-                }}>
-                    <div style={{ width: 120, flexShrink: 0 }} />
-                    <div style={{ display: 'flex', gap: 4, flex: 1, justifyContent: 'center' }}>
-                        {CLASS_LEVELS.map(cl => (
-                            <div
-                                key={cl.id}
-                                style={{
-                                    width: 32,
-                                    textAlign: 'center',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 10,
-                                    fontWeight: 700,
-                                    color: '#8395A7',
-                                }}
-                            >
-                                {cl.emoji}
-                            </div>
-                        ))}
-                    </div>
-                    <div style={{ width: 28, flexShrink: 0 }} />
-                </div>
+            {/* ─── Exercise cards ─── */}
+            {subTab === 'exercises' && (
+                <>
+                    {teacherExercises.length > 0 && (
+                        <>
+                            <SectionLabel text="先生がつくった種目" color="#0984E3" />
+                            {teacherExercises.map(ex => (
+                                <MenuSettingsItemCard
+                                    key={ex.id}
+                                    emoji={ex.emoji}
+                                    name={ex.name}
+                                    description={ex.description}
+                                    statusByClass={getStatusByClass(ex.id, 'exercise')}
+                                    nameOverride={null}
+                                    descriptionOverride={null}
+                                    expanded={expandedItemId === ex.id}
+                                    onToggleExpand={() => setExpandedItemId(prev => prev === ex.id ? null : ex.id)}
+                                    onStatusChange={(cl, status) => handleStatusChange(ex.id, 'exercise', cl, status)}
+                                    onSaveOverrides={() => {}}
+                                    onEdit={() => { setEditingExercise(ex); setShowExerciseForm(true); }}
+                                    onDelete={() => handleDeleteExercise(ex.id)}
+                                    isBuiltIn={false}
+                                />
+                            ))}
+                        </>
+                    )}
 
-                {/* Items */}
-                {subTab === 'exercises' && (
-                    <>
-                        {/* Teacher-created exercises first */}
-                        {teacherExercises.length > 0 && (
-                            <>
-                                <div style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 11,
-                                    fontWeight: 700,
-                                    color: '#0984E3',
-                                    padding: '8px 0 4px',
-                                }}>
-                                    先生がつくった種目
-                                </div>
-                                {teacherExercises.map(ex => (
-                                    <MenuSettingsItemRow
-                                        key={ex.id}
-                                        emoji={ex.emoji}
-                                        name={ex.name}
-                                        statusByClass={getStatusByClass(ex.id, 'exercise')}
-                                        onCycle={(cl) => handleCycle(ex.id, 'exercise', cl)}
-                                        onEdit={() => { setEditingExercise(ex); setShowExerciseForm(true); }}
-                                        onDelete={() => handleDeleteExercise(ex.id)}
-                                    />
-                                ))}
-                            </>
-                        )}
-
-                        {/* Built-in exercises */}
-                        <div style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: '#8395A7',
-                            padding: '8px 0 4px',
-                        }}>
-                            ビルトイン種目
-                        </div>
-                        {EXERCISES.map(ex => (
-                            <MenuSettingsItemRow
+                    <SectionLabel text="ビルトイン種目" color="#8395A7" />
+                    {EXERCISES.map(ex => {
+                        const ov = getOverride(ex.id, 'exercise');
+                        return (
+                            <MenuSettingsItemCard
                                 key={ex.id}
                                 emoji={ex.emoji}
                                 name={ex.name}
+                                description={ex.description ?? ''}
                                 statusByClass={getStatusByClass(ex.id, 'exercise')}
-                                onCycle={(cl) => handleCycle(ex.id, 'exercise', cl)}
+                                nameOverride={ov?.nameOverride ?? null}
+                                descriptionOverride={ov?.descriptionOverride ?? null}
+                                expanded={expandedItemId === ex.id}
+                                onToggleExpand={() => setExpandedItemId(prev => prev === ex.id ? null : ex.id)}
+                                onStatusChange={(cl, status) => handleStatusChange(ex.id, 'exercise', cl, status)}
+                                onSaveOverrides={(n, d) => handleSaveOverrides(ex.id, 'exercise', n, d)}
+                                isBuiltIn={true}
                             />
-                        ))}
-                    </>
-                )}
+                        );
+                    })}
+                </>
+            )}
 
-                {subTab === 'groups' && (
-                    <>
-                        {/* Teacher-created menus first */}
-                        {teacherMenus.length > 0 && (
-                            <>
-                                <div style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 11,
-                                    fontWeight: 700,
-                                    color: '#0984E3',
-                                    padding: '8px 0 4px',
-                                }}>
-                                    先生がつくったメニュー
-                                </div>
-                                {teacherMenus.map(menu => (
-                                    <MenuSettingsItemRow
-                                        key={menu.id}
-                                        emoji={menu.emoji}
-                                        name={menu.name}
-                                        statusByClass={getStatusByClass(menu.id, 'menu_group')}
-                                        onCycle={(cl) => handleCycle(menu.id, 'menu_group', cl)}
-                                        onEdit={() => { setEditingMenu(menu); setShowMenuForm(true); }}
-                                        onDelete={() => handleDeleteMenu(menu.id)}
-                                    />
-                                ))}
-                            </>
-                        )}
+            {/* ─── Group cards ─── */}
+            {subTab === 'groups' && (
+                <>
+                    {teacherMenus.length > 0 && (
+                        <>
+                            <SectionLabel text="先生がつくったメニュー" color="#0984E3" />
+                            {teacherMenus.map(menu => (
+                                <MenuSettingsItemCard
+                                    key={menu.id}
+                                    emoji={menu.emoji}
+                                    name={menu.name}
+                                    description={menu.description}
+                                    statusByClass={getStatusByClass(menu.id, 'menu_group')}
+                                    nameOverride={null}
+                                    descriptionOverride={null}
+                                    expanded={expandedItemId === menu.id}
+                                    onToggleExpand={() => setExpandedItemId(prev => prev === menu.id ? null : menu.id)}
+                                    onStatusChange={(cl, status) => handleStatusChange(menu.id, 'menu_group', cl, status)}
+                                    onSaveOverrides={() => {}}
+                                    onEdit={() => { setEditingMenu(menu); setShowMenuForm(true); }}
+                                    onDelete={() => handleDeleteMenu(menu.id)}
+                                    isBuiltIn={false}
+                                />
+                            ))}
+                        </>
+                    )}
 
-                        {/* Preset menus */}
-                        <div style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            color: '#8395A7',
-                            padding: '8px 0 4px',
-                        }}>
-                            プリセットメニュー
-                        </div>
-                        {PRESET_GROUPS.map(group => (
-                            <MenuSettingsItemRow
+                    <SectionLabel text="プリセットメニュー" color="#8395A7" />
+                    {PRESET_GROUPS.map(group => {
+                        const ov = getOverride(group.id, 'menu_group');
+                        return (
+                            <MenuSettingsItemCard
                                 key={group.id}
                                 emoji={group.emoji}
                                 name={group.name}
+                                description={group.description ?? ''}
                                 statusByClass={getStatusByClass(group.id, 'menu_group')}
-                                onCycle={(cl) => handleCycle(group.id, 'menu_group', cl)}
+                                nameOverride={ov?.nameOverride ?? null}
+                                descriptionOverride={ov?.descriptionOverride ?? null}
+                                expanded={expandedItemId === group.id}
+                                onToggleExpand={() => setExpandedItemId(prev => prev === group.id ? null : group.id)}
+                                onStatusChange={(cl, status) => handleStatusChange(group.id, 'menu_group', cl, status)}
+                                onSaveOverrides={(n, d) => handleSaveOverrides(group.id, 'menu_group', n, d)}
+                                isBuiltIn={true}
                             />
-                        ))}
-                    </>
-                )}
-            </div>
+                        );
+                    })}
+                </>
+            )}
         </div>
     );
 };
+
+const SectionLabel: React.FC<{ text: string; color: string }> = ({ text, color }) => (
+    <div style={{
+        fontFamily: "'Noto Sans JP', sans-serif",
+        fontSize: 12,
+        fontWeight: 700,
+        color,
+        padding: '4px 0 0',
+    }}>
+        {text}
+    </div>
+);

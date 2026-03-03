@@ -79,6 +79,7 @@ export interface Database {
                     emoji: string;
                     has_split: boolean;
                     creator_id: string | null;
+                    description: string | null;
                     created_at: string;
                 };
                 Insert: {
@@ -89,6 +90,7 @@ export interface Database {
                     emoji?: string;
                     has_split?: boolean;
                     creator_id?: string | null;
+                    description?: string | null;
                 };
                 Update: Partial<Database['public']['Tables']['custom_exercises']['Insert']>;
                 Relationships: [];
@@ -284,6 +286,68 @@ export interface Database {
                 Update: Partial<Database['public']['Tables']['teacher_menus']['Insert']>;
                 Relationships: [];
             };
+            public_exercises: {
+                Row: {
+                    id: string;
+                    name: string;
+                    sec: number;
+                    emoji: string;
+                    has_split: boolean;
+                    description: string | null;
+                    author_name: string;
+                    account_id: string;
+                    download_count: number;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    name: string;
+                    sec: number;
+                    emoji?: string;
+                    has_split?: boolean;
+                    description?: string | null;
+                    author_name: string;
+                    account_id: string;
+                    download_count?: number;
+                };
+                Update: Partial<Database['public']['Tables']['public_exercises']['Insert']>;
+                Relationships: [];
+            };
+            exercise_downloads: {
+                Row: {
+                    exercise_id: string;
+                    account_id: string;
+                    downloaded_at: string;
+                };
+                Insert: {
+                    exercise_id: string;
+                    account_id: string;
+                };
+                Update: Partial<Database['public']['Tables']['exercise_downloads']['Insert']>;
+                Relationships: [];
+            };
+            teacher_item_overrides: {
+                Row: {
+                    id: string;
+                    item_id: string;
+                    item_type: string;
+                    name_override: string | null;
+                    description_override: string | null;
+                    created_by: string;
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    item_id: string;
+                    item_type: string;
+                    name_override?: string | null;
+                    description_override?: string | null;
+                    created_by: string;
+                };
+                Update: Partial<Database['public']['Tables']['teacher_item_overrides']['Insert']>;
+                Relationships: [];
+            };
         };
         Views: Record<string, never>;
         Functions: {
@@ -306,6 +370,14 @@ export interface Database {
             fetch_active_public_menus: {
                 Args: { sort_by?: string; max_count?: number };
                 Returns: Database['public']['Tables']['public_menus']['Row'][];
+            };
+            fetch_active_public_exercises: {
+                Args: { sort_by?: string; max_count?: number };
+                Returns: Database['public']['Tables']['public_exercises']['Row'][];
+            };
+            try_increment_exercise_download_count: {
+                Args: { target_exercise_id: string; downloader_account_id: string };
+                Returns: boolean;
             };
         };
     };

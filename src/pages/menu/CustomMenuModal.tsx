@@ -14,6 +14,7 @@ interface CustomMenuModalProps {
     customExercises: CustomExercise[];
     teacherExcludedExerciseIds?: Set<string>;
     teacherRequiredExerciseIds?: Set<string>;
+    teacherHiddenExerciseIds?: Set<string>;
     onClose: () => void;
     onSetDailyTargetMinutes: (mins: number) => void;
     onSetExcludedExercises: (ids: string[]) => void;
@@ -29,6 +30,7 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
     customExercises,
     teacherExcludedExerciseIds,
     teacherRequiredExerciseIds,
+    teacherHiddenExerciseIds,
     onClose,
     onSetDailyTargetMinutes,
     onSetExcludedExercises,
@@ -180,7 +182,7 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
 
                     <div>
                         {[...EXERCISES, ...customExercises]
-                            .filter(exercise => !teacherExcludedExerciseIds?.has(exercise.id))
+                            .filter(exercise => !teacherHiddenExerciseIds?.has(exercise.id))
                             .map(exercise => {
                             const isTeacherRequired = teacherRequiredExerciseIds?.has(exercise.id);
                             const isRequired = isTeacherRequired || requiredExercises.includes(exercise.id);

@@ -1,5 +1,6 @@
 import React from 'react';
 import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
+import { PublicExerciseBrowser } from '../components/PublicExerciseBrowser';
 import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { useAppStore } from '../store/useAppStore';
@@ -64,7 +65,13 @@ export const MenuPage: React.FC = () => {
         teacherMenuIds,
         teacherExcludedExerciseIds,
         teacherRequiredExerciseIds,
+        teacherHiddenExerciseIds,
         isNewTeacherContent,
+        showPublicExerciseBrowser,
+        setShowPublicExerciseBrowser,
+        findPublishedExercise,
+        handlePublishExercise,
+        handleUnpublishExercise,
     } = useMenuPageData({
         users,
         sessionUserIds,
@@ -158,6 +165,11 @@ export const MenuPage: React.FC = () => {
                     onCreateCustomExercise={() => setShowCreateEx(true)}
                     teacherExerciseIds={teacherExerciseIds}
                     isNewTeacherContent={isNewTeacherContent}
+                    canPublish={canPublish}
+                    findPublishedExercise={findPublishedExercise}
+                    onPublishExercise={handlePublishExercise}
+                    onUnpublishExercise={handleUnpublishExercise}
+                    onOpenPublicExerciseBrowser={() => setShowPublicExerciseBrowser(true)}
                 />
             )}
 
@@ -170,6 +182,7 @@ export const MenuPage: React.FC = () => {
                 customExercises={customExercises}
                 teacherExcludedExerciseIds={teacherExcludedExerciseIds}
                 teacherRequiredExerciseIds={teacherRequiredExerciseIds}
+                teacherHiddenExerciseIds={teacherHiddenExerciseIds}
                 onClose={() => setShowCustomMenu(false)}
                 onSetDailyTargetMinutes={setDailyTargetMinutes}
                 onSetExcludedExercises={setExcludedExercises}
@@ -179,6 +192,12 @@ export const MenuPage: React.FC = () => {
             <PublicMenuBrowser
                 open={showPublicBrowser}
                 onClose={() => setShowPublicBrowser(false)}
+                onImported={loadCustomData}
+            />
+
+            <PublicExerciseBrowser
+                open={showPublicExerciseBrowser}
+                onClose={() => setShowPublicExerciseBrowser(false)}
                 onImported={loadCustomData}
             />
         </div>

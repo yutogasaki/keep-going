@@ -1,5 +1,6 @@
 import type { Exercise } from '../../../data/exercises';
 import type { CustomExercise } from '../../../lib/db';
+import type { PublicExercise } from '../../../lib/publicExercises';
 
 export interface MenuIndividualTabProps {
     exercises: Exercise[];
@@ -14,4 +15,9 @@ export interface MenuIndividualTabProps {
     onCreateCustomExercise: () => void;
     teacherExerciseIds?: Set<string>;
     isNewTeacherContent?: (id: string) => boolean;
+    canPublish?: boolean;
+    findPublishedExercise?: (exercise: CustomExercise) => PublicExercise | undefined;
+    onPublishExercise?: (exercise: CustomExercise) => void;
+    onUnpublishExercise?: (exercise: CustomExercise) => void;
+    onOpenPublicExerciseBrowser?: () => void;
 }

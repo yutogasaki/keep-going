@@ -26,6 +26,7 @@ export interface CustomExercise {
     sec: number;     // e.g. 30, 60
     emoji: string;
     hasSplit?: boolean;
+    description?: string;
     creatorId?: string; // If undefined, it's a family shared exercise
 }
 

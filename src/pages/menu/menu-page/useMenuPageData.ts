@@ -15,8 +15,15 @@ import {
     type PublicMenu,
     unpublishMenu,
 } from '../../../lib/publicMenus';
+import {
+    fetchMyPublishedExercises,
+    publishExercise,
+    unpublishExercise,
+    type PublicExercise,
+} from '../../../lib/publicExercises';
 import { fetchTeacherExercises, fetchTeacherMenus, type TeacherExercise, type TeacherMenu } from '../../../lib/teacherContent';
 import { fetchTeacherMenuSettingsForClass } from '../../../lib/teacherMenuSettings';
+import { fetchAllTeacherItemOverrides } from '../../../lib/teacherItemOverrides';
 import type { UserProfileStore } from '../../../store/useAppStore';
 import { getCreatorNameById, getMinClassLevel } from '../menuPageUtils';
 import type { MenuTab } from './types';
@@ -56,12 +63,17 @@ export function useMenuPageData({
     const [editEx, setEditEx] = useState<CustomExercise | null>(null);
     const [showCustomMenu, setShowCustomMenu] = useState(false);
     const [showPublicBrowser, setShowPublicBrowser] = useState(false);
+    const [showPublicExerciseBrowser, setShowPublicExerciseBrowser] = useState(false);
     const [myPublishedMenus, setMyPublishedMenus] = useState<PublicMenu[]>([]);
+    const [myPublishedExercises, setMyPublishedExercises] = useState<PublicExercise[]>([]);
     const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
     const [teacherMenus, setTeacherMenus] = useState<TeacherMenu[]>([]);
     const [teacherExcludedExerciseIds, setTeacherExcludedExerciseIds] = useState<Set<string>>(new Set());
     const [teacherExcludedMenuIds, setTeacherExcludedMenuIds] = useState<Set<string>>(new Set());
     const [teacherRequiredExerciseIds, setTeacherRequiredExerciseIds] = useState<Set<string>>(new Set());
+    const [teacherHiddenExerciseIds, setTeacherHiddenExerciseIds] = useState<Set<string>>(new Set());
+    const [teacherHiddenMenuIds, setTeacherHiddenMenuIds] = useState<Set<string>>(new Set());
+    const [overrideMap, setOverrideMap] = useState<Map<string, { name: string | null; description: string | null }>>(new Map());
 
     const isTogetherMode = sessionUserIds.length > 1;
 
@@ -110,14 +122,16 @@ export function useMenuPageData({
 
         if (getAccountId()) {
             fetchMyPublishedMenus().then(setMyPublishedMenus).catch(console.warn);
+            fetchMyPublishedExercises().then(setMyPublishedExercises).catch(console.warn);
         }
 
-        // Load teacher content and settings
+        // Load teacher content, settings, and overrides
         try {
-            const [tExercises, tMenus, tSettings] = await Promise.all([
+            const [tExercises, tMenus, tSettings, tOverrides] = await Promise.all([
                 fetchTeacherExercises(),
                 fetchTeacherMenus(),
                 fetchTeacherMenuSettingsForClass(classLevel),
+                fetchAllTeacherItemOverrides(),
             ]);
 
             // Filter teacher content by class level
@@ -141,9 +155,24 @@ export function useMenuPageData({
             const requiredEx = new Set(
                 tSettings.filter(s => s.itemType === 'exercise' && s.status === 'required').map(s => s.itemId),
             );
+            const hiddenEx = new Set(
+                tSettings.filter(s => s.itemType === 'exercise' && s.status === 'hidden').map(s => s.itemId),
+            );
+            const hiddenMenu = new Set(
+                tSettings.filter(s => s.itemType === 'menu_group' && s.status === 'hidden').map(s => s.itemId),
+            );
             setTeacherExcludedExerciseIds(excludedEx);
             setTeacherExcludedMenuIds(excludedMenu);
             setTeacherRequiredExerciseIds(requiredEx);
+            setTeacherHiddenExerciseIds(hiddenEx);
+            setTeacherHiddenMenuIds(hiddenMenu);
+
+            // Build override lookup map
+            const oMap = new Map<string, { name: string | null; description: string | null }>();
+            for (const ov of tOverrides) {
+                oMap.set(`${ov.itemType}:${ov.itemId}`, { name: ov.nameOverride, description: ov.descriptionOverride });
+            }
+            setOverrideMap(oMap);
         } catch (err) {
             console.warn('[menu] Failed to load teacher content:', err);
         }
@@ -239,13 +268,57 @@ export function useMenuPageData({
         }
     };
 
-    // Merge built-in exercises with teacher exercises, filter out teacher-excluded
+    // ─── Exercise publish/unpublish ─────────────────
+
+    const findPublishedExercise = useCallback((exercise: CustomExercise): PublicExercise | undefined => {
+        return myPublishedExercises.find(
+            (pub) => pub.name === exercise.name
+                && pub.emoji === exercise.emoji
+                && pub.sec === exercise.sec,
+        );
+    }, [myPublishedExercises]);
+
+    const handlePublishExercise = async (exercise: CustomExercise) => {
+        if (!getAccountId()) return;
+        const authorName = currentUsers[0]?.name ?? 'ゲスト';
+        try {
+            await publishExercise(exercise, authorName);
+            alert('種目を公開しました！');
+            void loadCustomData();
+        } catch (error) {
+            console.warn('[menu] exercise publish failed:', error);
+            alert('公開に失敗しました');
+        }
+    };
+
+    const handleUnpublishExercise = async (exercise: CustomExercise) => {
+        const pub = findPublishedExercise(exercise);
+        if (!pub) return;
+        try {
+            await unpublishExercise(pub.id);
+            alert('種目を非公開にしました');
+            void loadCustomData();
+        } catch (error) {
+            console.warn('[menu] exercise unpublish failed:', error);
+            alert('非公開に失敗しました');
+        }
+    };
+
+    // Merge built-in exercises with teacher exercises
+    // hidden = completely invisible, excluded = visible but not in auto-generation
     const exercises = useMemo(() => {
         const builtIn = getExercisesByClass(classLevel)
-            .filter(e => !teacherExcludedExerciseIds.has(e.id));
+            .filter(e => !teacherHiddenExerciseIds.has(e.id))
+            .map(e => {
+                const ov = overrideMap.get(`exercise:${e.id}`);
+                if (ov) {
+                    return { ...e, name: ov.name ?? e.name, description: ov.description ?? e.description };
+                }
+                return e;
+            });
 
         const teacherAsExercise: Exercise[] = teacherExercises
-            .filter(te => !teacherExcludedExerciseIds.has(te.id))
+            .filter(te => !teacherHiddenExerciseIds.has(te.id))
             .map(te => ({
                 id: te.id,
                 name: te.name,
@@ -261,14 +334,23 @@ export function useMenuPageData({
             }));
 
         return [...builtIn, ...teacherAsExercise];
-    }, [classLevel, teacherExercises, teacherExcludedExerciseIds]);
+    }, [classLevel, teacherExercises, teacherHiddenExerciseIds, overrideMap]);
 
-    // Merge presets with teacher menus, filter out teacher-excluded
+    // Merge presets with teacher menus
+    // hidden = completely invisible, excluded = visible but not in auto-generation
     const mergedPresets = useMemo(() => {
-        const filteredPresets = presets.filter(p => !teacherExcludedMenuIds.has(p.id));
+        const filteredPresets = presets
+            .filter(p => !teacherHiddenMenuIds.has(p.id))
+            .map(p => {
+                const ov = overrideMap.get(`menu_group:${p.id}`);
+                if (ov) {
+                    return { ...p, name: ov.name ?? p.name, description: ov.description ?? p.description };
+                }
+                return p;
+            });
 
         const teacherAsGroup: MenuGroup[] = teacherMenus
-            .filter(tm => !teacherExcludedMenuIds.has(tm.id))
+            .filter(tm => !teacherHiddenMenuIds.has(tm.id))
             .map(tm => ({
                 id: tm.id,
                 name: tm.name,
@@ -279,7 +361,7 @@ export function useMenuPageData({
             }));
 
         return [...filteredPresets, ...teacherAsGroup];
-    }, [presets, teacherMenus, teacherExcludedMenuIds]);
+    }, [presets, teacherMenus, teacherHiddenMenuIds, overrideMap]);
 
     // Track teacher content IDs for badges
     const teacherExerciseIds = useMemo(
@@ -360,6 +442,12 @@ export function useMenuPageData({
         teacherMenuIds,
         teacherExcludedExerciseIds,
         teacherRequiredExerciseIds,
+        teacherHiddenExerciseIds,
         isNewTeacherContent,
+        showPublicExerciseBrowser,
+        setShowPublicExerciseBrowser,
+        findPublishedExercise,
+        handlePublishExercise,
+        handleUnpublishExercise,
     };
 }

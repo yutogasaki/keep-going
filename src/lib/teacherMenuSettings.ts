@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-export type MenuSettingStatus = 'required' | 'optional' | 'excluded';
+export type MenuSettingStatus = 'required' | 'optional' | 'excluded' | 'hidden';
 export type MenuSettingItemType = 'exercise' | 'menu_group';
 
 export interface TeacherMenuSetting {

@@ -3,6 +3,7 @@ import { getAccountId } from './sync';
 import { saveCustomGroup, type MenuGroup } from '../data/menuGroups';
 import { getCustomExercises, saveCustomExercise, type CustomExercise } from './db';
 import { EXERCISES } from '../data/exercises';
+import { publishExercise, fetchMyPublishedExercises, unpublishExercise } from './publicExercises';
 
 export interface CustomExerciseData {
     id: string;
@@ -42,6 +43,26 @@ export async function publishMenu(menu: MenuGroup, authorName: string): Promise<
             .map(id => allCustom.find(ex => ex.id === id))
             .filter((ex): ex is CustomExercise => !!ex)
             .map(ex => ({ id: ex.id, name: ex.name, sec: ex.sec, emoji: ex.emoji, hasSplit: ex.hasSplit }));
+    }
+
+    // Auto-publish custom exercises
+    if (customExerciseData.length > 0) {
+        try {
+            const myPublished = await fetchMyPublishedExercises();
+            for (const ex of customExerciseData) {
+                const alreadyPublished = myPublished.find(
+                    p => p.name === ex.name && p.emoji === ex.emoji && p.sec === ex.sec,
+                );
+                if (!alreadyPublished) {
+                    await publishExercise(
+                        { id: ex.id, name: ex.name, sec: ex.sec, emoji: ex.emoji, hasSplit: ex.hasSplit },
+                        authorName,
+                    );
+                }
+            }
+        } catch (e) {
+            console.warn('[publishMenu] auto-publish exercises failed:', e);
+        }
     }
 
     const { error } = await supabase.from('public_menus').insert({
@@ -241,6 +262,15 @@ export async function unpublishMenu(id: string): Promise<void> {
     const accountId = getAccountId();
     if (!accountId) return;
 
+    // 1. Get custom_exercise_data before deleting the menu
+    const { data: menuRow } = await supabase
+        .from('public_menus')
+        .select('custom_exercise_data')
+        .eq('id', id)
+        .eq('account_id', accountId)
+        .single();
+
+    // 2. Delete the menu
     const { error } = await supabase
         .from('public_menus')
         .delete()
@@ -248,6 +278,24 @@ export async function unpublishMenu(id: string): Promise<void> {
         .eq('account_id', accountId);
 
     if (error) throw error;
+
+    // 3. Auto-unpublish associated custom exercises
+    const customData = (menuRow?.custom_exercise_data as CustomExerciseData[]) ?? [];
+    if (customData.length > 0) {
+        try {
+            const myPublished = await fetchMyPublishedExercises();
+            for (const ex of customData) {
+                const pub = myPublished.find(
+                    p => p.name === ex.name && p.emoji === ex.emoji && p.sec === ex.sec,
+                );
+                if (pub) {
+                    await unpublishExercise(pub.id);
+                }
+            }
+        } catch (e) {
+            console.warn('[unpublishMenu] auto-unpublish exercises failed:', e);
+        }
+    }
 }
 
 // ─── Mapper ─────────────────────────────────────────

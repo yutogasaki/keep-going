@@ -6,7 +6,7 @@ CREATE TABLE teacher_menu_settings (
     item_id TEXT NOT NULL,
     item_type TEXT NOT NULL CHECK (item_type IN ('exercise', 'menu_group')),
     class_level TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'optional' CHECK (status IN ('required', 'optional', 'excluded')),
+    status TEXT NOT NULL DEFAULT 'optional' CHECK (status IN ('required', 'optional', 'excluded', 'hidden')),
     created_by TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),

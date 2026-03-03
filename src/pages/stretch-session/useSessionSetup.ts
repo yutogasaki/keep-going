@@ -103,7 +103,7 @@ export function useSessionSetup({
                 // Fetch teacher menu settings for class-level overrides
                 const teacherSettings = await fetchTeacherMenuSettingsForClass(classLevel);
                 const teacherExcludedIds = teacherSettings
-                    .filter(s => s.itemType === 'exercise' && s.status === 'excluded')
+                    .filter(s => s.itemType === 'exercise' && (s.status === 'excluded' || s.status === 'hidden'))
                     .map(s => s.itemId);
                 const teacherRequiredIds = teacherSettings
                     .filter(s => s.itemType === 'exercise' && s.status === 'required')

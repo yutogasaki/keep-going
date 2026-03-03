@@ -57,6 +57,7 @@ export function toCustomExerciseUpsertPayload(exercise: CustomExercise, accountI
         emoji: exercise.emoji,
         has_split: exercise.hasSplit ?? false,
         creator_id: exercise.creatorId ?? null,
+        description: exercise.description ?? null,
     };
 }
 
@@ -145,6 +146,7 @@ export function toLocalCustomExercise(cloudExercise: any): CustomExercise {
         sec: cloudExercise.sec,
         emoji: cloudExercise.emoji,
         hasSplit: cloudExercise.has_split ?? false,
+        description: cloudExercise.description ?? undefined,
         creatorId: cloudExercise.creator_id ?? undefined,
     };
 }
