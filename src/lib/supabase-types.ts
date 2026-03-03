@@ -214,6 +214,76 @@ export interface Database {
                 Update: Partial<Database['public']['Tables']['public_menus']['Insert']>;
                 Relationships: [];
             };
+            teacher_menu_settings: {
+                Row: {
+                    id: string;
+                    item_id: string;
+                    item_type: string;
+                    class_level: string;
+                    status: string;
+                    created_by: string;
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    item_id: string;
+                    item_type: string;
+                    class_level: string;
+                    status?: string;
+                    created_by: string;
+                };
+                Update: Partial<Database['public']['Tables']['teacher_menu_settings']['Insert']>;
+                Relationships: [];
+            };
+            teacher_exercises: {
+                Row: {
+                    id: string;
+                    name: string;
+                    sec: number;
+                    emoji: string;
+                    has_split: boolean;
+                    description: string | null;
+                    class_levels: string[];
+                    created_by: string;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    name: string;
+                    sec?: number;
+                    emoji?: string;
+                    has_split?: boolean;
+                    description?: string | null;
+                    class_levels?: string[];
+                    created_by: string;
+                };
+                Update: Partial<Database['public']['Tables']['teacher_exercises']['Insert']>;
+                Relationships: [];
+            };
+            teacher_menus: {
+                Row: {
+                    id: string;
+                    name: string;
+                    emoji: string;
+                    description: string | null;
+                    exercise_ids: string[];
+                    class_levels: string[];
+                    created_by: string;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    name: string;
+                    emoji?: string;
+                    description?: string | null;
+                    exercise_ids?: string[];
+                    class_levels?: string[];
+                    created_by: string;
+                };
+                Update: Partial<Database['public']['Tables']['teacher_menus']['Insert']>;
+                Relationships: [];
+            };
         };
         Views: Record<string, never>;
         Functions: {
