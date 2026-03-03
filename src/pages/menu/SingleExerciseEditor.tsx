@@ -149,6 +149,40 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                 />
             </div>
 
+            {/* Description */}
+            <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
+                <label style={{
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#2D3436',
+                    display: 'block',
+                    marginBottom: 12,
+                }}>
+                    せつめい
+                </label>
+                <textarea
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    placeholder="種目の説明（公開時に表示されます）"
+                    rows={3}
+                    style={{
+                        width: '100%',
+                        padding: '16px 20px',
+                        borderRadius: 16,
+                        border: '1px solid rgba(0,0,0,0.05)',
+                        background: '#F8F9FA',
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 14,
+                        color: '#2D3436',
+                        outline: 'none',
+                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)',
+                        transition: 'all 0.2s',
+                        resize: 'vertical',
+                    }}
+                />
+            </div>
+
             {/* Time Settings */}
             <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
                 <label style={{
@@ -239,40 +273,6 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                         />
                     </button>
                 </div>
-            </div>
-
-            {/* Description */}
-            <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
-                <label style={{
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: '#2D3436',
-                    display: 'block',
-                    marginBottom: 12,
-                }}>
-                    せつめい
-                </label>
-                <textarea
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                    placeholder="種目の説明（公開時に表示されます）"
-                    rows={3}
-                    style={{
-                        width: '100%',
-                        padding: '16px 20px',
-                        borderRadius: 16,
-                        border: '1px solid rgba(0,0,0,0.05)',
-                        background: '#F8F9FA',
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 14,
-                        color: '#2D3436',
-                        outline: 'none',
-                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)',
-                        transition: 'all 0.2s',
-                        resize: 'vertical',
-                    }}
-                />
             </div>
 
             <div style={{ flex: 1 }} />
