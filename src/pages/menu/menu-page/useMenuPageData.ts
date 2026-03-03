@@ -69,7 +69,7 @@ export function useMenuPageData({
     const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
     const [teacherMenus, setTeacherMenus] = useState<TeacherMenu[]>([]);
     const [teacherExcludedExerciseIds, setTeacherExcludedExerciseIds] = useState<Set<string>>(new Set());
-    const [teacherExcludedMenuIds, setTeacherExcludedMenuIds] = useState<Set<string>>(new Set());
+    const [, setTeacherExcludedMenuIds] = useState<Set<string>>(new Set());
     const [teacherRequiredExerciseIds, setTeacherRequiredExerciseIds] = useState<Set<string>>(new Set());
     const [teacherHiddenExerciseIds, setTeacherHiddenExerciseIds] = useState<Set<string>>(new Set());
     const [teacherHiddenMenuIds, setTeacherHiddenMenuIds] = useState<Set<string>>(new Set());

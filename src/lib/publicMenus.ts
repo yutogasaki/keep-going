@@ -265,7 +265,7 @@ export async function unpublishMenu(id: string): Promise<void> {
     // 1. Get custom_exercise_data before deleting the menu
     const { data: menuRow } = await supabase
         .from('public_menus')
-        .select('custom_exercise_data')
+        .select('*')
         .eq('id', id)
         .eq('account_id', accountId)
         .single();
@@ -280,7 +280,7 @@ export async function unpublishMenu(id: string): Promise<void> {
     if (error) throw error;
 
     // 3. Auto-unpublish associated custom exercises
-    const customData = (menuRow?.custom_exercise_data as CustomExerciseData[]) ?? [];
+    const customData = ((menuRow as any)?.custom_exercise_data as CustomExerciseData[]) ?? [];
     if (customData.length > 0) {
         try {
             const myPublished = await fetchMyPublishedExercises();

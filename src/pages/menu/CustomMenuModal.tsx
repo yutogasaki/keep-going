@@ -28,7 +28,7 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
     requiredExercises,
     excludedExercises,
     customExercises,
-    teacherExcludedExerciseIds,
+    teacherExcludedExerciseIds: _teacherExcludedExerciseIds,
     teacherRequiredExerciseIds,
     teacherHiddenExerciseIds,
     onClose,
