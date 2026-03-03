@@ -38,23 +38,24 @@ export interface Exercise {
     hasSplit?: boolean;
     phase: ExercisePhase;
     reading?: string; // Phonetic reading for TTS (e.g., "かいきゃく" for "開脚")
+    description?: string;
 }
 
 export const EXERCISES: Exercise[] = [
     // Stretches (Warmups)
-    { id: 'S07', name: 'ポイント＆フレックス', sec: 60, type: 'stretch', internal: 'P30・F30', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🦶', phase: 'warmup' },
-    { id: 'S06', name: 'ゆりかご', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🛏️', phase: 'warmup' },
-    { id: 'S08', name: 'どんぐり', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🌰', phase: 'warmup' },
+    { id: 'S07', name: 'ポイント＆フレックス', sec: 60, type: 'stretch', internal: 'P30・F30', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🦶', phase: 'warmup', description: 'つまさきをピンとのばしたり、ぐっとまげたり。あしのゆびまでバレリーナ！' },
+    { id: 'S06', name: 'ゆりかご', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🛏️', phase: 'warmup', description: 'せなかをまるくして、ゆらゆらゆれよう。せぼねがほぐれてきもちいいよ！' },
+    { id: 'S08', name: 'どんぐり', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🌰', phase: 'warmup', description: 'からだをちいさくまるめて、どんぐりみたいにコロコロ。リラックスしよう！' },
     // Stretches (Main)
-    { id: 'S01', name: '開脚', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🦵', phase: 'main', reading: 'かいきゃく' },
-    { id: 'S02', name: '前屈', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🙇', phase: 'main', reading: 'ぜんくつ' },
-    { id: 'S03', name: '前後開脚', sec: 60, type: 'stretch', internal: 'R30→L30', classes: ['初級', '中級', '上級'], priority: 'medium', emoji: '🩰', phase: 'main', hasSplit: true, reading: 'ぜんごかいきゃく' },
-    { id: 'S05', name: 'アシカさん', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🦭', phase: 'main' },
+    { id: 'S01', name: '開脚', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🦵', phase: 'main', reading: 'かいきゃく', description: 'あしをひろげてゆかにすわろう。まいにちすこしずつ、もっとひらくよ！' },
+    { id: 'S02', name: '前屈', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🙇', phase: 'main', reading: 'ぜんくつ', description: 'あしをまっすぐのばして、まえにたおれよう。あしのうらがのびるかな？' },
+    { id: 'S03', name: '前後開脚', sec: 60, type: 'stretch', internal: 'R30→L30', classes: ['初級', '中級', '上級'], priority: 'medium', emoji: '🩰', phase: 'main', hasSplit: true, reading: 'ぜんごかいきゃく', description: 'まえとうしろにあしをひらくスプリッツ。バレリーナのきほんだよ！' },
+    { id: 'S05', name: 'アシカさん', sec: 30, type: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🦭', phase: 'main', description: 'うつぶせからうでをのばして、アシカさんみたいにむねをそらそう！' },
     // Core & Balance
-    { id: 'S04', name: 'ブリッジ', sec: 30, type: 'stretch', internal: 'single', classes: ['初級', '中級', '上級'], priority: 'medium', emoji: '🌈', phase: 'core' },
-    { id: 'S10', name: 'Y字バランス', sec: 60, type: 'stretch', internal: 'R30→L30', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💃', phase: 'core', hasSplit: true, reading: 'わいじばらんす' },
-    { id: 'C01', name: 'プランク', sec: 30, type: 'core', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💪', phase: 'core' },
-    { id: 'C02', name: 'サイドプランク', sec: 60, type: 'core', internal: 'R30→L30', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🏋️', phase: 'core', hasSplit: true },
+    { id: 'S04', name: 'ブリッジ', sec: 30, type: 'stretch', internal: 'single', classes: ['初級', '中級', '上級'], priority: 'medium', emoji: '🌈', phase: 'core', description: 'あおむけからグーンとおなかをもちあげよう。ぜんしんのちからをつかうよ！' },
+    { id: 'S10', name: 'Y字バランス', sec: 60, type: 'stretch', internal: 'R30→L30', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💃', phase: 'core', hasSplit: true, reading: 'わいじばらんす', description: 'かたあしでたって、もうかたほうのあしをたかくあげよう。バランスにちょうせん！' },
+    { id: 'C01', name: 'プランク', sec: 30, type: 'core', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💪', phase: 'core', description: 'うでとつまさきでからだをまっすぐキープ。おなかにちからをいれてね！' },
+    { id: 'C02', name: 'サイドプランク', sec: 60, type: 'core', internal: 'R30→L30', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🏋️', phase: 'core', hasSplit: true, description: 'よこむきでからだをささえよう。わきばらがつよくなるよ！' },
 ];
 
 // Get exercise by ID

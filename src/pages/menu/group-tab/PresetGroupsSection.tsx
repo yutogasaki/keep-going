@@ -5,9 +5,11 @@ import { GroupCard } from '../GroupCard';
 interface PresetGroupsSectionProps {
     groups: MenuGroup[];
     onTap: (group: MenuGroup) => void;
+    teacherMenuIds?: Set<string>;
+    isNewTeacherContent?: (id: string) => boolean;
 }
 
-export const PresetGroupsSection: React.FC<PresetGroupsSectionProps> = ({ groups, onTap }) => {
+export const PresetGroupsSection: React.FC<PresetGroupsSectionProps> = ({ groups, onTap, teacherMenuIds, isNewTeacherContent }) => {
     return (
         <section>
             <h2 style={{
@@ -27,6 +29,8 @@ export const PresetGroupsSection: React.FC<PresetGroupsSectionProps> = ({ groups
                         group={group}
                         index={index}
                         onTap={() => onTap(group)}
+                        isTeacher={teacherMenuIds?.has(group.id)}
+                        isNew={isNewTeacherContent?.(group.id)}
                     />
                 ))}
             </div>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DEFAULT_SESSION_TARGET_SECONDS, getExercisesByClass } from '../../../data/exercises';
+import { DEFAULT_SESSION_TARGET_SECONDS, getExercisesByClass, type Exercise } from '../../../data/exercises';
 import {
     deleteCustomGroup,
     getCustomGroups,
@@ -15,9 +15,13 @@ import {
     type PublicMenu,
     unpublishMenu,
 } from '../../../lib/publicMenus';
+import { fetchTeacherExercises, fetchTeacherMenus, type TeacherExercise, type TeacherMenu } from '../../../lib/teacherContent';
+import { fetchTeacherMenuSettingsForClass } from '../../../lib/teacherMenuSettings';
 import type { UserProfileStore } from '../../../store/useAppStore';
 import { getCreatorNameById, getMinClassLevel } from '../menuPageUtils';
 import type { MenuTab } from './types';
+
+const NEW_BADGE_DAYS = 14;
 
 interface UseMenuPageDataParams {
     users: UserProfileStore[];
@@ -53,6 +57,11 @@ export function useMenuPageData({
     const [showCustomMenu, setShowCustomMenu] = useState(false);
     const [showPublicBrowser, setShowPublicBrowser] = useState(false);
     const [myPublishedMenus, setMyPublishedMenus] = useState<PublicMenu[]>([]);
+    const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
+    const [teacherMenus, setTeacherMenus] = useState<TeacherMenu[]>([]);
+    const [teacherExcludedExerciseIds, setTeacherExcludedExerciseIds] = useState<Set<string>>(new Set());
+    const [teacherExcludedMenuIds, setTeacherExcludedMenuIds] = useState<Set<string>>(new Set());
+    const [teacherRequiredExerciseIds, setTeacherRequiredExerciseIds] = useState<Set<string>>(new Set());
 
     const isTogetherMode = sessionUserIds.length > 1;
 
@@ -102,7 +111,43 @@ export function useMenuPageData({
         if (getAccountId()) {
             fetchMyPublishedMenus().then(setMyPublishedMenus).catch(console.warn);
         }
-    }, [isTogetherMode, sessionUserIds, users]);
+
+        // Load teacher content and settings
+        try {
+            const [tExercises, tMenus, tSettings] = await Promise.all([
+                fetchTeacherExercises(),
+                fetchTeacherMenus(),
+                fetchTeacherMenuSettingsForClass(classLevel),
+            ]);
+
+            // Filter teacher content by class level
+            const filteredExercises = tExercises.filter(
+                te => te.classLevels.length === 0 || te.classLevels.includes(classLevel),
+            );
+            const filteredMenus = tMenus.filter(
+                tm => tm.classLevels.length === 0 || tm.classLevels.includes(classLevel),
+            );
+
+            setTeacherExercises(filteredExercises);
+            setTeacherMenus(filteredMenus);
+
+            // Parse teacher settings
+            const excludedEx = new Set(
+                tSettings.filter(s => s.itemType === 'exercise' && s.status === 'excluded').map(s => s.itemId),
+            );
+            const excludedMenu = new Set(
+                tSettings.filter(s => s.itemType === 'menu_group' && s.status === 'excluded').map(s => s.itemId),
+            );
+            const requiredEx = new Set(
+                tSettings.filter(s => s.itemType === 'exercise' && s.status === 'required').map(s => s.itemId),
+            );
+            setTeacherExcludedExerciseIds(excludedEx);
+            setTeacherExcludedMenuIds(excludedMenu);
+            setTeacherRequiredExerciseIds(requiredEx);
+        } catch (err) {
+            console.warn('[menu] Failed to load teacher content:', err);
+        }
+    }, [isTogetherMode, sessionUserIds, users, classLevel]);
 
     useEffect(() => {
         setPresets(getPresetsForClass(classLevel));
@@ -194,7 +239,72 @@ export function useMenuPageData({
         }
     };
 
-    const exercises = getExercisesByClass(classLevel);
+    // Merge built-in exercises with teacher exercises, filter out teacher-excluded
+    const exercises = useMemo(() => {
+        const builtIn = getExercisesByClass(classLevel)
+            .filter(e => !teacherExcludedExerciseIds.has(e.id));
+
+        const teacherAsExercise: Exercise[] = teacherExercises
+            .filter(te => !teacherExcludedExerciseIds.has(te.id))
+            .map(te => ({
+                id: te.id,
+                name: te.name,
+                sec: te.sec,
+                emoji: te.emoji,
+                hasSplit: te.hasSplit,
+                description: te.description,
+                type: 'stretch' as const,
+                internal: te.hasSplit ? 'R30→L30' : 'single',
+                classes: ['プレ' as const, '初級' as const, '中級' as const, '上級' as const],
+                priority: 'medium' as const,
+                phase: 'main' as const,
+            }));
+
+        return [...builtIn, ...teacherAsExercise];
+    }, [classLevel, teacherExercises, teacherExcludedExerciseIds]);
+
+    // Merge presets with teacher menus, filter out teacher-excluded
+    const mergedPresets = useMemo(() => {
+        const filteredPresets = presets.filter(p => !teacherExcludedMenuIds.has(p.id));
+
+        const teacherAsGroup: MenuGroup[] = teacherMenus
+            .filter(tm => !teacherExcludedMenuIds.has(tm.id))
+            .map(tm => ({
+                id: tm.id,
+                name: tm.name,
+                emoji: tm.emoji,
+                description: tm.description,
+                exerciseIds: tm.exerciseIds,
+                isPreset: true,
+            }));
+
+        return [...filteredPresets, ...teacherAsGroup];
+    }, [presets, teacherMenus, teacherExcludedMenuIds]);
+
+    // Track teacher content IDs for badges
+    const teacherExerciseIds = useMemo(
+        () => new Set(teacherExercises.map(te => te.id)),
+        [teacherExercises],
+    );
+    const teacherMenuIds = useMemo(
+        () => new Set(teacherMenus.map(tm => tm.id)),
+        [teacherMenus],
+    );
+
+    const isNewTeacherContent = useCallback((id: string): boolean => {
+        const te = teacherExercises.find(e => e.id === id);
+        if (te) {
+            const daysDiff = (Date.now() - new Date(te.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+            return daysDiff <= NEW_BADGE_DAYS;
+        }
+        const tm = teacherMenus.find(m => m.id === id);
+        if (tm) {
+            const daysDiff = (Date.now() - new Date(tm.createdAt).getTime()) / (1000 * 60 * 60 * 24);
+            return daysDiff <= NEW_BADGE_DAYS;
+        }
+        return false;
+    }, [teacherExercises, teacherMenus]);
+
     const autoMenuMinutes = Math.ceil(DEFAULT_SESSION_TARGET_SECONDS / 60);
     const canPublish = !!getAccountId();
 
@@ -202,7 +312,7 @@ export function useMenuPageData({
         tab,
         setTab,
         classLevel,
-        presets,
+        presets: mergedPresets,
         customGroups,
         customExercises,
         showCreateGroup,
@@ -246,5 +356,10 @@ export function useMenuPageData({
         handleStartCustomExercise: (exerciseId: string) => {
             startSessionWithExercises([exerciseId]);
         },
+        teacherExerciseIds,
+        teacherMenuIds,
+        teacherExcludedExerciseIds,
+        teacherRequiredExerciseIds,
+        isNewTeacherContent,
     };
 }

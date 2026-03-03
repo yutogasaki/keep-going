@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ArrowLeft, RefreshCw, Trophy, Users } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Settings, Trophy, Users } from 'lucide-react';
 import { fetchAllStudents, calculateStreak, type StudentSummary } from '../lib/teacher';
 import { getTodayKey, getDateKeyOffset } from '../lib/db';
 import { CLASS_LEVELS } from '../data/exercises';
@@ -7,6 +7,7 @@ import { fetchAllChallenges, type Challenge } from '../lib/challenges';
 import { useAuth } from '../contexts/AuthContext';
 import { ChallengeManagement } from './teacher-dashboard/ChallengeManagement';
 import { StudentsSection } from './teacher-dashboard/StudentsSection';
+import { MenuSettingsSection } from './teacher-dashboard/MenuSettingsSection';
 import type { IndividualStudent, WeeklyStats } from './teacher-dashboard/types';
 
 const CLASS_ORDER = CLASS_LEVELS.map((c) => c.id);
@@ -15,7 +16,7 @@ interface TeacherDashboardProps {
     onBack: () => void;
 }
 
-type DashboardTab = 'students' | 'challenges';
+type DashboardTab = 'students' | 'challenges' | 'menu-settings';
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) => {
     const { user } = useAuth();
@@ -185,8 +186,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                     先生ダッシュボード
                 </h1>
                 <button
-                    onClick={activeTab === 'students' ? load : loadChallenges}
-                    disabled={activeTab === 'students' ? loading : challengesLoading}
+                    onClick={activeTab === 'students' ? load : activeTab === 'challenges' ? loadChallenges : () => {}}
+                    disabled={activeTab === 'students' ? loading : activeTab === 'challenges' ? challengesLoading : false}
                     style={{
                         width: 36,
                         height: 36,
@@ -214,6 +215,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                 {([
                     { id: 'students' as DashboardTab, label: '生徒一覧', icon: <Users size={14} /> },
                     { id: 'challenges' as DashboardTab, label: 'チャレンジ', icon: <Trophy size={14} /> },
+                    { id: 'menu-settings' as DashboardTab, label: 'メニュー設定', icon: <Settings size={14} /> },
                 ]).map((tab) => (
                     <button
                         key={tab.id}
@@ -251,6 +253,13 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                     teacherEmail={user?.email ?? ''}
                     onCreated={loadChallenges}
                     onDeleted={loadChallenges}
+                />
+            )}
+
+            {activeTab === 'menu-settings' && (
+                <MenuSettingsSection
+                    teacherEmail={user?.email ?? ''}
+                    loading={false}
                 />
             )}
 

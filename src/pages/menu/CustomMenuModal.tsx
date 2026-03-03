@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { Lock, X } from 'lucide-react';
 import { ExerciseIcon } from '../../components/ExerciseIcon';
 import { EXERCISES } from '../../data/exercises';
 import type { CustomExercise } from '../../lib/db';
@@ -12,6 +12,8 @@ interface CustomMenuModalProps {
     requiredExercises: string[];
     excludedExercises: string[];
     customExercises: CustomExercise[];
+    teacherExcludedExerciseIds?: Set<string>;
+    teacherRequiredExerciseIds?: Set<string>;
     onClose: () => void;
     onSetDailyTargetMinutes: (mins: number) => void;
     onSetExcludedExercises: (ids: string[]) => void;
@@ -25,6 +27,8 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
     requiredExercises,
     excludedExercises,
     customExercises,
+    teacherExcludedExerciseIds,
+    teacherRequiredExerciseIds,
     onClose,
     onSetDailyTargetMinutes,
     onSetExcludedExercises,
@@ -175,11 +179,15 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                     </div>
 
                     <div>
-                        {[...EXERCISES, ...customExercises].map(exercise => {
-                            const isRequired = requiredExercises.includes(exercise.id);
-                            const isExcluded = excludedExercises.includes(exercise.id);
+                        {[...EXERCISES, ...customExercises]
+                            .filter(exercise => !teacherExcludedExerciseIds?.has(exercise.id))
+                            .map(exercise => {
+                            const isTeacherRequired = teacherRequiredExerciseIds?.has(exercise.id);
+                            const isRequired = isTeacherRequired || requiredExercises.includes(exercise.id);
+                            const isExcluded = !isRequired && excludedExercises.includes(exercise.id);
 
                             const handleCycle = () => {
+                                if (isTeacherRequired) return; // Teacher-locked, no cycling
                                 if (isRequired) {
                                     onSetRequiredExercises(requiredExercises.filter(id => id !== exercise.id));
                                 } else if (!isExcluded) {
@@ -240,24 +248,44 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                                         </div>
                                     </div>
 
-                                    <button
-                                        onClick={handleCycle}
-                                        style={{
+                                    {isTeacherRequired ? (
+                                        <div style={{
                                             minWidth: 70,
                                             padding: '8px 12px',
                                             borderRadius: 999,
-                                            border: 'none',
+                                            background: '#E8F8F0',
                                             fontFamily: "'Noto Sans JP', sans-serif",
                                             fontSize: 12,
                                             fontWeight: 700,
-                                            cursor: 'pointer',
-                                            background: isRequired ? '#E8F8F0' : isExcluded ? '#FFE4E1' : '#F8F9FA',
-                                            color: isRequired ? '#2BBAA0' : isExcluded ? '#E17055' : '#8395A7',
-                                            transition: 'all 0.2s ease',
-                                        }}
-                                    >
-                                        {isRequired ? '★ 必須' : isExcluded ? '🔴 除外' : '⚪ おまかせ'}
-                                    </button>
+                                            color: '#2BBAA0',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: 4,
+                                        }}>
+                                            <Lock size={10} />
+                                            ★ 必須
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={handleCycle}
+                                            style={{
+                                                minWidth: 70,
+                                                padding: '8px 12px',
+                                                borderRadius: 999,
+                                                border: 'none',
+                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                fontSize: 12,
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                background: isRequired ? '#E8F8F0' : isExcluded ? '#FFE4E1' : '#F8F9FA',
+                                                color: isRequired ? '#2BBAA0' : isExcluded ? '#E17055' : '#8395A7',
+                                                transition: 'all 0.2s ease',
+                                            }}
+                                        >
+                                            {isRequired ? '★ 必須' : isExcluded ? '🔴 除外' : '⚪ おまかせ'}
+                                        </button>
+                                    )}
                                 </div>
                             );
                         })}

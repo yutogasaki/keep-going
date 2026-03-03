@@ -6,6 +6,8 @@ import {
     type Exercise,
 } from '../../data/exercises';
 import { getAllSessions, getCustomExercises, getTodayKey } from '../../lib/db';
+import { fetchTeacherMenuSettingsForClass } from '../../lib/teacherMenuSettings';
+import { fetchTeacherExercises } from '../../lib/teacherContent';
 import type { UserProfileStore } from '../../store/useAppStore';
 
 interface UseSessionSetupParams {
@@ -81,7 +83,31 @@ export function useSessionSetup({
             setIsLoading(true);
             try {
                 const customExList = await getCustomExercises();
-                const allExercises = [...EXERCISES, ...customExList];
+
+                // Fetch teacher-created exercises and add to custom pool
+                const teacherExList = await fetchTeacherExercises();
+                const teacherExForClass = teacherExList.filter(
+                    te => te.classLevels.length === 0 || te.classLevels.includes(classLevel)
+                );
+                const teacherAsCustom = teacherExForClass.map(te => ({
+                    id: te.id,
+                    name: te.name,
+                    sec: te.sec,
+                    emoji: te.emoji,
+                    hasSplit: te.hasSplit,
+                }));
+                const allCustomPool = [...customExList, ...teacherAsCustom];
+
+                const allExercises = [...EXERCISES, ...allCustomPool];
+
+                // Fetch teacher menu settings for class-level overrides
+                const teacherSettings = await fetchTeacherMenuSettingsForClass(classLevel);
+                const teacherExcludedIds = teacherSettings
+                    .filter(s => s.itemType === 'exercise' && s.status === 'excluded')
+                    .map(s => s.itemId);
+                const teacherRequiredIds = teacherSettings
+                    .filter(s => s.itemType === 'exercise' && s.status === 'required')
+                    .map(s => s.itemId);
 
                 if (!sessionExerciseIds) {
                     const allSessions = await getAllSessions();
@@ -96,16 +122,23 @@ export function useSessionSetup({
                     });
 
                     const todaySessions = allSessions.filter((session) => session.date === getTodayKey());
-                    const todayExcludedIds = Array.from(new Set([
+                    // Merge teacher settings with student settings (teacher takes priority)
+                    const mergedExcluded = Array.from(new Set([
                         ...todaySessions.flatMap((session) => [...session.exerciseIds, ...session.skippedIds]),
                         ...globalExcludedIds,
-                    ]));
+                        ...teacherExcludedIds,
+                    ])).filter(id => !teacherRequiredIds.includes(id));
+
+                    const mergedRequired = Array.from(new Set([
+                        ...globalRequiredIds,
+                        ...teacherRequiredIds,
+                    ])).filter(id => !teacherExcludedIds.includes(id));
 
                     setSessionExercises(generateSession(classLevel, {
-                        excludedIds: todayExcludedIds,
-                        requiredIds: globalRequiredIds,
+                        excludedIds: mergedExcluded,
+                        requiredIds: mergedRequired,
                         targetSeconds: dailyTargetMinutes * 60,
-                        customPool: customExList,
+                        customPool: allCustomPool,
                         historicalCounts,
                     }));
                     return;

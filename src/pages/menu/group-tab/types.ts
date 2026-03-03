@@ -21,4 +21,6 @@ export interface MenuGroupTabProps {
     onUnpublishGroup: (group: MenuGroup) => void;
     findPublishedMenu: (group: MenuGroup) => PublicMenu | undefined;
     onOpenPublicBrowser: () => void;
+    teacherMenuIds?: Set<string>;
+    isNewTeacherContent?: (id: string) => boolean;
 }

@@ -17,9 +17,11 @@ interface GroupCardProps {
     isCustom?: boolean;
     isPublished?: boolean;
     downloadCount?: number;
+    isTeacher?: boolean;
+    isNew?: boolean;
 }
 
-export const GroupCard: React.FC<GroupCardProps> = ({ group, index, creatorName, onTap, onEdit, onDelete, onPublish, onUnpublish, isCustom, isPublished, downloadCount }) => {
+export const GroupCard: React.FC<GroupCardProps> = ({ group, index, creatorName, onTap, onEdit, onDelete, onPublish, onUnpublish, isCustom, isPublished, downloadCount, isTeacher, isNew }) => {
     const [expanded, setExpanded] = useState(false);
     const totalSec = calculateTotalSeconds(group.exerciseIds);
     const minutes = Math.ceil(totalSec / 60);
@@ -66,6 +68,38 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, index, creatorName,
                         marginBottom: 2,
                     }}>
                         {group.name}
+                        {isTeacher && (
+                            <span style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 9,
+                                fontWeight: 700,
+                                color: '#0984E3',
+                                background: 'rgba(9, 132, 227, 0.1)',
+                                padding: '1px 5px',
+                                borderRadius: 6,
+                                marginLeft: 6,
+                                display: 'inline-block',
+                                verticalAlign: 'middle',
+                            }}>
+                                先生
+                            </span>
+                        )}
+                        {isNew && (
+                            <span style={{
+                                fontFamily: "'Outfit', sans-serif",
+                                fontSize: 9,
+                                fontWeight: 700,
+                                color: '#FFF',
+                                background: '#FF6B6B',
+                                padding: '1px 5px',
+                                borderRadius: 6,
+                                marginLeft: 4,
+                                display: 'inline-block',
+                                verticalAlign: 'middle',
+                            }}>
+                                New
+                            </span>
+                        )}
                         {creatorName && (
                             <span style={{
                                 fontFamily: "'Noto Sans JP', sans-serif",

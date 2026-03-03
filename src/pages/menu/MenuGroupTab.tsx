@@ -25,6 +25,8 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
     onUnpublishGroup,
     findPublishedMenu,
     onOpenPublicBrowser,
+    teacherMenuIds,
+    isNewTeacherContent,
 }) => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '0 20px' }}>
@@ -40,6 +42,8 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
             <PresetGroupsSection
                 groups={presets}
                 onTap={onGroupTap}
+                teacherMenuIds={teacherMenuIds}
+                isNewTeacherContent={isNewTeacherContent}
             />
 
             <CustomGroupsSection

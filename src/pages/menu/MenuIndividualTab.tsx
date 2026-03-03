@@ -15,6 +15,8 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps> = ({
     onDeleteCustomExercise,
     onStartCustomExercise,
     onCreateCustomExercise,
+    teacherExerciseIds,
+    isNewTeacherContent,
 }) => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '0 20px' }}>
@@ -22,6 +24,8 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps> = ({
                 exercises={exercises}
                 requiredExerciseIds={requiredExercises}
                 onStartExercise={onStartExercise}
+                teacherExerciseIds={teacherExerciseIds}
+                isNewTeacherContent={isNewTeacherContent}
             />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>

@@ -1,0 +1,99 @@
+import { supabase } from './supabase';
+
+export type MenuSettingStatus = 'required' | 'optional' | 'excluded';
+export type MenuSettingItemType = 'exercise' | 'menu_group';
+
+export interface TeacherMenuSetting {
+    id: string;
+    itemId: string;
+    itemType: MenuSettingItemType;
+    classLevel: string;
+    status: MenuSettingStatus;
+    createdBy: string;
+}
+
+// ─── Cache ───────────────────────────────────────────
+
+let cachedSettings: TeacherMenuSetting[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+export function invalidateSettingsCache(): void {
+    cachedSettings = null;
+}
+
+// ─── Fetch ───────────────────────────────────────────
+
+export async function fetchAllTeacherMenuSettings(forceRefresh = false): Promise<TeacherMenuSetting[]> {
+    if (!supabase) return [];
+    if (!forceRefresh && cachedSettings && Date.now() - cacheTimestamp < CACHE_TTL) {
+        return cachedSettings;
+    }
+
+    const { data, error } = await supabase
+        .from('teacher_menu_settings')
+        .select('*');
+
+    if (error) {
+        console.warn('[teacherMenuSettings] fetch failed:', error);
+        return cachedSettings ?? [];
+    }
+
+    cachedSettings = (data ?? []).map(mapSetting);
+    cacheTimestamp = Date.now();
+    return cachedSettings;
+}
+
+export async function fetchTeacherMenuSettingsForClass(classLevel: string): Promise<TeacherMenuSetting[]> {
+    const all = await fetchAllTeacherMenuSettings();
+    return all.filter(s => s.classLevel === classLevel);
+}
+
+// ─── Upsert / Delete ─────────────────────────────────
+
+export async function upsertTeacherMenuSetting(
+    itemId: string,
+    itemType: MenuSettingItemType,
+    classLevel: string,
+    status: MenuSettingStatus,
+    createdBy: string,
+): Promise<void> {
+    if (!supabase) return;
+
+    if (status === 'optional') {
+        // Delete the row to revert to default
+        await supabase
+            .from('teacher_menu_settings')
+            .delete()
+            .eq('item_id', itemId)
+            .eq('item_type', itemType)
+            .eq('class_level', classLevel);
+    } else {
+        const { error } = await supabase
+            .from('teacher_menu_settings')
+            .upsert({
+                item_id: itemId,
+                item_type: itemType,
+                class_level: classLevel,
+                status,
+                created_by: createdBy,
+            }, { onConflict: 'item_id,item_type,class_level' });
+
+        if (error) throw error;
+    }
+
+    invalidateSettingsCache();
+}
+
+// ─── Mapper ──────────────────────────────────────────
+
+function mapSetting(row: any): TeacherMenuSetting {
+    return {
+        id: row.id,
+        itemId: row.item_id,
+        itemType: row.item_type,
+        classLevel: row.class_level,
+        status: row.status,
+        createdBy: row.created_by,
+    };
+}

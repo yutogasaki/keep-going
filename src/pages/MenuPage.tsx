@@ -60,6 +60,11 @@ export const MenuPage: React.FC = () => {
         handleUnpublishGroup,
         handleStartSingleExercise,
         handleStartCustomExercise,
+        teacherExerciseIds,
+        teacherMenuIds,
+        teacherExcludedExerciseIds,
+        teacherRequiredExerciseIds,
+        isNewTeacherContent,
     } = useMenuPageData({
         users,
         sessionUserIds,
@@ -134,6 +139,8 @@ export const MenuPage: React.FC = () => {
                     onUnpublishGroup={handleUnpublishGroup}
                     findPublishedMenu={findPublishedMenu}
                     onOpenPublicBrowser={() => setShowPublicBrowser(true)}
+                    teacherMenuIds={teacherMenuIds}
+                    isNewTeacherContent={isNewTeacherContent}
                 />
             )}
 
@@ -149,6 +156,8 @@ export const MenuPage: React.FC = () => {
                     onDeleteCustomExercise={handleDeleteEx}
                     onStartCustomExercise={handleStartCustomExercise}
                     onCreateCustomExercise={() => setShowCreateEx(true)}
+                    teacherExerciseIds={teacherExerciseIds}
+                    isNewTeacherContent={isNewTeacherContent}
                 />
             )}
 
@@ -159,6 +168,8 @@ export const MenuPage: React.FC = () => {
                 requiredExercises={requiredExercises}
                 excludedExercises={excludedExercises}
                 customExercises={customExercises}
+                teacherExcludedExerciseIds={teacherExcludedExerciseIds}
+                teacherRequiredExerciseIds={teacherRequiredExerciseIds}
                 onClose={() => setShowCustomMenu(false)}
                 onSetDailyTargetMinutes={setDailyTargetMinutes}
                 onSetExcludedExercises={setExcludedExercises}

@@ -12,4 +12,6 @@ export interface MenuIndividualTabProps {
     onDeleteCustomExercise: (exerciseId: string) => void;
     onStartCustomExercise: (exerciseId: string) => void;
     onCreateCustomExercise: () => void;
+    teacherExerciseIds?: Set<string>;
+    isNewTeacherContent?: (id: string) => boolean;
 }
