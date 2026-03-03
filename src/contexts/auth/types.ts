@@ -1,0 +1,24 @@
+import type { AuthError, User } from '@supabase/supabase-js';
+import type { ConflictScenario } from '../../lib/sync';
+
+export type LoginContext = 'onboarding' | 'settings' | null;
+
+export interface AuthContextValue {
+    user: User | null;
+    isLoading: boolean;
+    isSyncing: boolean;
+    isAnonymous: boolean;
+    loginContext: LoginContext;
+    setLoginContext: (ctx: LoginContext) => void;
+    conflictScenario: ConflictScenario | null;
+    resolveConflict: (choice: 'cloud' | 'local') => Promise<void>;
+    cancelLogin: () => Promise<void>;
+    isTeacher: boolean;
+    isDeveloper: boolean;
+    toastMessage: string | null;
+    clearToast: () => void;
+    signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+    signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+    signInWithGoogle: () => Promise<{ error: AuthError | null }>;
+    signOut: () => Promise<void>;
+}

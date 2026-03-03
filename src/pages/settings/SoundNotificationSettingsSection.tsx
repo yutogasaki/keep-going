@@ -1,26 +1,28 @@
 import React from 'react';
-import { Bell, Clock, Mic, Music, Smartphone, Volume2 } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { audio } from '../../lib/audio';
-import { ToggleButton } from './ToggleButton';
+import { VolumeCard } from './sound-notification/VolumeCard';
+import { AudioTogglesCard } from './sound-notification/AudioTogglesCard';
+import { HapticCard } from './sound-notification/HapticCard';
+import { NotificationCard } from './sound-notification/NotificationCard';
 
 export const SoundNotificationSettingsSection: React.FC = () => {
-    const soundVolume = useAppStore(s => s.soundVolume);
-    const setSoundVolume = useAppStore(s => s.setSoundVolume);
-    const ttsEnabled = useAppStore(s => s.ttsEnabled);
-    const setTtsEnabled = useAppStore(s => s.setTtsEnabled);
-    const bgmEnabled = useAppStore(s => s.bgmEnabled);
-    const setBgmEnabled = useAppStore(s => s.setBgmEnabled);
-    const hapticEnabled = useAppStore(s => s.hapticEnabled);
-    const setHapticEnabled = useAppStore(s => s.setHapticEnabled);
-    const notificationsEnabled = useAppStore(s => s.notificationsEnabled);
-    const setNotificationsEnabled = useAppStore(s => s.setNotificationsEnabled);
-    const notificationTime = useAppStore(s => s.notificationTime);
-    const setNotificationTime = useAppStore(s => s.setNotificationTime);
+    const soundVolume = useAppStore((state) => state.soundVolume);
+    const setSoundVolume = useAppStore((state) => state.setSoundVolume);
+    const ttsEnabled = useAppStore((state) => state.ttsEnabled);
+    const setTtsEnabled = useAppStore((state) => state.setTtsEnabled);
+    const bgmEnabled = useAppStore((state) => state.bgmEnabled);
+    const setBgmEnabled = useAppStore((state) => state.setBgmEnabled);
+    const hapticEnabled = useAppStore((state) => state.hapticEnabled);
+    const setHapticEnabled = useAppStore((state) => state.setHapticEnabled);
+    const notificationsEnabled = useAppStore((state) => state.notificationsEnabled);
+    const setNotificationsEnabled = useAppStore((state) => state.setNotificationsEnabled);
+    const notificationTime = useAppStore((state) => state.notificationTime);
+    const setNotificationTime = useAppStore((state) => state.setNotificationTime);
 
-    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = parseFloat(e.target.value);
-        setSoundVolume(val);
+    const handleVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = parseFloat(event.target.value);
+        setSoundVolume(value);
         audio.playTick();
     };
 
@@ -44,253 +46,37 @@ export const SoundNotificationSettingsSection: React.FC = () => {
         }
     };
 
+    const toggleTts = () => {
+        const next = !ttsEnabled;
+        setTtsEnabled(next);
+        if (next) {
+            audio.initTTS();
+            audio.speak('音声ガイダンスをオンにしました');
+        }
+    };
+
     return (
         <>
-            <div className="card" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                        <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 10,
-                            background: 'rgba(43, 186, 160, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <Volume2 size={16} color="#2BBAA0" />
-                        </div>
-                        <div style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 14,
-                            fontWeight: 700,
-                            color: '#2D3436',
-                        }}>音量</div>
-                    </div>
-                    <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.05"
-                        value={soundVolume}
-                        onChange={handleVolumeChange}
-                        style={{
-                            width: '100%',
-                            accentColor: '#2BBAA0',
-                        }}
-                    />
-                </div>
+            <VolumeCard volume={soundVolume} onChange={handleVolumeChange} />
 
-                <div style={{
-                    padding: '16px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderBottom: '1px solid rgba(0,0,0,0.06)',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 10,
-                            background: 'rgba(225, 112, 85, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <Mic size={16} color="#E17055" />
-                        </div>
-                        <div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 14,
-                                fontWeight: 700,
-                                color: '#2D3436',
-                            }}>音声ガイダンス</div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 11,
-                                color: '#8395A7',
-                                marginTop: 2,
-                            }}>残り時間などを声でお知らせ</div>
-                        </div>
-                    </div>
-                    <ToggleButton
-                        enabled={ttsEnabled}
-                        onToggle={() => {
-                            const next = !ttsEnabled;
-                            setTtsEnabled(next);
-                            if (next) {
-                                audio.initTTS();
-                                audio.speak('音声ガイダンスをオンにしました');
-                            }
-                        }}
-                        color="#2BBAA0"
-                    />
-                </div>
+            <AudioTogglesCard
+                ttsEnabled={ttsEnabled}
+                bgmEnabled={bgmEnabled}
+                onToggleTts={toggleTts}
+                onToggleBgm={() => setBgmEnabled(!bgmEnabled)}
+            />
 
-                <div style={{
-                    padding: '16px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 10,
-                            background: 'rgba(108, 92, 231, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <Music size={16} color="#6C5CE7" />
-                        </div>
-                        <div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 14,
-                                fontWeight: 700,
-                                color: '#2D3436',
-                            }}>BGM</div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 11,
-                                color: '#8395A7',
-                                marginTop: 2,
-                            }}>ストレッチ中のBGM</div>
-                        </div>
-                    </div>
-                    <ToggleButton
-                        enabled={bgmEnabled}
-                        onToggle={() => setBgmEnabled(!bgmEnabled)}
-                        color="#6C5CE7"
-                    />
-                </div>
-            </div>
+            <HapticCard
+                enabled={hapticEnabled}
+                onToggle={() => setHapticEnabled(!hapticEnabled)}
+            />
 
-            <div className="card" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
-                <div style={{
-                    padding: '16px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 10,
-                            background: 'rgba(253, 203, 110, 0.15)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <Smartphone size={16} color="#E17055" />
-                        </div>
-                        <div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 14,
-                                fontWeight: 700,
-                                color: '#2D3436',
-                            }}>振動フィードバック</div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 11,
-                                color: '#8395A7',
-                                marginTop: 2,
-                            }}>対応デバイスのみ</div>
-                        </div>
-                    </div>
-                    <ToggleButton
-                        enabled={hapticEnabled}
-                        onToggle={() => setHapticEnabled(!hapticEnabled)}
-                        color="#FDCB6E"
-                    />
-                </div>
-            </div>
-
-            <div className="card" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
-                <div style={{
-                    padding: '16px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderBottom: notificationsEnabled ? '1px solid rgba(0,0,0,0.06)' : 'none',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{
-                            width: 32,
-                            height: 32,
-                            borderRadius: 10,
-                            background: 'rgba(9, 132, 227, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            <Bell size={16} color="#0984e3" />
-                        </div>
-                        <div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 14,
-                                fontWeight: 700,
-                                color: '#2D3436',
-                            }}>まいにち通知</div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 11,
-                                color: '#8395A7',
-                                marginTop: 2,
-                            }}>忘れないようにリマインド</div>
-                        </div>
-                    </div>
-                    <ToggleButton
-                        enabled={notificationsEnabled}
-                        onToggle={() => requestNotificationPermission(!notificationsEnabled)}
-                        color="#0984e3"
-                    />
-                </div>
-
-                {notificationsEnabled && (
-                    <div style={{
-                        padding: '16px 20px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div style={{ width: 32, display: 'flex', justifyContent: 'center' }}>
-                                <Clock size={16} color="#B2BEC3" />
-                            </div>
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 14,
-                                fontWeight: 700,
-                                color: '#2D3436',
-                            }}>お知らせ時間</div>
-                        </div>
-                        <input
-                            type="time"
-                            value={notificationTime}
-                            onChange={(e) => setNotificationTime(e.target.value)}
-                            style={{
-                                border: '1px solid rgba(0,0,0,0.1)',
-                                borderRadius: 8,
-                                padding: '6px 12px',
-                                fontFamily: "'Outfit', sans-serif",
-                                fontSize: 16,
-                                fontWeight: 600,
-                                color: '#2D3436',
-                                background: '#F8F9FA',
-                                outline: 'none',
-                            }}
-                        />
-                    </div>
-                )}
-            </div>
+            <NotificationCard
+                enabled={notificationsEnabled}
+                time={notificationTime}
+                onToggle={() => requestNotificationPermission(!notificationsEnabled)}
+                onTimeChange={setNotificationTime}
+            />
         </>
     );
 };

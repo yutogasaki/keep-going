@@ -1,0 +1,24 @@
+import type { MenuGroup } from '../../../data/menuGroups';
+import type { PublicMenu } from '../../../lib/publicMenus';
+
+export interface MenuGroupTabProps {
+    isTogetherMode: boolean;
+    dailyTargetMinutes: number;
+    requiredExercises: string[];
+    excludedExercises: string[];
+    autoMenuMinutes: number;
+    presets: MenuGroup[];
+    customGroups: MenuGroup[];
+    sessionUserCount: number;
+    getCreatorName: (creatorId?: string) => string | null;
+    onOpenCustomMenu: () => void;
+    onGroupTap: (group: MenuGroup) => void;
+    onEditGroup: (group: MenuGroup) => void;
+    onDeleteGroup: (id: string) => void;
+    onCreateGroup: () => void;
+    canPublish: boolean;
+    onPublishGroup: (group: MenuGroup) => void;
+    onUnpublishGroup: (group: MenuGroup) => void;
+    findPublishedMenu: (group: MenuGroup) => PublicMenu | undefined;
+    onOpenPublicBrowser: () => void;
+}
