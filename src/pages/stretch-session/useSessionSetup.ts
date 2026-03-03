@@ -46,6 +46,7 @@ export function useSessionSetup({
 
         return contextUsers.reduce<ClassLevel>((min, user) => {
             const weights: Record<ClassLevel, number> = {
+                '先生': -1,
                 'プレ': 0,
                 '初級': 1,
                 '中級': 2,

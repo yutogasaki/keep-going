@@ -1,7 +1,7 @@
 // Stretch & Core exercise master data from specification
 
 export type ExerciseType = 'stretch' | 'core';
-export type ClassLevel = 'プレ' | '初級' | '中級' | '上級' | 'その他';
+export type ClassLevel = '先生' | 'プレ' | '初級' | '中級' | '上級' | 'その他';
 
 export interface ClassLevelInfo {
     id: ClassLevel;
@@ -11,12 +11,16 @@ export interface ClassLevelInfo {
 }
 
 export const CLASS_LEVELS: ClassLevelInfo[] = [
+    { id: '先生', label: '先生', emoji: '👩‍🏫', desc: '先生用のステージング' },
     { id: 'プレ', label: 'プレバレエ', emoji: '🐣', desc: 'はじめてのバレエ' },
     { id: '初級', label: '初級', emoji: '🌱', desc: 'たのしくストレッチ' },
     { id: '中級', label: '中級', emoji: '🌸', desc: 'もっとやわらかく' },
     { id: '上級', label: '上級', emoji: '⭐', desc: 'もっと上へ' },
     { id: 'その他', label: 'その他', emoji: '🎵', desc: 'その他のクラス' },
 ];
+
+/** User-facing class levels (excludes '先生') */
+export const USER_CLASS_LEVELS: ClassLevelInfo[] = CLASS_LEVELS.filter(c => c.id !== '先生');
 
 export const CLASS_EMOJI: Record<string, string> = Object.fromEntries(
     CLASS_LEVELS.map(c => [c.id, c.emoji])

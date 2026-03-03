@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, Edit2, Trash2 } from 'lucide-react';
+import { ChevronDown, Edit2, Play, Trash2 } from 'lucide-react';
 import { CLASS_LEVELS } from '../../../data/exercises';
 import type { MenuSettingStatus } from '../../../lib/teacherMenuSettings';
 
@@ -17,6 +17,7 @@ interface MenuSettingsItemCardProps {
     onSaveOverrides: (nameOverride: string | null, descriptionOverride: string | null) => void;
     onEdit?: () => void;
     onDelete?: () => void;
+    onPlay?: () => void;
     isBuiltIn: boolean;
     itemType?: 'exercise' | 'menu_group';
 }
@@ -45,6 +46,7 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
     onSaveOverrides,
     onEdit,
     onDelete,
+    onPlay,
     isBuiltIn,
     itemType = 'exercise',
 }) => {
@@ -231,6 +233,28 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
 
                             {/* Action buttons */}
                             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                                {onPlay && (
+                                    <button
+                                        onClick={onPlay}
+                                        style={{
+                                            padding: '8px 16px',
+                                            borderRadius: 10,
+                                            border: 'none',
+                                            background: 'rgba(43,186,160,0.1)',
+                                            color: '#2BBAA0',
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 13,
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                        }}
+                                    >
+                                        <Play size={12} />
+                                        ためす
+                                    </button>
+                                )}
                                 {isBuiltIn && (
                                     <button
                                         onClick={() => {

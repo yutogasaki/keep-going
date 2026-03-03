@@ -84,9 +84,11 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
 
     isInSession: false,
     sessionExerciseIds: null,
-    startSession: () => set({ isInSession: true, sessionExerciseIds: null }),
-    startSessionWithExercises: (ids) => set({ isInSession: true, sessionExerciseIds: ids }),
-    endSession: () => set({ isInSession: false, sessionExerciseIds: null }),
+    isTeacherPreview: false,
+    startSession: () => set({ isInSession: true, sessionExerciseIds: null, isTeacherPreview: false }),
+    startSessionWithExercises: (ids) => set({ isInSession: true, sessionExerciseIds: ids, isTeacherPreview: false }),
+    startTeacherPreviewSession: (ids) => set({ isInSession: true, sessionExerciseIds: ids, isTeacherPreview: true }),
+    endSession: () => set({ isInSession: false, sessionExerciseIds: null, isTeacherPreview: false }),
 
     onboardingCompleted: false,
     setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),

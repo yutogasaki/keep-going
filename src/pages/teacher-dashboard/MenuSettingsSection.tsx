@@ -28,6 +28,7 @@ import {
 import { MenuSettingsItemCard } from './menu-settings/MenuSettingsItemCard';
 import { TeacherExerciseEditor } from './menu-settings/TeacherExerciseEditor';
 import { TeacherMenuEditor } from './menu-settings/TeacherMenuEditor';
+import { useAppStore } from '../../store/useAppStore';
 
 type SubTab = 'exercises' | 'groups';
 
@@ -40,7 +41,8 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
     teacherEmail,
     loading: parentLoading,
 }) => {
-    const [subTab, setSubTab] = useState<SubTab>('exercises');
+    const startTeacherPreviewSession = useAppStore((state) => state.startTeacherPreviewSession);
+    const [subTab, setSubTab] = useState<SubTab>('groups');
     const [settings, setSettings] = useState<TeacherMenuSetting[]>([]);
     const [overrides, setOverrides] = useState<TeacherItemOverride[]>([]);
     const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
@@ -176,14 +178,24 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
 
     const handleSaveExercise = async (data: {
         name: string; sec: number; emoji: string; hasSplit: boolean; description: string; classLevels: string[];
+        statusByClass?: Record<string, MenuSettingStatus>;
     }) => {
         setSubmitting(true);
         setError(null);
         try {
+            let itemId: string;
             if (editingExercise) {
                 await updateTeacherExercise(editingExercise.id, data);
+                itemId = editingExercise.id;
             } else {
-                await createTeacherExercise({ ...data, createdBy: teacherEmail });
+                const newId = await createTeacherExercise({ ...data, createdBy: teacherEmail });
+                itemId = newId ?? '';
+            }
+            // Save per-class statuses
+            if (data.statusByClass && itemId) {
+                for (const [cl, status] of Object.entries(data.statusByClass)) {
+                    await upsertTeacherMenuSetting(itemId, 'exercise', cl, status, teacherEmail);
+                }
             }
             setShowExerciseForm(false);
             setEditingExercise(null);
@@ -210,14 +222,24 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
 
     const handleSaveMenu = async (data: {
         name: string; emoji: string; description: string; exerciseIds: string[]; classLevels: string[];
+        statusByClass?: Record<string, MenuSettingStatus>;
     }) => {
         setSubmitting(true);
         setError(null);
         try {
+            let itemId: string;
             if (editingMenu) {
                 await updateTeacherMenu(editingMenu.id, data);
+                itemId = editingMenu.id;
             } else {
-                await createTeacherMenu({ ...data, createdBy: teacherEmail });
+                const newId = await createTeacherMenu({ ...data, createdBy: teacherEmail });
+                itemId = newId ?? '';
+            }
+            // Save per-class statuses
+            if (data.statusByClass && itemId) {
+                for (const [cl, status] of Object.entries(data.statusByClass)) {
+                    await upsertTeacherMenuSetting(itemId, 'menu_group', cl, status, teacherEmail);
+                }
             }
             setShowMenuForm(false);
             setEditingMenu(null);
@@ -261,8 +283,8 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
             {/* Sub-tabs */}
             <div style={{ display: 'flex', gap: 8 }}>
                 {([
-                    { id: 'exercises' as SubTab, label: 'ひとつ' },
                     { id: 'groups' as SubTab, label: 'くみあわせ' },
+                    { id: 'exercises' as SubTab, label: 'ひとつ' },
                 ]).map(tab => (
                     <button
                         key={tab.id}
@@ -336,7 +358,9 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
             {/* Exercise editor (full-screen portal) */}
             {showExerciseForm && subTab === 'exercises' && (
                 <TeacherExerciseEditor
+                    key={editingExercise?.id ?? 'new'}
                     initial={editingExercise}
+                    initialStatuses={editingExercise ? getStatusByClass(editingExercise.id, 'exercise') : undefined}
                     onSave={handleSaveExercise}
                     onCancel={() => { setShowExerciseForm(false); setEditingExercise(null); }}
                     submitting={submitting}
@@ -346,7 +370,9 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
             {/* Menu editor (full-screen portal) */}
             {showMenuForm && subTab === 'groups' && (
                 <TeacherMenuEditor
+                    key={editingMenu?.id ?? 'new'}
                     initial={editingMenu}
+                    initialStatuses={editingMenu ? getStatusByClass(editingMenu.id, 'menu_group') : undefined}
                     teacherExercises={teacherExercises}
                     onSave={handleSaveMenu}
                     onCancel={() => { setShowMenuForm(false); setEditingMenu(null); }}
@@ -400,6 +426,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                     onSaveOverrides={() => {}}
                                     onEdit={() => { setEditingExercise(ex); setShowExerciseForm(true); }}
                                     onDelete={() => handleDeleteExercise(ex.id)}
+                                    onPlay={() => startTeacherPreviewSession([ex.id])}
                                     isBuiltIn={false}
                                 />
                             ))}
@@ -422,6 +449,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                 onToggleExpand={() => setExpandedItemId(prev => prev === ex.id ? null : ex.id)}
                                 onStatusChange={(cl, status) => handleStatusChange(ex.id, 'exercise', cl, status)}
                                 onSaveOverrides={(n, d) => handleSaveOverrides(ex.id, 'exercise', n, d)}
+                                onPlay={() => startTeacherPreviewSession([ex.id])}
                                 isBuiltIn={true}
                             />
                         );
@@ -450,6 +478,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                     onSaveOverrides={() => {}}
                                     onEdit={() => { setEditingMenu(menu); setShowMenuForm(true); }}
                                     onDelete={() => handleDeleteMenu(menu.id)}
+                                    onPlay={() => startTeacherPreviewSession(menu.exerciseIds)}
                                     isBuiltIn={false}
                                     itemType="menu_group"
                                 />
@@ -473,6 +502,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                 onToggleExpand={() => setExpandedItemId(prev => prev === group.id ? null : group.id)}
                                 onStatusChange={(cl, status) => handleStatusChange(group.id, 'menu_group', cl, status)}
                                 onSaveOverrides={(n, d) => handleSaveOverrides(group.id, 'menu_group', n, d)}
+                                onPlay={() => startTeacherPreviewSession(group.exerciseIds)}
                                 isBuiltIn={true}
                                 itemType="menu_group"
                             />

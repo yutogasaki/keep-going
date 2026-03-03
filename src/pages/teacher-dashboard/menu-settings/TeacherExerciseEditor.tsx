@@ -3,9 +3,11 @@ import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { CLASS_LEVELS } from '../../../data/exercises';
 import type { TeacherExercise } from '../../../lib/teacherContent';
+import type { MenuSettingStatus } from '../../../lib/teacherMenuSettings';
 
 interface TeacherExerciseEditorProps {
     initial?: TeacherExercise | null;
+    initialStatuses?: Record<string, MenuSettingStatus>;
     onSave: (data: {
         name: string;
         sec: number;
@@ -13,10 +15,18 @@ interface TeacherExerciseEditorProps {
         hasSplit: boolean;
         description: string;
         classLevels: string[];
+        statusByClass: Record<string, MenuSettingStatus>;
     }) => void;
     onCancel: () => void;
     submitting: boolean;
 }
+
+const STATUS_OPTIONS: { status: MenuSettingStatus; bg: string; color: string; label: string }[] = [
+    { status: 'required', bg: '#E8F8F0', color: '#2BBAA0', label: '必須' },
+    { status: 'optional', bg: '#F8F9FA', color: '#8395A7', label: 'おまかせ' },
+    { status: 'excluded', bg: '#FFE4E1', color: '#E17055', label: '除外' },
+    { status: 'hidden', bg: '#F0E6FF', color: '#8B5CF6', label: '非表示' },
+];
 
 const EMOJI_OPTIONS = [
     '🌸', '🎀', '🩰', '🦢', '🌟', '✨', '👑', '💎',
@@ -26,6 +36,7 @@ const EMOJI_OPTIONS = [
 
 export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
     initial,
+    initialStatuses,
     onSave,
     onCancel,
     submitting,
@@ -35,17 +46,26 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
     const [sec, setSec] = useState(initial?.sec ?? 30);
     const [hasSplit, setHasSplit] = useState(initial?.hasSplit ?? false);
     const [description, setDescription] = useState(initial?.description ?? '');
-    const [classLevels, setClassLevels] = useState<string[]>(initial?.classLevels ?? []);
 
-    const toggleClassLevel = (level: string) => {
-        setClassLevels(prev =>
-            prev.includes(level) ? prev.filter(l => l !== level) : [...prev, level]
-        );
+    // Per-class status (default: optional for all)
+    const [statusByClass, setStatusByClass] = useState<Record<string, MenuSettingStatus>>(() => {
+        if (initialStatuses) return { ...initialStatuses };
+        const defaults: Record<string, MenuSettingStatus> = {};
+        for (const cl of CLASS_LEVELS) defaults[cl.id] = 'optional';
+        return defaults;
+    });
+
+    const handleStatusChange = (classLevel: string, newStatus: MenuSettingStatus) => {
+        setStatusByClass(prev => ({ ...prev, [classLevel]: newStatus }));
     };
 
     const handleSubmit = () => {
         if (!name.trim() || submitting) return;
-        onSave({ name: name.trim(), sec, emoji, hasSplit, description: description.trim(), classLevels });
+        // Derive classLevels from statusByClass (non-hidden classes)
+        const classLevels = Object.entries(statusByClass)
+            .filter(([, s]) => s !== 'hidden')
+            .map(([cl]) => cl);
+        onSave({ name: name.trim(), sec, emoji, hasSplit, description: description.trim(), classLevels, statusByClass });
     };
 
     const cardStyle: React.CSSProperties = { padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' };
@@ -250,38 +270,74 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
                 </div>
             </div>
 
-            {/* Class Levels */}
+            {/* Per-class status */}
             <div className="card" style={cardStyle}>
-                <label style={labelStyle}>
-                    対象クラス
-                    <span style={{ fontWeight: 400, color: '#B2BEC3', marginLeft: 6, fontSize: 11 }}>未選択＝全クラス</span>
-                </label>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <label style={labelStyle}>クラスごとの設定</label>
+                <div style={{
+                    display: 'flex',
+                    gap: 4,
+                    marginBottom: 10,
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 10,
+                    color: '#8395A7',
+                }}>
+                    <span style={{ color: '#2BBAA0' }}>★ 必須</span>
+                    <span>⚪ おまかせ</span>
+                    <span style={{ color: '#E17055' }}>✕ 除外</span>
+                    <span style={{ color: '#8B5CF6' }}>👁 非表示</span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {CLASS_LEVELS.map(cl => {
-                        const selected = classLevels.includes(cl.id);
+                        const currentStatus = statusByClass[cl.id] || 'optional';
                         return (
-                            <motion.button
+                            <div
                                 key={cl.id}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => toggleClassLevel(cl.id)}
                                 style={{
-                                    padding: '10px 16px',
-                                    borderRadius: 20,
-                                    border: selected ? '2px solid #2BBAA0' : '2px solid transparent',
-                                    background: selected ? 'rgba(43,186,160,0.08)' : '#F8F9FA',
-                                    cursor: 'pointer',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 13,
-                                    fontWeight: 700,
-                                    color: selected ? '#2BBAA0' : '#8395A7',
-                                    transition: 'all 0.2s',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: 4,
+                                    gap: 8,
+                                    padding: '6px 0',
+                                    borderBottom: '1px solid rgba(0,0,0,0.04)',
                                 }}
                             >
-                                {cl.emoji} {cl.id}
-                            </motion.button>
+                                <span style={{ fontSize: 14, flexShrink: 0 }}>{cl.emoji}</span>
+                                <span style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    color: '#636E72',
+                                    width: 36,
+                                    flexShrink: 0,
+                                }}>
+                                    {cl.id}
+                                </span>
+                                <div style={{ display: 'flex', gap: 4, flex: 1 }}>
+                                    {STATUS_OPTIONS.map(opt => {
+                                        const isActive = currentStatus === opt.status;
+                                        return (
+                                            <button
+                                                key={opt.status}
+                                                onClick={() => handleStatusChange(cl.id, opt.status)}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '5px 2px',
+                                                    borderRadius: 8,
+                                                    border: isActive ? `2px solid ${opt.color}` : '2px solid transparent',
+                                                    background: isActive ? opt.bg : '#F8F9FA',
+                                                    color: isActive ? opt.color : '#B2BEC3',
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontSize: 10,
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.15s ease',
+                                                }}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         );
                     })}
                 </div>

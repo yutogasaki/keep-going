@@ -1,5 +1,5 @@
 import React from 'react';
-import { CLASS_LEVELS, type ClassLevel } from '../../../data/exercises';
+import { USER_CLASS_LEVELS, type ClassLevel } from '../../../data/exercises';
 import type { UserEditorValues } from './types';
 
 interface UserEditorFormProps {
@@ -38,7 +38,7 @@ export const UserEditorForm: React.FC<UserEditorFormProps> = ({
                 }}
             />
             <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-                {CLASS_LEVELS.map((classLevel) => (
+                {USER_CLASS_LEVELS.map((classLevel) => (
                     <button
                         key={classLevel.id}
                         onClick={() => onClassChange(classLevel.id)}

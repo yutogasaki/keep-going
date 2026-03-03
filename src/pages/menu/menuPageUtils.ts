@@ -1,7 +1,8 @@
 import type { ClassLevel } from '../../data/exercises';
 import type { UserProfileStore } from '../../store/useAppStore';
 
-const CLASS_LEVEL_WEIGHTS: Record<ClassLevel | 'その他', number> = {
+const CLASS_LEVEL_WEIGHTS: Record<ClassLevel, number> = {
+    先生: -1,
     プレ: 0,
     初級: 1,
     中級: 2,

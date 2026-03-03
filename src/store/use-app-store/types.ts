@@ -55,8 +55,10 @@ export interface AppState {
     setSessionUserIds: (ids: string[]) => void;
     isInSession: boolean;
     sessionExerciseIds: string[] | null;
+    isTeacherPreview: boolean;
     startSession: () => void;
     startSessionWithExercises: (ids: string[]) => void;
+    startTeacherPreviewSession: (ids: string[]) => void;
     endSession: () => void;
 
     onboardingCompleted: boolean;

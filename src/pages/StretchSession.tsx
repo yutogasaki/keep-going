@@ -21,6 +21,7 @@ export const StretchSession: React.FC = () => {
     const users = useAppStore((state) => state.users);
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const sessionExerciseIds = useAppStore((state) => state.sessionExerciseIds);
+    const isTeacherPreview = useAppStore((state) => state.isTeacherPreview);
     const {
         classLevel,
         dailyTargetMinutes,
@@ -76,6 +77,9 @@ export const StretchSession: React.FC = () => {
     });
 
     const saveSessionData = useCallback(async () => {
+        // Skip recording for teacher preview sessions
+        if (isTeacherPreview) return;
+
         let finalRunningTime = totalRunningTime;
 
         if (!sessionExerciseIds && isCompleted) {
@@ -94,7 +98,7 @@ export const StretchSession: React.FC = () => {
             };
             await saveSession(record);
         }
-    }, [completedIds, skippedIds, totalRunningTime, startedAt, sessionUserIds, sessionExerciseIds, isCompleted, dailyTargetMinutes]);
+    }, [completedIds, skippedIds, totalRunningTime, startedAt, sessionUserIds, sessionExerciseIds, isCompleted, dailyTargetMinutes, isTeacherPreview]);
     autoCompleteSaveRef.current = saveSessionData;
 
     const handleEndSession = useCallback(async () => {

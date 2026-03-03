@@ -69,10 +69,10 @@ export async function createTeacherExercise(data: {
     description: string;
     classLevels: string[];
     createdBy: string;
-}): Promise<void> {
-    if (!supabase) return;
+}): Promise<string | null> {
+    if (!supabase) return null;
 
-    const { error } = await supabase.from('teacher_exercises').insert({
+    const { data: result, error } = await supabase.from('teacher_exercises').insert({
         name: data.name,
         sec: data.sec,
         emoji: data.emoji,
@@ -80,10 +80,11 @@ export async function createTeacherExercise(data: {
         description: data.description,
         class_levels: data.classLevels,
         created_by: data.createdBy,
-    });
+    }).select('id').single();
 
     if (error) throw error;
     cachedExercises = null;
+    return result?.id ?? null;
 }
 
 export async function updateTeacherExercise(id: string, data: {
@@ -147,20 +148,21 @@ export async function createTeacherMenu(data: {
     exerciseIds: string[];
     classLevels: string[];
     createdBy: string;
-}): Promise<void> {
-    if (!supabase) return;
+}): Promise<string | null> {
+    if (!supabase) return null;
 
-    const { error } = await supabase.from('teacher_menus').insert({
+    const { data: result, error } = await supabase.from('teacher_menus').insert({
         name: data.name,
         emoji: data.emoji,
         description: data.description,
         exercise_ids: data.exerciseIds,
         class_levels: data.classLevels,
         created_by: data.createdBy,
-    });
+    }).select('id').single();
 
     if (error) throw error;
     cachedMenus = null;
+    return result?.id ?? null;
 }
 
 export async function updateTeacherMenu(id: string, data: {

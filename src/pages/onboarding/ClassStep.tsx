@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CLASS_LEVELS, type ClassLevel } from '../../data/exercises';
+import { USER_CLASS_LEVELS, type ClassLevel } from '../../data/exercises';
 
 interface ClassStepProps {
     selectedClass: ClassLevel | null;
@@ -60,7 +60,7 @@ export const ClassStep: React.FC<ClassStepProps> = ({
                     width: '100%',
                 }}
             >
-                {CLASS_LEVELS.map(({ id, label, emoji, desc }) => (
+                {USER_CLASS_LEVELS.map(({ id, label, emoji, desc }) => (
                     <motion.button
                         key={id}
                         onClick={() => onClassSelect(id)}
