@@ -2,20 +2,28 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { saveCustomExercise, type CustomExercise } from '../../lib/db';
+import { publishExercise } from '../../lib/publicExercises';
+import { getAccountId } from '../../lib/sync';
+import { PublishToggleCard } from './create-group/PublishToggleCard';
 
 interface SingleExerciseEditorProps {
     initial?: CustomExercise | null;
     currentUserId?: string;
+    authorName?: string;
     onSave: () => void;
     onCancel: () => void;
 }
 
-export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ initial, currentUserId, onSave, onCancel }) => {
+export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ initial, currentUserId, authorName, onSave, onCancel }) => {
     const [name, setName] = useState(initial?.name || '');
     const [emoji, setEmoji] = useState(initial?.emoji || '🌸');
     const [sec, setSec] = useState<number>(initial?.sec || 30);
     const [hasSplit, setHasSplit] = useState<boolean>(initial?.hasSplit || false);
     const [description, setDescription] = useState(initial?.description || '');
+    const [isPublic, setIsPublic] = useState(false);
+
+    const isLoggedIn = !!getAccountId();
+    const isEditing = !!initial;
 
     const EMOJI_OPTIONS = [
         '🌸', '🎀', '🩰', '🦢', '🌟', '✨', '👑', '💎',
@@ -35,6 +43,15 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
             creatorId: currentUserId,
         };
         await saveCustomExercise(ex);
+
+        if (isPublic && !isEditing && isLoggedIn && authorName) {
+            try {
+                await publishExercise(ex, authorName);
+            } catch (error) {
+                console.warn('[SingleExerciseEditor] publish failed:', error);
+            }
+        }
+
         onSave();
     };
 
@@ -274,6 +291,14 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                     </button>
                 </div>
             </div>
+
+            {isLoggedIn && !isEditing && (
+                <PublishToggleCard
+                    isPublic={isPublic}
+                    onToggle={() => setIsPublic((prev) => !prev)}
+                    subtitle="他の人がこの種目をもらえるようになります"
+                />
+            )}
 
             <div style={{ flex: 1 }} />
 

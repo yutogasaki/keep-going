@@ -4,11 +4,13 @@ import { Globe } from 'lucide-react';
 interface PublishToggleCardProps {
     isPublic: boolean;
     onToggle: () => void;
+    subtitle?: string;
 }
 
 export const PublishToggleCard: React.FC<PublishToggleCardProps> = ({
     isPublic,
     onToggle,
+    subtitle = '他の人がこのメニューをもらえるようになります',
 }) => {
     return (
         <div className="card" style={{
@@ -35,7 +37,7 @@ export const PublishToggleCard: React.FC<PublishToggleCardProps> = ({
                         fontSize: 11,
                         color: '#8395A7',
                     }}>
-                        他の人がこのメニューをもらえるようになります
+                        {subtitle}
                     </div>
                 </div>
             </div>

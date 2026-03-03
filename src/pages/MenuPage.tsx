@@ -103,6 +103,7 @@ export const MenuPage: React.FC = () => {
             <SingleExerciseEditor
                 initial={editEx}
                 currentUserId={sessionUserIds.length === 1 ? sessionUserIds[0] : undefined}
+                authorName={currentUsers[0]?.name ?? 'ゲスト'}
                 onSave={handleCreatedEx}
                 onCancel={() => {
                     setShowCreateEx(false);
