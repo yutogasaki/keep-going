@@ -64,7 +64,7 @@ export default defineConfig({
       includeAssets: ['audio/bgm.mp3'],
       manifest: false, // Use existing public/manifest.json
       workbox: {
-        globPatterns: ['**/*.{js,css,ico,png,svg,woff,woff2}'],
+        globPatterns: ['**/*.{js,css,ico,png,webp,svg,woff,woff2}'],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,

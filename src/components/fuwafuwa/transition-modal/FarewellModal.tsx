@@ -84,7 +84,7 @@ export const FarewellModal: React.FC<FarewellModalProps> = ({
                     }}
                 >
                     <img
-                        src={`/ikimono/${departingInfo.type}-${departingInfo.stage}.png`}
+                        src={`/ikimono/${departingInfo.type}-${departingInfo.stage}.webp`}
                         alt="departing fuwafuwa"
                         style={{
                             width: '100%',

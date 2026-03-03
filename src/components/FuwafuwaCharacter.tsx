@@ -171,7 +171,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
         }
     };
 
-    const imagePath = `/ikimono/${displayType}-${displayStage}.png`;
+    const imagePath = `/ikimono/${displayType}-${displayStage}.webp`;
     const { auraColor, pulseDuration, showFireflies } = getAuraVisualState(displayActiveDays);
 
     return (

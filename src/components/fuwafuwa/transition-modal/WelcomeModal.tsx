@@ -77,7 +77,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
                             rotate: [0, 2, -2, 0],
                         }}
                         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                        src={`/ikimono/${userFuwafuwaType}-1.png`}
+                        src={`/ikimono/${userFuwafuwaType}-1.webp`}
                         alt="new egg"
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                     />

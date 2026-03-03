@@ -89,7 +89,7 @@ export const RecordModals: React.FC<RecordModalsProps> = ({
                                     background: '#fff',
                                 }}>
                                     <img
-                                        src={`/ikimono/${selectedFuwafuwa.type}-${selectedFuwafuwa.finalStage}.png`}
+                                        src={`/ikimono/${selectedFuwafuwa.type}-${selectedFuwafuwa.finalStage}.webp`}
                                         alt={selectedFuwafuwa.name || 'ふわふわ'}
                                         style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.05)', display: 'block' }}
                                     />
@@ -201,7 +201,7 @@ export const RecordModals: React.FC<RecordModalsProps> = ({
                                     background: '#fff',
                                 }}>
                                     <img
-                                        src={`/medal/${selectedBadge.type}.png`}
+                                        src={`/medal/${selectedBadge.type}.webp`}
                                         alt={selectedBadge.challengeTitle}
                                         style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
                                     />

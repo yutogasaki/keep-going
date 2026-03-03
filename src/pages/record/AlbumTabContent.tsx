@@ -74,8 +74,9 @@ export const AlbumTabContent: React.FC<AlbumTabContentProps> = ({
                                     boxShadow: '0 2px 8px rgba(255, 200, 0, 0.15)',
                                 }}>
                                     <img
-                                        src={`/medal/${badge.type}.png`}
+                                        src={`/medal/${badge.type}.webp`}
                                         alt={badge.challengeTitle}
+                                        loading="lazy"
                                         style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
                                     />
                                 </div>
@@ -152,8 +153,9 @@ export const AlbumTabContent: React.FC<AlbumTabContentProps> = ({
                                 border: '2px solid rgba(255,154,158,0.2)',
                             }}>
                                 <img
-                                    src={`/ikimono/${fuwafuwa.type}-${fuwafuwa.finalStage}.png`}
+                                    src={`/ikimono/${fuwafuwa.type}-${fuwafuwa.finalStage}.webp`}
                                     alt="Fuwafuwa"
+                                    loading="lazy"
                                     style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.05)', display: 'block' }}
                                 />
                             </div>

@@ -165,8 +165,9 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                             }}
                         >
                             <img
-                                src={`/medal/${index}.png`}
+                                src={`/medal/${index}.webp`}
                                 alt={`medal ${index}`}
+                                loading="lazy"
                                 style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
                             />
                         </button>
