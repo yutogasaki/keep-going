@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,14 +6,35 @@ import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { AccountSection } from './settings/AccountSection';
 import { TeacherSection } from './settings/TeacherSection';
-import { TeacherDashboard } from './TeacherDashboard';
-import { DeveloperDashboard } from './DeveloperDashboard';
 import { UserManagementSection } from './settings/UserManagementSection';
 import { SoundNotificationSettingsSection } from './settings/SoundNotificationSettingsSection';
 import { HelpCenterSection } from './settings/HelpCenterSection';
 import { FeedbackSection } from './settings/FeedbackSection';
 import { AppInfoActionsSection } from './settings/AppInfoActionsSection';
 import { DeveloperDebugSection } from './settings/DeveloperDebugSection';
+
+const TeacherDashboard = lazy(() =>
+    import('./TeacherDashboard').then((module) => ({ default: module.TeacherDashboard }))
+);
+
+const DeveloperDashboard = lazy(() =>
+    import('./DeveloperDashboard').then((module) => ({ default: module.DeveloperDashboard }))
+);
+
+const FullPageFallback: React.FC = () => (
+    <div style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: "'Noto Sans JP', sans-serif",
+        color: '#8395A7',
+        fontSize: 14,
+    }}>
+        読み込み中...
+    </div>
+);
 
 export const SettingsPage: React.FC = () => {
     const users = useAppStore(s => s.users);
@@ -25,10 +46,18 @@ export const SettingsPage: React.FC = () => {
     const [showDeveloperDashboard, setShowDeveloperDashboard] = useState(false);
 
     if (showTeacherDashboard) {
-        return <TeacherDashboard onBack={() => setShowTeacherDashboard(false)} />;
+        return (
+            <Suspense fallback={<FullPageFallback />}>
+                <TeacherDashboard onBack={() => setShowTeacherDashboard(false)} />
+            </Suspense>
+        );
     }
     if (showDeveloperDashboard) {
-        return <DeveloperDashboard onBack={() => setShowDeveloperDashboard(false)} />;
+        return (
+            <Suspense fallback={<FullPageFallback />}>
+                <DeveloperDashboard onBack={() => setShowDeveloperDashboard(false)} />
+            </Suspense>
+        );
     }
 
     return (

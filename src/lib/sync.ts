@@ -3,8 +3,19 @@ import { supabase } from './supabase';
 import type { SessionRecord, CustomExercise } from './db';
 import { getAllSessions, getCustomExercises, saveSessionDirect, saveCustomExerciseDirect, clearHistoryDB, clearCustomExercisesDB } from './db';
 import { getCustomGroups, type MenuGroup, saveCustomGroupDirect, clearGroupsDB } from '../data/menuGroups';
-import type { UserProfileStore, PastFuwafuwaRecord } from '../store/useAppStore';
-import type { ClassLevel } from '../data/exercises';
+import type { UserProfileStore } from '../store/useAppStore';
+import {
+    type AppSettingsInput,
+    toAppSettingsUpsertPayload,
+    toCustomExerciseUpsertPayload,
+    toFamilyMemberUpsertPayload,
+    toLocalCustomExercise,
+    toLocalCustomMenuGroup,
+    toLocalSessionRecord,
+    toLocalUserFromCloudFamily,
+    toMenuGroupUpsertPayload,
+    toSessionUpsertPayload,
+} from './sync/mappers';
 
 // ─── Store accessor (avoids circular import) ────────
 // Set by useAppStore.ts at module init time
@@ -93,217 +104,99 @@ function isOnline(): boolean {
     return navigator.onLine;
 }
 
-export async function pushSession(record: SessionRecord): Promise<void> {
-    if (!_accountId) return;
-
-    const payload = {
-        id: record.id,
-        account_id: _accountId,
-        date: record.date,
-        started_at: record.startedAt,
-        total_seconds: record.totalSeconds,
-        exercise_ids: record.exerciseIds,
-        skipped_ids: record.skippedIds,
-        user_ids: record.userIds ?? [],
-    };
-
+async function upsertWithQueue(
+    table: string,
+    payload: Record<string, unknown>,
+    logLabel: string,
+): Promise<void> {
     if (!supabase || !isOnline()) {
-        await enqueue({ table: 'sessions', operation: 'upsert', payload });
+        await enqueue({ table, operation: 'upsert', payload });
         return;
     }
 
-    const { error } = await supabase.from('sessions').upsert(payload);
+    const { error } = await supabase.from(table as any).upsert(payload as any);
     if (error) {
-        console.warn('[sync] pushSession failed, queuing:', error);
-        await enqueue({ table: 'sessions', operation: 'upsert', payload });
-    } else {
-        console.log('[sync] pushSession OK:', payload.id, 'date:', payload.date);
+        console.warn(`[sync] ${logLabel} failed, queuing:`, error);
+        await enqueue({ table, operation: 'upsert', payload });
     }
+}
+
+async function deleteWithQueue(
+    table: string,
+    payload: Record<string, unknown>,
+    logLabel: string,
+): Promise<void> {
+    if (!supabase || !isOnline()) {
+        await enqueue({ table, operation: 'delete', payload });
+        return;
+    }
+
+    let query = supabase.from(table as any).delete();
+    for (const [key, value] of Object.entries(payload)) {
+        query = query.eq(key, value as any);
+    }
+    const { error } = await query;
+    if (error) {
+        console.warn(`[sync] ${logLabel} failed, queuing:`, error);
+        await enqueue({ table, operation: 'delete', payload });
+    }
+}
+
+export async function pushSession(record: SessionRecord): Promise<void> {
+    if (!_accountId) return;
+    const payload = toSessionUpsertPayload(record, _accountId);
+    await upsertWithQueue('sessions', payload, 'pushSession');
 }
 
 export async function pushFamilyMember(user: UserProfileStore): Promise<void> {
     if (!_accountId) return;
-
-    const payload = {
-        id: user.id,
-        account_id: _accountId,
-        name: user.name,
-        class_level: user.classLevel,
-        fuwafuwa_birth_date: user.fuwafuwaBirthDate,
-        fuwafuwa_type: user.fuwafuwaType,
-        fuwafuwa_cycle_count: user.fuwafuwaCycleCount,
-        fuwafuwa_name: user.fuwafuwaName,
-        past_fuwafuwas: user.pastFuwafuwas,
-        notified_fuwafuwa_stages: user.notifiedFuwafuwaStages,
-        daily_target_minutes: user.dailyTargetMinutes,
-        excluded_exercises: user.excludedExercises,
-        required_exercises: user.requiredExercises,
-        consumed_magic_date: user.consumedMagicDate ?? null,
-        consumed_magic_seconds: user.consumedMagicSeconds ?? 0,
-        avatar_url: user.avatarUrl ?? null,
-        chibifuwas: user.chibifuwas ?? [],
-    };
-
-    if (!supabase || !isOnline()) {
-        await enqueue({ table: 'family_members', operation: 'upsert', payload });
-        return;
-    }
-
-    const { error } = await supabase.from('family_members').upsert(payload);
-    if (error) {
-        console.warn('[sync] pushFamilyMember failed, queuing:', error);
-        await enqueue({ table: 'family_members', operation: 'upsert', payload });
-    }
+    const payload = toFamilyMemberUpsertPayload(user, _accountId);
+    await upsertWithQueue('family_members', payload, 'pushFamilyMember');
 }
 
 export async function deleteFamilyMember(userId: string): Promise<void> {
     if (!_accountId) return;
 
     const payload = { id: userId, account_id: _accountId };
-
-    if (!supabase || !isOnline()) {
-        await enqueue({ table: 'family_members', operation: 'delete', payload });
-        return;
-    }
-
-    const { error } = await supabase.from('family_members').delete().eq('id', userId).eq('account_id', _accountId);
-    if (error) {
-        console.warn('[sync] deleteFamilyMember failed, queuing:', error);
-        await enqueue({ table: 'family_members', operation: 'delete', payload });
-    }
+    await deleteWithQueue('family_members', payload, 'deleteFamilyMember');
 }
 
 export async function pushCustomExercise(ex: CustomExercise): Promise<void> {
     if (!_accountId) return;
-
-    const payload = {
-        id: ex.id,
-        account_id: _accountId,
-        name: ex.name,
-        sec: ex.sec,
-        emoji: ex.emoji,
-        has_split: ex.hasSplit ?? false,
-        creator_id: ex.creatorId ?? null,
-    };
-
-    if (!supabase || !isOnline()) {
-        await enqueue({ table: 'custom_exercises', operation: 'upsert', payload });
-        return;
-    }
-
-    const { error } = await supabase.from('custom_exercises').upsert(payload);
-    if (error) {
-        console.warn('[sync] pushCustomExercise failed, queuing:', error);
-        await enqueue({ table: 'custom_exercises', operation: 'upsert', payload });
-    }
+    const payload = toCustomExerciseUpsertPayload(ex, _accountId);
+    await upsertWithQueue('custom_exercises', payload, 'pushCustomExercise');
 }
 
 export async function deleteCustomExerciseRemote(exId: string): Promise<void> {
     if (!_accountId) return;
 
     const payload = { id: exId, account_id: _accountId };
-
-    if (!supabase || !isOnline()) {
-        await enqueue({ table: 'custom_exercises', operation: 'delete', payload });
-        return;
-    }
-
-    const { error } = await supabase.from('custom_exercises').delete().eq('id', exId).eq('account_id', _accountId);
-    if (error) {
-        console.warn('[sync] deleteCustomExerciseRemote failed, queuing:', error);
-        await enqueue({ table: 'custom_exercises', operation: 'delete', payload });
-    }
+    await deleteWithQueue('custom_exercises', payload, 'deleteCustomExerciseRemote');
 }
 
 export async function pushMenuGroup(group: MenuGroup): Promise<void> {
     if (!_accountId) return;
-
-    const payload = {
-        id: group.id,
-        account_id: _accountId,
-        name: group.name,
-        emoji: group.emoji,
-        description: group.description,
-        exercise_ids: group.exerciseIds,
-        is_preset: group.isPreset,
-        creator_id: group.creatorId ?? null,
-    };
-
-    if (!supabase || !isOnline()) {
-        await enqueue({ table: 'menu_groups', operation: 'upsert', payload });
-        return;
-    }
-
-    const { error } = await supabase.from('menu_groups').upsert(payload);
-    if (error) {
-        console.warn('[sync] pushMenuGroup failed, queuing:', error);
-        await enqueue({ table: 'menu_groups', operation: 'upsert', payload });
-    }
+    const payload = toMenuGroupUpsertPayload(group, _accountId);
+    await upsertWithQueue('menu_groups', payload, 'pushMenuGroup');
 }
 
 export async function deleteMenuGroupRemote(groupId: string): Promise<void> {
     if (!_accountId) return;
 
     const payload = { id: groupId, account_id: _accountId };
-
-    if (!supabase || !isOnline()) {
-        await enqueue({ table: 'menu_groups', operation: 'delete', payload });
-        return;
-    }
-
-    const { error } = await supabase.from('menu_groups').delete().eq('id', groupId).eq('account_id', _accountId);
-    if (error) {
-        console.warn('[sync] deleteMenuGroupRemote failed, queuing:', error);
-        await enqueue({ table: 'menu_groups', operation: 'delete', payload });
-    }
+    await deleteWithQueue('menu_groups', payload, 'deleteMenuGroupRemote');
 }
 
-export async function pushAppSettings(settings: {
-    onboardingCompleted: boolean;
-    soundVolume: number;
-    ttsEnabled: boolean;
-    bgmEnabled: boolean;
-    hapticEnabled: boolean;
-    notificationsEnabled: boolean;
-    notificationTime: string;
-}): Promise<void> {
+export async function pushAppSettings(settings: AppSettingsInput): Promise<void> {
     if (!_accountId) return;
-
-    const payload = {
-        account_id: _accountId,
-        onboarding_completed: settings.onboardingCompleted,
-        sound_volume: settings.soundVolume,
-        tts_enabled: settings.ttsEnabled,
-        bgm_enabled: settings.bgmEnabled,
-        haptic_enabled: settings.hapticEnabled,
-        notifications_enabled: settings.notificationsEnabled,
-        notification_time: settings.notificationTime,
-    };
-
-    if (!supabase || !isOnline()) {
-        await enqueue({ table: 'app_settings', operation: 'upsert', payload });
-        return;
-    }
-
-    const { error } = await supabase.from('app_settings').upsert(payload);
-    if (error) {
-        console.warn('[sync] pushAppSettings failed, queuing:', error);
-        await enqueue({ table: 'app_settings', operation: 'upsert', payload });
-    }
+    const payload = toAppSettingsUpsertPayload(settings, _accountId);
+    await upsertWithQueue('app_settings', payload, 'pushAppSettings');
 }
 
 // ─── Initial sync (upload all local data) ────────────
 export async function initialSync(
     users: UserProfileStore[],
-    settings: {
-        onboardingCompleted: boolean;
-        soundVolume: number;
-        ttsEnabled: boolean;
-        bgmEnabled: boolean;
-        hapticEnabled: boolean;
-        notificationsEnabled: boolean;
-        notificationTime: string;
-    }
+    settings: AppSettingsInput
 ): Promise<void> {
     if (!supabase || !_accountId) return;
 
@@ -434,76 +327,18 @@ export async function pullAllData(accountId: string): Promise<PullResult> {
             return { success: true, hadData: false };
         }
 
-        // 2. Map cloud data to local types (merge pastFuwafuwas/chibifuwas by ID to prevent data loss)
+        // 2. Map cloud data to local types
         const localUsers = _getStoreState?.().users ?? [];
-        const users: UserProfileStore[] = families.map(fm => {
-            const localUser = localUsers.find(u => u.id === fm.id);
-            const cloudPast = (fm.past_fuwafuwas ?? []) as PastFuwafuwaRecord[];
-            const localPast = localUser?.pastFuwafuwas ?? [];
-            const mergedPast = [...cloudPast];
-            const pastIds = new Set(cloudPast.map(p => p.id));
-            for (const lp of localPast) {
-                if (!pastIds.has(lp.id)) mergedPast.push(lp);
-            }
-
-            const cloudChibi = (fm.chibifuwas ?? []) as import('../store/useAppStore').ChibifuwaRecord[];
-            const localChibi = localUser?.chibifuwas ?? [];
-            const mergedChibi = [...cloudChibi];
-            const chibiIds = new Set(cloudChibi.map(c => c.id));
-            for (const lc of localChibi) {
-                if (!chibiIds.has(lc.id)) mergedChibi.push(lc);
-            }
-
-            return {
-                id: fm.id,
-                name: fm.name,
-                classLevel: fm.class_level as ClassLevel,
-                fuwafuwaBirthDate: fm.fuwafuwa_birth_date,
-                fuwafuwaType: fm.fuwafuwa_type,
-                fuwafuwaCycleCount: fm.fuwafuwa_cycle_count,
-                fuwafuwaName: fm.fuwafuwa_name,
-                pastFuwafuwas: mergedPast,
-                notifiedFuwafuwaStages: (fm.notified_fuwafuwa_stages ?? []) as number[],
-                dailyTargetMinutes: fm.daily_target_minutes,
-                excludedExercises: fm.excluded_exercises as string[],
-                requiredExercises: fm.required_exercises as string[],
-                consumedMagicDate: fm.consumed_magic_date ?? undefined,
-                consumedMagicSeconds: fm.consumed_magic_seconds ?? 0,
-                avatarUrl: fm.avatar_url ?? undefined,
-                chibifuwas: mergedChibi,
-            };
+        const users: UserProfileStore[] = families.map((family) => {
+            const localUser = localUsers.find((targetUser) => targetUser.id === family.id);
+            return toLocalUserFromCloudFamily(family, localUser);
         });
 
-        const sessions: SessionRecord[] = (sessionsRes.data ?? []).map(s => ({
-            id: s.id,
-            date: s.date,
-            startedAt: s.started_at,
-            totalSeconds: s.total_seconds,
-            exerciseIds: s.exercise_ids as string[],
-            skippedIds: s.skipped_ids as string[],
-            userIds: s.user_ids as string[],
-        }));
-
-        const exercises: CustomExercise[] = (exercisesRes.data ?? []).map(ex => ({
-            id: ex.id,
-            name: ex.name,
-            sec: ex.sec,
-            emoji: ex.emoji,
-            hasSplit: ex.has_split ?? false,
-            creatorId: ex.creator_id ?? undefined,
-        }));
-
+        const sessions: SessionRecord[] = (sessionsRes.data ?? []).map(toLocalSessionRecord);
+        const exercises: CustomExercise[] = (exercisesRes.data ?? []).map(toLocalCustomExercise);
         const groups: MenuGroup[] = (groupsRes.data ?? [])
-            .filter((g: any) => !g.is_preset)
-            .map((g: any) => ({
-                id: g.id,
-                name: g.name,
-                emoji: g.emoji,
-                description: g.description ?? '',
-                exerciseIds: g.exercise_ids as string[],
-                isPreset: false,
-                creatorId: g.creator_id ?? undefined,
-            }));
+            .filter((group: any) => !group.is_preset)
+            .map(toLocalCustomMenuGroup);
 
         const cloudSettings = settingsRes.data;
 
@@ -556,9 +391,9 @@ export async function mergeAppendData(accountId: string): Promise<void> {
     // 1. Sessions: bidirectional merge in single fetch
     const localSessions = await getAllSessions();
     const { data: cloudSessions } = await supabase
-        .from('sessions')
-        .select('*')
-        .eq('account_id', accountId);
+            .from('sessions')
+            .select('*')
+            .eq('account_id', accountId);
 
     const cloudSessionIds = new Set((cloudSessions ?? []).map((s: any) => s.id));
     const localSessionIds = new Set(localSessions.map(s => s.id));
@@ -573,15 +408,7 @@ export async function mergeAppendData(accountId: string): Promise<void> {
     // Pull cloud-only to local
     for (const cs of cloudSessions ?? []) {
         if (!localSessionIds.has(cs.id)) {
-            await saveSessionDirect({
-                id: cs.id,
-                date: cs.date,
-                startedAt: cs.started_at,
-                totalSeconds: cs.total_seconds,
-                exerciseIds: cs.exercise_ids as string[],
-                skippedIds: cs.skipped_ids as string[],
-                userIds: cs.user_ids as string[],
-            });
+            await saveSessionDirect(toLocalSessionRecord(cs));
         }
     }
 
@@ -595,14 +422,7 @@ export async function mergeAppendData(accountId: string): Promise<void> {
         const localExIds = new Set(localExercises.map(e => e.id));
         for (const ce of cloudExercises) {
             if (!localExIds.has(ce.id)) {
-                await saveCustomExerciseDirect({
-                    id: ce.id,
-                    name: ce.name,
-                    sec: ce.sec,
-                    emoji: ce.emoji,
-                    hasSplit: ce.has_split ?? false,
-                    creatorId: ce.creator_id ?? undefined,
-                });
+                await saveCustomExerciseDirect(toLocalCustomExercise(ce));
             }
         }
     }
@@ -617,15 +437,7 @@ export async function mergeAppendData(accountId: string): Promise<void> {
         const localGroupIds = new Set(localGroups.map(g => g.id));
         for (const cg of cloudGroups) {
             if (!cg.is_preset && !localGroupIds.has(cg.id)) {
-                await saveCustomGroupDirect({
-                    id: cg.id,
-                    name: cg.name,
-                    emoji: cg.emoji,
-                    description: cg.description ?? '',
-                    exerciseIds: cg.exercise_ids as string[],
-                    isPreset: false,
-                    creatorId: cg.creator_id ?? undefined,
-                });
+                await saveCustomGroupDirect(toLocalCustomMenuGroup(cg));
             }
         }
     }

@@ -31,7 +31,10 @@
       "Bash(npm ls framer-motion)",
       "Bash(lsof -ti:5173)",
       "Bash(xargs kill -9)",
-      "Bash(curl -s http://localhost:5173/)"
+      "Bash(curl -s http://localhost:5173/)",
+      "Bash(git stash drop)",
+      "Bash(git status -u)",
+      "Bash(file /Users/yutogasaki/Projects/keep-going/images/medal/*.png)"
     ]
   }
 }

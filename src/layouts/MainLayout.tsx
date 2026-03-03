@@ -47,6 +47,8 @@ const tabs = [
 export const MainLayout: React.FC = () => {
     const currentTab = useAppStore((state) => state.currentTab);
     const isInSession = useAppStore((state) => state.isInSession);
+    const activeTab = tabs.find((tab) => tab.key === currentTab) ?? tabs[0];
+    const ActiveComponent = activeTab.Component;
 
     return (
         <>
@@ -59,24 +61,11 @@ export const MainLayout: React.FC = () => {
                 flexDirection: 'column',
                 overflow: 'hidden',
             }}>
-                {/* Tab Content — all pages stay mounted, only active one is visible */}
+                {/* Tab content: render only active page to avoid hidden background work */}
                 <main style={{ flex: 1, height: '100%', width: '100%', overflow: 'hidden', position: 'relative' }}>
-                    {tabs.map(({ key, Component }) => (
-                        <div
-                            key={key}
-                            style={{
-                                width: '100%',
-                                height: '100%',
-                                position: 'absolute',
-                                visibility: currentTab === key ? 'visible' : 'hidden',
-                                pointerEvents: currentTab === key ? 'auto' : 'none',
-                            }}
-                        >
-                            <Suspense fallback={<PageFallback />}>
-                                <Component />
-                            </Suspense>
-                        </div>
-                    ))}
+                    <Suspense fallback={<PageFallback />}>
+                        <ActiveComponent />
+                    </Suspense>
                 </main>
 
                 {/* Bottom Navigation */}
