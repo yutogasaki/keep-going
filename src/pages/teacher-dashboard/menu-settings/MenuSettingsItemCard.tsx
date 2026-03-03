@@ -18,6 +18,7 @@ interface MenuSettingsItemCardProps {
     onEdit?: () => void;
     onDelete?: () => void;
     isBuiltIn: boolean;
+    itemType?: 'exercise' | 'menu_group';
 }
 
 const STATUS_OPTIONS: { status: MenuSettingStatus; bg: string; color: string; label: string; dotColor: string }[] = [
@@ -45,6 +46,7 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
     onEdit,
     onDelete,
     isBuiltIn,
+    itemType = 'exercise',
 }) => {
     const [localName, setLocalName] = useState(nameOverride ?? '');
     const [localDesc, setLocalDesc] = useState(descriptionOverride ?? '');
@@ -169,6 +171,11 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                 {CLASS_LEVELS.map(cl => {
                                     const currentStatus = statusByClass[cl.id] || 'optional';
+                                    const visibleOptions = itemType === 'menu_group'
+                                        ? STATUS_OPTIONS
+                                            .filter(o => o.status === 'optional' || o.status === 'hidden')
+                                            .map(o => o.status === 'optional' ? { ...o, label: '表示' } : o)
+                                        : STATUS_OPTIONS;
                                     return (
                                         <div
                                             key={cl.id}
@@ -192,7 +199,7 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
                                                 {cl.id}
                                             </span>
                                             <div style={{ display: 'flex', gap: 4, flex: 1 }}>
-                                                {STATUS_OPTIONS.map(opt => {
+                                                {visibleOptions.map(opt => {
                                                     const isActive = currentStatus === opt.status;
                                                     return (
                                                         <button

@@ -26,8 +26,8 @@ import {
     type TeacherItemOverride,
 } from '../../lib/teacherItemOverrides';
 import { MenuSettingsItemCard } from './menu-settings/MenuSettingsItemCard';
-import { TeacherExerciseForm } from './menu-settings/TeacherExerciseForm';
-import { TeacherMenuForm } from './menu-settings/TeacherMenuForm';
+import { TeacherExerciseEditor } from './menu-settings/TeacherExerciseEditor';
+import { TeacherMenuEditor } from './menu-settings/TeacherMenuEditor';
 
 type SubTab = 'exercises' | 'groups';
 
@@ -333,9 +333,9 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                 {subTab === 'exercises' ? '新しい種目をつくる' : '新しいメニューをつくる'}
             </button>
 
-            {/* Exercise form */}
+            {/* Exercise editor (full-screen portal) */}
             {showExerciseForm && subTab === 'exercises' && (
-                <TeacherExerciseForm
+                <TeacherExerciseEditor
                     initial={editingExercise}
                     onSave={handleSaveExercise}
                     onCancel={() => { setShowExerciseForm(false); setEditingExercise(null); }}
@@ -343,9 +343,9 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                 />
             )}
 
-            {/* Menu form */}
+            {/* Menu editor (full-screen portal) */}
             {showMenuForm && subTab === 'groups' && (
-                <TeacherMenuForm
+                <TeacherMenuEditor
                     initial={editingMenu}
                     teacherExercises={teacherExercises}
                     onSave={handleSaveMenu}
@@ -364,10 +364,19 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                 color: '#8395A7',
                 padding: '4px 0',
             }}>
-                <span style={{ color: '#2BBAA0' }}>★ 必須</span>
-                <span>⚪ おまかせ</span>
-                <span style={{ color: '#E17055' }}>✕ 除外</span>
-                <span style={{ color: '#8B5CF6' }}>👁 非表示</span>
+                {subTab === 'exercises' ? (
+                    <>
+                        <span style={{ color: '#2BBAA0' }}>★ 必須</span>
+                        <span>⚪ おまかせ</span>
+                        <span style={{ color: '#E17055' }}>✕ 除外</span>
+                        <span style={{ color: '#8B5CF6' }}>👁 非表示</span>
+                    </>
+                ) : (
+                    <>
+                        <span>⚪ 表示</span>
+                        <span style={{ color: '#8B5CF6' }}>👁 非表示</span>
+                    </>
+                )}
             </div>
 
             {/* ─── Exercise cards ─── */}
@@ -442,6 +451,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                     onEdit={() => { setEditingMenu(menu); setShowMenuForm(true); }}
                                     onDelete={() => handleDeleteMenu(menu.id)}
                                     isBuiltIn={false}
+                                    itemType="menu_group"
                                 />
                             ))}
                         </>
@@ -464,6 +474,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                 onStatusChange={(cl, status) => handleStatusChange(group.id, 'menu_group', cl, status)}
                                 onSaveOverrides={(n, d) => handleSaveOverrides(group.id, 'menu_group', n, d)}
                                 isBuiltIn={true}
+                                itemType="menu_group"
                             />
                         );
                     })}
