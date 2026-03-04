@@ -1,5 +1,4 @@
 import type { AuthError, User } from '@supabase/supabase-js';
-import type { ConflictScenario } from '../../lib/sync';
 
 export type LoginContext = 'onboarding' | 'settings' | null;
 
@@ -10,9 +9,6 @@ export interface AuthContextValue {
     isAnonymous: boolean;
     loginContext: LoginContext;
     setLoginContext: (ctx: LoginContext) => void;
-    conflictScenario: ConflictScenario | null;
-    resolveConflict: (choice: 'cloud' | 'local') => Promise<void>;
-    cancelLogin: () => Promise<void>;
     isTeacher: boolean;
     isDeveloper: boolean;
     authError: string | null;

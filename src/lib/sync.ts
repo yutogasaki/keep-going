@@ -16,15 +16,6 @@ export {
 
 export { initialSync, setupOnlineListener } from './sync/initial';
 
-export {
-    hasCloudData,
-    hasLocalData,
-    detectConflict,
-    type ConflictScenario,
-} from './sync/conflict';
-
-export { pullAllData, type PullResult } from './sync/pull';
-
-export { mergeAppendData } from './sync/merge';
+export { pullAndMerge, type PullResult } from './sync/pull';
 
 export type { AppSettingsInput } from './sync/mappers';

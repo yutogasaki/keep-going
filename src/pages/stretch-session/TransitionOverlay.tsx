@@ -25,8 +25,9 @@ export const TransitionOverlay: React.FC<TransitionOverlayProps> = ({
                     position: 'absolute',
                     inset: 0,
                     zIndex: 30,
-                    background: 'rgba(255,255,255,0.95)',
-                    backdropFilter: 'blur(20px)',
+                    background: 'var(--glass-bg-heavy)',
+                    backdropFilter: 'blur(var(--blur-xl))',
+                    WebkitBackdropFilter: 'blur(var(--blur-xl))',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -49,7 +50,7 @@ export const TransitionOverlay: React.FC<TransitionOverlayProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 6px 20px rgba(0,0,0,0.06)',
+                    boxShadow: 'var(--shadow-sm)',
                     marginBottom: 16,
                 }}>
                     <ExerciseIcon

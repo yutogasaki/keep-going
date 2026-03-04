@@ -9,7 +9,6 @@ import {
     type ReactNode,
 } from 'react';
 import type { User } from '@supabase/supabase-js';
-import type { ConflictScenario } from '../lib/sync';
 import { supabase } from '../lib/supabase';
 import { checkIsDeveloper, checkIsTeacher } from '../lib/teacher';
 import { initialSync, processQueue, setAccountId, setupOnlineListener } from '../lib/sync';
@@ -18,7 +17,7 @@ import { useSyncStatus } from '../store/useSyncStatus';
 import { createAuthActions } from './auth/authActions';
 import { LOGIN_CONTEXT_KEY } from './auth/constants';
 import { getAppSettingsSnapshot } from './auth/settingsSnapshot';
-import { runConflictResolution, runSettingsLoginSync } from './auth/syncFlows';
+import { runSettingsLoginSync } from './auth/syncFlows';
 import type { AuthContextValue, LoginContext } from './auth/types';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -34,7 +33,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const saved = sessionStorage.getItem(LOGIN_CONTEXT_KEY);
         return saved === 'onboarding' || saved === 'settings' ? saved : null;
     });
-    const [conflictScenario, setConflictScenario] = useState<ConflictScenario | null>(null);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [authError, setAuthError] = useState<string | null>(null);
 
@@ -56,31 +54,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await runSettingsLoginSync({
             accountId,
             setIsSyncing,
-            setConflictScenario,
             setToastMessage,
             setLoginContext,
         });
     }, [setLoginContext]);
-
-    const resolveConflict = useCallback(async (choice: 'cloud' | 'local') => {
-        if (!user) return;
-
-        await runConflictResolution({
-            userId: user.id,
-            choice,
-            setIsSyncing,
-            setConflictScenario,
-            setToastMessage,
-        });
-    }, [user]);
-
-    const cancelLogin = useCallback(async () => {
-        setConflictScenario(null);
-        setIsSyncing(false);
-        if (supabase) {
-            await supabase.auth.signOut();
-        }
-    }, []);
 
     const { signUp, signIn, signInWithGoogle, signOut } = useMemo(
         () => createAuthActions({ user, setIsAnonymous, setToastMessage }),
@@ -92,13 +69,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const timer = setTimeout(() => setToastMessage(null), 3000);
         return () => clearTimeout(timer);
     }, [toastMessage]);
-
-    useEffect(() => {
-        if (!user && conflictScenario) {
-            setConflictScenario(null);
-            setIsSyncing(false);
-        }
-    }, [user, conflictScenario]);
 
     useEffect(() => {
         if (!user) {
@@ -232,9 +202,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 isDeveloper,
                 loginContext,
                 setLoginContext,
-                conflictScenario,
-                resolveConflict,
-                cancelLogin,
                 authError,
                 retryAuth: initAuth,
                 toastMessage,

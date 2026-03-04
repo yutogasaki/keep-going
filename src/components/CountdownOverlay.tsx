@@ -41,8 +41,9 @@ export const CountdownOverlay: React.FC<CountdownOverlayProps> = ({ onComplete, 
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'rgba(255, 255, 255, 0.9)',
-                backdropFilter: 'blur(20px)',
+                background: 'var(--glass-bg-heavy)',
+                backdropFilter: 'blur(var(--blur-xl))',
+                WebkitBackdropFilter: 'blur(var(--blur-xl))',
             }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -68,7 +69,7 @@ export const CountdownOverlay: React.FC<CountdownOverlayProps> = ({ onComplete, 
                             background: 'white',
                             padding: '24px 32px',
                             borderRadius: 24,
-                            boxShadow: '0 8px 32px rgba(0,0,0,0.06)',
+                            boxShadow: 'var(--shadow-lg)',
                         }}
                     >
                         <div style={{

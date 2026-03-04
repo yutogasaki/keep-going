@@ -49,9 +49,9 @@
 - [x] キャンセルボタンのスタイル統一 (2026-03-04)
 
 ### MEDIUM: アーキテクチャ
-- [ ] Sync簡素化 - Cloud-First Local Cacheパターンにリライト（674行→350行） (2026-03-04)
+- [x] Sync簡素化 - conflict/merge削除、pullAndMerge統合（706→605行、関連込み~260行削減） (2026-03-04)
 
 ### MEDIUM: デザイン
-- [ ] Liquid Glass デザイン段階的導入（UIスタイル統一と同時実施推奨） (2026-03-04)
+- [x] Liquid Glass デザイン導入 - CSSトークン定義 + 21コンポーネント更新 (2026-03-04)
 
 ## In Progress

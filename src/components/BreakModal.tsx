@@ -18,8 +18,9 @@ export const BreakModal: React.FC<BreakModalProps> = ({ onContinue }) => {
                 justifyContent: 'center',
                 padding: 24,
                 textAlign: 'center',
-                background: 'rgba(255, 255, 255, 0.92)',
-                backdropFilter: 'blur(24px)',
+                background: 'var(--glass-bg-heavy)',
+                backdropFilter: 'blur(var(--blur-xl))',
+                WebkitBackdropFilter: 'blur(var(--blur-xl))',
             }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -59,7 +60,7 @@ export const BreakModal: React.FC<BreakModalProps> = ({ onContinue }) => {
                     fontSize: 18,
                     fontWeight: 700,
                     color: 'white',
-                    boxShadow: '0 6px 20px rgba(43, 186, 160, 0.35)',
+                    boxShadow: 'var(--shadow-accent-md)',
                     width: '100%',
                     maxWidth: 280,
                 }}

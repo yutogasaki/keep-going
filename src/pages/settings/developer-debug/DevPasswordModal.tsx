@@ -23,8 +23,9 @@ export const DevPasswordModal: React.FC<DevPasswordModalProps> = ({
         <div style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.3)',
-            backdropFilter: 'blur(4px)',
+            background: 'var(--overlay-bg)',
+            backdropFilter: 'blur(var(--overlay-blur))',
+            WebkitBackdropFilter: 'blur(var(--overlay-blur))',
             zIndex: 200,
             display: 'flex',
             alignItems: 'center',

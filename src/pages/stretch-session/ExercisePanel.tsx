@@ -81,14 +81,14 @@ export const ExercisePanel: React.FC<ExercisePanelProps> = ({
                         style={{
                             position: 'absolute',
                             inset: 0,
-                            background: 'rgba(255, 255, 255, 0.2)',
+                            background: 'var(--glass-bg-light)',
                             zIndex: 30,
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            backdropFilter: 'blur(12px)',
-                            WebkitBackdropFilter: 'blur(12px)',
+                            backdropFilter: 'blur(var(--blur-md))',
+                            WebkitBackdropFilter: 'blur(var(--blur-md))',
                         }}
                     >
                         <div style={{

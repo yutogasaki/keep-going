@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { Cloud, LogOut, Loader2, UserPlus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { LoginPage } from '../LoginPage';
-import { SyncConflictDialog } from '../../components/SyncConflictDialog';
 
 export const AccountSection: React.FC = () => {
-    const { user, isAnonymous, isSyncing, signOut, conflictScenario, resolveConflict, cancelLogin, setLoginContext } = useAuth();
+    const { user, isAnonymous, isSyncing, signOut, setLoginContext } = useAuth();
     const [showLogin, setShowLogin] = useState(false);
 
     if (showLogin) {
@@ -19,14 +18,6 @@ export const AccountSection: React.FC = () => {
 
     return (
         <>
-            {conflictScenario === 'conflict' && (
-                <SyncConflictDialog
-                    onChooseCloud={() => resolveConflict('cloud')}
-                    onChooseLocal={() => resolveConflict('local')}
-                    onCancel={() => cancelLogin()}
-                />
-            )}
-
             {isRealAccount ? (
                 // Real account (logged in with email/Google)
                 <div className="card" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>

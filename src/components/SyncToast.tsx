@@ -25,13 +25,14 @@ export const SyncToast: React.FC<SyncToastProps> = ({ message }) => {
                         padding: '10px 20px',
                         borderRadius: 12,
                         background: 'rgba(45, 52, 54, 0.9)',
-                        backdropFilter: 'blur(8px)',
+                        backdropFilter: 'blur(var(--blur-sm))',
+                        WebkitBackdropFilter: 'blur(var(--blur-sm))',
                         color: 'white',
                         fontFamily: "'Noto Sans JP', sans-serif",
                         fontSize: 14,
                         fontWeight: 500,
                         whiteSpace: 'nowrap',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                        boxShadow: 'var(--shadow-lg)',
                         pointerEvents: 'none',
                     }}
                 >

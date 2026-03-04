@@ -3,8 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 import { getTodayKey } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
-import { hasCloudData } from '../lib/sync/conflict';
-import { pullAllData } from '../lib/sync/pull';
+import { pullAndMerge } from '../lib/sync/pull';
 import { initialSync } from '../lib/sync/initial';
 import { LoginPage } from './LoginPage';
 import { type ClassLevel } from '../data/exercises';
@@ -39,13 +38,10 @@ export const Onboarding: React.FC = () => {
         setRestoreError(null);
 
         try {
-            const cloudExists = await hasCloudData(accountId);
-            if (cloudExists) {
-                const result = await pullAllData(accountId);
-                if (result.success && result.hadData) {
-                    setLoginContext(null);
-                    return;
-                }
+            const result = await pullAndMerge(accountId);
+            if (result.success && result.hadData) {
+                setLoginContext(null);
+                return;
             }
             setLoginContext(null);
             setStep('name');

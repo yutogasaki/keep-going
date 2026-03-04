@@ -25,16 +25,16 @@ export const ControlBar: React.FC<ControlBarProps> = ({
             bottom: 'calc(env(safe-area-inset-bottom, 24px) + 24px)',
             left: '50%',
             zIndex: 80,
-            background: 'rgba(255, 255, 255, 0.85)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
+            background: 'var(--glass-bg-heavy)',
+            backdropFilter: 'blur(var(--blur-xl))',
+            WebkitBackdropFilter: 'blur(var(--blur-xl))',
             borderRadius: 99,
             padding: '8px 24px',
             display: 'flex',
             alignItems: 'center',
             gap: 32,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-            border: '1px solid rgba(255,255,255,0.6)',
+            boxShadow: 'var(--shadow-lg)',
+            border: 'var(--glass-border)',
         }}
     >
         <button
@@ -72,7 +72,7 @@ export const ControlBar: React.FC<ControlBarProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: 'white',
-                boxShadow: '0 4px 12px rgba(43, 186, 160, 0.3)',
+                boxShadow: 'var(--shadow-accent-sm)',
             }}
         >
             {isPlaying ? (

@@ -58,11 +58,12 @@ export const CurrentContextBadge: React.FC = () => {
                 exit={{ opacity: 0, scale: 0.9, y: -10 }}
                 whileTap={{ scale: 0.95 }}
                 style={{
-                    background: 'rgba(255, 255, 255, 0.9)',
-                    backdropFilter: 'blur(8px)',
+                    background: 'var(--glass-bg-heavy)',
+                    backdropFilter: 'blur(var(--blur-sm))',
+                    WebkitBackdropFilter: 'blur(var(--blur-sm))',
                     padding: '6px 14px',
                     borderRadius: 20,
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                    boxShadow: 'var(--shadow-sm)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: 6,

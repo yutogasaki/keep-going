@@ -40,7 +40,9 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
                         position: 'fixed',
                         inset: 0,
                         zIndex: 2000,
-                        background: 'rgba(0,0,0,0.45)',
+                        background: 'var(--overlay-bg)',
+                        backdropFilter: 'blur(var(--overlay-blur))',
+                        WebkitBackdropFilter: 'blur(var(--overlay-blur))',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -59,12 +61,15 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
                         transition={{ duration: 0.15 }}
                         onClick={e => e.stopPropagation()}
                         style={{
-                            background: '#fff',
-                            borderRadius: 20,
+                            background: 'var(--glass-bg-heavy)',
+                            backdropFilter: 'blur(var(--blur-xl))',
+                            WebkitBackdropFilter: 'blur(var(--blur-xl))',
+                            border: 'var(--glass-border)',
+                            borderRadius: 'var(--card-radius)',
                             padding: 24,
                             maxWidth: 320,
                             width: '100%',
-                            boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+                            boxShadow: 'var(--shadow-xl)',
                         }}
                     >
                         <h3 style={{
@@ -92,13 +97,13 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
                                 style={{
                                     flex: 1,
                                     padding: '12px 0',
-                                    borderRadius: 14,
-                                    border: '1px solid #E0E0E0',
-                                    background: '#fff',
+                                    borderRadius: 'var(--btn-radius)',
+                                    border: 'var(--btn-cancel-border)',
+                                    background: 'var(--btn-cancel-bg)',
                                     fontFamily: "'Noto Sans JP', sans-serif",
                                     fontSize: 14,
                                     fontWeight: 600,
-                                    color: '#636E72',
+                                    color: 'var(--btn-cancel-color)',
                                     cursor: 'pointer',
                                 }}
                             >
@@ -110,7 +115,7 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
                                 style={{
                                     flex: 1,
                                     padding: '12px 0',
-                                    borderRadius: 14,
+                                    borderRadius: 'var(--btn-radius)',
                                     border: 'none',
                                     background: confirmColor,
                                     fontFamily: "'Noto Sans JP', sans-serif",

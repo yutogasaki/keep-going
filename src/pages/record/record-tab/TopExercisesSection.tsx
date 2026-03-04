@@ -47,7 +47,7 @@ export const TopExercisesSection: React.FC<TopExercisesSectionProps> = ({ loadin
                                 alignItems: 'center',
                                 gap: 6,
                                 padding: '12px 8px',
-                                background: 'rgba(255, 255, 255, 0.9)',
+                                background: 'var(--glass-bg-heavy)',
                             }}
                         >
                             <div style={{

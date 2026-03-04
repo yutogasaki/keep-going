@@ -20,8 +20,9 @@ export const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ userId, onCanc
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(0,0,0,0.4)',
-            backdropFilter: 'blur(4px)',
+            background: 'var(--overlay-bg)',
+            backdropFilter: 'blur(var(--overlay-blur))',
+            WebkitBackdropFilter: 'blur(var(--overlay-blur))',
             zIndex: 100000,
             display: 'flex',
             alignItems: 'center',
@@ -36,12 +37,15 @@ export const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ userId, onCanc
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 style={{
-                    background: 'white',
-                    borderRadius: 24,
+                    background: 'var(--glass-bg-heavy)',
+                    backdropFilter: 'blur(var(--blur-xl))',
+                    WebkitBackdropFilter: 'blur(var(--blur-xl))',
+                    border: 'var(--glass-border)',
+                    borderRadius: 'var(--card-radius)',
                     padding: 24,
                     width: 'calc(100% - 64px)',
                     maxWidth: 320,
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+                    boxShadow: 'var(--shadow-xl)',
                 }}
             >
                 <h3 style={{

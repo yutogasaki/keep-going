@@ -29,10 +29,10 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
             style={{
                 background: allCompleted
                     ? 'linear-gradient(135deg, #FFF9E6, #FFF3CC)'
-                    : 'rgba(255, 255, 255, 0.95)',
-                borderRadius: 16,
+                    : 'var(--glass-bg-heavy)',
+                borderRadius: 'var(--card-radius-sm)',
                 padding: '14px 16px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                boxShadow: 'var(--shadow-sm)',
                 border: allCompleted
                     ? '1px solid #FFD700'
                     : '1px solid rgba(0,0,0,0.05)',
