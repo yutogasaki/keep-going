@@ -64,13 +64,13 @@ export function useSessionSetup({
 
     const globalExcludedIds = useMemo(
         () => Array.from(new Set(
-            contextUsers.flatMap((user) => user.excludedExercises || (user.classLevel === 'プレ' ? ['C01', 'C02'] : []))
+            contextUsers.flatMap((user) => user.excludedExercises ?? [])
         )),
         [contextUsers]
     );
     const globalRequiredIds = useMemo(
         () => Array.from(new Set(
-            contextUsers.flatMap((user) => user.requiredExercises || ['S01', 'S02', 'S07'])
+            contextUsers.flatMap((user) => user.requiredExercises ?? [])
         )),
         [contextUsers]
     );
@@ -123,17 +123,22 @@ export function useSessionSetup({
                     });
 
                     const todaySessions = allSessions.filter((session) => session.date === getTodayKey());
-                    // Merge teacher settings with student settings (teacher takes priority)
-                    const mergedExcluded = Array.from(new Set([
-                        ...todaySessions.flatMap((session) => [...session.exerciseIds, ...session.skippedIds]),
-                        ...globalExcludedIds,
-                        ...teacherExcludedIds,
-                    ])).filter(id => !teacherRequiredIds.includes(id));
+                    // ユーザー設定が優先、先生設定はユーザー未設定分のみ適用
+                    const userSetIds = new Set([...globalRequiredIds, ...globalExcludedIds]);
 
-                    const mergedRequired = Array.from(new Set([
-                        ...globalRequiredIds,
-                        ...teacherRequiredIds,
-                    ])).filter(id => !teacherExcludedIds.includes(id));
+                    const effectiveRequired = [
+                        ...globalRequiredIds,  // ユーザーの必須（先生の除外に勝つ）
+                        ...teacherRequiredIds.filter(id => !userSetIds.has(id)),  // 先生の必須（ユーザー未設定分のみ）
+                    ];
+                    const effectiveExcluded = [
+                        ...globalExcludedIds,  // ユーザーの除外（先生の必須に勝つ）
+                        ...teacherExcludedIds.filter(id => !userSetIds.has(id)),  // 先生の除外（ユーザー未設定分のみ）
+                    ];
+
+                    const mergedRequired = [...new Set(effectiveRequired)];
+                    const today = todaySessions.flatMap((session) => [...session.exerciseIds, ...session.skippedIds]);
+                    const mergedExcluded = [...new Set([...today, ...effectiveExcluded])]
+                        .filter(id => !mergedRequired.includes(id));
 
                     setSessionExercises(generateSession(classLevel, {
                         excludedIds: mergedExcluded,

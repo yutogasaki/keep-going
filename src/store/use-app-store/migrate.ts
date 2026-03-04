@@ -1,7 +1,7 @@
 import { getTodayKey } from '../../lib/db';
 import type { AppState } from './types';
 
-export const APP_STATE_VERSION = 10;
+export const APP_STATE_VERSION = 11;
 
 export function migrateAppState(persistedState: any, version: number): AppState {
     if (version === 0) {
@@ -114,6 +114,24 @@ export function migrateAppState(persistedState: any, version: number): AppState 
         }
 
         persistedState.joinedChallengeIds = newRecord;
+    }
+
+    if (version < 11) {
+        // ハードコードされた旧デフォルト値を削除し、先生ダッシュボード設定が適用されるようにする
+        // ユーザーが明示的に追加した他の種目は残す
+        const OLD_REQUIRED = ['S01', 'S02', 'S07'];
+        const OLD_EXCLUDED = ['C01', 'C02'];
+        if (persistedState.users && Array.isArray(persistedState.users)) {
+            persistedState.users = persistedState.users.map((user: any) => ({
+                ...user,
+                requiredExercises: (user.requiredExercises ?? []).filter(
+                    (id: string) => !OLD_REQUIRED.includes(id)
+                ),
+                excludedExercises: (user.excludedExercises ?? []).filter(
+                    (id: string) => !OLD_EXCLUDED.includes(id)
+                ),
+            }));
+        }
     }
 
     return persistedState as AppState;

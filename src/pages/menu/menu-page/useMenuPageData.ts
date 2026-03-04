@@ -88,14 +88,14 @@ export function useMenuPageData({
 
     const excludedExercises = useMemo(
         () => Array.from(new Set(
-            currentUsers.flatMap((user) => user.excludedExercises || (user.classLevel === 'プレ' ? ['C01', 'C02'] : [])),
+            currentUsers.flatMap((user) => user.excludedExercises ?? []),
         )),
         [currentUsers],
     );
 
     const requiredExercises = useMemo(
         () => Array.from(new Set(
-            currentUsers.flatMap((user) => user.requiredExercises || ['S01', 'S02', 'S07']),
+            currentUsers.flatMap((user) => user.requiredExercises ?? []),
         )),
         [currentUsers],
     );

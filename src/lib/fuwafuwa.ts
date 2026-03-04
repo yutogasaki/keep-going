@@ -6,8 +6,8 @@ import type { PastFuwafuwaRecord } from '../store/useAppStore';
 export const FUWAFUWA_CYCLE_DAYS = 28;
 
 // Thresholds
-export const EVOLVE_TO_FAIRY_THRESHOLD = 3;   // Requires 3 active days in the first 7 days to evolve to fairy
-export const EVOLVE_TO_ADULT_THRESHOLD = 10;  // Requires 10 active days total to evolve to adult
+export const EVOLVE_TO_FAIRY_THRESHOLD = 2;   // Requires 2 active days to evolve to fairy
+export const EVOLVE_TO_ADULT_THRESHOLD = 7;   // Requires 7 active days total to evolve to adult
 
 export interface FuwafuwaStatus {
     stage: number; // 1: Egg, 2: Fairy, 3: Adult
@@ -36,7 +36,10 @@ export function calculateFuwafuwaStatus(
     const daysAlive = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1; // 1-indexed
 
     // Calculate active days since birth (always needed, even for sayonara)
-    const sessionsSinceBirth = sessions.filter(s => s.date >= birthDate && s.date <= getTodayKey());
+    // Only count sessions where at least 1 exercise was completed
+    const sessionsSinceBirth = sessions.filter(
+        s => s.date >= birthDate && s.date <= getTodayKey() && s.exerciseIds.length >= 1
+    );
     const uniqueActiveDates = new Set(sessionsSinceBirth.map(s => s.date));
     const activeDays = uniqueActiveDates.size;
 
@@ -52,23 +55,23 @@ export function calculateFuwafuwaStatus(
     let stage = 1;
     let scale = 1.0;
 
-    if (daysAlive <= 7) {
-        // Week 1: always Egg regardless of activeDays
+    if (daysAlive <= 3) {
+        // Day 1-3: always Egg regardless of activeDays
         stage = 1;
         scale = 1.0;
-    } else if (daysAlive <= 21) {
-        // Week 2-3: Fairy possible
+    } else if (daysAlive <= 14) {
+        // Day 4-14: Fairy possible
         if (activeDays >= EVOLVE_TO_FAIRY_THRESHOLD) {
             stage = 2;
-            if (activeDays <= 5) scale = 0.5;
-            else if (activeDays <= 8) scale = 0.75;
+            if (activeDays <= 3) scale = 0.7;
+            else if (activeDays <= 5) scale = 0.85;
             else scale = 1.0;
         } else {
             stage = 1;
             scale = 1.0;
         }
     } else {
-        // Week 4: Adult possible
+        // Day 15-28: Adult possible
         if (activeDays >= EVOLVE_TO_ADULT_THRESHOLD) {
             stage = 3;
             scale = 1.0;
