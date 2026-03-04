@@ -82,7 +82,6 @@ export async function pullAndMerge(accountId: string): Promise<PullResult> {
 
         // --- Exercises: cloud wins, push local-only ---
         const localExercises = await getCustomExercises();
-        const localExerciseIds = new Set(localExercises.map((e) => e.id));
         const cloudExerciseIds = new Set(cloudExercises.map((e) => e.id));
 
         for (const ce of cloudExercises) {
@@ -96,7 +95,6 @@ export async function pullAndMerge(accountId: string): Promise<PullResult> {
 
         // --- Groups: cloud wins, push local-only ---
         const localGroups = await getCustomGroups();
-        const localGroupIds = new Set(localGroups.filter((g) => !g.isPreset).map((g) => g.id));
         const cloudGroupIds = new Set(cloudGroups.map((g) => g.id));
 
         for (const cg of cloudGroups) {

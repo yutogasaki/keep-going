@@ -5,7 +5,7 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 import { audio } from '../lib/audio';
 
 export const PwaReloadPrompt: React.FC = () => {
-    const registrationRef = useRef<ServiceWorkerRegistration | undefined>();
+    const registrationRef = useRef<ServiceWorkerRegistration | undefined>(undefined);
     const {
         offlineReady: [offlineReady, setOfflineReady],
         needRefresh: [needRefresh, setNeedRefresh],
