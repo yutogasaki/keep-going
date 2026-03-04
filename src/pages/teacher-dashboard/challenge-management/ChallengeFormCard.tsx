@@ -43,6 +43,11 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
     onCancel,
     onSubmit,
 }) => {
+    const dateError = values.startDate && values.endDate && values.endDate < values.startDate
+        ? '終了日は開始日より後にしてください'
+        : '';
+    const hasError = !values.title.trim() || !!dateError;
+
     return (
         <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ ...labelStyle }}>タイトル</div>
@@ -94,10 +99,24 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                         type="date"
                         value={values.endDate}
                         onChange={(event) => onChange({ endDate: event.target.value })}
-                        style={inputStyle}
+                        style={{
+                            ...inputStyle,
+                            ...(dateError ? { border: '1px solid #E17055' } : {}),
+                        }}
                     />
                 </div>
             </div>
+            {dateError && (
+                <div style={{
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 11,
+                    color: '#E17055',
+                    fontWeight: 600,
+                    marginTop: -4,
+                }}>
+                    {dateError}
+                </div>
+            )}
 
             <div>
                 <div style={labelStyle}>対象クラス（未選択＝全クラス）</div>
@@ -196,18 +215,18 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                 </button>
                 <button
                     onClick={onSubmit}
-                    disabled={!values.title.trim() || submitting}
+                    disabled={hasError || submitting}
                     style={{
                         flex: 1,
                         padding: '12px 0',
                         borderRadius: 14,
                         border: 'none',
-                        background: values.title.trim() ? '#2BBAA0' : '#DFE6E9',
-                        color: values.title.trim() ? '#FFF' : '#B2BEC3',
+                        background: !hasError ? '#2BBAA0' : '#DFE6E9',
+                        color: !hasError ? '#FFF' : '#B2BEC3',
                         fontFamily: "'Noto Sans JP', sans-serif",
                         fontSize: 14,
                         fontWeight: 700,
-                        cursor: values.title.trim() ? 'pointer' : 'not-allowed',
+                        cursor: !hasError ? 'pointer' : 'not-allowed',
                     }}
                 >
                     {submitting ? (isEditing ? '保存中...' : '作成中...') : (isEditing ? '保存' : '作成')}

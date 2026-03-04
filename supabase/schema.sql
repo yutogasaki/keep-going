@@ -298,6 +298,130 @@ begin
 end;
 $$ language plpgsql security definer;
 
+-- ─── 先生モード追加テーブル ──────────────────────────────
+
+-- 先生メニュー設定（種目・メニューのクラス別ステータス）
+create table teacher_menu_settings (
+  id uuid primary key default gen_random_uuid(),
+  item_id text not null,
+  item_type text not null check (item_type in ('exercise', 'menu_group')),
+  class_level text not null,
+  status text not null default 'optional' check (status in ('required', 'optional', 'excluded', 'hidden')),
+  created_by text not null,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique (item_id, item_type, class_level)
+);
+
+alter table teacher_menu_settings enable row level security;
+create policy "Anyone can read teacher_menu_settings" on teacher_menu_settings
+  for select using (true);
+create policy "Teachers can manage teacher_menu_settings" on teacher_menu_settings
+  for all using (is_teacher()) with check (is_teacher());
+create index idx_teacher_menu_settings_class on teacher_menu_settings (class_level, item_type);
+
+create trigger teacher_menu_settings_updated_at
+  before update on teacher_menu_settings
+  for each row execute function update_updated_at();
+
+-- 先生が作ったオリジナル種目
+create table teacher_exercises (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  sec int not null default 30,
+  emoji text not null default '🌸',
+  has_split boolean default false,
+  description text,
+  class_levels text[] not null default '{}',
+  created_by text not null,
+  created_at timestamptz default now()
+);
+
+alter table teacher_exercises enable row level security;
+create policy "Anyone can read teacher_exercises" on teacher_exercises
+  for select using (true);
+create policy "Teachers can manage teacher_exercises" on teacher_exercises
+  for all using (is_teacher()) with check (is_teacher());
+
+-- 先生が作ったセットメニュー
+create table teacher_menus (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  emoji text not null default '📋',
+  description text,
+  exercise_ids jsonb not null default '[]',
+  class_levels text[] not null default '{}',
+  created_by text not null,
+  created_at timestamptz default now()
+);
+
+alter table teacher_menus enable row level security;
+create policy "Anyone can read teacher_menus" on teacher_menus
+  for select using (true);
+create policy "Teachers can manage teacher_menus" on teacher_menus
+  for all using (is_teacher()) with check (is_teacher());
+
+-- 先生の種目/メニュー名・説明の上書き
+create table teacher_item_overrides (
+  id uuid primary key default gen_random_uuid(),
+  item_id text not null,
+  item_type text not null check (item_type in ('exercise', 'menu_group')),
+  name_override text,
+  description_override text,
+  emoji_override text,
+  sec_override int,
+  has_split_override boolean,
+  exercise_ids_override text[],
+  created_by text not null,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique (item_id, item_type)
+);
+
+alter table teacher_item_overrides enable row level security;
+create policy "Anyone can read teacher_item_overrides" on teacher_item_overrides
+  for select using (true);
+create policy "Teachers can manage teacher_item_overrides" on teacher_item_overrides
+  for all using (is_teacher()) with check (is_teacher());
+
+create trigger teacher_item_overrides_updated_at
+  before update on teacher_item_overrides
+  for each row execute function update_updated_at();
+
+-- ─── 公開種目 ────────────────────────────────────────
+
+create table public_exercises (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  sec int not null default 30,
+  emoji text not null default '🌸',
+  has_split boolean default false,
+  description text,
+  author_name text not null,
+  account_id uuid references auth.users not null,
+  download_count int default 0,
+  created_at timestamptz default now()
+);
+
+alter table public_exercises enable row level security;
+create policy "Anyone can read public_exercises" on public_exercises
+  for select using (true);
+create policy "Users can manage own public_exercises" on public_exercises
+  for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
+create index idx_public_exercises_downloads on public_exercises (download_count desc);
+
+-- 種目ダウンロード重複防止
+create table exercise_downloads (
+  exercise_id uuid not null references public_exercises(id) on delete cascade,
+  account_id uuid not null,
+  downloaded_at timestamptz default now(),
+  primary key (exercise_id, account_id)
+);
+
+alter table exercise_downloads enable row level security;
+create policy "Users can manage own exercise_downloads" on exercise_downloads
+  for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
+
 -- ─── ダウンロード重複防止 ──────────────────────────────
 
 -- メニューダウンロード記録テーブル

@@ -136,7 +136,7 @@ export const SettingsPage: React.FC = () => {
                 <HelpCenterSection />
                 <FeedbackSection />
                 <AppInfoActionsSection />
-                <DeveloperDebugSection />
+                {import.meta.env.DEV && <DeveloperDebugSection />}
             </div>
 
             <ConfirmDeleteModal

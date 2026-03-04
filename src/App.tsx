@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import { useAppStore } from './store/useAppStore';
 import { PwaReloadPrompt } from './components/PwaReloadPrompt';
 import { SyncToast } from './components/SyncToast';
+import { OfflineBanner } from './components/OfflineBanner';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -111,6 +112,7 @@ function AppContent() {
             </Suspense>
             <PwaReloadPrompt />
             <SyncToast message={toastMessage} />
+            <OfflineBanner />
         </div>
     );
 }
