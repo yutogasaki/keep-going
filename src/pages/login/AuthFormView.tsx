@@ -104,9 +104,11 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
                         <input
                             type="email"
                             placeholder="メールアドレス"
+                            aria-label="メールアドレス"
                             value={email}
                             onChange={(event) => onEmailChange(event.target.value)}
                             required
+                            autoComplete="email"
                             style={{
                                 flex: 1,
                                 border: 'none',
@@ -129,10 +131,12 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
                         <input
                             type="password"
                             placeholder="パスワード"
+                            aria-label="パスワード"
                             value={password}
                             onChange={(event) => onPasswordChange(event.target.value)}
                             required
                             minLength={6}
+                            autoComplete={isSignUp ? 'new-password' : 'current-password'}
                             style={{
                                 flex: 1,
                                 border: 'none',

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface FuwafuwaNameModalProps {
     open: boolean;
@@ -17,6 +18,7 @@ export const FuwafuwaNameModal: React.FC<FuwafuwaNameModalProps> = ({
 }) => {
     const [value, setValue] = useState(currentName || '');
     const inputRef = useRef<HTMLInputElement>(null);
+    const trapRef = useFocusTrap<HTMLDivElement>(open);
 
     useEffect(() => {
         if (open) {
@@ -50,6 +52,10 @@ export const FuwafuwaNameModal: React.FC<FuwafuwaNameModalProps> = ({
                     onClick={onCancel}
                 >
                     <motion.div
+                        ref={trapRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="なまえをつけよう"
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.9, opacity: 0 }}

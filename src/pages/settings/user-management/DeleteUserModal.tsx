@@ -1,6 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
+import { useFocusTrap } from '../../../hooks/useFocusTrap';
 
 interface DeleteUserModalProps {
     userId: string | null;
@@ -9,6 +10,7 @@ interface DeleteUserModalProps {
 }
 
 export const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ userId, onCancel, onConfirm }) => {
+    const trapRef = useFocusTrap<HTMLDivElement>(!!userId);
     if (!userId) return null;
 
     return createPortal(
@@ -26,6 +28,10 @@ export const DeleteUserModal: React.FC<DeleteUserModalProps> = ({ userId, onCanc
             justifyContent: 'center',
         }}>
             <motion.div
+                ref={trapRef}
+                role="dialog"
+                aria-modal="true"
+                aria-label="ユーザーの削除"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}

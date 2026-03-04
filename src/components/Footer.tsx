@@ -44,6 +44,8 @@ export const Footer: React.FC = () => {
                 <button
                     key={id}
                     onClick={() => setTab(id)}
+                    aria-label={label}
+                    aria-current={currentTab === id ? 'page' : undefined}
                     style={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -96,6 +98,8 @@ export const Footer: React.FC = () => {
                         haptics.tick();
                         setTab(id);
                     }}
+                    aria-label={label}
+                    aria-current={currentTab === id ? 'page' : undefined}
                     style={{
                         display: 'flex',
                         flexDirection: 'column',

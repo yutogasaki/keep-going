@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { ExerciseIcon } from '../../components/ExerciseIcon';
 import { EXERCISES } from '../../data/exercises';
 import type { CustomExercise } from '../../lib/db';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface CustomMenuModalProps {
     show: boolean;
@@ -36,17 +37,24 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
     onSetExcludedExercises,
     onSetRequiredExercises,
 }) => {
+    const trapRef = useFocusTrap<HTMLDivElement>(show);
     if (!show) return null;
 
     return createPortal(
-        <div style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgb(248, 249, 250)',
-            zIndex: 200,
-            display: 'flex',
-            flexDirection: 'column',
-        }}>
+        <div
+            ref={trapRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="おまかせの設定"
+            style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgb(248, 249, 250)',
+                zIndex: 200,
+                display: 'flex',
+                flexDirection: 'column',
+            }}
+        >
             <div style={{
                 padding: '24px 24px 20px',
                 display: 'flex',
@@ -78,6 +86,7 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                 </div>
                 <button
                     onClick={onClose}
+                    aria-label="閉じる"
                     style={{
                         width: 40,
                         height: 40,

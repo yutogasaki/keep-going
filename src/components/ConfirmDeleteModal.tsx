@@ -1,6 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 interface ConfirmDeleteModalProps {
     open: boolean;
@@ -25,6 +26,8 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
     loadingLabel = '削除中...',
     confirmColor = '#E17055',
 }) => {
+    const trapRef = useFocusTrap<HTMLDivElement>(open);
+
     return createPortal(
         <AnimatePresence>
             {open && (
@@ -46,6 +49,10 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
                     onClick={onCancel}
                 >
                     <motion.div
+                        ref={trapRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={title}
                         initial={{ scale: 0.9, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.9, opacity: 0 }}
