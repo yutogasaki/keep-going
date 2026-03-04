@@ -1,3 +1,5 @@
+export type TableName = keyof Database['public']['Tables'];
+
 export interface Database {
     public: {
         Tables: {
@@ -201,6 +203,7 @@ export interface Database {
                     author_name: string;
                     account_id: string;
                     download_count: number;
+                    custom_exercise_data: unknown[];
                     created_at: string;
                 };
                 Insert: {
@@ -212,6 +215,7 @@ export interface Database {
                     author_name: string;
                     account_id: string;
                     download_count?: number;
+                    custom_exercise_data?: unknown[];
                 };
                 Update: Partial<Database['public']['Tables']['public_menus']['Insert']>;
                 Relationships: [];
@@ -375,9 +379,17 @@ export interface Database {
                 Args: { sort_by?: string; max_count?: number };
                 Returns: Database['public']['Tables']['public_exercises']['Row'][];
             };
+            try_increment_download_count: {
+                Args: { target_menu_id: string; downloader_account_id: string };
+                Returns: boolean;
+            };
             try_increment_exercise_download_count: {
                 Args: { target_exercise_id: string; downloader_account_id: string };
                 Returns: boolean;
+            };
+            teacher_delete_family_member: {
+                Args: { target_member_id: string };
+                Returns: undefined;
             };
         };
     };

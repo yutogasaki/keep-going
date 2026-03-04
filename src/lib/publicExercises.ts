@@ -108,7 +108,7 @@ async function tryIncrementDownload(exerciseId: string): Promise<void> {
     if (!accountId) return;
 
     try {
-        await (supabase.rpc as any)('try_increment_exercise_download_count', {
+        await supabase.rpc('try_increment_exercise_download_count', {
             target_exercise_id: exerciseId,
             downloader_account_id: accountId,
         });

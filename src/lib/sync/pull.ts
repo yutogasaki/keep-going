@@ -63,10 +63,10 @@ export async function pullAllData(accountId: string): Promise<PullResult> {
         const sessions: SessionRecord[] = (sessionsRes.data ?? []).map(toLocalSessionRecord);
         const exercises: CustomExercise[] = (exercisesRes.data ?? []).map(toLocalCustomExercise);
         const groups: MenuGroup[] = (groupsRes.data ?? [])
-            .filter((group: any) => !group.is_preset)
+            .filter((group) => !group.is_preset)
             .map(toLocalCustomMenuGroup);
 
-        const cloudSettings = settingsRes.data as any;
+        const cloudSettings = settingsRes.data;
 
         await clearHistoryDB();
         for (const session of sessions) {

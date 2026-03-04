@@ -246,7 +246,7 @@ async function tryIncrementDownload(menuId: string): Promise<void> {
         // - 初回: INSERT成功 → カウント+1 → true
         // - 2回目以降（削除後含む）: INSERT失敗(重複) → カウント変化なし → false
         // - RPC未デプロイ: エラー → 無視（カウントは増えない）
-        await (supabase.rpc as any)('try_increment_download_count', {
+        await supabase.rpc('try_increment_download_count', {
             target_menu_id: menuId,
             downloader_account_id: accountId,
         });
@@ -280,7 +280,7 @@ export async function unpublishMenu(id: string): Promise<void> {
     if (error) throw error;
 
     // 3. Auto-unpublish associated custom exercises
-    const customData = ((menuRow as any)?.custom_exercise_data as CustomExerciseData[]) ?? [];
+    const customData = (menuRow?.custom_exercise_data as CustomExerciseData[]) ?? [];
     if (customData.length > 0) {
         try {
             const myPublished = await fetchMyPublishedExercises();

@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAnimation } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
+import { useShallow } from 'zustand/react/shallow';
 import { calculateFuwafuwaStatus, pickNextFuwafuwaType } from '../lib/fuwafuwa';
 import { getTodayKey, type SessionRecord } from '../lib/db';
 import type { UserProfileStore } from '../store/useAppStore';
@@ -35,15 +36,17 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
     const rippleIdCounter = useRef(0);
     const particleTimers = useRef<number[]>([]);
 
-    const debugStage = useAppStore((state) => state.debugFuwafuwaStage);
-    const debugType = useAppStore((state) => state.debugFuwafuwaType);
-    const debugActiveDays = useAppStore((state) => state.debugActiveDays);
-    const debugScale = useAppStore((state) => state.debugFuwafuwaScale);
+    const debugOverrides = useAppStore(useShallow((state) => ({
+        stage: state.debugFuwafuwaStage,
+        type: state.debugFuwafuwaType,
+        activeDays: state.debugActiveDays,
+        scale: state.debugFuwafuwaScale,
+    })));
 
-    const displayStage = debugStage !== null ? debugStage : status.stage;
-    const displayType = debugType !== null ? debugType : fuwafuwaType;
-    const displayActiveDays = debugActiveDays !== null ? debugActiveDays : status.activeDays;
-    const displayScale = debugScale !== null ? debugScale : status.scale;
+    const displayStage = debugOverrides.stage ?? status.stage;
+    const displayType = debugOverrides.type ?? fuwafuwaType;
+    const displayActiveDays = debugOverrides.activeDays ?? status.activeDays;
+    const displayScale = debugOverrides.scale ?? status.scale;
 
     useEffect(() => {
         const timers = particleTimers;
@@ -176,7 +179,8 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
     };
 
     const imagePath = `/ikimono/${displayType}-${displayStage}.webp`;
-    const { auraColor, pulseDuration, showFireflies } = getAuraVisualState(displayActiveDays);
+    const auraVisual = useMemo(() => getAuraVisualState(displayActiveDays), [displayActiveDays]);
+    const { auraColor, pulseDuration, showFireflies } = auraVisual;
 
     return (
         <div

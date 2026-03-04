@@ -1,4 +1,5 @@
 import { supabase } from '../supabase';
+import type { TableName } from '../supabase-types';
 import type { CustomExercise, SessionRecord } from '../db';
 import type { MenuGroup } from '../../data/menuGroups';
 import type { UserProfileStore } from '../../store/useAppStore';
@@ -27,7 +28,7 @@ async function upsertWithQueue(
         return;
     }
 
-    const { error } = await supabase.from(table as any).upsert(payload as any);
+    const { error } = await supabase.from(table as TableName).upsert(payload as never);
     if (error) {
         console.warn(`[sync] ${logLabel} failed, queuing:`, error);
         await enqueueSyncEntry({ table, operation: 'upsert', payload });
@@ -44,9 +45,9 @@ async function deleteWithQueue(
         return;
     }
 
-    let query = supabase.from(table as any).delete();
+    let query = supabase.from(table as TableName).delete();
     for (const [key, value] of Object.entries(payload)) {
-        query = query.eq(key, value as any);
+        query = query.eq(key, value as string);
     }
 
     const { error } = await query;

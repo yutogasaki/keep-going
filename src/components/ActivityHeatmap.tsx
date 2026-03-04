@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { getDateKeyOffset, type SessionRecord } from '../lib/db';
 
 interface ActivityHeatmapProps {
@@ -7,14 +7,18 @@ interface ActivityHeatmapProps {
 }
 
 export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ sessions, daysToShow = 14 }) => {
-    // Generate array of date keys for the last `daysToShow` days
-    const dates = Array.from({ length: daysToShow }, (_, i) => getDateKeyOffset(- (daysToShow - 1 - i)));
+    const dates = useMemo(
+        () => Array.from({ length: daysToShow }, (_, i) => getDateKeyOffset(-(daysToShow - 1 - i))),
+        [daysToShow],
+    );
 
-    // Map sessions to dates
-    const sessionMap = sessions.reduce((acc, session) => {
-        acc[session.date] = (acc[session.date] || 0) + session.totalSeconds;
-        return acc;
-    }, {} as Record<string, number>);
+    const sessionMap = useMemo(
+        () => sessions.reduce((acc, session) => {
+            acc[session.date] = (acc[session.date] || 0) + session.totalSeconds;
+            return acc;
+        }, {} as Record<string, number>),
+        [sessions],
+    );
 
     return (
         <div style={{

@@ -14,12 +14,12 @@
 
 ### MEDIUM: コード品質
 - [x] console.log 19箇所の整理 (2026-03-04)
-- [ ] エラーハンドリングパターン統一 (2026-03-04)
-- [ ] as any 7箇所の型安全性改善 (2026-03-04)
+- [x] エラーハンドリングパターン統一 (2026-03-04)
+- [x] as any 型安全性改善（16→5箇所、残りはブラウザAPI互換） (2026-03-04)
 
 ### MEDIUM: パフォーマンス
-- [ ] useMemo不足の改善 - FuwafuwaCharacter, ActivityHeatmap (2026-03-04)
-- [ ] framer-motion/canvas-confettiの遅延ロード (2026-03-04)
+- [x] useMemo不足の改善 - FuwafuwaCharacter, ActivityHeatmap (2026-03-04)
+- [x] canvas-confettiの遅延ロード（framer-motionは全体で使用のため対象外） (2026-03-04)
 
 ### MEDIUM: UI/UX
 - [ ] オフライン状態のUI表示 (2026-03-04)

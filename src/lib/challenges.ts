@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { Database } from './supabase-types';
 import { getAccountId } from './sync';
 import { getAllSessions } from './db';
 
@@ -79,7 +80,7 @@ export async function fetchAllChallenges(): Promise<Challenge[]> {
     return (data ?? []).map(mapChallenge);
 }
 
-function mapChallenge(row: any): Challenge {
+function mapChallenge(row: Database['public']['Tables']['challenges']['Row']): Challenge {
     return {
         id: row.id,
         title: row.title,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
-import confetti from 'canvas-confetti';
+const lazyConfetti = () => import('canvas-confetti').then((m) => m.default);
 import type { Exercise } from '../../data/exercises';
 import { audio } from '../../lib/audio';
 import { haptics } from '../../lib/haptics';
@@ -250,13 +250,13 @@ export function useSessionProgressEffects({
         if (nextIndex >= sessionExercises.length) {
             audio.playSuccess();
             haptics.success();
-            confetti({
+            lazyConfetti().then((confetti) => confetti({
                 particleCount: 100,
                 spread: 70,
                 origin: { y: 0.6 },
                 colors: ['#FFD5C8', '#2BBAA0', '#FFF5F0', '#B8E6D4'],
                 disableForReducedMotion: true,
-            });
+            }));
             setIsCompleted(true);
             setIsPlaying(false);
             onAutoCompleteSaveRef.current();

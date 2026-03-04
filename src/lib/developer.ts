@@ -96,7 +96,7 @@ export async function fetchAllAccountsForAdmin(): Promise<AdminAccountSummary[]>
 
 export async function suspendAccount(accountId: string, suspended: boolean): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await (supabase.rpc as any)('suspend_account', {
+    const { error } = await supabase.rpc('suspend_account', {
         target_account_id: accountId,
         is_suspended: suspended,
     });
@@ -107,7 +107,7 @@ export async function suspendAccount(accountId: string, suspended: boolean): Pro
 
 export async function deleteAccountData(accountId: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await (supabase.rpc as any)('delete_account_data', {
+    const { error } = await supabase.rpc('delete_account_data', {
         target_account_id: accountId,
     });
     if (error) throw error;
@@ -117,7 +117,7 @@ export async function deleteAccountData(accountId: string): Promise<void> {
 
 export async function developerDeleteFamilyMember(memberId: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    const { error } = await (supabase.rpc as any)('teacher_delete_family_member', {
+    const { error } = await supabase.rpc('teacher_delete_family_member', {
         target_member_id: memberId,
     });
     if (error) throw error;

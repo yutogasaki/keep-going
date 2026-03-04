@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import confetti from 'canvas-confetti';
+const lazyConfetti = () => import('canvas-confetti').then((m) => m.default);
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { PageHeader } from '../components/PageHeader';
 import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
@@ -72,28 +72,30 @@ export const HomeScreen: React.FC = () => {
         const duration = 3000;
         const end = Date.now() + duration;
 
-        const frame = () => {
-            confetti({
-                particleCount: 5,
-                angle: 60,
-                spread: 55,
-                origin: { x: 0 },
-                colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'],
-            });
-            confetti({
-                particleCount: 5,
-                angle: 120,
-                spread: 55,
-                origin: { x: 1 },
-                colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'],
-            });
+        lazyConfetti().then((confetti) => {
+            const frame = () => {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'],
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'],
+                });
 
-            if (Date.now() < end) {
-                requestAnimationFrame(frame);
-            }
-        };
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            };
 
-        frame();
+            frame();
+        });
         audio.playSuccess();
     };
 

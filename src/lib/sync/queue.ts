@@ -1,5 +1,6 @@
 import localforage from 'localforage';
 import { supabase } from '../supabase';
+import type { TableName } from '../supabase-types';
 import { getAccountId } from './authState';
 
 interface SyncQueueEntry {
@@ -36,12 +37,12 @@ export async function processQueue(): Promise<void> {
     for (const entry of entries) {
         try {
             if (entry.operation === 'upsert') {
-                const { error } = await supabase.from(entry.table as any).upsert(entry.payload as any);
+                const { error } = await supabase.from(entry.table as TableName).upsert(entry.payload as never);
                 if (error) throw error;
             } else {
-                let query = supabase.from(entry.table as any).delete();
+                let query = supabase.from(entry.table as TableName).delete();
                 for (const [key, value] of Object.entries(entry.payload)) {
-                    query = query.eq(key, value as any);
+                    query = query.eq(key, value as string);
                 }
                 const { error } = await query;
                 if (error) throw error;
