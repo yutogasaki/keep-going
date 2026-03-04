@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Edit2, Play, Trash2 } from 'lucide-react';
 import { CLASS_LEVELS } from '../../../data/exercises';
@@ -7,18 +7,13 @@ import type { MenuSettingStatus } from '../../../lib/teacherMenuSettings';
 interface MenuSettingsItemCardProps {
     emoji: string;
     name: string;
-    description: string;
     statusByClass: Record<string, MenuSettingStatus>;
-    nameOverride: string | null;
-    descriptionOverride: string | null;
     expanded: boolean;
     onToggleExpand: () => void;
     onStatusChange: (classLevel: string, newStatus: MenuSettingStatus) => void;
-    onSaveOverrides: (nameOverride: string | null, descriptionOverride: string | null) => void;
     onEdit?: () => void;
     onDelete?: () => void;
     onPlay?: () => void;
-    isBuiltIn: boolean;
     itemType?: 'exercise' | 'menu_group';
 }
 
@@ -36,35 +31,15 @@ const STATUS_DOT_MAP: Record<MenuSettingStatus, string> = Object.fromEntries(
 export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
     emoji,
     name,
-    description,
     statusByClass,
-    nameOverride,
-    descriptionOverride,
     expanded,
     onToggleExpand,
     onStatusChange,
-    onSaveOverrides,
     onEdit,
     onDelete,
     onPlay,
-    isBuiltIn,
     itemType = 'exercise',
 }) => {
-    const [localName, setLocalName] = useState(nameOverride ?? '');
-    const [localDesc, setLocalDesc] = useState(descriptionOverride ?? '');
-
-    // Reset local state when overrides change externally
-    useEffect(() => {
-        setLocalName(nameOverride ?? '');
-        setLocalDesc(descriptionOverride ?? '');
-    }, [nameOverride, descriptionOverride]);
-
-    const isDirty =
-        (localName.trim() || null) !== (nameOverride ?? null) ||
-        (localDesc.trim() || null) !== (descriptionOverride ?? null);
-
-    const displayName = nameOverride || name;
-
     return (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             {/* ─── Collapsed header ─── */}
@@ -93,7 +68,7 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                 }}>
-                    {displayName}
+                    {name}
                 </span>
 
                 {/* Status dots */}
@@ -143,32 +118,6 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
                             flexDirection: 'column',
                             gap: 14,
                         }}>
-                            {/* Name / description override fields (built-in only) */}
-                            {isBuiltIn && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                    <div>
-                                        <label style={labelStyle}>表示名</label>
-                                        <input
-                                            type="text"
-                                            value={localName}
-                                            onChange={e => setLocalName(e.target.value)}
-                                            placeholder={name}
-                                            style={inputStyle}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label style={labelStyle}>せつめい</label>
-                                        <textarea
-                                            value={localDesc}
-                                            onChange={e => setLocalDesc(e.target.value)}
-                                            placeholder={description || 'せつめいを入力…'}
-                                            rows={2}
-                                            style={{ ...inputStyle, resize: 'vertical' }}
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
                             {/* Per-class status rows */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                                 {CLASS_LEVELS.map(cl => {
@@ -255,31 +204,6 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
                                         ためす
                                     </button>
                                 )}
-                                {isBuiltIn && (
-                                    <button
-                                        onClick={() => {
-                                            onSaveOverrides(
-                                                localName.trim() || null,
-                                                localDesc.trim() || null,
-                                            );
-                                        }}
-                                        disabled={!isDirty}
-                                        style={{
-                                            padding: '8px 20px',
-                                            borderRadius: 10,
-                                            border: 'none',
-                                            background: isDirty ? '#2BBAA0' : '#E0E0E0',
-                                            color: isDirty ? '#FFF' : '#B2BEC3',
-                                            fontFamily: "'Noto Sans JP', sans-serif",
-                                            fontSize: 13,
-                                            fontWeight: 700,
-                                            cursor: isDirty ? 'pointer' : 'default',
-                                            transition: 'all 0.2s',
-                                        }}
-                                    >
-                                        保存
-                                    </button>
-                                )}
                                 {onEdit && (
                                     <button
                                         onClick={onEdit}
@@ -331,24 +255,4 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
             </AnimatePresence>
         </div>
     );
-};
-
-const labelStyle: React.CSSProperties = {
-    fontFamily: "'Noto Sans JP', sans-serif",
-    fontSize: 12,
-    fontWeight: 700,
-    color: '#636E72',
-    marginBottom: 4,
-    display: 'block',
-};
-
-const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '8px 12px',
-    borderRadius: 10,
-    border: '1px solid #E0E0E0',
-    fontFamily: "'Noto Sans JP', sans-serif",
-    fontSize: 13,
-    outline: 'none',
-    boxSizing: 'border-box',
 };

@@ -387,6 +387,12 @@ create trigger teacher_item_overrides_updated_at
   before update on teacher_item_overrides
   for each row execute function update_updated_at();
 
+-- ─── teacher_item_overrides に追加カラム ─────────────
+do $$ begin alter table teacher_item_overrides add column emoji_override text; exception when duplicate_column then null; end $$;
+do $$ begin alter table teacher_item_overrides add column sec_override int; exception when duplicate_column then null; end $$;
+do $$ begin alter table teacher_item_overrides add column has_split_override boolean; exception when duplicate_column then null; end $$;
+do $$ begin alter table teacher_item_overrides add column exercise_ids_override text[]; exception when duplicate_column then null; end $$;
+
 -- ─── custom_exercises に description カラム追加 ──────
 do $$ begin
   alter table custom_exercises add column description text;

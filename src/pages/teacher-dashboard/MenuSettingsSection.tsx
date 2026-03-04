@@ -28,6 +28,7 @@ import {
 import { MenuSettingsItemCard } from './menu-settings/MenuSettingsItemCard';
 import { TeacherExerciseEditor } from './menu-settings/TeacherExerciseEditor';
 import { TeacherMenuEditor } from './menu-settings/TeacherMenuEditor';
+import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import { useAppStore } from '../../store/useAppStore';
 import { audio } from '../../lib/audio';
 
@@ -56,8 +57,18 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
     // Form states
     const [showExerciseForm, setShowExerciseForm] = useState(false);
     const [editingExercise, setEditingExercise] = useState<TeacherExercise | null>(null);
+    const [editingBuiltInExerciseId, setEditingBuiltInExerciseId] = useState<string | null>(null);
     const [showMenuForm, setShowMenuForm] = useState(false);
     const [editingMenu, setEditingMenu] = useState<TeacherMenu | null>(null);
+    const [editingBuiltInMenuId, setEditingBuiltInMenuId] = useState<string | null>(null);
+
+    // Delete confirmation modal
+    const [deleteTarget, setDeleteTarget] = useState<{
+        id: string;
+        type: 'exercise' | 'menu';
+        name: string;
+    } | null>(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     const loadAll = useCallback(async () => {
         setLoading(true);
@@ -143,38 +154,6 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
         }
     };
 
-    // ─── Override save ───
-
-    const handleSaveOverrides = async (
-        itemId: string,
-        itemType: 'exercise' | 'menu_group',
-        nameOverride: string | null,
-        descriptionOverride: string | null,
-    ) => {
-        setError(null);
-        try {
-            await upsertTeacherItemOverride(itemId, itemType, nameOverride, descriptionOverride, teacherEmail);
-            // Optimistic update
-            setOverrides(prev => {
-                const filtered = prev.filter(o => !(o.itemId === itemId && o.itemType === itemType));
-                if (nameOverride || descriptionOverride) {
-                    filtered.push({
-                        id: `temp-${Date.now()}`,
-                        itemId,
-                        itemType: itemType as 'exercise' | 'menu_group',
-                        nameOverride,
-                        descriptionOverride,
-                        createdBy: teacherEmail,
-                    });
-                }
-                return filtered;
-            });
-        } catch (err) {
-            console.warn('[MenuSettings] save overrides failed:', err);
-            setError('上書き設定の保存に失敗しました。');
-        }
-    };
-
     // ─── Exercise CRUD ───
 
     const handleSaveExercise = async (data: {
@@ -184,38 +163,52 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
         setSubmitting(true);
         setError(null);
         try {
-            let itemId: string;
-            if (editingExercise) {
-                await updateTeacherExercise(editingExercise.id, data);
-                itemId = editingExercise.id;
+            if (editingBuiltInExerciseId) {
+                // Built-in exercise: save as overrides
+                const builtIn = EXERCISES.find(e => e.id === editingBuiltInExerciseId);
+                if (builtIn) {
+                    await upsertTeacherItemOverride(
+                        editingBuiltInExerciseId,
+                        'exercise',
+                        {
+                            nameOverride: data.name !== builtIn.name ? data.name : null,
+                            descriptionOverride: data.description !== (builtIn.description ?? '') ? data.description : null,
+                            emojiOverride: data.emoji !== builtIn.emoji ? data.emoji : null,
+                            secOverride: data.sec !== builtIn.sec ? data.sec : null,
+                            hasSplitOverride: data.hasSplit !== (builtIn.hasSplit ?? false) ? data.hasSplit : null,
+                        },
+                        teacherEmail,
+                    );
+                }
+                // Save per-class statuses
+                if (data.statusByClass) {
+                    for (const [cl, status] of Object.entries(data.statusByClass)) {
+                        await upsertTeacherMenuSetting(editingBuiltInExerciseId, 'exercise', cl, status, teacherEmail);
+                    }
+                }
             } else {
-                const newId = await createTeacherExercise({ ...data, createdBy: teacherEmail });
-                itemId = newId ?? '';
-            }
-            // Save per-class statuses
-            if (data.statusByClass && itemId) {
-                for (const [cl, status] of Object.entries(data.statusByClass)) {
-                    await upsertTeacherMenuSetting(itemId, 'exercise', cl, status, teacherEmail);
+                // Teacher-created exercise
+                let itemId: string;
+                if (editingExercise) {
+                    await updateTeacherExercise(editingExercise.id, data);
+                    itemId = editingExercise.id;
+                } else {
+                    const newId = await createTeacherExercise({ ...data, createdBy: teacherEmail });
+                    itemId = newId ?? '';
+                }
+                if (data.statusByClass && itemId) {
+                    for (const [cl, status] of Object.entries(data.statusByClass)) {
+                        await upsertTeacherMenuSetting(itemId, 'exercise', cl, status, teacherEmail);
+                    }
                 }
             }
-            setShowExerciseForm(false);
-            setEditingExercise(null);
+            closeExerciseForm();
             await loadAll();
         } catch (err) {
             console.warn('[MenuSettings] save exercise failed:', err);
             setError('種目の保存に失敗しました。');
         } finally {
             setSubmitting(false);
-        }
-    };
-
-    const handleDeleteExercise = async (id: string) => {
-        if (!confirm('この種目を削除しますか？')) return;
-        try {
-            await deleteTeacherExercise(id);
-            await loadAll();
-        } catch (err) {
-            console.warn('[MenuSettings] delete exercise failed:', err);
         }
     };
 
@@ -228,22 +221,47 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
         setSubmitting(true);
         setError(null);
         try {
-            let itemId: string;
-            if (editingMenu) {
-                await updateTeacherMenu(editingMenu.id, data);
-                itemId = editingMenu.id;
+            if (editingBuiltInMenuId) {
+                // Built-in menu: save as overrides
+                const builtIn = PRESET_GROUPS.find(g => g.id === editingBuiltInMenuId);
+                if (builtIn) {
+                    await upsertTeacherItemOverride(
+                        editingBuiltInMenuId,
+                        'menu_group',
+                        {
+                            nameOverride: data.name !== builtIn.name ? data.name : null,
+                            descriptionOverride: data.description !== (builtIn.description ?? '') ? data.description : null,
+                            emojiOverride: data.emoji !== builtIn.emoji ? data.emoji : null,
+                            exerciseIdsOverride:
+                                JSON.stringify(data.exerciseIds) !== JSON.stringify(builtIn.exerciseIds)
+                                    ? data.exerciseIds
+                                    : null,
+                        },
+                        teacherEmail,
+                    );
+                }
+                if (data.statusByClass) {
+                    for (const [cl, status] of Object.entries(data.statusByClass)) {
+                        await upsertTeacherMenuSetting(editingBuiltInMenuId, 'menu_group', cl, status, teacherEmail);
+                    }
+                }
             } else {
-                const newId = await createTeacherMenu({ ...data, createdBy: teacherEmail });
-                itemId = newId ?? '';
-            }
-            // Save per-class statuses
-            if (data.statusByClass && itemId) {
-                for (const [cl, status] of Object.entries(data.statusByClass)) {
-                    await upsertTeacherMenuSetting(itemId, 'menu_group', cl, status, teacherEmail);
+                // Teacher-created menu
+                let itemId: string;
+                if (editingMenu) {
+                    await updateTeacherMenu(editingMenu.id, data);
+                    itemId = editingMenu.id;
+                } else {
+                    const newId = await createTeacherMenu({ ...data, createdBy: teacherEmail });
+                    itemId = newId ?? '';
+                }
+                if (data.statusByClass && itemId) {
+                    for (const [cl, status] of Object.entries(data.statusByClass)) {
+                        await upsertTeacherMenuSetting(itemId, 'menu_group', cl, status, teacherEmail);
+                    }
                 }
             }
-            setShowMenuForm(false);
-            setEditingMenu(null);
+            closeMenuForm();
             await loadAll();
         } catch (err) {
             console.warn('[MenuSettings] save menu failed:', err);
@@ -253,32 +271,85 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
         }
     };
 
-    const handleDeleteMenu = async (id: string) => {
-        if (!confirm('このメニューを削除しますか？')) return;
-        try {
-            await deleteTeacherMenu(id);
-            await loadAll();
-        } catch (err) {
-            console.warn('[MenuSettings] delete menu failed:', err);
-        }
-    };
-
-    // ─── Delete from editor (confirm → delete → close editor) ───
+    // ─── Delete (with modal confirmation) ───
 
     const handleDeleteExerciseFromEditor = () => {
-        if (!editingExercise || !confirm('この種目を削除しますか？')) return;
-        deleteTeacherExercise(editingExercise.id)
-            .then(() => loadAll())
-            .then(() => { setShowExerciseForm(false); setEditingExercise(null); })
-            .catch(err => console.warn('[MenuSettings] delete exercise failed:', err));
+        if (!editingExercise) return;
+        setDeleteTarget({ id: editingExercise.id, type: 'exercise', name: editingExercise.name });
     };
 
     const handleDeleteMenuFromEditor = () => {
-        if (!editingMenu || !confirm('このメニューを削除しますか？')) return;
-        deleteTeacherMenu(editingMenu.id)
-            .then(() => loadAll())
-            .then(() => { setShowMenuForm(false); setEditingMenu(null); })
-            .catch(err => console.warn('[MenuSettings] delete menu failed:', err));
+        if (!editingMenu) return;
+        setDeleteTarget({ id: editingMenu.id, type: 'menu', name: editingMenu.name });
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return;
+        setDeleteLoading(true);
+        try {
+            if (deleteTarget.type === 'exercise') {
+                await deleteTeacherExercise(deleteTarget.id);
+                if (editingExercise?.id === deleteTarget.id) closeExerciseForm();
+            } else {
+                await deleteTeacherMenu(deleteTarget.id);
+                if (editingMenu?.id === deleteTarget.id) closeMenuForm();
+            }
+            await loadAll();
+        } catch (err) {
+            console.warn('[MenuSettings] delete failed:', err);
+        } finally {
+            setDeleteLoading(false);
+            setDeleteTarget(null);
+        }
+    };
+
+    // ─── Helper: Build initial data for built-in item editing ───
+
+    const buildBuiltInExerciseInitial = (exerciseId: string): TeacherExercise | null => {
+        const ex = EXERCISES.find(e => e.id === exerciseId);
+        if (!ex) return null;
+        const ov = getOverride(exerciseId, 'exercise');
+        return {
+            id: ex.id,
+            name: ov?.nameOverride ?? ex.name,
+            sec: ov?.secOverride ?? ex.sec,
+            emoji: ov?.emojiOverride ?? ex.emoji,
+            hasSplit: ov?.hasSplitOverride ?? (ex.hasSplit ?? false),
+            description: ov?.descriptionOverride ?? (ex.description ?? ''),
+            classLevels: ex.classes as string[],
+            createdBy: '',
+            createdAt: '',
+        };
+    };
+
+    const buildBuiltInMenuInitial = (menuId: string): TeacherMenu | null => {
+        const group = PRESET_GROUPS.find(g => g.id === menuId);
+        if (!group) return null;
+        const ov = getOverride(menuId, 'menu_group');
+        return {
+            id: group.id,
+            name: ov?.nameOverride ?? group.name,
+            emoji: ov?.emojiOverride ?? group.emoji,
+            description: ov?.descriptionOverride ?? (group.description ?? ''),
+            exerciseIds: ov?.exerciseIdsOverride ?? group.exerciseIds,
+            classLevels: [],
+            createdBy: '',
+            createdAt: '',
+        };
+    };
+
+    // ─── Form open/close helpers ───
+
+    const closeExerciseForm = () => {
+        setShowExerciseForm(false);
+        setEditingExercise(null);
+        setEditingBuiltInExerciseId(null);
+    };
+
+    const closeMenuForm = () => {
+        setShowMenuForm(false);
+        setEditingMenu(null);
+        setEditingBuiltInMenuId(null);
     };
 
     // ─── Render ───
@@ -297,6 +368,25 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
         );
     }
 
+    // Determine what initial data to pass to editors
+    const exerciseEditorInitial = editingExercise
+        ?? (editingBuiltInExerciseId ? buildBuiltInExerciseInitial(editingBuiltInExerciseId) : null);
+    const exerciseEditorStatuses = editingExercise
+        ? getStatusByClass(editingExercise.id, 'exercise')
+        : editingBuiltInExerciseId
+            ? getStatusByClass(editingBuiltInExerciseId, 'exercise')
+            : undefined;
+    const exerciseEditorItemId = editingExercise?.id ?? editingBuiltInExerciseId;
+
+    const menuEditorInitial = editingMenu
+        ?? (editingBuiltInMenuId ? buildBuiltInMenuInitial(editingBuiltInMenuId) : null);
+    const menuEditorStatuses = editingMenu
+        ? getStatusByClass(editingMenu.id, 'menu_group')
+        : editingBuiltInMenuId
+            ? getStatusByClass(editingBuiltInMenuId, 'menu_group')
+            : undefined;
+    const menuEditorItemId = editingMenu?.id ?? editingBuiltInMenuId;
+
     return (
         <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* Sub-tabs */}
@@ -307,7 +397,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                 ]).map(tab => (
                     <button
                         key={tab.id}
-                        onClick={() => { setSubTab(tab.id); setShowExerciseForm(false); setShowMenuForm(false); setExpandedItemId(null); }}
+                        onClick={() => { setSubTab(tab.id); closeExerciseForm(); closeMenuForm(); setExpandedItemId(null); }}
                         style={{
                             flex: 1,
                             padding: '8px 0',
@@ -348,9 +438,11 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                 onClick={() => {
                     if (subTab === 'exercises') {
                         setEditingExercise(null);
+                        setEditingBuiltInExerciseId(null);
                         setShowExerciseForm(true);
                     } else {
                         setEditingMenu(null);
+                        setEditingBuiltInMenuId(null);
                         setShowMenuForm(true);
                     }
                 }}
@@ -377,12 +469,12 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
             {/* Exercise editor (full-screen portal) */}
             {showExerciseForm && subTab === 'exercises' && (
                 <TeacherExerciseEditor
-                    key={editingExercise?.id ?? 'new'}
-                    initial={editingExercise}
-                    initialStatuses={editingExercise ? getStatusByClass(editingExercise.id, 'exercise') : undefined}
+                    key={exerciseEditorItemId ?? 'new'}
+                    initial={exerciseEditorInitial}
+                    initialStatuses={exerciseEditorStatuses}
                     onSave={handleSaveExercise}
-                    onCancel={() => { setShowExerciseForm(false); setEditingExercise(null); }}
-                    onPlay={editingExercise ? () => { audio.initTTS(); startTeacherPreviewSession([editingExercise.id]); } : undefined}
+                    onCancel={closeExerciseForm}
+                    onPlay={exerciseEditorItemId ? () => { audio.initTTS(); startTeacherPreviewSession([exerciseEditorItemId]); } : undefined}
                     onDelete={editingExercise ? handleDeleteExerciseFromEditor : undefined}
                     submitting={submitting}
                 />
@@ -391,13 +483,13 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
             {/* Menu editor (full-screen portal) */}
             {showMenuForm && subTab === 'groups' && (
                 <TeacherMenuEditor
-                    key={editingMenu?.id ?? 'new'}
-                    initial={editingMenu}
-                    initialStatuses={editingMenu ? getStatusByClass(editingMenu.id, 'menu_group') : undefined}
+                    key={menuEditorItemId ?? 'new'}
+                    initial={menuEditorInitial}
+                    initialStatuses={menuEditorStatuses}
                     teacherExercises={teacherExercises}
                     onSave={handleSaveMenu}
-                    onCancel={() => { setShowMenuForm(false); setEditingMenu(null); }}
-                    onPlay={editingMenu ? () => { audio.initTTS(); startTeacherPreviewSession(editingMenu.exerciseIds); } : undefined}
+                    onCancel={closeMenuForm}
+                    onPlay={menuEditorItemId ? () => { audio.initTTS(); startTeacherPreviewSession(menuEditorInitial?.exerciseIds ?? []); } : undefined}
                     onDelete={editingMenu ? handleDeleteMenuFromEditor : undefined}
                     submitting={submitting}
                 />
@@ -439,18 +531,13 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                     key={ex.id}
                                     emoji={ex.emoji}
                                     name={ex.name}
-                                    description={ex.description}
                                     statusByClass={getStatusByClass(ex.id, 'exercise')}
-                                    nameOverride={null}
-                                    descriptionOverride={null}
                                     expanded={expandedItemId === ex.id}
                                     onToggleExpand={() => setExpandedItemId(prev => prev === ex.id ? null : ex.id)}
                                     onStatusChange={(cl, status) => handleStatusChange(ex.id, 'exercise', cl, status)}
-                                    onSaveOverrides={() => {}}
-                                    onEdit={() => { setEditingExercise(ex); setShowExerciseForm(true); }}
-                                    onDelete={() => handleDeleteExercise(ex.id)}
+                                    onEdit={() => { setEditingExercise(ex); setEditingBuiltInExerciseId(null); setShowExerciseForm(true); }}
+                                    onDelete={() => setDeleteTarget({ id: ex.id, type: 'exercise', name: ex.name })}
                                     onPlay={() => { audio.initTTS(); startTeacherPreviewSession([ex.id]); }}
-                                    isBuiltIn={false}
                                 />
                             ))}
                         </>
@@ -459,21 +546,19 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     <SectionLabel text="ビルトイン種目" color="#8395A7" />
                     {EXERCISES.map(ex => {
                         const ov = getOverride(ex.id, 'exercise');
+                        const displayName = ov?.nameOverride ?? ex.name;
+                        const displayEmoji = ov?.emojiOverride ?? ex.emoji;
                         return (
                             <MenuSettingsItemCard
                                 key={ex.id}
-                                emoji={ex.emoji}
-                                name={ex.name}
-                                description={ex.description ?? ''}
+                                emoji={displayEmoji}
+                                name={displayName}
                                 statusByClass={getStatusByClass(ex.id, 'exercise')}
-                                nameOverride={ov?.nameOverride ?? null}
-                                descriptionOverride={ov?.descriptionOverride ?? null}
                                 expanded={expandedItemId === ex.id}
                                 onToggleExpand={() => setExpandedItemId(prev => prev === ex.id ? null : ex.id)}
                                 onStatusChange={(cl, status) => handleStatusChange(ex.id, 'exercise', cl, status)}
-                                onSaveOverrides={(n, d) => handleSaveOverrides(ex.id, 'exercise', n, d)}
+                                onEdit={() => { setEditingBuiltInExerciseId(ex.id); setEditingExercise(null); setShowExerciseForm(true); }}
                                 onPlay={() => { audio.initTTS(); startTeacherPreviewSession([ex.id]); }}
-                                isBuiltIn={true}
                             />
                         );
                     })}
@@ -491,18 +576,13 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                     key={menu.id}
                                     emoji={menu.emoji}
                                     name={menu.name}
-                                    description={menu.description}
                                     statusByClass={getStatusByClass(menu.id, 'menu_group')}
-                                    nameOverride={null}
-                                    descriptionOverride={null}
                                     expanded={expandedItemId === menu.id}
                                     onToggleExpand={() => setExpandedItemId(prev => prev === menu.id ? null : menu.id)}
                                     onStatusChange={(cl, status) => handleStatusChange(menu.id, 'menu_group', cl, status)}
-                                    onSaveOverrides={() => {}}
-                                    onEdit={() => { setEditingMenu(menu); setShowMenuForm(true); }}
-                                    onDelete={() => handleDeleteMenu(menu.id)}
+                                    onEdit={() => { setEditingMenu(menu); setEditingBuiltInMenuId(null); setShowMenuForm(true); }}
+                                    onDelete={() => setDeleteTarget({ id: menu.id, type: 'menu', name: menu.name })}
                                     onPlay={() => { audio.initTTS(); startTeacherPreviewSession(menu.exerciseIds); }}
-                                    isBuiltIn={false}
                                     itemType="menu_group"
                                 />
                             ))}
@@ -512,27 +592,35 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     <SectionLabel text="プリセットメニュー" color="#8395A7" />
                     {PRESET_GROUPS.map(group => {
                         const ov = getOverride(group.id, 'menu_group');
+                        const displayName = ov?.nameOverride ?? group.name;
+                        const displayEmoji = ov?.emojiOverride ?? group.emoji;
                         return (
                             <MenuSettingsItemCard
                                 key={group.id}
-                                emoji={group.emoji}
-                                name={group.name}
-                                description={group.description ?? ''}
+                                emoji={displayEmoji}
+                                name={displayName}
                                 statusByClass={getStatusByClass(group.id, 'menu_group')}
-                                nameOverride={ov?.nameOverride ?? null}
-                                descriptionOverride={ov?.descriptionOverride ?? null}
                                 expanded={expandedItemId === group.id}
                                 onToggleExpand={() => setExpandedItemId(prev => prev === group.id ? null : group.id)}
                                 onStatusChange={(cl, status) => handleStatusChange(group.id, 'menu_group', cl, status)}
-                                onSaveOverrides={(n, d) => handleSaveOverrides(group.id, 'menu_group', n, d)}
+                                onEdit={() => { setEditingBuiltInMenuId(group.id); setEditingMenu(null); setShowMenuForm(true); }}
                                 onPlay={() => { audio.initTTS(); startTeacherPreviewSession(group.exerciseIds); }}
-                                isBuiltIn={true}
                                 itemType="menu_group"
                             />
                         );
                     })}
                 </>
             )}
+
+            {/* Delete confirmation modal */}
+            <ConfirmDeleteModal
+                open={!!deleteTarget}
+                title={deleteTarget?.type === 'exercise' ? 'この種目を削除しますか？' : 'このメニューを削除しますか？'}
+                message={`「${deleteTarget?.name ?? ''}」を削除すると元に戻せません。`}
+                onCancel={() => setDeleteTarget(null)}
+                onConfirm={handleConfirmDelete}
+                loading={deleteLoading}
+            />
         </div>
     );
 };

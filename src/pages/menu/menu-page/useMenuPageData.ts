@@ -73,7 +73,7 @@ export function useMenuPageData({
     const [teacherRequiredExerciseIds, setTeacherRequiredExerciseIds] = useState<Set<string>>(new Set());
     const [teacherHiddenExerciseIds, setTeacherHiddenExerciseIds] = useState<Set<string>>(new Set());
     const [teacherHiddenMenuIds, setTeacherHiddenMenuIds] = useState<Set<string>>(new Set());
-    const [overrideMap, setOverrideMap] = useState<Map<string, { name: string | null; description: string | null }>>(new Map());
+    const [overrideMap, setOverrideMap] = useState<Map<string, { name: string | null; description: string | null; emoji: string | null; sec: number | null; hasSplit: boolean | null; exerciseIds: string[] | null }>>(new Map());
 
     const isTogetherMode = sessionUserIds.length > 1;
 
@@ -168,9 +168,16 @@ export function useMenuPageData({
             setTeacherHiddenMenuIds(hiddenMenu);
 
             // Build override lookup map
-            const oMap = new Map<string, { name: string | null; description: string | null }>();
+            const oMap = new Map<string, { name: string | null; description: string | null; emoji: string | null; sec: number | null; hasSplit: boolean | null; exerciseIds: string[] | null }>();
             for (const ov of tOverrides) {
-                oMap.set(`${ov.itemType}:${ov.itemId}`, { name: ov.nameOverride, description: ov.descriptionOverride });
+                oMap.set(`${ov.itemType}:${ov.itemId}`, {
+                    name: ov.nameOverride,
+                    description: ov.descriptionOverride,
+                    emoji: ov.emojiOverride,
+                    sec: ov.secOverride,
+                    hasSplit: ov.hasSplitOverride,
+                    exerciseIds: ov.exerciseIdsOverride,
+                });
             }
             setOverrideMap(oMap);
         } catch (err) {
@@ -312,7 +319,14 @@ export function useMenuPageData({
             .map(e => {
                 const ov = overrideMap.get(`exercise:${e.id}`);
                 if (ov) {
-                    return { ...e, name: ov.name ?? e.name, description: ov.description ?? e.description };
+                    return {
+                        ...e,
+                        name: ov.name ?? e.name,
+                        description: ov.description ?? e.description,
+                        emoji: ov.emoji ?? e.emoji,
+                        sec: ov.sec ?? e.sec,
+                        hasSplit: ov.hasSplit ?? e.hasSplit,
+                    };
                 }
                 return e;
             });
@@ -344,7 +358,13 @@ export function useMenuPageData({
             .map(p => {
                 const ov = overrideMap.get(`menu_group:${p.id}`);
                 if (ov) {
-                    return { ...p, name: ov.name ?? p.name, description: ov.description ?? p.description };
+                    return {
+                        ...p,
+                        name: ov.name ?? p.name,
+                        description: ov.description ?? p.description,
+                        emoji: ov.emoji ?? p.emoji,
+                        exerciseIds: ov.exerciseIds ?? p.exerciseIds,
+                    };
                 }
                 return p;
             });

@@ -6,6 +6,10 @@ export interface TeacherItemOverride {
     itemType: 'exercise' | 'menu_group';
     nameOverride: string | null;
     descriptionOverride: string | null;
+    emojiOverride: string | null;
+    secOverride: number | null;
+    hasSplitOverride: boolean | null;
+    exerciseIdsOverride: string[] | null;
     createdBy: string;
 }
 
@@ -46,17 +50,28 @@ export async function fetchAllTeacherItemOverrides(forceRefresh = false): Promis
 export async function upsertTeacherItemOverride(
     itemId: string,
     itemType: 'exercise' | 'menu_group',
-    nameOverride: string | null,
-    descriptionOverride: string | null,
+    overrides: {
+        nameOverride?: string | null;
+        descriptionOverride?: string | null;
+        emojiOverride?: string | null;
+        secOverride?: number | null;
+        hasSplitOverride?: boolean | null;
+        exerciseIdsOverride?: string[] | null;
+    },
     createdBy: string,
 ): Promise<void> {
     if (!supabase) return;
 
-    // If both are null/empty, delete the override row
-    const hasName = nameOverride && nameOverride.trim().length > 0;
-    const hasDesc = descriptionOverride && descriptionOverride.trim().length > 0;
+    const name = overrides.nameOverride?.trim() || null;
+    const desc = overrides.descriptionOverride?.trim() || null;
+    const emoji = overrides.emojiOverride || null;
+    const sec = overrides.secOverride ?? null;
+    const hasSplit = overrides.hasSplitOverride ?? null;
+    const exerciseIds = overrides.exerciseIdsOverride ?? null;
 
-    if (!hasName && !hasDesc) {
+    // If all overrides are null, delete the override row
+    const hasAny = name || desc || emoji || sec !== null || hasSplit !== null || exerciseIds;
+    if (!hasAny) {
         await supabase
             .from('teacher_item_overrides')
             .delete()
@@ -68,8 +83,12 @@ export async function upsertTeacherItemOverride(
             .upsert({
                 item_id: itemId,
                 item_type: itemType,
-                name_override: hasName ? nameOverride!.trim() : null,
-                description_override: hasDesc ? descriptionOverride!.trim() : null,
+                name_override: name,
+                description_override: desc,
+                emoji_override: emoji,
+                sec_override: sec,
+                has_split_override: hasSplit,
+                exercise_ids_override: exerciseIds,
                 created_by: createdBy,
             }, { onConflict: 'item_id,item_type' });
 
@@ -88,6 +107,10 @@ function mapOverride(row: any): TeacherItemOverride {
         itemType: row.item_type,
         nameOverride: row.name_override,
         descriptionOverride: row.description_override,
+        emojiOverride: row.emoji_override ?? null,
+        secOverride: row.sec_override ?? null,
+        hasSplitOverride: row.has_split_override ?? null,
+        exerciseIdsOverride: row.exercise_ids_override ?? null,
         createdBy: row.created_by,
     };
 }
