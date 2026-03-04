@@ -1,13 +1,11 @@
+import localforage from 'localforage';
 import { supabase } from '../supabase';
 import type { CustomExercise, SessionRecord } from '../db';
 import {
-    clearCustomExercisesDB,
-    clearHistoryDB,
     saveCustomExerciseDirect,
     saveSessionDirect,
 } from '../db';
 import {
-    clearGroupsDB,
     saveCustomGroupDirect,
     type MenuGroup,
 } from '../../data/menuGroups';
@@ -68,19 +66,38 @@ export async function pullAllData(accountId: string): Promise<PullResult> {
 
         const cloudSettings = settingsRes.data;
 
-        await clearHistoryDB();
+        // Write-first, then remove stale entries (crash-safe: no data loss window)
         for (const session of sessions) {
             await saveSessionDirect(session);
         }
-
-        await clearCustomExercisesDB();
         for (const exercise of exercises) {
             await saveCustomExerciseDirect(exercise);
         }
-
-        await clearGroupsDB();
         for (const group of groups) {
             await saveCustomGroupDirect(group);
+        }
+
+        // Remove entries not present in cloud data
+        const cloudSessionIds = new Set(sessions.map(s => s.id));
+        const cloudExerciseIds = new Set(exercises.map(e => e.id));
+        const cloudGroupIds = new Set(groups.map(g => g.id));
+
+        const historyStore = localforage.createInstance({ name: 'keepgoing', storeName: 'history' });
+        const exerciseStore = localforage.createInstance({ name: 'keepgoing', storeName: 'custom_exercises' });
+        const groupStore = localforage.createInstance({ name: 'keepgoing', storeName: 'menu_groups' });
+
+        const staleKeys: { store: LocalForage; key: string }[] = [];
+        await historyStore.iterate<unknown, void>((_val, key) => {
+            if (!cloudSessionIds.has(key)) staleKeys.push({ store: historyStore, key });
+        });
+        await exerciseStore.iterate<unknown, void>((_val, key) => {
+            if (!cloudExerciseIds.has(key)) staleKeys.push({ store: exerciseStore, key });
+        });
+        await groupStore.iterate<unknown, void>((_val, key) => {
+            if (!cloudGroupIds.has(key)) staleKeys.push({ store: groupStore, key });
+        });
+        for (const { store, key } of staleKeys) {
+            await store.removeItem(key);
         }
 
         const localState = (getRegisteredStoreState() ?? {}) as Record<string, unknown>;

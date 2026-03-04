@@ -5,7 +5,13 @@ import {
     pushFamilyMember,
 } from '../../lib/sync/push';
 import { registerStoreAccessor } from '../../lib/sync/storeAccess';
+import { useSyncStatus } from '../useSyncStatus';
 import type { AppState } from './types';
+
+function onSyncError(error: unknown): void {
+    console.warn('[sync]', error);
+    useSyncStatus.getState().reportFailure(String(error));
+}
 
 interface SyncableStore {
     getState: () => AppState;
@@ -39,13 +45,13 @@ export function setupStoreSyncSubscription(store: SyncableStore): void {
             for (const user of state.users) {
                 const previous = prevState.users.find((prevUser) => prevUser.id === user.id);
                 if (!previous || previous !== user) {
-                    pushFamilyMember(user).catch(console.warn);
+                    pushFamilyMember(user).catch(onSyncError);
                 }
             }
 
             for (const id of prevIds) {
                 if (!currentIds.has(id)) {
-                    syncDeleteFamilyMember(id).catch(console.warn);
+                    syncDeleteFamilyMember(id).catch(onSyncError);
                 }
             }
         }
@@ -60,7 +66,7 @@ export function setupStoreSyncSubscription(store: SyncableStore): void {
             state.notificationTime !== prevState.notificationTime;
 
         if (settingsChanged) {
-            pushAppSettings(toAppSettingsPayload(state)).catch(console.warn);
+            pushAppSettings(toAppSettingsPayload(state)).catch(onSyncError);
         }
     });
 }

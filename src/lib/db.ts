@@ -1,5 +1,11 @@
 import localforage from 'localforage';
 import { pushSession as syncPushSession, pushCustomExercise as syncPushCustomExercise, deleteCustomExerciseRemote, getAccountId } from './sync';
+import { useSyncStatus } from '../store/useSyncStatus';
+
+function onSyncError(error: unknown): void {
+    console.warn('[sync]', error);
+    useSyncStatus.getState().reportFailure(String(error));
+}
 
 // Session history record
 export interface SessionRecord {
@@ -109,7 +115,7 @@ export async function saveSession(record: SessionRecord): Promise<void> {
     await historyDB.setItem(record.id, record);
     // Dual-write to Supabase if logged in
     if (getAccountId()) {
-        syncPushSession(record).catch(console.warn);
+        syncPushSession(record).catch(onSyncError);
     }
 }
 
@@ -161,7 +167,7 @@ export async function clearAllData(): Promise<void> {
 export async function saveCustomExercise(ex: CustomExercise): Promise<void> {
     await customExercisesDB.setItem(ex.id, ex);
     if (getAccountId()) {
-        syncPushCustomExercise(ex).catch(console.warn);
+        syncPushCustomExercise(ex).catch(onSyncError);
     }
 }
 
@@ -187,7 +193,7 @@ export async function getCustomExercises(): Promise<CustomExercise[]> {
 export async function deleteCustomExercise(id: string): Promise<void> {
     await customExercisesDB.removeItem(id);
     if (getAccountId()) {
-        deleteCustomExerciseRemote(id).catch(console.warn);
+        deleteCustomExerciseRemote(id).catch(onSyncError);
     }
 }
 

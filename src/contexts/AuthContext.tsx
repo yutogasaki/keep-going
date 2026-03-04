@@ -14,6 +14,7 @@ import { supabase } from '../lib/supabase';
 import { checkIsDeveloper, checkIsTeacher } from '../lib/teacher';
 import { initialSync, processQueue, setAccountId, setupOnlineListener } from '../lib/sync';
 import { useAppStore } from '../store/useAppStore';
+import { useSyncStatus } from '../store/useSyncStatus';
 import { createAuthActions } from './auth/authActions';
 import { LOGIN_CONTEXT_KEY } from './auth/constants';
 import { getAppSettingsSnapshot } from './auth/settingsSnapshot';
@@ -126,7 +127,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (user.is_anonymous) {
             const state = useAppStore.getState();
             if (state.users.length > 0) {
-                initialSync(state.users, getAppSettingsSnapshot()).catch(console.warn);
+                initialSync(state.users, getAppSettingsSnapshot()).catch((err) => {
+                    console.warn('[sync]', err);
+                    useSyncStatus.getState().reportFailure(String(err));
+                });
             }
             return;
         }
@@ -142,7 +146,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (loginContext === 'settings') {
             handleSettingsLogin(user.id);
         } else {
-            processQueue().catch(console.warn);
+            processQueue().then(({ failed }) => {
+                if (failed === 0) useSyncStatus.getState().clearFailure();
+            }).catch((err) => {
+                console.warn('[sync]', err);
+                useSyncStatus.getState().reportFailure(String(err));
+            });
         }
     }, [user, loginContext, handleSettingsLogin, setLoginContext]);
 
@@ -155,7 +164,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!user) return;
 
         const interval = setInterval(() => {
-            processQueue().catch(console.warn);
+            processQueue().then(({ failed }) => {
+                if (failed === 0) useSyncStatus.getState().clearFailure();
+            }).catch((err) => {
+                console.warn('[sync]', err);
+                useSyncStatus.getState().reportFailure(String(err));
+            });
         }, 60_000);
 
         return () => clearInterval(interval);

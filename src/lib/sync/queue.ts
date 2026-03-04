@@ -9,7 +9,10 @@ interface SyncQueueEntry {
     operation: 'upsert' | 'delete';
     payload: Record<string, unknown>;
     createdAt: string;
+    retryCount?: number;
 }
+
+const MAX_RETRIES = 5;
 
 const syncQueueDB = localforage.createInstance({ name: 'keepgoing', storeName: 'sync_queue' });
 
@@ -22,9 +25,9 @@ export async function enqueueSyncEntry(entry: Omit<SyncQueueEntry, 'id' | 'creat
     });
 }
 
-export async function processQueue(): Promise<void> {
+export async function processQueue(): Promise<{ failed: number }> {
     if (!supabase || !getAccountId()) {
-        return;
+        return { failed: 0 };
     }
 
     const entries: SyncQueueEntry[] = [];
@@ -33,6 +36,8 @@ export async function processQueue(): Promise<void> {
     });
 
     entries.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+    let failed = 0;
 
     for (const entry of entries) {
         try {
@@ -50,10 +55,18 @@ export async function processQueue(): Promise<void> {
 
             await syncQueueDB.removeItem(entry.id);
         } catch (error) {
-            console.warn(`[sync] Failed to process queue entry ${entry.id}:`, error);
-            break;
+            const retryCount = (entry.retryCount ?? 0) + 1;
+            if (retryCount >= MAX_RETRIES) {
+                console.warn(`[sync] Dropping queue entry ${entry.id} after ${MAX_RETRIES} retries:`, error);
+                await syncQueueDB.removeItem(entry.id);
+            } else {
+                await syncQueueDB.setItem(entry.id, { ...entry, retryCount });
+            }
+            failed++;
         }
     }
+
+    return { failed };
 }
 
 export async function clearSyncQueue(): Promise<void> {

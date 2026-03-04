@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { WifiOff } from 'lucide-react';
+import { AlertTriangle, WifiOff } from 'lucide-react';
+import { useSyncStatus } from '../store/useSyncStatus';
 
 export const OfflineBanner: React.FC = () => {
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
+    const failedCount = useSyncStatus((s) => s.failedCount);
+    const clearFailure = useSyncStatus((s) => s.clearFailure);
 
     useEffect(() => {
         const handleOnline = () => setIsOffline(false);
@@ -16,31 +19,46 @@ export const OfflineBanner: React.FC = () => {
         };
     }, []);
 
-    if (!isOffline) return null;
+    const showSyncError = !isOffline && failedCount > 0;
+
+    if (!isOffline && !showSyncError) return null;
 
     return (
-        <div style={{
-            position: 'fixed',
-            bottom: 80,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 1500,
-            background: 'rgba(45, 52, 54, 0.9)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            color: '#fff',
-            padding: '8px 16px',
-            borderRadius: 20,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            fontSize: 12,
-            fontFamily: "'Noto Sans JP', sans-serif",
-            fontWeight: 600,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-        }}>
-            <WifiOff size={14} />
-            オフライン
+        <div
+            onClick={showSyncError ? clearFailure : undefined}
+            style={{
+                position: 'fixed',
+                bottom: 80,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 1500,
+                background: isOffline ? 'rgba(45, 52, 54, 0.9)' : 'rgba(225, 112, 85, 0.9)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                color: '#fff',
+                padding: '8px 16px',
+                borderRadius: 20,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12,
+                fontFamily: "'Noto Sans JP', sans-serif",
+                fontWeight: 600,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                cursor: showSyncError ? 'pointer' : 'default',
+            }}
+        >
+            {isOffline ? (
+                <>
+                    <WifiOff size={14} />
+                    オフライン
+                </>
+            ) : (
+                <>
+                    <AlertTriangle size={14} />
+                    同期に失敗しました（タップで消す）
+                </>
+            )}
         </div>
     );
 };

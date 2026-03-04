@@ -4,6 +4,7 @@ import type { UserProfileStore } from '../../store/useAppStore';
 import type { AppSettingsInput } from './mappers';
 import { getAccountId } from './authState';
 import { processQueue } from './queue';
+import { useSyncStatus } from '../../store/useSyncStatus';
 import { pushAppSettings, pushCustomExercise, pushFamilyMember, pushMenuGroup, pushSession } from './push';
 
 export async function initialSync(
@@ -41,7 +42,12 @@ export async function initialSync(
 export function setupOnlineListener(): () => void {
     const handler = () => {
         if (navigator.onLine && getAccountId()) {
-            processQueue().catch(console.warn);
+            processQueue().then(({ failed }) => {
+                if (failed === 0) useSyncStatus.getState().clearFailure();
+            }).catch((err) => {
+                console.warn('[sync]', err);
+                useSyncStatus.getState().reportFailure(String(err));
+            });
         }
     };
 

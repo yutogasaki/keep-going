@@ -1,6 +1,12 @@
 import localforage from 'localforage';
 import { getExercisesByClass, type ClassLevel } from './exercises';
 import { pushMenuGroup, deleteMenuGroupRemote, getAccountId } from '../lib/sync';
+import { useSyncStatus } from '../store/useSyncStatus';
+
+function onSyncError(error: unknown): void {
+    console.warn('[sync]', error);
+    useSyncStatus.getState().reportFailure(String(error));
+}
 
 export interface MenuGroup {
     id: string;
@@ -83,14 +89,14 @@ export async function saveCustomGroup(group: MenuGroup): Promise<void> {
     const saved = { ...group, isPreset: false };
     await groupsDB.setItem(group.id, saved);
     if (getAccountId()) {
-        pushMenuGroup(saved).catch(console.warn);
+        pushMenuGroup(saved).catch(onSyncError);
     }
 }
 
 export async function deleteCustomGroup(id: string): Promise<void> {
     await groupsDB.removeItem(id);
     if (getAccountId()) {
-        deleteMenuGroupRemote(id).catch(console.warn);
+        deleteMenuGroupRemote(id).catch(onSyncError);
     }
 }
 
