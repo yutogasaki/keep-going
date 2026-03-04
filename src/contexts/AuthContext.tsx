@@ -35,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     const [conflictScenario, setConflictScenario] = useState<ConflictScenario | null>(null);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
+    const [authError, setAuthError] = useState<string | null>(null);
 
     const hasSyncedRef = useRef(false);
     const prevUserIdRef = useRef<string | null>(null);
@@ -160,38 +161,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return () => clearInterval(interval);
     }, [user]);
 
-    useEffect(() => {
+    const initAuth = useCallback(() => {
         if (!supabase) {
             setIsLoading(false);
             return;
         }
+
+        setAuthError(null);
+        setIsLoading(true);
 
         const sb = supabase;
 
         sb.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
                 setUser(session.user);
+                setIsLoading(false);
             } else {
                 sb.auth.signInAnonymously().then(({ error }) => {
                     if (error) {
                         console.warn('[auth] anonymous sign-in failed:', error);
+                        setAuthError('サーバーに接続できませんでした');
                     }
+                    setIsLoading(false);
                 });
             }
-            setIsLoading(false);
         }).catch((error) => {
             console.warn('[auth] getSession failed:', error);
+            setAuthError('サーバーに接続できませんでした');
             setIsLoading(false);
         });
+    }, []);
 
-        const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+    useEffect(() => {
+        initAuth();
+
+        if (!supabase) return;
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             const nextUser = session?.user ?? null;
             setUser(nextUser);
             setIsAnonymous(nextUser?.is_anonymous ?? false);
+            if (nextUser) setAuthError(null);
         });
 
         return () => subscription.unsubscribe();
-    }, []);
+    }, [initAuth]);
 
     return (
         <AuthContext.Provider
@@ -207,6 +221,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 conflictScenario,
                 resolveConflict,
                 cancelLogin,
+                authError,
+                retryAuth: initAuth,
                 toastMessage,
                 clearToast,
                 signUp,

@@ -15,6 +15,8 @@ export interface AuthContextValue {
     cancelLogin: () => Promise<void>;
     isTeacher: boolean;
     isDeveloper: boolean;
+    authError: string | null;
+    retryAuth: () => void;
     toastMessage: string | null;
     clearToast: () => void;
     signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;

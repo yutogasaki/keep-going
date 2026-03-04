@@ -4,6 +4,7 @@ import { useAppStore } from '../store/useAppStore';
 import { useAuth } from '../contexts/AuthContext';
 import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
+import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { AccountSection } from './settings/AccountSection';
 import { TeacherSection } from './settings/TeacherSection';
 import { UserManagementSection } from './settings/UserManagementSection';
@@ -44,6 +45,7 @@ export const SettingsPage: React.FC = () => {
     const { isTeacher, isDeveloper } = useAuth();
     const [showTeacherDashboard, setShowTeacherDashboard] = useState(false);
     const [showDeveloperDashboard, setShowDeveloperDashboard] = useState(false);
+    const [showCacheClearConfirm, setShowCacheClearConfirm] = useState(false);
 
     if (showTeacherDashboard) {
         return (
@@ -74,21 +76,7 @@ export const SettingsPage: React.FC = () => {
                 rightElement={
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <button
-                            onClick={async () => {
-                                if ('serviceWorker' in navigator) {
-                                    const registrations = await navigator.serviceWorker.getRegistrations();
-                                    for (const reg of registrations) {
-                                        await reg.update();
-                                    }
-                                }
-                                if ('caches' in window) {
-                                    const names = await caches.keys();
-                                    for (const name of names) {
-                                        await caches.delete(name);
-                                    }
-                                }
-                                window.location.reload();
-                            }}
+                            onClick={() => setShowCacheClearConfirm(true)}
                             style={{
                                 width: 36,
                                 height: 36,
@@ -150,6 +138,31 @@ export const SettingsPage: React.FC = () => {
                 <AppInfoActionsSection />
                 <DeveloperDebugSection />
             </div>
+
+            <ConfirmDeleteModal
+                open={showCacheClearConfirm}
+                title="キャッシュをクリアしますか？"
+                message="アプリのキャッシュを削除して最新版に更新します。データは消えませんが、一時的に読み込みが遅くなることがあります。"
+                onCancel={() => setShowCacheClearConfirm(false)}
+                onConfirm={async () => {
+                    if ('serviceWorker' in navigator) {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        for (const reg of registrations) {
+                            await reg.update();
+                        }
+                    }
+                    if ('caches' in window) {
+                        const names = await caches.keys();
+                        for (const name of names) {
+                            await caches.delete(name);
+                        }
+                    }
+                    window.location.reload();
+                }}
+                confirmLabel="クリアする"
+                loadingLabel="クリア中..."
+                confirmColor="#0984E3"
+            />
         </div>
     );
 };

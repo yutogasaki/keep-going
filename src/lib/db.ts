@@ -110,8 +110,6 @@ export async function saveSession(record: SessionRecord): Promise<void> {
     // Dual-write to Supabase if logged in
     if (getAccountId()) {
         syncPushSession(record).catch(console.warn);
-    } else {
-        console.warn('[db] saveSession: no accountId, session saved locally only:', record.id);
     }
 }
 

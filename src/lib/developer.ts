@@ -21,12 +21,6 @@ export interface AdminAccountSummary {
 export async function fetchAllAccountsForAdmin(): Promise<AdminAccountSummary[]> {
     if (!supabase) return [];
 
-    // Debug: verify auth context and RLS
-    const { data: sessionData } = await supabase.auth.getSession();
-    console.log('[developer] auth email:', sessionData?.session?.user?.email, '| uid:', sessionData?.session?.user?.id);
-    const { data: isDevResult, error: isDevError } = await (supabase.rpc as any)('is_developer');
-    console.log('[developer] is_developer() =', isDevResult, 'error:', isDevError);
-
     const [membersRes, sessionsRes, settingsRes] = await Promise.all([
         supabase.from('family_members').select('id, account_id, name, class_level, avatar_url, created_at'),
         supabase
@@ -45,16 +39,6 @@ export async function fetchAllAccountsForAdmin(): Promise<AdminAccountSummary[]>
     const members = membersRes.data ?? [];
     const sessions = sessionsRes.data ?? [];
     const settings = settingsRes.data ?? [];
-    console.log('[developer] fetched:', members.length, 'members,', sessions.length, 'sessions,', settings.length, 'settings');
-
-    if (sessions.length === 0 && members.length > 0) {
-        console.warn('[developer] WARNING: 0 sessions returned but', members.length, 'members exist. Check RLS policy "Teachers can read all sessions".');
-    } else if (sessions.length > 0) {
-        const sessionsByAccount = new Map<string, number>();
-        for (const s of sessions) sessionsByAccount.set(s.account_id, (sessionsByAccount.get(s.account_id) ?? 0) + 1);
-        console.log('[developer] sessions per account:', Object.fromEntries(sessionsByAccount));
-    }
-
     const suspendedMap = new Map(settings.map(s => [s.account_id, s.suspended ?? false]));
 
     // Group by account_id

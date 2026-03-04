@@ -12,8 +12,6 @@ export async function initialSync(
 ): Promise<void> {
     if (!getAccountId()) return;
 
-    console.log('[sync] Starting initial sync...');
-
     for (const user of users) {
         await pushFamilyMember(user);
     }
@@ -38,7 +36,6 @@ export async function initialSync(
     await pushAppSettings(settings);
     await processQueue();
 
-    console.log('[sync] Initial sync complete.');
 }
 
 export function setupOnlineListener(): () => void {

@@ -118,7 +118,7 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
                     fontWeight: 700,
                     color: '#2D3436',
                 }}>
-                    {initial ? '先生の種目をへんしゅう' : '先生の種目をつくる'}
+                    {initial ? '先生の種目を編集' : '先生の種目を作成'}
                 </h1>
                 <div style={{ width: 48 }} />
             </div>
@@ -429,7 +429,7 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
                     marginTop: 16,
                 }}
             >
-                {submitting ? '保存中...' : initial ? 'ほぞん' : 'つくる！'}
+                {submitting ? '保存中...' : initial ? '保存' : '作成'}
             </motion.button>
         </div>,
         document.body

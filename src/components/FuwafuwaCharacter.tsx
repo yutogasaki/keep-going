@@ -8,6 +8,7 @@ import { FuwafuwaOrb } from './fuwafuwa/FuwafuwaOrb';
 import { FuwafuwaStatusPill } from './fuwafuwa/FuwafuwaStatusPill';
 import { FuwafuwaTransitionModal } from './fuwafuwa/FuwafuwaTransitionModal';
 import { getAuraVisualState } from './fuwafuwa/getAuraVisualState';
+import { FuwafuwaNameModal } from './fuwafuwa/FuwafuwaNameModal';
 import type { DepartingInfo, EmotionParticle, RippleState, SayonaraModalState } from './fuwafuwa/types';
 
 interface Props {
@@ -26,6 +27,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
     const [ripple, setRipple] = useState<RippleState | null>(null);
     const [sayonaraModal, setSayonaraModal] = useState<SayonaraModalState>(null);
     const [departingInfo, setDepartingInfo] = useState<DepartingInfo | null>(null);
+    const [showNameModal, setShowNameModal] = useState(false);
 
     const controls = useAnimation();
     const containerRef = useRef<HTMLDivElement>(null);
@@ -165,10 +167,12 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
     };
 
     const handleEditName = () => {
-        const newName = prompt('パートナーに名前をつけてあげよう！', fuwafuwaName || '');
-        if (newName !== null) {
-            updateUser(user.id, { fuwafuwaName: newName.trim() || null });
-        }
+        setShowNameModal(true);
+    };
+
+    const handleNameConfirm = (name: string | null) => {
+        updateUser(user.id, { fuwafuwaName: name });
+        setShowNameModal(false);
     };
 
     const imagePath = `/ikimono/${displayType}-${displayStage}.webp`;
@@ -206,6 +210,13 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
                 isSayonara={status.isSayonara}
                 name={fuwafuwaName}
                 onEditName={handleEditName}
+            />
+
+            <FuwafuwaNameModal
+                open={showNameModal}
+                currentName={fuwafuwaName}
+                onCancel={() => setShowNameModal(false)}
+                onConfirm={handleNameConfirm}
             />
 
             <FuwafuwaTransitionModal

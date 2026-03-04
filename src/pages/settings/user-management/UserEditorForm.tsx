@@ -30,9 +30,10 @@ export const UserEditorForm: React.FC<UserEditorFormProps> = ({
                 value={values.name}
                 onChange={(event) => onNameChange(event.target.value)}
                 style={{
-                    padding: '8px 12px',
-                    borderRadius: 8,
-                    border: '1px solid #DFE6E9',
+                    padding: '14px 18px',
+                    borderRadius: 14,
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    background: '#F8F9FA',
                     fontFamily: "'Noto Sans JP'",
                     fontSize: 14,
                 }}
@@ -62,9 +63,9 @@ export const UserEditorForm: React.FC<UserEditorFormProps> = ({
                     onClick={onCancel}
                     style={{
                         padding: '6px 16px',
-                        borderRadius: 20,
-                        border: 'none',
-                        background: '#F0F3F5',
+                        borderRadius: 14,
+                        border: '1px solid #E0E0E0',
+                        background: '#fff',
                         fontWeight: 700,
                         color: '#636E72',
                     }}
@@ -76,11 +77,12 @@ export const UserEditorForm: React.FC<UserEditorFormProps> = ({
                     disabled={!submitEnabled}
                     style={{
                         padding: '6px 16px',
-                        borderRadius: 20,
+                        borderRadius: 14,
                         border: 'none',
-                        background: submitEnabled ? '#2BBAA0' : '#B2BEC3',
-                        color: 'white',
+                        background: submitEnabled ? '#2BBAA0' : '#DFE6E9',
+                        color: submitEnabled ? 'white' : '#B2BEC3',
                         fontWeight: 700,
+                        cursor: submitEnabled ? 'pointer' : 'not-allowed',
                     }}
                 >
                     {submitLabel}

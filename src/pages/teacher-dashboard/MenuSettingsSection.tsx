@@ -392,8 +392,8 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
             {/* Sub-tabs */}
             <div style={{ display: 'flex', gap: 8 }}>
                 {([
-                    { id: 'groups' as SubTab, label: 'くみあわせ' },
-                    { id: 'exercises' as SubTab, label: 'ひとつ' },
+                    { id: 'groups' as SubTab, label: '組み合わせ' },
+                    { id: 'exercises' as SubTab, label: '種目' },
                 ]).map(tab => (
                     <button
                         key={tab.id}
@@ -463,7 +463,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                 }}
             >
                 <Plus size={16} />
-                {subTab === 'exercises' ? '新しい種目をつくる' : '新しいメニューをつくる'}
+                {subTab === 'exercises' ? '新しい種目を作成' : '新しいメニューを作成'}
             </button>
 
             {/* Exercise editor (full-screen portal) */}

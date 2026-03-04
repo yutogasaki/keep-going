@@ -35,8 +35,6 @@ export async function pullAllData(accountId: string): Promise<PullResult> {
     setPulling(true);
 
     try {
-        console.log('[sync] Starting pull...');
-
         const [familyRes, sessionsRes, exercisesRes, groupsRes, settingsRes] = await Promise.all([
             supabase.from('family_members').select('*').eq('account_id', accountId),
             supabase.from('sessions').select('*').eq('account_id', accountId),
@@ -99,7 +97,6 @@ export async function pullAllData(accountId: string): Promise<PullResult> {
             notificationTime: cloudSettings?.notification_time ?? localState['notificationTime'] ?? '21:00',
         });
 
-        console.log('[sync] Pull complete.');
         return { success: true, hadData: true };
     } catch (error) {
         console.error('[sync] pullAllData failed:', error);

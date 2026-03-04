@@ -1,30 +1,34 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface ConfirmDeleteModalProps {
+interface FuwafuwaNameModalProps {
     open: boolean;
-    title: string;
-    message: string;
+    currentName: string | null;
     onCancel: () => void;
-    onConfirm: () => void;
-    loading?: boolean;
-    confirmLabel?: string;
-    loadingLabel?: string;
-    confirmColor?: string;
+    onConfirm: (name: string | null) => void;
 }
 
-export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
+export const FuwafuwaNameModal: React.FC<FuwafuwaNameModalProps> = ({
     open,
-    title,
-    message,
+    currentName,
     onCancel,
     onConfirm,
-    loading = false,
-    confirmLabel = '削除する',
-    loadingLabel = '削除中...',
-    confirmColor = '#E17055',
 }) => {
+    const [value, setValue] = useState(currentName || '');
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (open) {
+            setValue(currentName || '');
+            setTimeout(() => inputRef.current?.focus(), 100);
+        }
+    }, [open, currentName]);
+
+    const handleSubmit = () => {
+        onConfirm(value.trim() || null);
+    };
+
     return createPortal(
         <AnimatePresence>
             {open && (
@@ -61,27 +65,55 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
                         }}
                     >
                         <h3 style={{
-                            margin: '0 0 8px',
+                            margin: '0 0 4px',
                             fontFamily: "'Noto Sans JP', sans-serif",
                             fontSize: 16,
                             fontWeight: 700,
                             color: '#2D3436',
+                            textAlign: 'center',
                         }}>
-                            {title}
+                            🌟 なまえをつけよう
                         </h3>
                         <p style={{
-                            margin: '0 0 20px',
+                            margin: '0 0 16px',
                             fontFamily: "'Noto Sans JP', sans-serif",
                             fontSize: 13,
                             color: '#636E72',
                             lineHeight: 1.6,
+                            textAlign: 'center',
                         }}>
-                            {message}
+                            パートナーに名前をつけてあげよう！
                         </p>
-                        <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            value={value}
+                            onChange={e => setValue(e.target.value)}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter') handleSubmit();
+                            }}
+                            placeholder="なまえを入力"
+                            maxLength={20}
+                            style={{
+                                width: '100%',
+                                padding: '12px 16px',
+                                borderRadius: 14,
+                                border: '2px solid #E0E0E0',
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 16,
+                                fontWeight: 600,
+                                color: '#2D3436',
+                                textAlign: 'center',
+                                outline: 'none',
+                                boxSizing: 'border-box',
+                                transition: 'border-color 0.2s',
+                            }}
+                            onFocus={e => { e.target.style.borderColor = '#6C5CE7'; }}
+                            onBlur={e => { e.target.style.borderColor = '#E0E0E0'; }}
+                        />
+                        <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                             <button
                                 onClick={onCancel}
-                                disabled={loading}
                                 style={{
                                     flex: 1,
                                     padding: '12px 0',
@@ -98,23 +130,21 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
                                 キャンセル
                             </button>
                             <button
-                                onClick={onConfirm}
-                                disabled={loading}
+                                onClick={handleSubmit}
                                 style={{
                                     flex: 1,
                                     padding: '12px 0',
                                     borderRadius: 14,
                                     border: 'none',
-                                    background: confirmColor,
+                                    background: '#6C5CE7',
                                     fontFamily: "'Noto Sans JP', sans-serif",
                                     fontSize: 14,
                                     fontWeight: 700,
                                     color: '#fff',
-                                    cursor: loading ? 'not-allowed' : 'pointer',
-                                    opacity: loading ? 0.6 : 1,
+                                    cursor: 'pointer',
                                 }}
                             >
-                                {loading ? loadingLabel : confirmLabel}
+                                けってい
                             </button>
                         </div>
                     </motion.div>

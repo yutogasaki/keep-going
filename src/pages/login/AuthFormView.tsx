@@ -95,10 +95,10 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         gap: 8,
-                        padding: '10px 14px',
-                        borderRadius: 10,
-                        border: '1px solid rgba(0,0,0,0.12)',
-                        background: 'white',
+                        padding: '14px 18px',
+                        borderRadius: 14,
+                        border: '1px solid rgba(0,0,0,0.08)',
+                        background: '#F8F9FA',
                     }}>
                         <Mail size={16} color="#8395A7" />
                         <input
@@ -120,10 +120,10 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         gap: 8,
-                        padding: '10px 14px',
-                        borderRadius: 10,
-                        border: '1px solid rgba(0,0,0,0.12)',
-                        background: 'white',
+                        padding: '14px 18px',
+                        borderRadius: 14,
+                        border: '1px solid rgba(0,0,0,0.08)',
+                        background: '#F8F9FA',
                     }}>
                         <Lock size={16} color="#8395A7" />
                         <input
@@ -152,14 +152,13 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
                         disabled={loading}
                         style={{
                             padding: '12px 16px',
-                            borderRadius: 12,
+                            borderRadius: 14,
                             border: 'none',
-                            background: '#2BBAA0',
-                            color: 'white',
+                            background: loading ? '#DFE6E9' : '#2BBAA0',
+                            color: loading ? '#B2BEC3' : 'white',
                             fontSize: 15,
                             fontWeight: 600,
                             cursor: loading ? 'not-allowed' : 'pointer',
-                            opacity: loading ? 0.7 : 1,
                         }}
                     >
                         {loading ? '...' : isSignUp ? 'アカウントを作成' : 'ログイン'}

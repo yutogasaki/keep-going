@@ -56,7 +56,7 @@ export const CreateGroupCard: React.FC<CreateGroupCardProps> = ({ hasGroups, onC
                     color: '#8395A7',
                     lineHeight: 1.4,
                 }}>
-                    自分だけのくみあわせを作成
+                    じぶんだけのくみあわせをつくろう
                 </div>
             </div>
         </motion.button>

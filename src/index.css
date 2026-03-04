@@ -124,19 +124,45 @@ body {
     -webkit-overflow-scrolling: touch;
 }
 
+/* ─── Design Tokens ──────────────── */
+:root {
+    /* Card */
+    --card-radius: 20px;
+    --card-radius-sm: 16px;
+    --card-padding: 20px;
+    --card-padding-sm: 16px;
+    --card-bg: rgba(255, 255, 255, 0.85);
+    --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
+
+    /* Input */
+    --input-padding: 14px 18px;
+    --input-radius: 14px;
+    --input-border: 1px solid rgba(0, 0, 0, 0.08);
+    --input-bg: #F8F9FA;
+    --input-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+
+    /* Button */
+    --btn-radius: 14px;
+    --btn-disabled-bg: #DFE6E9;
+    --btn-disabled-color: #B2BEC3;
+    --btn-cancel-bg: #fff;
+    --btn-cancel-border: 1px solid #E0E0E0;
+    --btn-cancel-color: #636E72;
+}
+
 /* Card styles for reusability */
 .card {
-    background: rgba(255, 255, 255, 0.85);
+    background: var(--card-bg);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-radius: 20px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04);
-    padding: 20px;
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    padding: var(--card-padding);
 }
 
 .card-sm {
-    border-radius: 16px;
-    padding: 16px;
+    border-radius: var(--card-radius-sm);
+    padding: var(--card-padding-sm);
 }
 
 /* FAB styles */

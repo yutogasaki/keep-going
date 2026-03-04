@@ -57,11 +57,14 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
                         disabled={actionLoading}
                         style={{
                             flex: 1,
-                            padding: '10px',
-                            borderRadius: 10,
-                            border: '1px solid #ddd',
+                            padding: '12px 0',
+                            borderRadius: 14,
+                            border: '1px solid #E0E0E0',
                             background: '#fff',
+                            color: '#636E72',
+                            fontFamily: "'Noto Sans JP', sans-serif",
                             fontSize: 14,
+                            fontWeight: 600,
                             cursor: 'pointer',
                         }}
                     >
@@ -72,8 +75,8 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
                         disabled={actionLoading}
                         style={{
                             flex: 1,
-                            padding: '10px',
-                            borderRadius: 10,
+                            padding: '12px 0',
+                            borderRadius: 14,
                             border: 'none',
                             background: confirmAction.type === 'delete' ? '#ef4444'
                                 : confirmAction.type === 'suspend' ? '#f59e0b' : '#22c55e',

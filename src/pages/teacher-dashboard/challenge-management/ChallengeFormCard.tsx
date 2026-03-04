@@ -15,9 +15,10 @@ interface ChallengeFormCardProps {
 
 const inputStyle: React.CSSProperties = {
     width: '100%',
-    padding: '10px 12px',
-    borderRadius: 10,
-    border: '1px solid #E0E0E0',
+    padding: '14px 18px',
+    borderRadius: 14,
+    border: '1px solid rgba(0,0,0,0.08)',
+    background: '#F8F9FA',
     fontFamily: "'Noto Sans JP', sans-serif",
     fontSize: 14,
     outline: 'none',
@@ -180,11 +181,11 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                     onClick={onCancel}
                     style={{
                         flex: 1,
-                        padding: '10px 0',
-                        borderRadius: 10,
+                        padding: '12px 0',
+                        borderRadius: 14,
                         border: '1px solid #E0E0E0',
-                        background: '#FFF',
-                        color: '#8395A7',
+                        background: '#fff',
+                        color: '#636E72',
                         fontFamily: "'Noto Sans JP', sans-serif",
                         fontSize: 14,
                         fontWeight: 700,
@@ -198,15 +199,15 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                     disabled={!values.title.trim() || submitting}
                     style={{
                         flex: 1,
-                        padding: '10px 0',
-                        borderRadius: 10,
+                        padding: '12px 0',
+                        borderRadius: 14,
                         border: 'none',
-                        background: values.title.trim() ? '#2BBAA0' : '#B2BEC3',
-                        color: '#FFF',
+                        background: values.title.trim() ? '#2BBAA0' : '#DFE6E9',
+                        color: values.title.trim() ? '#FFF' : '#B2BEC3',
                         fontFamily: "'Noto Sans JP', sans-serif",
                         fontSize: 14,
                         fontWeight: 700,
-                        cursor: values.title.trim() ? 'pointer' : 'default',
+                        cursor: values.title.trim() ? 'pointer' : 'not-allowed',
                     }}
                 >
                     {submitting ? (isEditing ? '保存中...' : '作成中...') : (isEditing ? '保存' : '作成')}

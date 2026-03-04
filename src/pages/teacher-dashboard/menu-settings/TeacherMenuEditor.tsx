@@ -137,7 +137,7 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
                     fontWeight: 700,
                     color: '#2D3436',
                 }}>
-                    {initial ? '先生のメニューをへんしゅう' : '先生のメニューをつくる'}
+                    {initial ? '先生のメニューを編集' : '先生のメニューを作成'}
                 </h1>
                 <div style={{ width: 48 }} />
             </div>
@@ -561,7 +561,7 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
                     marginTop: 16,
                 }}
             >
-                {submitting ? '保存中...' : initial ? 'ほぞん' : 'つくる！'}
+                {submitting ? '保存中...' : initial ? '保存' : '作成'}
             </motion.button>
         </div>,
         document.body
