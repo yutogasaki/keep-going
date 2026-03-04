@@ -29,6 +29,7 @@ import { MenuSettingsItemCard } from './menu-settings/MenuSettingsItemCard';
 import { TeacherExerciseEditor } from './menu-settings/TeacherExerciseEditor';
 import { TeacherMenuEditor } from './menu-settings/TeacherMenuEditor';
 import { useAppStore } from '../../store/useAppStore';
+import { audio } from '../../lib/audio';
 
 type SubTab = 'exercises' | 'groups';
 
@@ -262,6 +263,24 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
         }
     };
 
+    // ─── Delete from editor (confirm → delete → close editor) ───
+
+    const handleDeleteExerciseFromEditor = () => {
+        if (!editingExercise || !confirm('この種目を削除しますか？')) return;
+        deleteTeacherExercise(editingExercise.id)
+            .then(() => loadAll())
+            .then(() => { setShowExerciseForm(false); setEditingExercise(null); })
+            .catch(err => console.warn('[MenuSettings] delete exercise failed:', err));
+    };
+
+    const handleDeleteMenuFromEditor = () => {
+        if (!editingMenu || !confirm('このメニューを削除しますか？')) return;
+        deleteTeacherMenu(editingMenu.id)
+            .then(() => loadAll())
+            .then(() => { setShowMenuForm(false); setEditingMenu(null); })
+            .catch(err => console.warn('[MenuSettings] delete menu failed:', err));
+    };
+
     // ─── Render ───
 
     if (parentLoading || loading) {
@@ -363,6 +382,8 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     initialStatuses={editingExercise ? getStatusByClass(editingExercise.id, 'exercise') : undefined}
                     onSave={handleSaveExercise}
                     onCancel={() => { setShowExerciseForm(false); setEditingExercise(null); }}
+                    onPlay={editingExercise ? () => { audio.initTTS(); startTeacherPreviewSession([editingExercise.id]); } : undefined}
+                    onDelete={editingExercise ? handleDeleteExerciseFromEditor : undefined}
                     submitting={submitting}
                 />
             )}
@@ -376,6 +397,8 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     teacherExercises={teacherExercises}
                     onSave={handleSaveMenu}
                     onCancel={() => { setShowMenuForm(false); setEditingMenu(null); }}
+                    onPlay={editingMenu ? () => { audio.initTTS(); startTeacherPreviewSession(editingMenu.exerciseIds); } : undefined}
+                    onDelete={editingMenu ? handleDeleteMenuFromEditor : undefined}
                     submitting={submitting}
                 />
             )}
@@ -426,7 +449,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                     onSaveOverrides={() => {}}
                                     onEdit={() => { setEditingExercise(ex); setShowExerciseForm(true); }}
                                     onDelete={() => handleDeleteExercise(ex.id)}
-                                    onPlay={() => startTeacherPreviewSession([ex.id])}
+                                    onPlay={() => { audio.initTTS(); startTeacherPreviewSession([ex.id]); }}
                                     isBuiltIn={false}
                                 />
                             ))}
@@ -449,7 +472,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                 onToggleExpand={() => setExpandedItemId(prev => prev === ex.id ? null : ex.id)}
                                 onStatusChange={(cl, status) => handleStatusChange(ex.id, 'exercise', cl, status)}
                                 onSaveOverrides={(n, d) => handleSaveOverrides(ex.id, 'exercise', n, d)}
-                                onPlay={() => startTeacherPreviewSession([ex.id])}
+                                onPlay={() => { audio.initTTS(); startTeacherPreviewSession([ex.id]); }}
                                 isBuiltIn={true}
                             />
                         );
@@ -478,7 +501,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                     onSaveOverrides={() => {}}
                                     onEdit={() => { setEditingMenu(menu); setShowMenuForm(true); }}
                                     onDelete={() => handleDeleteMenu(menu.id)}
-                                    onPlay={() => startTeacherPreviewSession(menu.exerciseIds)}
+                                    onPlay={() => { audio.initTTS(); startTeacherPreviewSession(menu.exerciseIds); }}
                                     isBuiltIn={false}
                                     itemType="menu_group"
                                 />
@@ -502,7 +525,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                 onToggleExpand={() => setExpandedItemId(prev => prev === group.id ? null : group.id)}
                                 onStatusChange={(cl, status) => handleStatusChange(group.id, 'menu_group', cl, status)}
                                 onSaveOverrides={(n, d) => handleSaveOverrides(group.id, 'menu_group', n, d)}
-                                onPlay={() => startTeacherPreviewSession(group.exerciseIds)}
+                                onPlay={() => { audio.initTTS(); startTeacherPreviewSession(group.exerciseIds); }}
                                 isBuiltIn={true}
                                 itemType="menu_group"
                             />

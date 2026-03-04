@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { Plus } from 'lucide-react';
+import { Play, Plus, Trash2 } from 'lucide-react';
 import { CLASS_LEVELS, EXERCISES } from '../../../data/exercises';
 import { ExerciseIcon } from '../../../components/ExerciseIcon';
 import type { TeacherMenu, TeacherExercise } from '../../../lib/teacherContent';
@@ -20,6 +20,8 @@ interface TeacherMenuEditorProps {
         statusByClass: Record<string, MenuSettingStatus>;
     }) => void;
     onCancel: () => void;
+    onPlay?: () => void;
+    onDelete?: () => void;
     submitting: boolean;
 }
 
@@ -39,6 +41,8 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
     teacherExercises,
     onSave,
     onCancel,
+    onPlay,
+    onDelete,
     submitting,
 }) => {
     const [name, setName] = useState(initial?.name ?? '');
@@ -477,6 +481,61 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
             </div>
 
             <div style={{ flex: 1 }} />
+
+            {/* Play & Delete buttons (edit mode only) */}
+            {initial && (
+                <div style={{ display: 'flex', gap: 8 }}>
+                    {onPlay && (
+                        <motion.button
+                            whileTap={{ scale: 0.97 }}
+                            onClick={onPlay}
+                            style={{
+                                flex: 1,
+                                padding: '14px 0',
+                                borderRadius: 16,
+                                border: 'none',
+                                background: 'rgba(43,186,160,0.1)',
+                                color: '#2BBAA0',
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 15,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 6,
+                            }}
+                        >
+                            <Play size={14} />
+                            ためす
+                        </motion.button>
+                    )}
+                    {onDelete && (
+                        <motion.button
+                            whileTap={{ scale: 0.97 }}
+                            onClick={onDelete}
+                            style={{
+                                padding: '14px 20px',
+                                borderRadius: 16,
+                                border: 'none',
+                                background: 'rgba(225,112,85,0.08)',
+                                color: '#E17055',
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 15,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 6,
+                            }}
+                        >
+                            <Trash2 size={14} />
+                            削除
+                        </motion.button>
+                    )}
+                </div>
+            )}
 
             {/* Save button */}
             <motion.button
