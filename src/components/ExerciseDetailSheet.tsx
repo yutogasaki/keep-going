@@ -35,8 +35,15 @@ export const ExerciseDetailSheet: React.FC<ExerciseDetailSheetProps> = ({ exerci
         }
     };
 
-    const handleTry = () => {
+    const handleTry = async () => {
         if (!exercise) return;
+        // 自動インポートしてからセッション開始
+        try {
+            await importExercise(exercise);
+            onImported?.();
+        } catch {
+            // 既にインポート済みの場合のエラーは無視
+        }
         onClose();
         onTry(`imported-ex-${exercise.id}`);
     };

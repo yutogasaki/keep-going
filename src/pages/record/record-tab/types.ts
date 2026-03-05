@@ -3,6 +3,8 @@ import type { SessionRecord } from '../../../lib/db';
 export interface TopExercise {
     id: string;
     count: number;
+    name?: string;
+    emoji?: string;
 }
 
 export interface RecordTabContentProps {

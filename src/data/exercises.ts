@@ -105,6 +105,8 @@ export interface GenerateSessionOptions {
     targetSeconds?: number;
     customPool?: SessionPoolExercise[];
     historicalCounts?: Record<string, number>;
+    /** Override built-in exercises (e.g., with teacher item overrides applied) */
+    builtInOverrides?: Exercise[];
 }
 
 // Generate a session (list of exercises) for a class
@@ -116,11 +118,14 @@ export function generateSession(classLevel: ClassLevel, options: GenerateSession
         targetSeconds = DEFAULT_SESSION_TARGET_SECONDS,
         customPool = [],
         historicalCounts = {},
+        builtInOverrides,
     } = options;
 
     const usageCounts = historicalCounts;
 
-    const baseExercises = getExercisesByClass(classLevel);
+    const baseExercises = builtInOverrides
+        ? builtInOverrides.filter(e => e.classes.includes(classLevel === 'その他' ? '初級' : classLevel))
+        : getExercisesByClass(classLevel);
     // Merge base exercises with custom exercises. Ensure custom exercises have 'main' phase and 'stretch' type as defaults.
     const allAvailable: Exercise[] = [
         ...baseExercises,

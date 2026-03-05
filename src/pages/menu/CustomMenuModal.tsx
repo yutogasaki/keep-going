@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { ExerciseIcon } from '../../components/ExerciseIcon';
 import { EXERCISES } from '../../data/exercises';
 import type { CustomExercise } from '../../lib/db';
+import type { TeacherExercise } from '../../lib/teacherContent';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface CustomMenuModalProps {
@@ -13,6 +14,7 @@ interface CustomMenuModalProps {
     requiredExercises: string[];
     excludedExercises: string[];
     customExercises: CustomExercise[];
+    teacherExercises?: TeacherExercise[];
     teacherExcludedExerciseIds?: Set<string>;
     teacherRequiredExerciseIds?: Set<string>;
     teacherHiddenExerciseIds?: Set<string>;
@@ -29,6 +31,7 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
     requiredExercises,
     excludedExercises,
     customExercises,
+    teacherExercises,
     teacherExcludedExerciseIds,
     teacherRequiredExerciseIds,
     teacherHiddenExerciseIds,
@@ -190,7 +193,7 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                     </div>
 
                     <div>
-                        {[...EXERCISES, ...customExercises]
+                        {[...EXERCISES, ...(teacherExercises ?? []), ...customExercises]
                             .filter(exercise => !teacherHiddenExerciseIds?.has(exercise.id))
                             .map(exercise => {
                             const isTeacherRequired = teacherRequiredExerciseIds?.has(exercise.id) ?? false;
@@ -259,6 +262,21 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                                                         verticalAlign: 'middle',
                                                     }}>
                                                         じぶん種目
+                                                    </span>
+                                                )}
+                                                {'classLevels' in exercise && (
+                                                    <span style={{
+                                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                                        fontSize: 9,
+                                                        fontWeight: 700,
+                                                        color: '#0984E3',
+                                                        background: 'rgba(9, 132, 227, 0.1)',
+                                                        padding: '1px 4px',
+                                                        borderRadius: 6,
+                                                        display: 'inline-block',
+                                                        verticalAlign: 'middle',
+                                                    }}>
+                                                        先生
                                                     </span>
                                                 )}
                                             </div>

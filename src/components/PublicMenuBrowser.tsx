@@ -205,7 +205,11 @@ const BrowserMenuCard: React.FC<{
 }> = ({ menu, onTap }) => {
     const exerciseNames = menu.exerciseIds
         .slice(0, 4)
-        .map(id => EXERCISES.find(e => e.id === id)?.name || id);
+        .map(id =>
+            EXERCISES.find(e => e.id === id)?.name
+            ?? menu.customExerciseData?.find(e => e.id === id)?.name
+            ?? id
+        );
     const remaining = menu.exerciseIds.length - 4;
 
     return (

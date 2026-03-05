@@ -1,5 +1,5 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
-import { getReplacementExercise, type ClassLevel, type Exercise } from '../../data/exercises';
+import { getExercisesByClass, type ClassLevel, type Exercise } from '../../data/exercises';
 import { audio } from '../../lib/audio';
 import { haptics } from '../../lib/haptics';
 
@@ -87,12 +87,23 @@ export function useSessionControlHandlers({
             setSkippedIds((prev) => [...prev, currentExercise.id]);
 
             if (!sessionExerciseIds) {
-                const currentIds = sessionExercises.map((exercise) => exercise.id);
-                const replacement = getReplacementExercise(
-                    classLevel,
-                    [...currentIds, ...skippedIds, currentExercise.id],
-                    currentExercise.sec
+                const usedIds = new Set([
+                    ...sessionExercises.map(e => e.id),
+                    ...skippedIds,
+                    currentExercise.id,
+                ]);
+                // ビルトイン + セッション中のカスタム/先生種目から代替を探す
+                const builtInPool = getExercisesByClass(classLevel);
+                const sessionPool = sessionExercises.filter(e =>
+                    !builtInPool.some(b => b.id === e.id)
                 );
+                const allPool = [...builtInPool, ...sessionPool];
+                const available = allPool.filter(e =>
+                    !usedIds.has(e.id) && e.type === 'stretch'
+                );
+                const replacement = available.find(e => e.sec === currentExercise.sec)
+                    || available[0]
+                    || null;
                 if (replacement) {
                     setSessionExercises((prev) => {
                         const cores = prev.filter((exercise) => exercise.type === 'core');

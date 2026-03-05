@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { EXERCISES } from '../../../data/exercises';
 import { ExerciseIcon } from '../../../components/ExerciseIcon';
 import type { TopExercise } from './types';
 
@@ -27,11 +26,8 @@ export const TopExercisesSection: React.FC<TopExercisesSectionProps> = ({ loadin
                 よくがんばった種目
             </h2>
             <div style={{ display: 'flex', gap: 10 }}>
-                {topExercises.map(({ id, count }, index) => {
-                    const exercise = EXERCISES.find((target) => target.id === id);
-                    if (!exercise) {
-                        return null;
-                    }
+                {topExercises.map(({ id, count, name, emoji }, index) => {
+                    if (!name) return null;
 
                     return (
                         <motion.div
@@ -60,7 +56,7 @@ export const TopExercisesSection: React.FC<TopExercisesSectionProps> = ({ loadin
                                 justifyContent: 'center',
                                 flexShrink: 0,
                             }}>
-                                <ExerciseIcon id={exercise.id} emoji={exercise.emoji} size={28} color="#E17055" />
+                                <ExerciseIcon id={id} emoji={emoji ?? '🎯'} size={28} color="#E17055" />
                             </div>
                             <span style={{
                                 fontFamily: "'Noto Sans JP', sans-serif",
@@ -73,7 +69,7 @@ export const TopExercisesSection: React.FC<TopExercisesSectionProps> = ({ loadin
                                 textOverflow: 'ellipsis',
                                 maxWidth: '100%',
                             }}>
-                                {exercise.name}
+                                {name}
                             </span>
                             <span style={{
                                 fontFamily: "'Outfit', sans-serif",

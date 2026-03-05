@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronRight, Clock, Download } from 'lucide-react';
 import { fetchRecommendedMenus, type PublicMenu } from '../lib/publicMenus';
-import { EXERCISES, calculateTotalSeconds } from '../data/exercises';
+import { EXERCISES } from '../data/exercises';
 
 interface PopularMenusRowProps {
     onOpenBrowser: () => void;
@@ -63,11 +63,16 @@ export const PopularMenusRow: React.FC<PopularMenusRowProps> = ({ onOpenBrowser,
                 gap: 8,
             }}>
                 {menus.map(menu => {
+                    const resolveEx = (id: string) =>
+                        EXERCISES.find(e => e.id === id)
+                        ?? menu.customExerciseData?.find(e => e.id === id);
                     const exerciseNames = menu.exerciseIds
                         .slice(0, 3)
-                        .map(id => EXERCISES.find(e => e.id === id)?.name || id);
+                        .map(id => resolveEx(id)?.name ?? id);
                     const remaining = menu.exerciseIds.length - 3;
-                    const totalSec = calculateTotalSeconds(menu.exerciseIds);
+                    const totalSec = menu.exerciseIds.reduce(
+                        (sum, id) => sum + (resolveEx(id)?.sec ?? 0), 0
+                    );
                     const minutes = Math.ceil(totalSec / 60);
 
                     return (

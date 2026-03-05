@@ -198,30 +198,47 @@ export async function fetchMyPublishedMenus(): Promise<PublicMenu[]> {
 // ─── Import (download) a public menu ────────────────
 
 export async function importMenu(publicMenu: PublicMenu): Promise<void> {
-    // 1. 独自種目を保存（ベストエフォート: 失敗してもインポートは続行）
+    // 1. 独自種目を保存（IDをリマップして衝突を回避）
+    const builtInIds = new Set(EXERCISES.map(e => e.id));
+    const idRemap = new Map<string, string>();
+
     if (publicMenu.customExerciseData?.length) {
+        // 既存のカスタム種目を取得してIDの衝突を検出
+        const existingCustom = await getCustomExercises();
+        const existingIds = new Set(existingCustom.map(e => e.id));
+
         for (const ex of publicMenu.customExerciseData) {
+            const importedId = `imported-ex-${publicMenu.id}-${ex.id}`;
+            idRemap.set(ex.id, importedId);
             try {
-                await saveCustomExercise({
-                    id: ex.id,
-                    name: ex.name,
-                    sec: ex.sec,
-                    emoji: ex.emoji,
-                    hasSplit: ex.hasSplit,
-                });
+                // 既にインポート済みならスキップ
+                if (!existingIds.has(importedId)) {
+                    await saveCustomExercise({
+                        id: importedId,
+                        name: ex.name,
+                        sec: ex.sec,
+                        emoji: ex.emoji,
+                        hasSplit: ex.hasSplit,
+                    });
+                }
             } catch (e) {
                 console.warn('[importMenu] custom exercise save skipped:', e);
             }
         }
     }
 
-    // 2. メニューをローカルに保存（これが唯一の必須処理）
+    // 2. メニューをローカルに保存（種目IDをリマップ）
+    const remappedExerciseIds = publicMenu.exerciseIds.map(id => {
+        if (builtInIds.has(id)) return id; // ビルトインはそのまま
+        return idRemap.get(id) ?? id; // カスタム種目はリマップ
+    });
+
     const localMenu: MenuGroup = {
         id: `imported-${publicMenu.id}`,
         name: publicMenu.name,
         emoji: publicMenu.emoji,
         description: `${publicMenu.authorName}さんのメニュー`,
-        exerciseIds: [...publicMenu.exerciseIds],
+        exerciseIds: remappedExerciseIds,
         isPreset: false,
     };
     try {

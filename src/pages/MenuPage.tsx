@@ -195,6 +195,7 @@ export const MenuPage: React.FC = () => {
                 requiredExercises={requiredExercises}
                 excludedExercises={excludedExercises}
                 customExercises={customExercises}
+                teacherExercises={teacherExercises.filter(te => !teacherHiddenExerciseIds.has(te.id))}
                 teacherExcludedExerciseIds={teacherExcludedExerciseIds}
                 teacherRequiredExerciseIds={teacherRequiredExerciseIds}
                 teacherHiddenExerciseIds={teacherHiddenExerciseIds}

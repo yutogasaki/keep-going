@@ -8,6 +8,7 @@ import {
 import { getAllSessions, getCustomExercises, getTodayKey } from '../../lib/db';
 import { fetchTeacherMenuSettingsForClass } from '../../lib/teacherMenuSettings';
 import { fetchTeacherExercises } from '../../lib/teacherContent';
+import { fetchAllTeacherItemOverrides } from '../../lib/teacherItemOverrides';
 import type { UserProfileStore } from '../../store/useAppStore';
 
 interface UseSessionSetupParams {
@@ -83,10 +84,36 @@ export function useSessionSetup({
         const loadSession = async () => {
             setIsLoading(true);
             try {
-                const customExList = await getCustomExercises();
+                const [customExList, teacherExList, teacherSettings, teacherOverrides] = await Promise.all([
+                    getCustomExercises(),
+                    fetchTeacherExercises(),
+                    fetchTeacherMenuSettingsForClass(classLevel),
+                    fetchAllTeacherItemOverrides(),
+                ]);
+
+                // Build override map for built-in exercises
+                const overrideMap = new Map(
+                    teacherOverrides
+                        .filter(o => o.itemType === 'exercise')
+                        .map(o => [o.itemId, o])
+                );
+
+                // Apply teacher overrides to built-in exercises
+                const overriddenBuiltIns: Exercise[] = EXERCISES.map(e => {
+                    const ov = overrideMap.get(e.id);
+                    if (!ov) return e;
+                    return {
+                        ...e,
+                        name: ov.nameOverride ?? e.name,
+                        emoji: ov.emojiOverride ?? e.emoji,
+                        sec: ov.secOverride ?? e.sec,
+                        hasSplit: ov.hasSplitOverride ?? e.hasSplit,
+                        description: ov.descriptionOverride ?? e.description,
+                        reading: ov.nameOverride ? undefined : e.reading, // reading invalidated if name changed
+                    };
+                });
 
                 // Fetch teacher-created exercises and add to custom pool
-                const teacherExList = await fetchTeacherExercises();
                 const teacherExForClass = teacherExList.filter(
                     te => te.classLevels.length === 0 || te.classLevels.includes(classLevel)
                 );
@@ -96,13 +123,11 @@ export function useSessionSetup({
                     sec: te.sec,
                     emoji: te.emoji,
                     hasSplit: te.hasSplit,
+                    description: te.description,
                 }));
                 const allCustomPool = [...customExList, ...teacherAsCustom];
 
-                const allExercises = [...EXERCISES, ...allCustomPool];
-
-                // Fetch teacher menu settings for class-level overrides
-                const teacherSettings = await fetchTeacherMenuSettingsForClass(classLevel);
+                const allExercises = [...overriddenBuiltIns, ...allCustomPool];
                 const teacherExcludedIds = teacherSettings
                     .filter(s => s.itemType === 'exercise' && (s.status === 'excluded' || s.status === 'hidden'))
                     .map(s => s.itemId);
@@ -146,12 +171,25 @@ export function useSessionSetup({
                         targetSeconds: dailyTargetMinutes * 60,
                         customPool: allCustomPool,
                         historicalCounts,
+                        builtInOverrides: overriddenBuiltIns,
                     }));
                     return;
                 }
 
-                const resolved = sessionExerciseIds
-                    .map((id) => allExercises.find((exercise) => exercise.id === id))
+                const resolved: Exercise[] = sessionExerciseIds
+                    .map((id) => {
+                        const found = allExercises.find((exercise) => exercise.id === id);
+                        if (!found) return undefined;
+                        // Ensure custom/teacher exercises have all required Exercise fields
+                        return {
+                            internal: found.hasSplit ? 'R30→L30' : 'single',
+                            phase: 'main' as const,
+                            type: 'stretch' as const,
+                            classes: [] as ClassLevel[],
+                            priority: 'medium' as const,
+                            ...found,
+                        } satisfies Exercise;
+                    })
                     .filter((exercise): exercise is Exercise => exercise !== undefined);
 
                 setSessionExercises(resolved);

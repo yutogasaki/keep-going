@@ -3,7 +3,9 @@ import { AnimatePresence } from 'framer-motion';
 import { CalendarDays, Home } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
-import { getAllSessions, getSessionsByDate, getTodayKey, type SessionRecord } from '../lib/db';
+import { getAllSessions, getCustomExercises, getSessionsByDate, getTodayKey, type SessionRecord } from '../lib/db';
+import { EXERCISES } from '../data/exercises';
+import { fetchTeacherExercises } from '../lib/teacherContent';
 import { useAppStore } from '../store/useAppStore';
 import type { ChibifuwaRecord, PastFuwafuwaRecord } from '../store/useAppStore';
 import { RecordTabContent } from './record/RecordTabContent';
@@ -19,6 +21,7 @@ export const RecordPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [selectedFuwafuwa, setSelectedFuwafuwa] = useState<PastFuwafuwaRecord | null>(null);
     const [selectedBadge, setSelectedBadge] = useState<ChibifuwaRecord | null>(null);
+    const [exerciseMap, setExerciseMap] = useState<Map<string, { name: string; emoji: string }>>(new Map());
 
     const users = useAppStore((state) => state.users);
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
@@ -69,6 +72,19 @@ export const RecordPage: React.FC = () => {
         };
     }, [sessionUserIds]);
 
+    useEffect(() => {
+        const loadExMap = async () => {
+            const map = new Map<string, { name: string; emoji: string }>();
+            for (const e of EXERCISES) map.set(e.id, { name: e.name, emoji: e.emoji });
+            const customs = await getCustomExercises();
+            for (const c of customs) map.set(c.id, { name: c.name, emoji: c.emoji });
+            const teachers = await fetchTeacherExercises();
+            for (const t of teachers) map.set(t.id, { name: t.name, emoji: t.emoji });
+            setExerciseMap(map);
+        };
+        loadExMap();
+    }, []);
+
     const groupedSessions = new Map<string, SessionRecord[]>();
     for (const session of sessions) {
         const existing = groupedSessions.get(session.date) || [];
@@ -88,7 +104,10 @@ export const RecordPage: React.FC = () => {
         }
     }
     const topExercises = Array.from(exerciseCounts.entries())
-        .map(([id, count]) => ({ id, count }))
+        .map(([id, count]) => {
+            const info = exerciseMap.get(id);
+            return { id, count, name: info?.name, emoji: info?.emoji };
+        })
         .sort((a, b) => b.count - a.count)
         .slice(0, 3);
 

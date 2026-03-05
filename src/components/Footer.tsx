@@ -46,7 +46,11 @@ export const Footer: React.FC = () => {
             {leftTabs.map(({ id, icon: Icon, label }) => (
                 <button
                     key={id}
-                    onClick={() => setTab(id)}
+                    onClick={() => {
+                        audio.playTick();
+                        haptics.tick();
+                        setTab(id);
+                    }}
                     aria-label={label}
                     aria-current={currentTab === id ? 'page' : undefined}
                     style={{
