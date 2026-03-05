@@ -6,7 +6,7 @@ interface MenuTabsProps {
     onChange: (tab: MenuTab) => void;
 }
 
-export const MenuTabs: React.FC<MenuTabsProps> = ({ tab, onChange }) => {
+export const MenuTabs: React.FC<MenuTabsProps> = React.memo(({ tab, onChange }) => {
     return (
         <div style={{
             display: 'flex',
@@ -40,4 +40,4 @@ export const MenuTabs: React.FC<MenuTabsProps> = ({ tab, onChange }) => {
             ))}
         </div>
     );
-};
+});

@@ -8,7 +8,7 @@ interface ExerciseIconProps {
     color?: string;  // Unused, kept for API compatibility
 }
 
-export const ExerciseIcon: React.FC<ExerciseIconProps> = ({ emoji, size = 32 }) => {
+export const ExerciseIcon: React.FC<ExerciseIconProps> = React.memo(({ emoji, size = 32 }) => {
     return (
         <span style={{
             fontSize: size,
@@ -20,4 +20,4 @@ export const ExerciseIcon: React.FC<ExerciseIconProps> = ({ emoji, size = 32 }) 
             {emoji}
         </span>
     );
-};
+});

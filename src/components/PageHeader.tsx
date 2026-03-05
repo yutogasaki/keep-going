@@ -5,7 +5,7 @@ interface PageHeaderProps {
     rightElement?: React.ReactNode;
 }
 
-export const PageHeader: React.FC<PageHeaderProps> = ({ title, rightElement }) => {
+export const PageHeader: React.FC<PageHeaderProps> = React.memo(({ title, rightElement }) => {
     return (
         <div style={{
             display: 'flex',
@@ -32,4 +32,4 @@ export const PageHeader: React.FC<PageHeaderProps> = ({ title, rightElement }) =
             )}
         </div>
     );
-};
+});

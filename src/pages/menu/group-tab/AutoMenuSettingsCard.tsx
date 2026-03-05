@@ -11,7 +11,7 @@ interface AutoMenuSettingsCardProps {
     onOpenCustomMenu: () => void;
 }
 
-export const AutoMenuSettingsCard: React.FC<AutoMenuSettingsCardProps> = ({
+export const AutoMenuSettingsCard: React.FC<AutoMenuSettingsCardProps> = React.memo(({
     isTogetherMode,
     dailyTargetMinutes,
     requiredCount,
@@ -86,4 +86,4 @@ export const AutoMenuSettingsCard: React.FC<AutoMenuSettingsCardProps> = ({
             </p>
         </div>
     );
-};
+});

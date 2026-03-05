@@ -6,7 +6,7 @@ interface ActivityHeatmapProps {
     daysToShow?: number;
 }
 
-export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ sessions, daysToShow = 14 }) => {
+export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = React.memo(({ sessions, daysToShow = 14 }) => {
     const dates = useMemo(
         () => Array.from({ length: daysToShow }, (_, i) => getDateKeyOffset(-(daysToShow - 1 - i))),
         [daysToShow],
@@ -60,4 +60,4 @@ export const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ sessions, days
             </div>
         </div>
     );
-};
+});
