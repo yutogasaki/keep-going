@@ -1,8 +1,8 @@
 import { supabase } from './supabase';
-import { calculateStreak as calculateStreakFromDb } from './db';
+import { calculateStreak } from './db';
 
 // Re-export so existing callers (TeacherDashboard, AccountCard) don't need to change imports
-export { calculateStreakFromDb as calculateStreak };
+export { calculateStreak };
 
 // ─── Types ───────────────────────────────────────────
 
