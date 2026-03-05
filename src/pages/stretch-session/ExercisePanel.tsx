@@ -159,6 +159,19 @@ export const ExercisePanel: React.FC<ExercisePanelProps> = ({
                         }
                     </p>
                 )}
+
+                {activeExercise.description && (
+                    <p style={{
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 14,
+                        color: '#636E72',
+                        marginTop: 8,
+                        maxWidth: 280,
+                        lineHeight: 1.6,
+                    }}>
+                        {activeExercise.description}
+                    </p>
+                )}
             </div>
 
             <AnimatePresence>
