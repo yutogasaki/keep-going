@@ -20,6 +20,9 @@
 npm run dev      # 開発サーバー (port 5173)
 npm run build    # tsc -b && vite build
 npx tsc --noEmit # 型チェックのみ
+npm test         # Vitest テスト実行
+npm run lint     # ESLint
+npm run format   # Prettier 自動整形
 ```
 
 ## Directory Structure
@@ -87,13 +90,19 @@ src/
 
 ### スタイリング
 - **インラインstyle**を主に使用（CSS-in-JS風）
-- フォント: `fontFamily: "'Noto Sans JP', sans-serif"` 統一
-- カラー: `#2D3436`(テキスト), `#2BBAA0`(プライマリ/緑), `#E17055`(危険/赤), `#8B5CF6`(紫), `#8395A7`(グレー)
-- borderRadius: 10〜20px
+- **`src/lib/styles.ts` のデザイントークンを必ず使う**:
+  - フォント: `FONT.body` / `FONT.heading` / `FONT.mono`（直接文字列を書かない）
+  - カラー: `COLOR.dark`, `COLOR.primary`, `COLOR.danger` 等
+  - サイズ: `FONT_SIZE.md`, `SPACE.lg`, `RADIUS.lg` 等
+  - z-index: `Z.modal`, `Z.confirm`, `Z.sheet` 等
+  - ミックスイン: `btnPrimary`, `btnSecondary`, `btnDanger`, `inputField`, `overlay`
 - `className="card"` でカードスタイル（グローバルCSS）
 
 ### コンポーネント
-- モーダル/エディター: `createPortal(jsx, document.body)` でbodyにマウント
+- **モーダル: `<Modal>` コンポーネント (`src/components/Modal.tsx`) を使う**
+  - overlay + portal + AnimatePresence + focusTrap が組み込み済み
+  - `open`, `onClose`, `zIndex`, `maxWidth`, `ariaLabel` を渡すだけ
+  - 例: `ConfirmDeleteModal.tsx` の実装を参照
 - アニメーション: `framer-motion` の `motion.div`, `AnimatePresence`
 - アイコン: `lucide-react` から個別import
 
