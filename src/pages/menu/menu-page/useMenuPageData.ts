@@ -504,6 +504,7 @@ export function useMenuPageData({
         handleStartCustomExercise: (exerciseId: string) => {
             startSessionWithExercises([exerciseId]);
         },
+        teacherExercises,
         teacherExerciseIds,
         teacherMenuIds,
         teacherExcludedExerciseIds,

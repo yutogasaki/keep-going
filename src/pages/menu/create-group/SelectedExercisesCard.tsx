@@ -1,18 +1,28 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { getExerciseById } from '../../../data/exercises';
+import type { PickerExercise } from './ExercisePickerList';
 
 interface SelectedExercisesCardProps {
     selectedIds: string[];
     minutes: number;
+    allExercises?: PickerExercise[];
     onRemoveAtIndex: (index: number) => void;
 }
 
 export const SelectedExercisesCard: React.FC<SelectedExercisesCardProps> = ({
     selectedIds,
     minutes,
+    allExercises,
     onRemoveAtIndex,
 }) => {
+    const resolveExercise = (id: string) => {
+        const builtIn = getExerciseById(id);
+        if (builtIn) return { name: builtIn.name, emoji: builtIn.emoji };
+        const extra = allExercises?.find((e) => e.id === id);
+        if (extra) return { name: extra.name, emoji: extra.emoji };
+        return null;
+    };
     return (
         <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
             <div style={{
@@ -69,7 +79,7 @@ export const SelectedExercisesCard: React.FC<SelectedExercisesCardProps> = ({
             ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {selectedIds.map((id, index) => {
-                        const exercise = getExerciseById(id);
+                        const exercise = resolveExercise(id);
                         if (!exercise) {
                             return null;
                         }

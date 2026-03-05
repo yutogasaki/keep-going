@@ -1,20 +1,32 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { calculateTotalSeconds, getExercisesByClass, type ClassLevel } from '../../data/exercises';
+import { getExercisesByClass, type ClassLevel } from '../../data/exercises';
 import { saveCustomGroup, type MenuGroup } from '../../data/menuGroups';
+import type { CustomExercise } from '../../lib/db';
 import { publishMenu, unpublishMenu } from '../../lib/publicMenus';
 import { getAccountId } from '../../lib/sync';
+import type { TeacherExercise } from '../../lib/teacherContent';
 import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import { COLOR, FONT } from '../../lib/styles';
 import { CreateGroupHeader } from './create-group/CreateGroupHeader';
 import { EmojiSelectorCard } from './create-group/EmojiSelectorCard';
-import { ExercisePickerList } from './create-group/ExercisePickerList';
+import { ExercisePickerList, type ExercisePickerSection, type PickerExercise } from './create-group/ExercisePickerList';
 import { MenuMetaCards } from './create-group/MenuMetaCards';
 import { PublishToggleCard } from './create-group/PublishToggleCard';
 import { SelectedExercisesCard } from './create-group/SelectedExercisesCard';
 
 const EMOJI_OPTIONS = ['🌸', '💪', '🦵', '🩰', '⭐', '🌈', '🔥', '💃', '🧘', '🎯', '✨', '🌙'];
+
+function toPickerExercise(ex: CustomExercise | TeacherExercise): PickerExercise {
+    return {
+        id: ex.id,
+        name: ex.name,
+        sec: ex.sec,
+        emoji: ex.emoji,
+        splitLabel: ex.hasSplit ? 'みぎ→ひだり' : undefined,
+    };
+}
 
 interface CreateGroupViewProps {
     classLevel: string;
@@ -22,6 +34,8 @@ interface CreateGroupViewProps {
     currentUserId?: string;
     authorName?: string;
     publishedMenuId?: string;
+    customExercises?: CustomExercise[];
+    teacherExercises?: TeacherExercise[];
     onSave: () => void;
     onCancel: () => void;
 }
@@ -32,6 +46,8 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
     currentUserId,
     authorName,
     publishedMenuId,
+    customExercises,
+    teacherExercises,
     onSave,
     onCancel,
 }) => {
@@ -46,8 +62,63 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
 
     const isLoggedIn = !!getAccountId();
     const isEditing = !!initial;
-    const availableExercises = getExercisesByClass(classLevel as ClassLevel);
-    const totalSec = calculateTotalSeconds(selectedIds);
+
+    // Built-in exercises
+    const builtInExercises = useMemo(
+        () => getExercisesByClass(classLevel as ClassLevel),
+        [classLevel],
+    );
+
+    // Convert built-in to PickerExercise format
+    const builtInPicker: PickerExercise[] = useMemo(
+        () => builtInExercises.map((ex) => ({
+            id: ex.id,
+            name: ex.name,
+            sec: ex.sec,
+            emoji: ex.emoji,
+            splitLabel: ex.internal !== 'single' ? ex.internal : undefined,
+        })),
+        [builtInExercises],
+    );
+
+    // Convert custom & teacher exercises
+    const customPicker = useMemo(
+        () => (customExercises ?? []).map(toPickerExercise),
+        [customExercises],
+    );
+    const teacherPicker = useMemo(
+        () => (teacherExercises ?? []).map(toPickerExercise),
+        [teacherExercises],
+    );
+
+    // All exercises flat list for lookups (time calc, selected card)
+    const allExercises = useMemo(
+        () => [...builtInPicker, ...customPicker, ...teacherPicker],
+        [builtInPicker, customPicker, teacherPicker],
+    );
+
+    // Sections for picker
+    const sections: ExercisePickerSection[] = useMemo(() => {
+        const result: ExercisePickerSection[] = [
+            { label: '種目をタップして追加（くりかえしOK）', exercises: builtInPicker },
+        ];
+        if (teacherPicker.length > 0) {
+            result.push({ label: '先生の種目', exercises: teacherPicker });
+        }
+        if (customPicker.length > 0) {
+            result.push({ label: 'じぶんの種目', exercises: customPicker });
+        }
+        return result;
+    }, [builtInPicker, teacherPicker, customPicker]);
+
+    // Total time calculation using all exercises
+    const totalSec = useMemo(
+        () => selectedIds.reduce((sum, id) => {
+            const ex = allExercises.find((e) => e.id === id);
+            return sum + (ex?.sec ?? 0);
+        }, 0),
+        [selectedIds, allExercises],
+    );
     const minutes = Math.ceil(totalSec / 60);
     const canSave = name.trim().length > 0 && selectedIds.length > 0 && !saving;
 
@@ -148,13 +219,14 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
             <SelectedExercisesCard
                 selectedIds={selectedIds}
                 minutes={minutes}
+                allExercises={allExercises}
                 onRemoveAtIndex={(index) => {
                     setSelectedIds((previous) => previous.filter((_, targetIndex) => targetIndex !== index));
                 }}
             />
 
             <ExercisePickerList
-                availableExercises={availableExercises}
+                sections={sections}
                 selectedIds={selectedIds}
                 onAddExercise={addExercise}
             />

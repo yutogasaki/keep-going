@@ -68,6 +68,7 @@ export const MenuPage: React.FC = () => {
         handleUnpublishGroup,
         handleStartSingleExercise,
         handleStartCustomExercise,
+        teacherExercises,
         teacherExerciseIds,
         teacherMenuIds,
         teacherExcludedExerciseIds,
@@ -98,6 +99,8 @@ export const MenuPage: React.FC = () => {
                 currentUserId={sessionUserIds.length === 1 ? sessionUserIds[0] : undefined}
                 authorName={currentUsers[0]?.name ?? 'ゲスト'}
                 publishedMenuId={publishedId}
+                customExercises={customExercises}
+                teacherExercises={teacherExercises}
                 onSave={handleCreatedGroup}
                 onCancel={() => {
                     setShowCreateGroup(false);
