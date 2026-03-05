@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeepGoing - バレエストレッチアプリ</title>
+    <meta name="description" content="バレエ教室向けストレッチ・トレーニング管理アプリ。毎日のストレッチを楽しく続けよう。">
+    <link rel="icon" href="/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;700;800&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            color: #2D3436;
+            background: #FAFBFC;
+            overflow-x: hidden;
+        }
+
+        /* ===== Hero ===== */
+        .hero {
+            min-height: 100vh;
+            background: linear-gradient(165deg, #FFF5F0 0%, #E8F8F0 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 60px 24px;
+            position: relative;
+        }
+
+        .hero-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: 32px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .hero h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 48px;
+            font-weight: 800;
+            margin-top: 24px;
+            letter-spacing: -1px;
+        }
+
+        .hero .tagline {
+            font-size: 18px;
+            color: #8395A7;
+            margin-top: 12px;
+            line-height: 1.8;
+        }
+
+        .hero .subtitle {
+            font-size: 14px;
+            color: #B2BEC3;
+            margin-top: 8px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            margin-top: 32px;
+            padding: 16px 48px;
+            border-radius: 9999px;
+            background: #2BBAA0;
+            color: white;
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 6px 24px rgba(43, 186, 160, 0.35);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(43, 186, 160, 0.45);
+        }
+
+        .hero-phones {
+            display: flex;
+            gap: 16px;
+            margin-top: 48px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .hero-phones img {
+            width: 180px;
+            border-radius: 24px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+        }
+
+        /* ===== Sections ===== */
+        section {
+            padding: 80px 24px;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 32px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .section-subtitle {
+            font-size: 15px;
+            color: #8395A7;
+            text-align: center;
+            margin-bottom: 48px;
+            line-height: 1.8;
+        }
+
+        /* ===== Features ===== */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 32px;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 24px;
+            padding: 32px 24px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            text-align: center;
+        }
+
+        .feature-card .emoji {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .feature-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 14px;
+            color: #636E72;
+            line-height: 1.8;
+        }
+
+        .feature-card img {
+            width: 100%;
+            max-width: 220px;
+            border-radius: 16px;
+            margin-top: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        /* ===== How to Use ===== */
+        .howto-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 48px;
+        }
+
+        .howto-step {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .howto-step:nth-child(even) {
+            flex-direction: row-reverse;
+        }
+
+        .howto-step img {
+            width: 220px;
+            flex-shrink: 0;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .howto-step .step-content {
+            flex: 1;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #2BBAA0;
+            color: white;
+            font-weight: 800;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .howto-step h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .howto-step p {
+            font-size: 14px;
+            color: #636E72;
+            line-height: 1.8;
+        }
+
+        /* ===== Install ===== */
+        .install-section {
+            background: linear-gradient(165deg, #F0FDFA 0%, #FFF5F0 100%);
+            border-radius: 32px;
+            padding: 48px 32px;
+            text-align: center;
+            margin: 0 auto;
+            max-width: 640px;
+        }
+
+        .install-section h2 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .install-section .note {
+            font-size: 13px;
+            color: #8395A7;
+            margin-bottom: 32px;
+        }
+
+        .install-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            text-align: left;
+        }
+
+        .install-step {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .install-step .num {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #2BBAA0;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .install-step .text {
+            font-size: 15px;
+            line-height: 1.7;
+            padding-top: 2px;
+        }
+
+        .install-step .text strong {
+            color: #2BBAA0;
+        }
+
+        .install-screenshot {
+            margin-top: 32px;
+            width: 100%;
+            max-width: 260px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        /* ===== Footer ===== */
+        footer {
+            text-align: center;
+            padding: 48px 24px;
+            color: #B2BEC3;
+            font-size: 13px;
+        }
+
+        footer a {
+            color: #2BBAA0;
+            text-decoration: none;
+        }
+
+        /* ===== Mobile ===== */
+        @media (max-width: 640px) {
+            .hero h1 { font-size: 36px; }
+            .hero .tagline { font-size: 16px; }
+            .hero-phones img { width: 140px; }
+            .section-title { font-size: 24px; }
+
+            .howto-step,
+            .howto-step:nth-child(even) {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .howto-step img { width: 180px; }
+            .step-number { margin: 0 auto 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hero -->
+    <div class="hero">
+        <img src="/icon.png" alt="KeepGoing" class="hero-icon">
+        <h1>KeepGoing</h1>
+        <p class="tagline">今日のちょっとが、未来のちからに。</p>
+        <p class="subtitle">バレエ教室向け ストレッチ＆トレーニング管理アプリ</p>
+        <a href="https://keep-going-sandy.vercel.app" class="cta-button">アプリをひらく</a>
+        <div class="hero-phones">
+            <img src="/images/web/S__139288585_0.jpg" alt="ホーム画面 - ふわふわペット">
+            <img src="/images/web/S__139288586_0.jpg" alt="ストレッチ実行画面">
+            <img src="/images/web/S__139288583_0.jpg" alt="メニュー画面">
+        </div>
+    </div>
+
+    <!-- Features -->
+    <section>
+        <h2 class="section-title">できること</h2>
+        <p class="section-subtitle">お子さまが楽しくストレッチを続けられる工夫がいっぱい</p>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="emoji">🐣</div>
+                <h3>ふわふわペット</h3>
+                <p>ストレッチを続けると、ふわふわが卵から妖精、大人へと成長。お世話をしながら楽しく習慣化できます。</p>
+                <img src="/images/web/S__139288585_0.jpg" alt="ふわふわペット">
+            </div>
+
+            <div class="feature-card">
+                <div class="emoji">⏱️</div>
+                <h3>タイマー付きセッション</h3>
+                <p>種目ごとにタイマーで自動カウント。音声ガイド付きで、お子さまひとりでもストレッチできます。</p>
+                <img src="/images/web/S__139288586_0.jpg" alt="ストレッチタイマー">
+            </div>
+
+            <div class="feature-card">
+                <div class="emoji">📋</div>
+                <h3>メニュー管理</h3>
+                <p>セットメニューで時短ストレッチ。先生がクラスごとにメニューをカスタマイズすることもできます。</p>
+                <img src="/images/web/S__139288583_0.jpg" alt="メニュー一覧">
+            </div>
+
+            <div class="feature-card">
+                <div class="emoji">📊</div>
+                <h3>きろく</h3>
+                <p>毎日のストレッチ記録をアクティビティで見える化。回数・時間・継続日数をひと目で確認。</p>
+                <img src="/images/web/S__139288584_0.jpg" alt="記録画面">
+            </div>
+
+            <div class="feature-card">
+                <div class="emoji">👨‍👩‍👧‍👦</div>
+                <h3>家族で使える</h3>
+                <p>1つのアカウントで複数のお子さまを登録OK。それぞれのクラスやペットを管理できます。</p>
+                <img src="/images/web/S__139288580_0.jpg" alt="設定画面">
+            </div>
+
+            <div class="feature-card">
+                <div class="emoji">☁️</div>
+                <h3>クラウド同期</h3>
+                <p>Googleアカウントで同期すれば、機種変更しても安心。オフラインでも使えるPWAアプリです。</p>
+                <img src="/images/web/S__139288579_0.jpg" alt="アカウント設定">
+            </div>
+        </div>
+    </section>
+
+    <!-- How to Use -->
+    <section style="background: #F4F6F8; border-radius: 0; max-width: none; padding: 80px 24px;">
+        <div style="max-width: 720px; margin: 0 auto;">
+            <h2 class="section-title">つかいかた</h2>
+            <p class="section-subtitle">かんたん3ステップではじめよう</p>
+
+            <div class="howto-steps">
+                <div class="howto-step">
+                    <img src="/images/web/S__139288591_0.jpg" alt="クラスをえらぶ">
+                    <div class="step-content">
+                        <div class="step-number">1</div>
+                        <h3>クラスをえらぶ</h3>
+                        <p>お名前とクラスを選んで登録。プレバレエから上級まで、レベルに合った種目が自動で表示されます。</p>
+                    </div>
+                </div>
+
+                <div class="howto-step">
+                    <img src="/images/web/S__139288582_0.jpg" alt="メニューをえらぶ">
+                    <div class="step-content">
+                        <div class="step-number">2</div>
+                        <h3>メニューをえらぶ</h3>
+                        <p>「くみあわせ」でセットメニューをワンタップ、または「ひとつ」から好きな種目を選んでスタート。</p>
+                    </div>
+                </div>
+
+                <div class="howto-step">
+                    <img src="/images/web/S__139288586_0.jpg" alt="ストレッチする">
+                    <div class="step-content">
+                        <div class="step-number">3</div>
+                        <h3>タイマーでストレッチ</h3>
+                        <p>タイマーが自動カウント。終わったら次の種目へ自動で切り替わります。ふわふわにまほうエネルギーがたまっていきます。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Install Guide -->
+    <section>
+        <div class="install-section">
+            <h2>iPhoneへのインストール</h2>
+            <p class="note">KeepGoingはPWA（ウェブアプリ）です。<br>Safariからホーム画面に追加するだけで、アプリのように使えます。</p>
+
+            <div class="install-steps">
+                <div class="install-step">
+                    <div class="num">1</div>
+                    <div class="text"><strong>Safari</strong> でアプリのURLを開きます</div>
+                </div>
+                <div class="install-step">
+                    <div class="num">2</div>
+                    <div class="text">画面下の <strong>共有ボタン（□↑）</strong> をタップします</div>
+                </div>
+                <div class="install-step">
+                    <div class="num">3</div>
+                    <div class="text">メニューから <strong>「ホーム画面に追加」</strong> を選びます</div>
+                </div>
+                <div class="install-step">
+                    <div class="num">4</div>
+                    <div class="text">右上の <strong>「追加」</strong> をタップすれば完了！</div>
+                </div>
+            </div>
+
+            <img src="/images/web/S__139288581_0.jpg" alt="ホーム画面に追加" class="install-screenshot">
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p style="margin-bottom: 8px;">
+            <a href="https://keep-going-sandy.vercel.app" style="font-weight: 700; font-size: 15px;">アプリをひらく →</a>
+        </p>
+        <p>&copy; 2025 KeepGoing</p>
+    </footer>
+
+</body>
+</html>
