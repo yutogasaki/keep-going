@@ -77,14 +77,14 @@
 - [ ] ヘルプセンターの内容をアップデート（helpData.ts: 11セクション48件のQ&A）
 
 ### MEDIUM: パフォーマンス（追加）
-- [ ] useHomeSessions 5秒ポーリングの最適化
-- [ ] React.memo追加（主要コンポーネント）
+- [x] useHomeSessions 5秒ポーリング → sessionSavedイベント駆動に変更 (2026-03-05)
+- [x] React.memo追加（ExerciseIcon/PageHeader/ActivityHeatmap/MenuTabs/AutoMenuSettingsCard） (2026-03-05)
 
 ### MEDIUM: コード品質（追加）
-- [ ] calculateStreak重複（db.ts + teacher.ts）を統合
-- [ ] mappers.tsの6関数の`any`型をSupabase型に置換
-- [ ] dead code削除: profileDB/saveProfile/getProfile (db.ts)
-- [ ] menuGroups.tsのCRUD関数をsrc/lib/に移動
+- [x] calculateStreak重複統合（teacher.ts → db.tsからre-export） (2026-03-05)
+- [x] mappers.tsの4関数の`any`型をSupabase型に置換 (2026-03-05)
+- [x] dead code削除: UserProfile/profileDB/saveProfile/getProfile (db.ts) (2026-03-05)
+- [x] menuGroups.tsのCRUD関数をsrc/lib/customGroups.tsに分離 (2026-03-05)
 
 ### LOW: テスト
 - [ ] generateSessionのテスト追加（~125行の複雑なビジネスロジック）
