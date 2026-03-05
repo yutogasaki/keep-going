@@ -13,7 +13,10 @@ import { AccountCard } from './developer-dashboard/AccountCard';
 import { ConfirmActionDialog } from './developer-dashboard/ConfirmActionDialog';
 import { DeveloperHeader } from './developer-dashboard/DeveloperHeader';
 import { DeveloperStatsAndFilters } from './developer-dashboard/DeveloperStatsAndFilters';
+import { DeveloperDebugPanel } from './settings/developer-debug/DeveloperDebugPanel';
 import type { ConfirmAction, FilterType } from './developer-dashboard/types';
+
+type DeveloperTab = 'accounts' | 'debug';
 
 interface DeveloperDashboardProps {
     onBack: () => void;
@@ -26,6 +29,7 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
     const [expandedAccount, setExpandedAccount] = useState<string | null>(null);
     const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
     const [actionLoading, setActionLoading] = useState(false);
+    const [tab, setTab] = useState<DeveloperTab>('accounts');
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -115,58 +119,95 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
         }}>
             <DeveloperHeader onBack={onBack} onRefresh={load} />
 
-            {loading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
-                    <Loader2 size={28} style={{ animation: 'spin 1s linear infinite' }} />
-                </div>
+            {/* Tab Bar */}
+            <div style={{
+                display: 'flex',
+                gap: 0,
+                background: '#16213e',
+                padding: '0 16px',
+            }}>
+                {(['accounts', 'debug'] as const).map((t) => (
+                    <button
+                        key={t}
+                        onClick={() => setTab(t)}
+                        style={{
+                            flex: 1,
+                            padding: '10px 0',
+                            border: 'none',
+                            background: 'none',
+                            color: tab === t ? '#fff' : 'rgba(255,255,255,0.4)',
+                            fontWeight: 700,
+                            fontSize: 13,
+                            cursor: 'pointer',
+                            borderBottom: tab === t ? '2px solid #fff' : '2px solid transparent',
+                            transition: 'color 0.2s, border-color 0.2s',
+                        }}
+                    >
+                        {t === 'accounts' ? 'Accounts' : 'Debug'}
+                    </button>
+                ))}
+            </div>
+
+            {tab === 'accounts' ? (
+                <>
+                    {loading ? (
+                        <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
+                            <Loader2 size={28} style={{ animation: 'spin 1s linear infinite' }} />
+                        </div>
+                    ) : (
+                        <div style={{ padding: '12px 16px 100px' }}>
+                            <DeveloperStatsAndFilters
+                                accounts={accounts}
+                                stats={stats}
+                                filter={filter}
+                                filteredCount={filteredAccounts.length}
+                                onFilterChange={setFilter}
+                            />
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                {filteredAccounts.map((account) => (
+                                    <AccountCard
+                                        key={account.accountId}
+                                        account={account}
+                                        expanded={expandedAccount === account.accountId}
+                                        onToggle={() => {
+                                            setExpandedAccount(expandedAccount === account.accountId ? null : account.accountId);
+                                        }}
+                                        daysAgo={daysAgo}
+                                        formatDate={formatDate}
+                                        onSuspend={() => {
+                                            setConfirmAction({
+                                                accountId: account.accountId,
+                                                type: account.suspended ? 'unsuspend' : 'suspend',
+                                            });
+                                        }}
+                                        onDelete={() => {
+                                            setConfirmAction({
+                                                accountId: account.accountId,
+                                                type: 'delete',
+                                            });
+                                        }}
+                                        onDeleteMember={async (memberId) => {
+                                            if (!window.confirm('このメンバーを削除しますか？')) {
+                                                return;
+                                            }
+                                            try {
+                                                await developerDeleteFamilyMember(memberId);
+                                                load();
+                                            } catch (error) {
+                                                alert('削除に失敗: ' + (error as Error).message);
+                                            }
+                                        }}
+                                        thirtyDaysAgoStr={thirtyDaysAgoStr}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </>
             ) : (
                 <div style={{ padding: '12px 16px 100px' }}>
-                    <DeveloperStatsAndFilters
-                        accounts={accounts}
-                        stats={stats}
-                        filter={filter}
-                        filteredCount={filteredAccounts.length}
-                        onFilterChange={setFilter}
-                    />
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {filteredAccounts.map((account) => (
-                            <AccountCard
-                                key={account.accountId}
-                                account={account}
-                                expanded={expandedAccount === account.accountId}
-                                onToggle={() => {
-                                    setExpandedAccount(expandedAccount === account.accountId ? null : account.accountId);
-                                }}
-                                daysAgo={daysAgo}
-                                formatDate={formatDate}
-                                onSuspend={() => {
-                                    setConfirmAction({
-                                        accountId: account.accountId,
-                                        type: account.suspended ? 'unsuspend' : 'suspend',
-                                    });
-                                }}
-                                onDelete={() => {
-                                    setConfirmAction({
-                                        accountId: account.accountId,
-                                        type: 'delete',
-                                    });
-                                }}
-                                onDeleteMember={async (memberId) => {
-                                    if (!window.confirm('このメンバーを削除しますか？')) {
-                                        return;
-                                    }
-                                    try {
-                                        await developerDeleteFamilyMember(memberId);
-                                        load();
-                                    } catch (error) {
-                                        alert('削除に失敗: ' + (error as Error).message);
-                                    }
-                                }}
-                                thirtyDaysAgoStr={thirtyDaysAgoStr}
-                            />
-                        ))}
-                    </div>
+                    <DeveloperDebugPanel />
                 </div>
             )}
 

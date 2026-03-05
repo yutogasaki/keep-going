@@ -12,7 +12,6 @@ import { SoundNotificationSettingsSection } from './settings/SoundNotificationSe
 import { HelpCenterSection } from './settings/HelpCenterSection';
 import { FeedbackSection } from './settings/FeedbackSection';
 import { AppInfoActionsSection } from './settings/AppInfoActionsSection';
-import { DeveloperDebugSection } from './settings/DeveloperDebugSection';
 
 const TeacherDashboard = lazy(() =>
     import('./TeacherDashboard').then((module) => ({ default: module.TeacherDashboard }))
@@ -136,7 +135,6 @@ export const SettingsPage: React.FC = () => {
                 <HelpCenterSection />
                 <FeedbackSection />
                 <AppInfoActionsSection />
-                {import.meta.env.DEV && <DeveloperDebugSection />}
             </div>
 
             <ConfirmDeleteModal
