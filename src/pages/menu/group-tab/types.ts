@@ -4,8 +4,8 @@ import type { PublicMenu } from '../../../lib/publicMenus';
 export interface MenuGroupTabProps {
     isTogetherMode: boolean;
     dailyTargetMinutes: number;
-    requiredExercises: string[];
-    excludedExercises: string[];
+    effectiveRequiredCount: number;
+    effectiveExcludedCount: number;
     autoMenuMinutes: number;
     presets: MenuGroup[];
     customGroups: MenuGroup[];

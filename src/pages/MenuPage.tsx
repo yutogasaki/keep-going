@@ -50,6 +50,8 @@ export const MenuPage: React.FC = () => {
         exercises,
         autoMenuMinutes,
         canPublish,
+        effectiveRequiredCount,
+        effectiveExcludedCount,
         sessionUserCount,
         getCreatorName,
         loadCustomData,
@@ -137,8 +139,8 @@ export const MenuPage: React.FC = () => {
                 <MenuGroupTab
                     isTogetherMode={isTogetherMode}
                     dailyTargetMinutes={dailyTargetMinutes}
-                    requiredExercises={requiredExercises}
-                    excludedExercises={excludedExercises}
+                    effectiveRequiredCount={effectiveRequiredCount}
+                    effectiveExcludedCount={effectiveExcludedCount}
                     autoMenuMinutes={autoMenuMinutes}
                     presets={presets}
                     customGroups={customGroups}

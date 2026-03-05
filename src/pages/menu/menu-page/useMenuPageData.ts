@@ -313,6 +313,48 @@ export function useMenuPageData({
         }
     };
 
+    // Effective excluded/required counts: merge user settings with teacher defaults
+    // Uses the same priority logic as CustomMenuModal (user > teacher)
+    const effectiveCounts = useMemo(() => {
+        const userRequiredSet = new Set(requiredExercises);
+        const userExcludedSet = new Set(excludedExercises);
+        let requiredCount = 0;
+        let excludedCount = 0;
+
+        // We iterate over all exercise IDs visible to this class
+        // (built-in filtered by class + teacher exercises, both minus hidden)
+        const builtInIds = getExercisesByClass(classLevel)
+            .filter(e => !teacherHiddenExerciseIds.has(e.id))
+            .map(e => e.id);
+        const teacherIds = teacherExercises
+            .filter(te => !teacherHiddenExerciseIds.has(te.id))
+            .map(te => te.id);
+        const allVisibleIds = [...builtInIds, ...teacherIds];
+
+        for (const id of allVisibleIds) {
+            const isTeacherRequired = teacherRequiredExerciseIds.has(id);
+            const isTeacherExcluded = teacherExcludedExerciseIds.has(id);
+            const isUserRequired = userRequiredSet.has(id);
+            const isUserExcluded = userExcludedSet.has(id);
+
+            const isRequired = isUserRequired || (isTeacherRequired && !isUserExcluded);
+            const isExcluded = !isRequired && (isUserExcluded || (isTeacherExcluded && !isUserRequired));
+
+            if (isRequired) requiredCount++;
+            if (isExcluded) excludedCount++;
+        }
+
+        return { requiredCount, excludedCount };
+    }, [
+        classLevel,
+        teacherExercises,
+        teacherHiddenExerciseIds,
+        teacherRequiredExerciseIds,
+        teacherExcludedExerciseIds,
+        requiredExercises,
+        excludedExercises,
+    ]);
+
     // Merge built-in exercises with teacher exercises
     // hidden = completely invisible, excluded = visible but not in auto-generation
     const exercises = useMemo(() => {
@@ -439,6 +481,8 @@ export function useMenuPageData({
         exercises,
         autoMenuMinutes,
         canPublish,
+        effectiveRequiredCount: effectiveCounts.requiredCount,
+        effectiveExcludedCount: effectiveCounts.excludedCount,
         sessionUserCount: sessionUserIds.length,
         getCreatorName: (creatorId?: string) => getCreatorNameById(users, creatorId),
         loadCustomData,

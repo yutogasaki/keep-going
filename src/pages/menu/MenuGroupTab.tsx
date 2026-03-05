@@ -8,8 +8,8 @@ import type { MenuGroupTabProps } from './group-tab/types';
 export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
     isTogetherMode,
     dailyTargetMinutes,
-    requiredExercises,
-    excludedExercises,
+    effectiveRequiredCount,
+    effectiveExcludedCount,
     autoMenuMinutes,
     presets,
     customGroups,
@@ -33,8 +33,8 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
             <AutoMenuSettingsCard
                 isTogetherMode={isTogetherMode}
                 dailyTargetMinutes={dailyTargetMinutes}
-                requiredCount={requiredExercises.length}
-                excludedCount={excludedExercises.length}
+                requiredCount={effectiveRequiredCount}
+                excludedCount={effectiveExcludedCount}
                 autoMenuMinutes={autoMenuMinutes}
                 onOpenCustomMenu={onOpenCustomMenu}
             />
