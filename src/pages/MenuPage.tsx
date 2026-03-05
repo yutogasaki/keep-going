@@ -100,7 +100,7 @@ export const MenuPage: React.FC = () => {
                 authorName={currentUsers[0]?.name ?? 'ゲスト'}
                 publishedMenuId={publishedId}
                 customExercises={customExercises}
-                teacherExercises={teacherExercises}
+                teacherExercises={teacherExercises.filter(te => !teacherHiddenExerciseIds.has(te.id))}
                 onSave={handleCreatedGroup}
                 onCancel={() => {
                     setShowCreateGroup(false);
