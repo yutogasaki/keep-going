@@ -199,7 +199,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
                 controls={controls}
                 displayScale={displayScale}
                 imagePath={imagePath}
-                stage={status.stage}
+                stage={displayStage}
                 isSayonara={status.isSayonara}
                 particles={particles}
                 ripple={ripple}
@@ -209,7 +209,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
             />
 
             <FuwafuwaStatusPill
-                stage={status.stage}
+                stage={displayStage}
                 daysAlive={status.daysAlive}
                 isSayonara={status.isSayonara}
                 name={fuwafuwaName}
