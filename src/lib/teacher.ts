@@ -1,5 +1,8 @@
 import { supabase } from './supabase';
-import { formatDateKey, shiftDateKey } from './db';
+import { calculateStreak as calculateStreakFromDb } from './db';
+
+// Re-export so existing callers (TeacherDashboard, AccountCard) don't need to change imports
+export { calculateStreakFromDb as calculateStreak };
 
 // ─── Types ───────────────────────────────────────────
 
@@ -128,32 +131,3 @@ export async function teacherDeleteFamilyMember(memberId: string): Promise<void>
     if (error) throw error;
 }
 
-// ─── Streak calculation (uses shared utilities from db.ts) ────
-
-export function calculateStreak(sessions: { date: string }[]): number {
-    if (sessions.length === 0) return 0;
-
-    const dates = [...new Set(sessions.map(s => s.date))].sort().reverse();
-
-    // 3AM day boundary
-    const now = new Date();
-    const adjusted = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-    const today = formatDateKey(adjusted);
-    const yesterday = shiftDateKey(today, -1);
-
-    if (dates[0] !== today && dates[0] !== yesterday) return 0;
-
-    let streak = 0;
-    let currentDate = dates[0] === today ? today : yesterday;
-
-    for (const date of dates) {
-        if (date === currentDate) {
-            streak++;
-            currentDate = shiftDateKey(currentDate, -1);
-        } else if (date < currentDate) {
-            break;
-        }
-    }
-
-    return streak;
-}

@@ -22,19 +22,20 @@ export function useHomeSessions({ users, sessionUserIds }: UseHomeSessionsParams
 
         load();
 
-        let interval = setInterval(load, 5000);
+        // Refresh when a session is saved (event fired by db.saveSession)
+        // or when the tab becomes visible again (e.g. returning from another app)
+        const handleSessionSaved = () => { load(); };
         const handleVisibility = () => {
-            clearInterval(interval);
             if (document.visibilityState === 'visible') {
                 load();
-                interval = setInterval(load, 5000);
             }
         };
 
+        window.addEventListener('sessionSaved', handleSessionSaved);
         document.addEventListener('visibilitychange', handleVisibility);
 
         return () => {
-            clearInterval(interval);
+            window.removeEventListener('sessionSaved', handleSessionSaved);
             document.removeEventListener('visibilitychange', handleVisibility);
         };
     }, []);

@@ -2,6 +2,12 @@ import type { CustomExercise, SessionRecord } from '../db';
 import type { MenuGroup } from '../../data/menuGroups';
 import type { ClassLevel } from '../../data/exercises';
 import type { ChibifuwaRecord, PastFuwafuwaRecord, UserProfileStore } from '../../store/useAppStore';
+import type { Database } from '../supabase-types';
+
+type CloudFamilyMember = Database['public']['Tables']['family_members']['Row'];
+type CloudSession = Database['public']['Tables']['sessions']['Row'];
+type CloudCustomExercise = Database['public']['Tables']['custom_exercises']['Row'];
+type CloudMenuGroup = Database['public']['Tables']['menu_groups']['Row'];
 
 export interface AppSettingsInput {
     onboardingCompleted: boolean;
@@ -98,7 +104,7 @@ function mergeUniqueById<T extends { id: string }>(primary: T[], secondary: T[])
     return result;
 }
 
-export function toLocalUserFromCloudFamily(cloudFamily: any, localUser?: UserProfileStore): UserProfileStore {
+export function toLocalUserFromCloudFamily(cloudFamily: CloudFamilyMember, localUser?: UserProfileStore): UserProfileStore {
     const cloudPast = (cloudFamily.past_fuwafuwas ?? []) as PastFuwafuwaRecord[];
     const localPast = localUser?.pastFuwafuwas ?? [];
     const mergedPast = mergeUniqueById(cloudPast, localPast);
@@ -118,8 +124,8 @@ export function toLocalUserFromCloudFamily(cloudFamily: any, localUser?: UserPro
         pastFuwafuwas: mergedPast,
         notifiedFuwafuwaStages: (cloudFamily.notified_fuwafuwa_stages ?? []) as number[],
         dailyTargetMinutes: cloudFamily.daily_target_minutes,
-        excludedExercises: cloudFamily.excluded_exercises as string[],
-        requiredExercises: cloudFamily.required_exercises as string[],
+        excludedExercises: cloudFamily.excluded_exercises,
+        requiredExercises: cloudFamily.required_exercises,
         consumedMagicDate: cloudFamily.consumed_magic_date ?? undefined,
         consumedMagicSeconds: cloudFamily.consumed_magic_seconds ?? 0,
         avatarUrl: cloudFamily.avatar_url ?? undefined,
@@ -127,19 +133,19 @@ export function toLocalUserFromCloudFamily(cloudFamily: any, localUser?: UserPro
     };
 }
 
-export function toLocalSessionRecord(cloudSession: any): SessionRecord {
+export function toLocalSessionRecord(cloudSession: CloudSession): SessionRecord {
     return {
         id: cloudSession.id,
         date: cloudSession.date,
         startedAt: cloudSession.started_at,
         totalSeconds: cloudSession.total_seconds,
-        exerciseIds: cloudSession.exercise_ids as string[],
-        skippedIds: cloudSession.skipped_ids as string[],
-        userIds: cloudSession.user_ids as string[],
+        exerciseIds: cloudSession.exercise_ids,
+        skippedIds: cloudSession.skipped_ids,
+        userIds: cloudSession.user_ids,
     };
 }
 
-export function toLocalCustomExercise(cloudExercise: any): CustomExercise {
+export function toLocalCustomExercise(cloudExercise: CloudCustomExercise): CustomExercise {
     return {
         id: cloudExercise.id,
         name: cloudExercise.name,
@@ -151,13 +157,13 @@ export function toLocalCustomExercise(cloudExercise: any): CustomExercise {
     };
 }
 
-export function toLocalCustomMenuGroup(cloudGroup: any): MenuGroup {
+export function toLocalCustomMenuGroup(cloudGroup: CloudMenuGroup): MenuGroup {
     return {
         id: cloudGroup.id,
         name: cloudGroup.name,
         emoji: cloudGroup.emoji,
         description: cloudGroup.description ?? '',
-        exerciseIds: cloudGroup.exercise_ids as string[],
+        exerciseIds: cloudGroup.exercise_ids,
         isPreset: false,
         creatorId: cloudGroup.creator_id ?? undefined,
     };

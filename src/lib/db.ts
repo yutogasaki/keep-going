@@ -18,13 +18,6 @@ export interface SessionRecord {
     userIds?: string[];   // For multi-user support
 }
 
-// User profile (Legacy, now moving to Zustand for simplicity/sync)
-export interface UserProfile {
-    classLevel: 'プレ' | '初級' | '中級' | '上級';
-    displayName: string;
-    createdAt: string;
-}
-
 // Custom Exercises
 export interface CustomExercise {
     id: string;      // typically starts with 'custom-ex-'
@@ -38,7 +31,6 @@ export interface CustomExercise {
 
 // DB instances
 const historyDB = localforage.createInstance({ name: 'keepgoing', storeName: 'history' });
-const profileDB = localforage.createInstance({ name: 'keepgoing', storeName: 'profile' });
 const customExercisesDB = localforage.createInstance({ name: 'keepgoing', storeName: 'custom_exercises' });
 
 export function formatDateKey(date: Date): string {
@@ -81,13 +73,13 @@ export function getDateKeyOffset(offsetDays: number): string {
     return formatDateKey(adjusted);
 }
 
-export function calculateStreak(sessions: SessionRecord[]): number {
+// Accepts any object with a date field (works for SessionRecord and teacher's StudentSession)
+export function calculateStreak(sessions: { date: string }[]): number {
     if (sessions.length === 0) return 0;
 
     // Get unique dates sorted descending
     const dates = Array.from(new Set(sessions.map(s => s.date))).sort().reverse();
 
-    let streak = 0;
     const today = getTodayKey();
     const yesterday = getDateKeyOffset(-1);
 
@@ -95,6 +87,7 @@ export function calculateStreak(sessions: SessionRecord[]): number {
         return 0; // Streak broken
     }
 
+    let streak = 0;
     let currentDate = dates[0] === today ? today : yesterday;
 
     // Count consecutive days backwards
@@ -102,7 +95,7 @@ export function calculateStreak(sessions: SessionRecord[]): number {
         if (date === currentDate) {
             streak++;
             currentDate = shiftDateKey(currentDate, -1);
-        } else {
+        } else if (date < currentDate) {
             break;
         }
     }
@@ -117,6 +110,8 @@ export async function saveSession(record: SessionRecord): Promise<void> {
     if (getAccountId()) {
         syncPushSession(record).catch(onSyncError);
     }
+    // Notify listeners (e.g. useHomeSessions) that a new session was saved
+    window.dispatchEvent(new Event('sessionSaved'));
 }
 
 export async function getSessionsByDate(date: string): Promise<SessionRecord[]> {
@@ -148,18 +143,8 @@ export async function getRecentDays(): Promise<Map<string, SessionRecord[]>> {
     return map;
 }
 
-// Profile operations
-export async function saveProfile(profile: UserProfile): Promise<void> {
-    await profileDB.setItem('profile', profile);
-}
-
-export async function getProfile(): Promise<UserProfile | null> {
-    return await profileDB.getItem<UserProfile>('profile');
-}
-
 export async function clearAllData(): Promise<void> {
     await historyDB.clear();
-    await profileDB.clear();
     await customExercisesDB.clear();
 }
 
