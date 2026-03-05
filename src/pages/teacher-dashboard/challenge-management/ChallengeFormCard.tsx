@@ -1,6 +1,7 @@
 import React from 'react';
 import { CLASS_LEVELS, EXERCISES } from '../../../data/exercises';
 import type { ChallengeFormValues } from './types';
+import { COLOR, FONT, FONT_SIZE, RADIUS } from '../../../lib/styles';
 
 interface ChallengeFormCardProps {
     values: ChallengeFormValues;
@@ -16,20 +17,20 @@ interface ChallengeFormCardProps {
 const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '14px 18px',
-    borderRadius: 14,
+    borderRadius: RADIUS.lg,
     border: '1px solid rgba(0,0,0,0.08)',
-    background: '#F8F9FA',
-    fontFamily: "'Noto Sans JP', sans-serif",
-    fontSize: 14,
+    background: COLOR.bgLight,
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.md,
     outline: 'none',
     boxSizing: 'border-box',
 };
 
 const labelStyle: React.CSSProperties = {
-    fontFamily: "'Noto Sans JP', sans-serif",
-    fontSize: 12,
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.sm,
     fontWeight: 700,
-    color: '#636E72',
+    color: COLOR.text,
     marginBottom: 4,
 };
 
@@ -201,12 +202,12 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                     style={{
                         flex: 1,
                         padding: '12px 0',
-                        borderRadius: 14,
-                        border: '1px solid #E0E0E0',
-                        background: '#fff',
-                        color: '#636E72',
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 14,
+                        borderRadius: RADIUS.lg,
+                        border: 'none',
+                        background: COLOR.bgMuted,
+                        color: COLOR.text,
+                        fontFamily: FONT.body,
+                        fontSize: FONT_SIZE.md,
                         fontWeight: 700,
                         cursor: 'pointer',
                     }}
@@ -219,12 +220,12 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                     style={{
                         flex: 1,
                         padding: '12px 0',
-                        borderRadius: 14,
+                        borderRadius: RADIUS.lg,
                         border: 'none',
-                        background: !hasError ? '#2BBAA0' : '#DFE6E9',
-                        color: !hasError ? '#FFF' : '#B2BEC3',
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 14,
+                        background: !hasError ? COLOR.primary : COLOR.disabled,
+                        color: !hasError ? COLOR.white : COLOR.light,
+                        fontFamily: FONT.body,
+                        fontSize: FONT_SIZE.md,
                         fontWeight: 700,
                         cursor: !hasError ? 'pointer' : 'not-allowed',
                     }}

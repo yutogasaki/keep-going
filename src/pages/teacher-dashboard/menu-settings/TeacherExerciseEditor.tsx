@@ -5,6 +5,7 @@ import { Play, Trash2 } from 'lucide-react';
 import { CLASS_LEVELS } from '../../../data/exercises';
 import type { TeacherExercise } from '../../../lib/teacherContent';
 import type { MenuSettingStatus } from '../../../lib/teacherMenuSettings';
+import { COLOR, FONT, FONT_SIZE, inputField } from '../../../lib/styles';
 
 interface TeacherExerciseEditorProps {
     initial?: TeacherExercise | null;
@@ -75,10 +76,10 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
 
     const cardStyle: React.CSSProperties = { padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' };
     const labelStyle: React.CSSProperties = {
-        fontFamily: "'Noto Sans JP', sans-serif",
+        fontFamily: FONT.body,
         fontSize: 13,
         fontWeight: 700,
-        color: '#2D3436',
+        color: COLOR.dark,
         display: 'block',
         marginBottom: 12,
     };
@@ -161,16 +162,9 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
                     onChange={e => setName(e.target.value)}
                     placeholder="新しい種目の名前"
                     style={{
-                        width: '100%',
-                        padding: '16px 20px',
-                        borderRadius: 16,
-                        border: '1px solid rgba(0,0,0,0.05)',
-                        background: '#F8F9FA',
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 16,
-                        color: '#2D3436',
-                        outline: 'none',
-                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)',
+                        ...inputField,
+                        fontSize: FONT_SIZE.lg,
+                        color: COLOR.dark,
                         transition: 'all 0.2s',
                     }}
                 />
@@ -185,16 +179,9 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
                     placeholder="種目の説明やポイント"
                     rows={3}
                     style={{
-                        width: '100%',
-                        padding: '16px 20px',
-                        borderRadius: 16,
-                        border: '1px solid rgba(0,0,0,0.05)',
-                        background: '#F8F9FA',
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 14,
-                        color: '#2D3436',
-                        outline: 'none',
-                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)',
+                        ...inputField,
+                        fontSize: FONT_SIZE.md,
+                        color: COLOR.dark,
                         transition: 'all 0.2s',
                         resize: 'vertical',
                     }}
@@ -416,9 +403,9 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
                     padding: '16px 0',
                     borderRadius: 16,
                     border: 'none',
-                    background: name.trim() ? 'linear-gradient(135deg, #2BBAA0, #1A937D)' : '#DFE6E9',
-                    color: name.trim() ? 'white' : '#B2BEC3',
-                    fontFamily: "'Noto Sans JP', sans-serif",
+                    background: name.trim() ? 'linear-gradient(135deg, #2BBAA0, #1A937D)' : COLOR.disabled,
+                    color: name.trim() ? COLOR.white : COLOR.light,
+                    fontFamily: FONT.body,
                     fontSize: 16,
                     fontWeight: 700,
                     cursor: name.trim() && !submitting ? 'pointer' : 'not-allowed',

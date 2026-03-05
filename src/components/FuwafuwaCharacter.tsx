@@ -20,7 +20,8 @@ interface Props {
 const EMOTION_EMOJIS = ['🎵', '✨', '💖', '🌟', '🫧'];
 
 export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
-    const { updateUser, resetUserFuwafuwa } = useAppStore();
+    const updateUser = useAppStore((state) => state.updateUser);
+    const resetUserFuwafuwa = useAppStore((state) => state.resetUserFuwafuwa);
     const { fuwafuwaBirthDate, fuwafuwaType, fuwafuwaName } = user;
 
     const [status, setStatus] = useState(() => calculateFuwafuwaStatus(fuwafuwaBirthDate || getTodayKey(), sessions));

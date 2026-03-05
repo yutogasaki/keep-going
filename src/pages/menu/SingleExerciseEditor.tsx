@@ -5,6 +5,7 @@ import { saveCustomExercise, type CustomExercise } from '../../lib/db';
 import { publishExercise } from '../../lib/publicExercises';
 import { getAccountId } from '../../lib/sync';
 import { PublishToggleCard } from './create-group/PublishToggleCard';
+import { COLOR, FONT, FONT_SIZE, inputField } from '../../lib/styles';
 
 interface SingleExerciseEditorProps {
     initial?: CustomExercise | null;
@@ -98,10 +99,10 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
             {/* Emoji selector */}
             <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
                 <label style={{
-                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontFamily: FONT.body,
                     fontSize: 13,
                     fontWeight: 700,
-                    color: '#2D3436',
+                    color: COLOR.dark,
                     display: 'block',
                     marginBottom: 12,
                 }}>
@@ -136,10 +137,10 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
             {/* Name input */}
             <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
                 <label style={{
-                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontFamily: FONT.body,
                     fontSize: 13,
                     fontWeight: 700,
-                    color: '#2D3436',
+                    color: COLOR.dark,
                     display: 'block',
                     marginBottom: 12,
                 }}>
@@ -151,16 +152,9 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                     onChange={e => setName(e.target.value)}
                     placeholder="新しい種目の名前"
                     style={{
-                        width: '100%',
-                        padding: '16px 20px',
-                        borderRadius: 16,
-                        border: '1px solid rgba(0,0,0,0.05)',
-                        background: '#F8F9FA',
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 16,
-                        color: '#2D3436',
-                        outline: 'none',
-                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)',
+                        ...inputField,
+                        fontSize: FONT_SIZE.lg,
+                        color: COLOR.dark,
                         transition: 'all 0.2s',
                     }}
                 />
@@ -169,10 +163,10 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
             {/* Description */}
             <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
                 <label style={{
-                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontFamily: FONT.body,
                     fontSize: 13,
                     fontWeight: 700,
-                    color: '#2D3436',
+                    color: COLOR.dark,
                     display: 'block',
                     marginBottom: 12,
                 }}>
@@ -184,16 +178,9 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                     placeholder="種目の説明（公開時に表示されます）"
                     rows={3}
                     style={{
-                        width: '100%',
-                        padding: '16px 20px',
-                        borderRadius: 16,
-                        border: '1px solid rgba(0,0,0,0.05)',
-                        background: '#F8F9FA',
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 14,
-                        color: '#2D3436',
-                        outline: 'none',
-                        boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)',
+                        ...inputField,
+                        fontSize: FONT_SIZE.md,
+                        color: COLOR.dark,
                         transition: 'all 0.2s',
                         resize: 'vertical',
                     }}
@@ -203,10 +190,10 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
             {/* Time Settings */}
             <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
                 <label style={{
-                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontFamily: FONT.body,
                     fontSize: 13,
                     fontWeight: 700,
-                    color: '#2D3436',
+                    color: COLOR.dark,
                     display: 'block',
                     marginBottom: 12,
                 }}>
@@ -313,9 +300,9 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                     padding: '16px 0',
                     borderRadius: 16,
                     border: 'none',
-                    background: name.trim() ? 'linear-gradient(135deg, #2BBAA0, #1A937D)' : '#DFE6E9',
-                    color: name.trim() ? 'white' : '#B2BEC3',
-                    fontFamily: "'Noto Sans JP', sans-serif",
+                    background: name.trim() ? 'linear-gradient(135deg, #2BBAA0, #1A937D)' : COLOR.disabled,
+                    color: name.trim() ? COLOR.white : COLOR.light,
+                    fontFamily: FONT.body,
                     fontSize: 16,
                     fontWeight: 700,
                     cursor: name.trim() ? 'pointer' : 'not-allowed',

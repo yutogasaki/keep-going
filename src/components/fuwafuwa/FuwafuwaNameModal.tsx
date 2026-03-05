@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { COLOR, FONT, FONT_SIZE, RADIUS } from '../../lib/styles';
 
 interface FuwafuwaNameModalProps {
     open: boolean;
@@ -72,19 +73,19 @@ export const FuwafuwaNameModal: React.FC<FuwafuwaNameModalProps> = ({
                     >
                         <h3 style={{
                             margin: '0 0 4px',
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 16,
+                            fontFamily: FONT.body,
+                            fontSize: FONT_SIZE.lg,
                             fontWeight: 700,
-                            color: '#2D3436',
+                            color: COLOR.dark,
                             textAlign: 'center',
                         }}>
                             🌟 なまえをつけよう
                         </h3>
                         <p style={{
                             margin: '0 0 16px',
-                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontFamily: FONT.body,
                             fontSize: 13,
-                            color: '#636E72',
+                            color: COLOR.text,
                             lineHeight: 1.6,
                             textAlign: 'center',
                         }}>
@@ -102,20 +103,20 @@ export const FuwafuwaNameModal: React.FC<FuwafuwaNameModalProps> = ({
                             maxLength={20}
                             style={{
                                 width: '100%',
-                                padding: '12px 16px',
-                                borderRadius: 14,
-                                border: '2px solid #E0E0E0',
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 16,
+                                padding: '14px 18px',
+                                borderRadius: RADIUS.lg,
+                                border: '2px solid rgba(0,0,0,0.08)',
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.lg,
                                 fontWeight: 600,
-                                color: '#2D3436',
+                                color: COLOR.dark,
                                 textAlign: 'center',
                                 outline: 'none',
                                 boxSizing: 'border-box',
                                 transition: 'border-color 0.2s',
                             }}
                             onFocus={e => { e.target.style.borderColor = '#6C5CE7'; }}
-                            onBlur={e => { e.target.style.borderColor = '#E0E0E0'; }}
+                            onBlur={e => { e.target.style.borderColor = 'rgba(0,0,0,0.08)'; }}
                         />
                         <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
                             <button
@@ -123,13 +124,13 @@ export const FuwafuwaNameModal: React.FC<FuwafuwaNameModalProps> = ({
                                 style={{
                                     flex: 1,
                                     padding: '12px 0',
-                                    borderRadius: 14,
-                                    border: '1px solid #E0E0E0',
-                                    background: '#fff',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 14,
+                                    borderRadius: RADIUS.lg,
+                                    border: 'none',
+                                    background: COLOR.bgMuted,
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.md,
                                     fontWeight: 600,
-                                    color: '#636E72',
+                                    color: COLOR.text,
                                     cursor: 'pointer',
                                 }}
                             >
@@ -140,13 +141,13 @@ export const FuwafuwaNameModal: React.FC<FuwafuwaNameModalProps> = ({
                                 style={{
                                     flex: 1,
                                     padding: '12px 0',
-                                    borderRadius: 14,
+                                    borderRadius: RADIUS.lg,
                                     border: 'none',
                                     background: '#6C5CE7',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 14,
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.md,
                                     fontWeight: 700,
-                                    color: '#fff',
+                                    color: COLOR.white,
                                     cursor: 'pointer',
                                 }}
                             >

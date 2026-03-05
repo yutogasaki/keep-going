@@ -1,6 +1,7 @@
 import React from 'react';
 import { USER_CLASS_LEVELS, type ClassLevel } from '../../../data/exercises';
 import type { UserEditorValues } from './types';
+import { COLOR, FONT, FONT_SIZE, RADIUS } from '../../../lib/styles';
 
 interface UserEditorFormProps {
     values: UserEditorValues;
@@ -31,11 +32,11 @@ export const UserEditorForm: React.FC<UserEditorFormProps> = ({
                 onChange={(event) => onNameChange(event.target.value)}
                 style={{
                     padding: '14px 18px',
-                    borderRadius: 14,
+                    borderRadius: RADIUS.lg,
                     border: '1px solid rgba(0,0,0,0.08)',
-                    background: '#F8F9FA',
-                    fontFamily: "'Noto Sans JP'",
-                    fontSize: 14,
+                    background: COLOR.bgLight,
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.md,
                 }}
             />
             <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
@@ -63,11 +64,11 @@ export const UserEditorForm: React.FC<UserEditorFormProps> = ({
                     onClick={onCancel}
                     style={{
                         padding: '6px 16px',
-                        borderRadius: 14,
-                        border: '1px solid #E0E0E0',
-                        background: '#fff',
+                        borderRadius: RADIUS.lg,
+                        border: 'none',
+                        background: COLOR.bgMuted,
                         fontWeight: 700,
-                        color: '#636E72',
+                        color: COLOR.text,
                     }}
                 >
                     キャンセル
@@ -77,10 +78,10 @@ export const UserEditorForm: React.FC<UserEditorFormProps> = ({
                     disabled={!submitEnabled}
                     style={{
                         padding: '6px 16px',
-                        borderRadius: 14,
+                        borderRadius: RADIUS.lg,
                         border: 'none',
-                        background: submitEnabled ? '#2BBAA0' : '#DFE6E9',
-                        color: submitEnabled ? 'white' : '#B2BEC3',
+                        background: submitEnabled ? COLOR.primary : COLOR.disabled,
+                        color: submitEnabled ? COLOR.white : COLOR.light,
                         fontWeight: 700,
                         cursor: submitEnabled ? 'pointer' : 'not-allowed',
                     }}

@@ -99,7 +99,7 @@ export const NameStep: React.FC<NameStepProps> = ({
                     padding: '14px 48px',
                     borderRadius: 9999,
                     border: 'none',
-                    background: canProceed ? '#2BBAA0' : '#B2BEC3',
+                    background: canProceed ? '#2BBAA0' : '#DFE6E9',
                     color: 'white',
                     fontFamily: "'Noto Sans JP', sans-serif",
                     fontSize: 16,
