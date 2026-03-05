@@ -15,7 +15,19 @@
       "mcp__Claude_Preview__preview_start",
       "Bash(wc -l /Users/yutogasaki/Projects/keep-going/supabase/*.sql)",
       "Bash(grep -r \"commands\\\\|hooks\\\\|shortcuts\" /Users/yutogasaki/Projects/keep-going/.claude/*.json)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(grep -n \"as any\\\\|as unknown\" src/lib/sync/*.ts src/contexts/*.tsx)",
+      "Bash(grep -n \"console\\\\.\" src/lib/sync/*.ts src/contexts/auth/*.ts src/lib/db.ts)",
+      "Bash(wc -l src/lib/sync/*.ts src/lib/db.ts src/contexts/AuthContext.tsx)",
+      "Bash(find src/lib/sync -name \"*.ts\" -type f -exec wc -l {} +)",
+      "Bash(wc -l /Users/yutogasaki/Projects/keep-going/src/lib/sync/*.ts)",
+      "Bash(du -h /Users/yutogasaki/Projects/keep-going/src/data/*.ts)",
+      "Bash(grep -r \"style={{\" /Users/yutogasaki/Projects/keep-going/src/components/*.tsx)",
+      "Bash(grep -A 5 \"function.*Modal\\\\|const.*Modal.*=\" /Users/yutogasaki/Projects/keep-going/src/components/*.tsx /Users/yutogasaki/Projects/keep-going/src/pages/**/*.tsx)",
+      "Bash(find src -name \"*.tsx\" -type f -exec grep -oh \"#[0-9A-Fa-f]\\\\{6\\\\}\\\\|#[0-9A-Fa-f]\\\\{3\\\\}\" {} ;)",
+      "Bash(find src -name \"*.tsx\" -type f -exec grep -oh \"padding[^:]*: ''[^'']*''\\\\|padding[^:]*: [0-9]*\" {} ;)",
+      "Bash(find src -name \"*.tsx\" -type f -exec grep -oh \"fontFamily[^:]*: ''[^'']*''\" {} ;)",
+      "Bash(find src -name \"*.tsx\" -type f -exec grep -h \"fontFamily\" {} ;)"
     ]
   }
 }

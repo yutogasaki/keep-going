@@ -75,6 +75,8 @@ export function useMenuPageData({
     const [teacherHiddenMenuIds, setTeacherHiddenMenuIds] = useState<Set<string>>(new Set());
     const [overrideMap, setOverrideMap] = useState<Map<string, { name: string | null; description: string | null; emoji: string | null; sec: number | null; hasSplit: boolean | null; exerciseIds: string[] | null }>>(new Map());
 
+    const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
     const isTogetherMode = sessionUserIds.length > 1;
 
     const dailyTargetMinutes = useMemo(() => {
@@ -251,11 +253,11 @@ export function useMenuPageData({
 
         try {
             await publishMenu(group, authorName);
-            alert('メニューを公開しました！');
+            setToastMessage({ text: 'メニューを公開しました！', type: 'success' });
             void loadCustomData();
         } catch (error) {
             console.warn('[menu] publish failed:', error);
-            alert('公開に失敗しました');
+            setToastMessage({ text: '公開に失敗しました', type: 'error' });
         }
     };
 
@@ -267,11 +269,11 @@ export function useMenuPageData({
 
         try {
             await unpublishMenu(publishedMenu.id);
-            alert('メニューを非公開にしました');
+            setToastMessage({ text: 'メニューを非公開にしました', type: 'success' });
             void loadCustomData();
         } catch (error) {
             console.warn('[menu] unpublish failed:', error);
-            alert('非公開に失敗しました');
+            setToastMessage({ text: '非公開に失敗しました', type: 'error' });
         }
     };
 
@@ -290,11 +292,11 @@ export function useMenuPageData({
         const authorName = currentUsers[0]?.name ?? 'ゲスト';
         try {
             await publishExercise(exercise, authorName);
-            alert('種目を公開しました！');
+            setToastMessage({ text: '種目を公開しました！', type: 'success' });
             void loadCustomData();
         } catch (error) {
             console.warn('[menu] exercise publish failed:', error);
-            alert('公開に失敗しました');
+            setToastMessage({ text: '公開に失敗しました', type: 'error' });
         }
     };
 
@@ -303,11 +305,11 @@ export function useMenuPageData({
         if (!pub) return;
         try {
             await unpublishExercise(pub.id);
-            alert('種目を非公開にしました');
+            setToastMessage({ text: '種目を非公開にしました', type: 'success' });
             void loadCustomData();
         } catch (error) {
             console.warn('[menu] exercise unpublish failed:', error);
-            alert('非公開に失敗しました');
+            setToastMessage({ text: '非公開に失敗しました', type: 'error' });
         }
     };
 
@@ -469,5 +471,7 @@ export function useMenuPageData({
         findPublishedExercise,
         handlePublishExercise,
         handleUnpublishExercise,
+        toastMessage,
+        clearToast: () => setToastMessage(null),
     };
 }

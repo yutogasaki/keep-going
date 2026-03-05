@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import type { Database } from './supabase-types';
 import { getAccountId } from './sync';
-import { getAllSessions } from './db';
+import { getAllSessions, getTodayKey } from './db';
 
 export interface Challenge {
     id: string;
@@ -29,7 +29,7 @@ export interface ChallengeCompletion {
 export async function fetchActiveChallenges(): Promise<Challenge[]> {
     if (!supabase) return [];
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayKey();
     const { data, error } = await supabase
         .from('challenges')
         .select('*')
@@ -48,7 +48,7 @@ export async function fetchActiveChallenges(): Promise<Challenge[]> {
 export async function fetchPastChallenges(): Promise<Challenge[]> {
     if (!supabase) return [];
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayKey();
     const { data, error } = await supabase
         .from('challenges')
         .select('*')

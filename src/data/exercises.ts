@@ -159,7 +159,7 @@ export function generateSession(classLevel: ClassLevel, options: GenerateSession
 
     // 1. Pick Warmup (aim for 1-2, prioritize required)
     const selectedWarmup = [...requiredWarmups];
-    let remainingWarmups = availableWarmups.filter(e => !requiredIds.includes(e.id)).sort((a, b) => getSortWeight(a) - getSortWeight(b));
+    const remainingWarmups = availableWarmups.filter(e => !requiredIds.includes(e.id)).sort((a, b) => getSortWeight(a) - getSortWeight(b));
     while (selectedWarmup.length < 2 && remainingWarmups.length > 0) {
         selectedWarmup.push(remainingWarmups.shift()!);
     }
@@ -167,14 +167,14 @@ export function generateSession(classLevel: ClassLevel, options: GenerateSession
 
     // 2. Pick Core/Balance (aim for 2, prioritize required) to put at the very end
     const selectedCore = [...requiredCore];
-    let remainingCore = availableCore.filter(e => !requiredIds.includes(e.id)).sort((a, b) => getSortWeight(a) - getSortWeight(b));
+    const remainingCore = availableCore.filter(e => !requiredIds.includes(e.id)).sort((a, b) => getSortWeight(a) - getSortWeight(b));
     while (selectedCore.length < 2 && remainingCore.length > 0) {
         selectedCore.push(remainingCore.shift()!);
     }
     currentSec += selectedCore.reduce((sum, e) => sum + e.sec, 0);
 
     // 3. Pick Main Stretches to fill the rest up to target
-    let selectedMain: Exercise[] = [...requiredMain];
+    const selectedMain: Exercise[] = [...requiredMain];
     currentSec += requiredMain.reduce((sum, e) => sum + e.sec, 0);
 
     // High priority first for remaining main stretches
@@ -218,8 +218,8 @@ export function generateSession(classLevel: ClassLevel, options: GenerateSession
     }
 
     // Smart ordering for Main phase (avoid consecutive same emojis/body parts if possible)
-    let orderedMain: Exercise[] = [];
-    let remaining = [...selectedMain];
+    const orderedMain: Exercise[] = [];
+    const remaining = [...selectedMain];
 
     while (remaining.length > 0) {
         if (orderedMain.length === 0) {

@@ -6,6 +6,17 @@ import { useAppStore } from '../store/useAppStore';
 class AudioEngine {
     private ctx: AudioContext | null = null;
     private isMuted: boolean = false;
+    private cachedVoices: SpeechSynthesisVoice[] = [];
+
+    constructor() {
+        // iOS Safari loads voices asynchronously — cache them when ready
+        if ('speechSynthesis' in window) {
+            this.cachedVoices = window.speechSynthesis.getVoices();
+            window.speechSynthesis.addEventListener('voiceschanged', () => {
+                this.cachedVoices = window.speechSynthesis.getVoices();
+            });
+        }
+    }
 
     // Initialize context only on user interaction
     public init() {
@@ -50,7 +61,8 @@ class AudioEngine {
             // Increase TTS volume substantially to ensure it cuts through BGM and is audible on mobile.
             utterance.volume = Math.min(1.0, state.soundVolume * 5.0);
             // Voice selection logic for premium natural voices
-            const voices = window.speechSynthesis.getVoices();
+            // Use cached voices (iOS Safari returns [] from getVoices() until voiceschanged fires)
+            const voices = this.cachedVoices.length > 0 ? this.cachedVoices : window.speechSynthesis.getVoices();
             const jpVoices = voices.filter(v => v.lang.includes('ja'));
 
             if (jpVoices.length > 0) {

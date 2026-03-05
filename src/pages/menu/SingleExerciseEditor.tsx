@@ -22,6 +22,7 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
     const [hasSplit, setHasSplit] = useState<boolean>(initial?.hasSplit || false);
     const [description, setDescription] = useState(initial?.description || '');
     const [isPublic, setIsPublic] = useState(false);
+    const [saving, setSaving] = useState(false);
 
     const isLoggedIn = !!getAccountId();
     const isEditing = !!initial;
@@ -33,27 +34,34 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
     ];
 
     const handleSave = async () => {
-        if (!name.trim()) return;
-        const ex: CustomExercise = {
-            id: initial?.id || `custom-ex-${Date.now()}`,
-            name: name.trim(),
-            emoji,
-            sec: sec as number,
-            hasSplit,
-            description: description.trim() || undefined,
-            creatorId: currentUserId,
-        };
-        await saveCustomExercise(ex);
+        if (!name.trim() || saving) return;
+        setSaving(true);
+        try {
+            const ex: CustomExercise = {
+                id: initial?.id || `custom-ex-${Date.now()}`,
+                name: name.trim(),
+                emoji,
+                sec: sec as number,
+                hasSplit,
+                description: description.trim() || undefined,
+                creatorId: currentUserId,
+            };
+            await saveCustomExercise(ex);
 
-        if (isPublic && !isEditing && isLoggedIn && authorName) {
-            try {
-                await publishExercise(ex, authorName);
-            } catch (error) {
-                console.warn('[SingleExerciseEditor] publish failed:', error);
+            if (isPublic && !isEditing && isLoggedIn && authorName) {
+                try {
+                    await publishExercise(ex, authorName);
+                } catch (error) {
+                    console.warn('[SingleExerciseEditor] publish failed:', error);
+                }
             }
-        }
 
-        onSave();
+            onSave();
+        } catch (error) {
+            console.warn('[SingleExerciseEditor] save failed:', error);
+        } finally {
+            setSaving(false);
+        }
     };
 
     return createPortal(
@@ -293,27 +301,27 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
             <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={handleSave}
-                disabled={!name.trim()}
+                disabled={!name.trim() || saving}
                 style={{
                     position: 'sticky',
                     bottom: 0,
                     padding: '16px 0',
                     borderRadius: 16,
                     border: 'none',
-                    background: name.trim() ? 'linear-gradient(135deg, #2BBAA0, #1A937D)' : COLOR.disabled,
-                    color: name.trim() ? COLOR.white : COLOR.light,
+                    background: name.trim() && !saving ? 'linear-gradient(135deg, #2BBAA0, #1A937D)' : COLOR.disabled,
+                    color: name.trim() && !saving ? COLOR.white : COLOR.light,
                     fontFamily: FONT.body,
                     fontSize: 16,
                     fontWeight: 700,
-                    cursor: name.trim() ? 'pointer' : 'not-allowed',
-                    boxShadow: name.trim()
+                    cursor: name.trim() && !saving ? 'pointer' : 'not-allowed',
+                    boxShadow: name.trim() && !saving
                         ? '0 8px 20px rgba(43, 186, 160, 0.3)'
                         : 'none',
                     transition: 'all 0.3s ease',
                     marginTop: 16,
                 }}
             >
-                {initial ? 'ほぞん' : 'つくる！'}
+                {saving ? 'ほぞん中...' : initial ? 'ほぞん' : 'つくる！'}
             </motion.button>
         </div>,
         document.body

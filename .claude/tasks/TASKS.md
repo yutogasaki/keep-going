@@ -54,4 +54,40 @@
 ### MEDIUM: デザイン
 - [x] Liquid Glass デザイン導入 - CSSトークン定義 + 21コンポーネント更新 (2026-03-04)
 
+### HIGH: バグ修正
+- [x] S09 phantom ID - preset-allメニューからS09削除 (2026-03-05)
+- [x] rewardFuwafuwaType 0-11 → 0-9に修正 (2026-03-05)
+- [x] fetchActiveChallenges UTC日付 → getTodayKey()に修正 (2026-03-05)
+- [x] exerciseIdsOverride空配列で行削除される問題修正 (2026-03-05)
+- [x] Session double-save防止（hasSavedRef guard追加） (2026-03-05)
+- [x] Pull時のsessionUserIds保持（既存の有効なIDを維持） (2026-03-05)
+- [x] iOS Safari TTS getVoices()対応（voiceschangedイベント+キャッシュ） (2026-03-05)
+
+### HIGH: UX改善
+- [x] チャレンジ削除に確認ダイアログ追加 (2026-03-05)
+- [x] カスタムグループ/種目の削除に確認ダイアログ追加 (2026-03-05)
+- [x] セッション中のXボタンに確認ダイアログ追加 (2026-03-05)
+- [x] native confirm/alert → ConfirmDeleteModal/Toastに置換 (2026-03-05)
+- [x] SingleExerciseEditor/CreateGroupViewに保存中ローディング状態追加 (2026-03-05)
+
+### HIGH: パフォーマンス
+- [x] Footer useAppStore()に個別セレクタ追加 (2026-03-05)
+
+### MEDIUM: コンテンツ
+- [ ] ヘルプセンターの内容をアップデート（helpData.ts: 11セクション48件のQ&A）
+
+### MEDIUM: パフォーマンス（追加）
+- [ ] useHomeSessions 5秒ポーリングの最適化
+- [ ] React.memo追加（主要コンポーネント）
+
+### MEDIUM: コード品質（追加）
+- [ ] calculateStreak重複（db.ts + teacher.ts）を統合
+- [ ] mappers.tsの6関数の`any`型をSupabase型に置換
+- [ ] dead code削除: profileDB/saveProfile/getProfile (db.ts)
+- [ ] menuGroups.tsのCRUD関数をsrc/lib/に移動
+
+### LOW: テスト
+- [ ] generateSessionのテスト追加（~125行の複雑なビジネスロジック）
+- [ ] migrateAppStateのテスト追加
+
 ## In Progress

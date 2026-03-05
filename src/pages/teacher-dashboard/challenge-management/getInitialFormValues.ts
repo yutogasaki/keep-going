@@ -10,7 +10,7 @@ export function createDefaultChallengeFormValues(): ChallengeFormValues {
         targetCount: 20,
         startDate,
         endDate,
-        rewardType: Math.floor(Math.random() * 12),
+        rewardType: Math.floor(Math.random() * 10),
         classLevels: [],
     };
 }

@@ -133,9 +133,18 @@ export async function pullAndMerge(accountId: string): Promise<PullResult> {
                 }
             }
 
+            // Preserve existing sessionUserIds if they are valid, otherwise default to first user
+            const existingSessionUserIds = (localState['sessionUserIds'] ?? []) as string[];
+            const validSessionUserIds = existingSessionUserIds.filter((id) =>
+                users.some((u) => u.id === id),
+            );
+            const sessionUserIds = validSessionUserIds.length > 0
+                ? validSessionUserIds
+                : [users[0]?.id].filter(Boolean);
+
             setRegisteredStoreState({
                 users,
-                sessionUserIds: [users[0]?.id].filter(Boolean),
+                sessionUserIds,
                 onboardingCompleted: cloudSettings?.onboarding_completed ?? localState['onboardingCompleted'] ?? true,
                 soundVolume: cloudSettings?.sound_volume ?? localState['soundVolume'] ?? 1.0,
                 ttsEnabled: cloudSettings?.tts_enabled ?? localState['ttsEnabled'] ?? true,

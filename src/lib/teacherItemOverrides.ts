@@ -70,7 +70,8 @@ export async function upsertTeacherItemOverride(
     const exerciseIds = overrides.exerciseIdsOverride ?? null;
 
     // If all overrides are null, delete the override row
-    const hasAny = name || desc || emoji || sec !== null || hasSplit !== null || exerciseIds;
+    // Note: exerciseIds can be an empty array (valid override), so check with !== null
+    const hasAny = name || desc || emoji || sec !== null || hasSplit !== null || exerciseIds !== null;
     if (!hasAny) {
         await supabase
             .from('teacher_item_overrides')

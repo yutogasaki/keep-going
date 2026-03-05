@@ -60,7 +60,7 @@ export const PRESET_GROUPS: MenuGroup[] = [
         name: 'ぜんぶやる！',
         emoji: '⭐',
         description: '全種目をひととおり',
-        exerciseIds: ['S01', 'S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S09', 'S10', 'C01', 'C02'],
+        exerciseIds: ['S01', 'S02', 'S03', 'S04', 'S05', 'S06', 'S07', 'S08', 'S10', 'C01', 'C02'],
         isPreset: true,
     },
 ];

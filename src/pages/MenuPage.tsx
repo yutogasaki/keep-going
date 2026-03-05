@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
 import { PublicExerciseBrowser } from '../components/PublicExerciseBrowser';
 import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
+import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
+import { Toast } from '../components/Toast';
 import { useAppStore } from '../store/useAppStore';
 import { CustomMenuModal } from './menu/CustomMenuModal';
 import { CreateGroupView } from './menu/CreateGroupView';
@@ -17,6 +19,9 @@ export const MenuPage: React.FC = () => {
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const startSessionWithExercises = useAppStore((state) => state.startSessionWithExercises);
     const updateUserSettings = useAppStore((state) => state.updateUserSettings);
+
+    const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
+    const [deleteExId, setDeleteExId] = useState<string | null>(null);
 
     const {
         tab,
@@ -72,6 +77,8 @@ export const MenuPage: React.FC = () => {
         findPublishedExercise,
         handlePublishExercise,
         handleUnpublishExercise,
+        toastMessage,
+        clearToast,
     } = useMenuPageData({
         users,
         sessionUserIds,
@@ -140,7 +147,7 @@ export const MenuPage: React.FC = () => {
                     onOpenCustomMenu={() => setShowCustomMenu(true)}
                     onGroupTap={handleGroupTap}
                     onEditGroup={setEditGroup}
-                    onDeleteGroup={handleDeleteGroup}
+                    onDeleteGroup={(groupId) => setDeleteGroupId(groupId)}
                     onCreateGroup={() => setShowCreateGroup(true)}
                     canPublish={canPublish}
                     onPublishGroup={handlePublishGroup}
@@ -161,7 +168,7 @@ export const MenuPage: React.FC = () => {
                     getCreatorName={getCreatorName}
                     onStartExercise={handleStartSingleExercise}
                     onEditCustomExercise={setEditEx}
-                    onDeleteCustomExercise={handleDeleteEx}
+                    onDeleteCustomExercise={(exId) => setDeleteExId(exId)}
                     onStartCustomExercise={handleStartCustomExercise}
                     onCreateCustomExercise={() => setShowCreateEx(true)}
                     teacherExerciseIds={teacherExerciseIds}
@@ -200,6 +207,38 @@ export const MenuPage: React.FC = () => {
                 open={showPublicExerciseBrowser}
                 onClose={() => setShowPublicExerciseBrowser(false)}
                 onImported={loadCustomData}
+            />
+
+            <ConfirmDeleteModal
+                open={deleteGroupId !== null}
+                title="メニューをさくじょ"
+                message="このメニューをさくじょしますか？この操作は取り消せません。"
+                onCancel={() => setDeleteGroupId(null)}
+                onConfirm={() => {
+                    if (deleteGroupId) {
+                        handleDeleteGroup(deleteGroupId);
+                    }
+                    setDeleteGroupId(null);
+                }}
+            />
+
+            <ConfirmDeleteModal
+                open={deleteExId !== null}
+                title="種目をさくじょ"
+                message="このじぶん種目をさくじょしますか？この操作は取り消せません。"
+                onCancel={() => setDeleteExId(null)}
+                onConfirm={() => {
+                    if (deleteExId) {
+                        handleDeleteEx(deleteExId);
+                    }
+                    setDeleteExId(null);
+                }}
+            />
+
+            <Toast
+                message={toastMessage?.text ?? null}
+                type={toastMessage?.type ?? 'success'}
+                onClose={clearToast}
             />
         </div>
     );

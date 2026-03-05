@@ -13,6 +13,7 @@ interface SyncQueueEntry {
 }
 
 const MAX_RETRIES = 5;
+let processing = false;
 
 const syncQueueDB = localforage.createInstance({ name: 'keepgoing', storeName: 'sync_queue' });
 
@@ -30,6 +31,12 @@ export async function processQueue(): Promise<{ failed: number }> {
         return { failed: 0 };
     }
 
+    // Guard against concurrent queue processing (e.g. flaky network triggering multiple 'online' events)
+    if (processing) {
+        return { failed: 0 };
+    }
+    processing = true;
+
     const entries: SyncQueueEntry[] = [];
     await syncQueueDB.iterate<SyncQueueEntry, void>((value) => {
         entries.push(value);
@@ -39,31 +46,35 @@ export async function processQueue(): Promise<{ failed: number }> {
 
     let failed = 0;
 
-    for (const entry of entries) {
-        try {
-            if (entry.operation === 'upsert') {
-                const { error } = await supabase.from(entry.table as TableName).upsert(entry.payload as never);
-                if (error) throw error;
-            } else {
-                let query = supabase.from(entry.table as TableName).delete();
-                for (const [key, value] of Object.entries(entry.payload)) {
-                    query = query.eq(key, value as string);
+    try {
+        for (const entry of entries) {
+            try {
+                if (entry.operation === 'upsert') {
+                    const { error } = await supabase.from(entry.table as TableName).upsert(entry.payload as never);
+                    if (error) throw error;
+                } else {
+                    let query = supabase.from(entry.table as TableName).delete();
+                    for (const [key, value] of Object.entries(entry.payload)) {
+                        query = query.eq(key, value as string);
+                    }
+                    const { error } = await query;
+                    if (error) throw error;
                 }
-                const { error } = await query;
-                if (error) throw error;
-            }
 
-            await syncQueueDB.removeItem(entry.id);
-        } catch (error) {
-            const retryCount = (entry.retryCount ?? 0) + 1;
-            if (retryCount >= MAX_RETRIES) {
-                console.warn(`[sync] Dropping queue entry ${entry.id} after ${MAX_RETRIES} retries:`, error);
                 await syncQueueDB.removeItem(entry.id);
-            } else {
-                await syncQueueDB.setItem(entry.id, { ...entry, retryCount });
+            } catch (error) {
+                const retryCount = (entry.retryCount ?? 0) + 1;
+                if (retryCount >= MAX_RETRIES) {
+                    console.warn(`[sync] Dropping queue entry ${entry.id} after ${MAX_RETRIES} retries:`, error);
+                    await syncQueueDB.removeItem(entry.id);
+                } else {
+                    await syncQueueDB.setItem(entry.id, { ...entry, retryCount });
+                }
+                failed++;
             }
-            failed++;
         }
+    } finally {
+        processing = false;
     }
 
     return { failed };

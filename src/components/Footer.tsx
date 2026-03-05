@@ -7,7 +7,9 @@ import { haptics } from '../lib/haptics';
 type TabId = 'home' | 'record' | 'menu' | 'settings';
 
 export const Footer: React.FC = () => {
-    const { currentTab, setTab, startSession } = useAppStore();
+    const currentTab = useAppStore((state) => state.currentTab);
+    const setTab = useAppStore((state) => state.setTab);
+    const startSession = useAppStore((state) => state.startSession);
 
     const leftTabs: { id: TabId; icon: React.ElementType; label: string }[] = [
         { id: 'home', icon: Home, label: 'ホーム' },

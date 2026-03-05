@@ -5,6 +5,7 @@ import {
     type Challenge,
     updateChallenge,
 } from '../../lib/challenges';
+import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import { ChallengeFormCard } from './challenge-management/ChallengeFormCard';
 import { ChallengeList } from './challenge-management/ChallengeList';
 import { CreateChallengeButton } from './challenge-management/CreateChallengeButton';
@@ -36,6 +37,8 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
     const [formValues, setFormValues] = useState<ChallengeFormValues>(() => createDefaultChallengeFormValues());
     const [submitting, setSubmitting] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState(false);
 
     const resetForm = () => {
         setFormValues(createDefaultChallengeFormValues());
@@ -103,12 +106,17 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
         setShowCreateForm(false);
     };
 
-    const handleDelete = async (challengeId: string) => {
+    const handleDeleteConfirm = async () => {
+        if (!deleteTargetId) return;
+        setDeleting(true);
         try {
-            await deleteChallenge(challengeId);
+            await deleteChallenge(deleteTargetId);
             onDeleted();
         } catch (error) {
             console.warn('[teacher] Failed to delete challenge:', error);
+        } finally {
+            setDeleting(false);
+            setDeleteTargetId(null);
         }
     };
 
@@ -135,7 +143,7 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                     onRandomReward={() => {
                         setFormValues((previous) => ({
                             ...previous,
-                            rewardType: Math.floor(Math.random() * 12),
+                            rewardType: Math.floor(Math.random() * 10),
                         }));
                     }}
                     onCancel={handleCancel}
@@ -147,7 +155,16 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                 loading={loading}
                 challenges={challenges}
                 onEdit={startEdit}
-                onDelete={handleDelete}
+                onDelete={(id) => setDeleteTargetId(id)}
+            />
+
+            <ConfirmDeleteModal
+                open={deleteTargetId !== null}
+                title="チャレンジを削除"
+                message="このチャレンジを削除しますか？この操作は取り消せません。"
+                onCancel={() => setDeleteTargetId(null)}
+                onConfirm={handleDeleteConfirm}
+                loading={deleting}
             />
         </div>
     );

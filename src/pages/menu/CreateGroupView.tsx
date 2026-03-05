@@ -5,6 +5,8 @@ import { calculateTotalSeconds, getExercisesByClass, type ClassLevel } from '../
 import { saveCustomGroup, type MenuGroup } from '../../data/menuGroups';
 import { publishMenu, unpublishMenu } from '../../lib/publicMenus';
 import { getAccountId } from '../../lib/sync';
+import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
+import { COLOR, FONT } from '../../lib/styles';
 import { CreateGroupHeader } from './create-group/CreateGroupHeader';
 import { EmojiSelectorCard } from './create-group/EmojiSelectorCard';
 import { ExercisePickerList } from './create-group/ExercisePickerList';
@@ -38,55 +40,79 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
     const [description, setDescription] = useState(initial?.description || '');
     const [selectedIds, setSelectedIds] = useState<string[]>(initial?.exerciseIds || []);
     const [isPublic, setIsPublic] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [showRepublishConfirm, setShowRepublishConfirm] = useState(false);
+    const [pendingGroup, setPendingGroup] = useState<MenuGroup | null>(null);
 
     const isLoggedIn = !!getAccountId();
     const isEditing = !!initial;
     const availableExercises = getExercisesByClass(classLevel as ClassLevel);
     const totalSec = calculateTotalSeconds(selectedIds);
     const minutes = Math.ceil(totalSec / 60);
-    const canSave = name.trim().length > 0 && selectedIds.length > 0;
+    const canSave = name.trim().length > 0 && selectedIds.length > 0 && !saving;
 
     const addExercise = (exerciseId: string) => {
         setSelectedIds((previous) => [...previous, exerciseId]);
     };
 
     const handleSave = async () => {
-        if (!canSave) {
-            return;
-        }
+        if (!canSave) return;
+        setSaving(true);
 
-        const group: MenuGroup = {
-            id: initial?.id || `custom-${Date.now()}`,
-            name: name.trim(),
-            emoji,
-            description: description.trim(),
-            exerciseIds: selectedIds,
-            isPreset: false,
-            creatorId: currentUserId,
-        };
+        try {
+            const group: MenuGroup = {
+                id: initial?.id || `custom-${Date.now()}`,
+                name: name.trim(),
+                emoji,
+                description: description.trim(),
+                exerciseIds: selectedIds,
+                isPreset: false,
+                creatorId: currentUserId,
+            };
 
-        await saveCustomGroup(group);
+            await saveCustomGroup(group);
 
-        if (isPublic && !isEditing && isLoggedIn && authorName) {
-            try {
-                await publishMenu(group, authorName);
-            } catch (error) {
-                console.warn('[CreateGroupView] publish failed:', error);
-            }
-        }
-
-        if (isEditing && publishedMenuId && isLoggedIn && authorName) {
-            const shouldRepublish = confirm('公開版も更新しますか？');
-            if (shouldRepublish) {
+            if (isPublic && !isEditing && isLoggedIn && authorName) {
                 try {
-                    await unpublishMenu(publishedMenuId);
                     await publishMenu(group, authorName);
                 } catch (error) {
-                    console.warn('[CreateGroupView] re-publish failed:', error);
+                    console.warn('[CreateGroupView] publish failed:', error);
                 }
             }
-        }
 
+            if (isEditing && publishedMenuId && isLoggedIn && authorName) {
+                // Show confirmation modal instead of native confirm()
+                setPendingGroup(group);
+                setShowRepublishConfirm(true);
+                setSaving(false);
+                return;
+            }
+
+            onSave();
+        } catch (error) {
+            console.warn('[CreateGroupView] save failed:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleRepublishConfirm = async () => {
+        if (pendingGroup && publishedMenuId && authorName) {
+            try {
+                await unpublishMenu(publishedMenuId);
+                await publishMenu(pendingGroup, authorName);
+            } catch (error) {
+                console.warn('[CreateGroupView] re-publish failed:', error);
+            }
+        }
+        setShowRepublishConfirm(false);
+        setPendingGroup(null);
+        onSave();
+    };
+
+    const handleRepublishCancel = () => {
+        setShowRepublishConfirm(false);
+        setPendingGroup(null);
         onSave();
     };
 
@@ -150,9 +176,9 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
                     padding: '16px 0',
                     borderRadius: 16,
                     border: 'none',
-                    background: canSave ? 'linear-gradient(135deg, #2BBAA0, #1A937D)' : '#DFE6E9',
-                    color: canSave ? 'white' : '#B2BEC3',
-                    fontFamily: "'Noto Sans JP', sans-serif",
+                    background: canSave ? 'linear-gradient(135deg, #2BBAA0, #1A937D)' : COLOR.disabled,
+                    color: canSave ? COLOR.white : COLOR.light,
+                    fontFamily: FONT.body,
                     fontSize: 16,
                     fontWeight: 700,
                     cursor: canSave ? 'pointer' : 'not-allowed',
@@ -161,8 +187,18 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
                     marginTop: 16,
                 }}
             >
-                {isEditing ? 'ほぞん' : 'つくる！'}
+                {saving ? 'ほぞん中...' : isEditing ? 'ほぞん' : 'つくる！'}
             </motion.button>
+
+            <ConfirmDeleteModal
+                open={showRepublishConfirm}
+                title="公開版も更新する？"
+                message="保存しました。公開版のメニューも一緒に更新しますか？"
+                onCancel={handleRepublishCancel}
+                onConfirm={handleRepublishConfirm}
+                confirmLabel="更新する"
+                confirmColor="#2BBAA0"
+            />
         </div>,
         document.body,
     );

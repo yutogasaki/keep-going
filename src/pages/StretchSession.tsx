@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { CountdownOverlay } from '../components/CountdownOverlay';
 import { BreakModal } from '../components/BreakModal';
+import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { audio } from '../lib/audio';
 import { useAppStore } from '../store/useAppStore';
 import { saveSession, getTodayKey, type SessionRecord } from '../lib/db';
@@ -35,7 +36,9 @@ export const StretchSession: React.FC = () => {
     });
     const [startedAt] = useState(() => new Date().toISOString());
     const autoCompleteSaveRef = useRef<() => Promise<void> | void>(() => { });
+    const hasSavedRef = useRef(false);
     const [isMuted, setIsMuted] = useState(audio.getMuted());
+    const [showExitConfirm, setShowExitConfirm] = useState(false);
     const toggleMute = () => {
         audio.toggleMute();
         setIsMuted(audio.getMuted());
@@ -79,6 +82,9 @@ export const StretchSession: React.FC = () => {
     const saveSessionData = useCallback(async () => {
         // Skip recording for teacher preview sessions
         if (isTeacherPreview) return;
+        // Guard against double-save (auto-complete + manual end)
+        if (hasSavedRef.current) return;
+        hasSavedRef.current = true;
 
         let finalRunningTime = totalRunningTime;
 
@@ -165,7 +171,7 @@ export const StretchSession: React.FC = () => {
 
             {/* Close button */}
             <button
-                onClick={handleEndSession}
+                onClick={() => setShowExitConfirm(true)}
                 style={{
                     position: 'absolute',
                     top: 'calc(env(safe-area-inset-top, 16px) + 12px)',
@@ -187,6 +193,20 @@ export const StretchSession: React.FC = () => {
             >
                 <X size={20} />
             </button>
+
+            {/* Exit confirmation dialog */}
+            <ConfirmDeleteModal
+                open={showExitConfirm}
+                title="ストレッチをおわる？"
+                message="いまのきろくをほぞんしておわりますか？"
+                onCancel={() => setShowExitConfirm(false)}
+                onConfirm={() => {
+                    setShowExitConfirm(false);
+                    handleEndSession();
+                }}
+                confirmLabel="おわる"
+                confirmColor="#E17055"
+            />
 
             {/* Bounce indicator for down-swipe at start */}
             <AnimatePresence>
