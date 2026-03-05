@@ -132,7 +132,7 @@ export const Onboarding: React.FC = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                overflow: 'hidden',
+                overflow: 'auto',
             }}
         >
             <AnimatePresence mode="wait">
@@ -149,6 +149,7 @@ export const Onboarding: React.FC = () => {
                             setStep('emailLogin');
                         }}
                         onSkip={() => setStep('name')}
+                        onBack={() => setStep('welcome')}
                     />
                 )}
 
@@ -159,19 +160,22 @@ export const Onboarding: React.FC = () => {
                         userName={userName}
                         onNameChange={setUserName}
                         onNext={() => setStep('class')}
+                        onBack={() => setStep('account')}
                     />
                 )}
 
                 {step === 'class' && (
                     <ClassStep
-                        selectedClass={selectedClass}
-                        onClassSelect={setSelectedClass}
-                        onNext={() => setStep('swipe')}
+                        onClassSelect={(level) => {
+                            setSelectedClass(level);
+                            setStep('swipe');
+                        }}
+                        onBack={() => setStep('name')}
                     />
                 )}
 
                 {step === 'swipe' && (
-                    <SwipeStep onFinish={handleFinish} />
+                    <SwipeStep onFinish={handleFinish} onBack={() => setStep('class')} />
                 )}
             </AnimatePresence>
         </div>

@@ -1,16 +1,19 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { ChevronLeft } from 'lucide-react';
 
 interface NameStepProps {
     userName: string;
     onNameChange: (name: string) => void;
     onNext: () => void;
+    onBack: () => void;
 }
 
 export const NameStep: React.FC<NameStepProps> = ({
     userName,
     onNameChange,
     onNext,
+    onBack,
 }) => {
     const canProceed = userName.trim().length > 0;
 
@@ -32,6 +35,25 @@ export const NameStep: React.FC<NameStepProps> = ({
                 width: '100%',
             }}
         >
+            <button
+                onClick={onBack}
+                style={{
+                    alignSelf: 'flex-start',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: 0,
+                    background: 'none',
+                    border: 'none',
+                    color: '#8395A7',
+                    fontSize: 14,
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    cursor: 'pointer',
+                }}
+            >
+                <ChevronLeft size={18} />
+                もどる
+            </button>
             <h2
                 style={{
                     fontFamily: "'Noto Sans JP', sans-serif",

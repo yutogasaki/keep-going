@@ -1,11 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { ChevronLeft } from 'lucide-react';
 
 interface SwipeStepProps {
     onFinish: () => void;
+    onBack: () => void;
 }
 
-export const SwipeStep: React.FC<SwipeStepProps> = ({ onFinish }) => {
+export const SwipeStep: React.FC<SwipeStepProps> = ({ onFinish, onBack }) => {
     return (
         <motion.div
             key="swipe"
@@ -24,6 +26,25 @@ export const SwipeStep: React.FC<SwipeStepProps> = ({ onFinish }) => {
                 width: '100%',
             }}
         >
+            <button
+                onClick={onBack}
+                style={{
+                    alignSelf: 'flex-start',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: 0,
+                    background: 'none',
+                    border: 'none',
+                    color: '#8395A7',
+                    fontSize: 14,
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    cursor: 'pointer',
+                }}
+            >
+                <ChevronLeft size={18} />
+                もどる
+            </button>
             <h2
                 style={{
                     fontFamily: "'Noto Sans JP', sans-serif",

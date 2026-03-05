@@ -1,12 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Chrome, Mail } from 'lucide-react';
+import { ChevronLeft, Chrome, Mail } from 'lucide-react';
 
 interface AccountStepProps {
     restoreError: string | null;
     onGoogleLogin: () => void;
     onEmailLogin: () => void;
     onSkip: () => void;
+    onBack: () => void;
 }
 
 export const AccountStep: React.FC<AccountStepProps> = ({
@@ -14,6 +15,7 @@ export const AccountStep: React.FC<AccountStepProps> = ({
     onGoogleLogin,
     onEmailLogin,
     onSkip,
+    onBack,
 }) => {
     return (
         <motion.div
@@ -33,6 +35,25 @@ export const AccountStep: React.FC<AccountStepProps> = ({
                 textAlign: 'center',
             }}
         >
+            <button
+                onClick={onBack}
+                style={{
+                    alignSelf: 'flex-start',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: 0,
+                    background: 'none',
+                    border: 'none',
+                    color: '#8395A7',
+                    fontSize: 14,
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    cursor: 'pointer',
+                }}
+            >
+                <ChevronLeft size={18} />
+                もどる
+            </button>
             <h2
                 style={{
                     fontFamily: "'Noto Sans JP', sans-serif",
