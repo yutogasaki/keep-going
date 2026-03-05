@@ -65,6 +65,7 @@ export default defineConfig({
       manifest: false, // Use existing public/manifest.json
       workbox: {
         globPatterns: ['**/*.{js,css,ico,png,webp,svg,woff,woff2}'],
+        globIgnores: ['images/**/*', 'website/**/*'],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
