@@ -43,6 +43,13 @@ export const Onboarding: React.FC = () => {
                 setLoginContext(null);
                 return;
             }
+            // Even if hadData is false, check if onboarding was already completed
+            // (pullAndMerge may have restored settings, or store already has the flag)
+            if (result.success && useAppStore.getState().onboardingCompleted) {
+                console.warn('[onboarding] No cloud data but onboardingCompleted=true, skipping onboarding');
+                setLoginContext(null);
+                return;
+            }
             setLoginContext(null);
             setStep('name');
         } catch (error) {
