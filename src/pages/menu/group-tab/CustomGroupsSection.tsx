@@ -6,6 +6,7 @@ import { CreateGroupCard } from './CreateGroupCard';
 
 interface CustomGroupsSectionProps {
     groups: MenuGroup[];
+    exerciseMap: Map<string, { name: string; emoji: string; sec: number }>;
     sessionUserCount: number;
     canPublish: boolean;
     getCreatorName: (creatorId?: string) => string | null;
@@ -20,6 +21,7 @@ interface CustomGroupsSectionProps {
 
 export const CustomGroupsSection: React.FC<CustomGroupsSectionProps> = ({
     groups,
+    exerciseMap,
     sessionUserCount,
     canPublish,
     getCreatorName,
@@ -53,6 +55,7 @@ export const CustomGroupsSection: React.FC<CustomGroupsSectionProps> = ({
                                 key={group.id}
                                 group={group}
                                 index={index}
+                                exerciseMap={exerciseMap}
                                 creatorName={sessionUserCount > 1 ? getCreatorName(group.creatorId) : undefined}
                                 onTap={() => onTap(group)}
                                 onEdit={() => onEdit(group)}

@@ -80,6 +80,7 @@ export const MenuPage: React.FC = () => {
         findPublishedExercise,
         handlePublishExercise,
         handleUnpublishExercise,
+        exerciseMap,
         toastMessage,
         clearToast,
     } = useMenuPageData({
@@ -140,6 +141,7 @@ export const MenuPage: React.FC = () => {
 
             {tab === 'group' && (
                 <MenuGroupTab
+                    exerciseMap={exerciseMap}
                     isTogetherMode={isTogetherMode}
                     dailyTargetMinutes={dailyTargetMinutes}
                     effectiveRequiredCount={effectiveRequiredCount}

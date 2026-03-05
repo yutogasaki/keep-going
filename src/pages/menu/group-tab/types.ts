@@ -2,6 +2,7 @@ import type { MenuGroup } from '../../../data/menuGroups';
 import type { PublicMenu } from '../../../lib/publicMenus';
 
 export interface MenuGroupTabProps {
+    exerciseMap: Map<string, { name: string; emoji: string; sec: number }>;
     isTogetherMode: boolean;
     dailyTargetMinutes: number;
     effectiveRequiredCount: number;

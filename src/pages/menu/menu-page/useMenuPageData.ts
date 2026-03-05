@@ -394,6 +394,18 @@ export function useMenuPageData({
         return [...builtIn, ...teacherAsExercise];
     }, [classLevel, teacherExercises, teacherHiddenExerciseIds, overrideMap]);
 
+    // Lookup map for all exercise types (built-in with overrides + teacher + custom)
+    const exerciseMap = useMemo(() => {
+        const map = new Map<string, { name: string; emoji: string; sec: number }>();
+        for (const ex of exercises) {
+            map.set(ex.id, { name: ex.name, emoji: ex.emoji, sec: ex.sec });
+        }
+        for (const ce of customExercises) {
+            map.set(ce.id, { name: ce.name, emoji: ce.emoji, sec: ce.sec });
+        }
+        return map;
+    }, [exercises, customExercises]);
+
     // Merge presets with teacher menus
     // hidden = completely invisible, excluded = visible but not in auto-generation
     const mergedPresets = useMemo(() => {
@@ -479,6 +491,7 @@ export function useMenuPageData({
         requiredExercises,
         currentUsers,
         exercises,
+        exerciseMap,
         autoMenuMinutes,
         canPublish,
         effectiveRequiredCount: effectiveCounts.requiredCount,

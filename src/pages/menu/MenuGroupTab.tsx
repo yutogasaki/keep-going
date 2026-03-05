@@ -6,6 +6,7 @@ import { PublicMenuSection } from './group-tab/PublicMenuSection';
 import type { MenuGroupTabProps } from './group-tab/types';
 
 export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
+    exerciseMap,
     isTogetherMode,
     dailyTargetMinutes,
     effectiveRequiredCount,
@@ -41,6 +42,7 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
 
             <PresetGroupsSection
                 groups={presets}
+                exerciseMap={exerciseMap}
                 onTap={onGroupTap}
                 teacherMenuIds={teacherMenuIds}
                 isNewTeacherContent={isNewTeacherContent}
@@ -48,6 +50,7 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
 
             <CustomGroupsSection
                 groups={customGroups}
+                exerciseMap={exerciseMap}
                 sessionUserCount={sessionUserCount}
                 canPublish={canPublish}
                 getCreatorName={getCreatorName}

@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Clock, Download, Edit2, EyeOff, Play, Trash2, Upload } from 'lucide-react';
 import { ExerciseIcon } from '../../components/ExerciseIcon';
-import { calculateTotalSeconds, getExerciseById } from '../../data/exercises';
+import { getExerciseById } from '../../data/exercises';
 import type { MenuGroup } from '../../data/menuGroups';
 
 interface GroupCardProps {
     group: MenuGroup;
     index: number;
+    exerciseMap?: Map<string, { name: string; emoji: string; sec: number }>;
     creatorName?: string | null;
     onTap: () => void;
     onEdit?: () => void;
@@ -21,11 +22,17 @@ interface GroupCardProps {
     isNew?: boolean;
 }
 
-export const GroupCard: React.FC<GroupCardProps> = ({ group, index, creatorName, onTap, onEdit, onDelete, onPublish, onUnpublish, isCustom, isPublished, downloadCount, isTeacher, isNew }) => {
+export const GroupCard: React.FC<GroupCardProps> = ({ group, index, exerciseMap, creatorName, onTap, onEdit, onDelete, onPublish, onUnpublish, isCustom, isPublished, downloadCount, isTeacher, isNew }) => {
     const [expanded, setExpanded] = useState(false);
-    const totalSec = calculateTotalSeconds(group.exerciseIds);
+
+    const resolveEx = (id: string) => {
+        const builtIn = getExerciseById(id);
+        if (builtIn) return { name: builtIn.name, emoji: builtIn.emoji, sec: builtIn.sec };
+        return exerciseMap?.get(id) ?? null;
+    };
+
+    const totalSec = group.exerciseIds.reduce((sum, id) => sum + (resolveEx(id)?.sec ?? 0), 0);
     const minutes = Math.ceil(totalSec / 60);
-    const firstEx = getExerciseById(group.exerciseIds[0]);
 
     return (
         <motion.div
@@ -56,7 +63,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, index, creatorName,
                     justifyContent: 'center',
                     flexShrink: 0,
                 }}>
-                    <ExerciseIcon id={firstEx?.id || 'S01'} emoji={group.emoji} size={24} color="#2BBAA0" />
+                    <ExerciseIcon id={group.exerciseIds[0] || 'S01'} emoji={group.emoji} size={24} color="#2BBAA0" />
                 </div>
 
                 <div style={{ flex: 1 }}>
@@ -195,7 +202,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, index, creatorName,
                             )}
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                                 {group.exerciseIds.map((id, i) => {
-                                    const ex = getExerciseById(id);
+                                    const ex = resolveEx(id);
                                     if (!ex) return null;
                                     return (
                                         <span key={`${id}-${i}`} style={{

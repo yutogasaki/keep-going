@@ -4,12 +4,13 @@ import { GroupCard } from '../GroupCard';
 
 interface PresetGroupsSectionProps {
     groups: MenuGroup[];
+    exerciseMap: Map<string, { name: string; emoji: string; sec: number }>;
     onTap: (group: MenuGroup) => void;
     teacherMenuIds?: Set<string>;
     isNewTeacherContent?: (id: string) => boolean;
 }
 
-export const PresetGroupsSection: React.FC<PresetGroupsSectionProps> = ({ groups, onTap, teacherMenuIds, isNewTeacherContent }) => {
+export const PresetGroupsSection: React.FC<PresetGroupsSectionProps> = ({ groups, exerciseMap, onTap, teacherMenuIds, isNewTeacherContent }) => {
     return (
         <section>
             <h2 style={{
@@ -28,6 +29,7 @@ export const PresetGroupsSection: React.FC<PresetGroupsSectionProps> = ({ groups
                         key={group.id}
                         group={group}
                         index={index}
+                        exerciseMap={exerciseMap}
                         onTap={() => onTap(group)}
                         isTeacher={teacherMenuIds?.has(group.id)}
                         isNew={isNewTeacherContent?.(group.id)}
