@@ -1,5 +1,5 @@
-import React from 'react';
-import { getDateKeyOffset } from '../../../lib/db';
+import React, { useState } from 'react';
+import { getDateKeyOffset, getTodayKey } from '../../../lib/db';
 import { useAppStore } from '../../../store/useAppStore';
 
 const buttonStyle: React.CSSProperties = {
@@ -8,6 +8,7 @@ const buttonStyle: React.CSSProperties = {
     borderRadius: 6,
     border: '1px solid #ccc',
     background: '#fff',
+    cursor: 'pointer',
 };
 
 const selectRowLabelStyle: React.CSSProperties = {
@@ -37,10 +38,19 @@ export const FuwafuwaDebugSection: React.FC = () => {
     const setDebugActiveDays = useAppStore((state) => state.setDebugActiveDays);
 
     const primaryUser = users[0];
+    const [lastSet, setLastSet] = useState<string | null>(null);
+
+    const birthDate = primaryUser?.fuwafuwaBirthDate ?? null;
+    const daysAlive = birthDate
+        ? Math.max(0, Math.floor((new Date(getTodayKey()).getTime() - new Date(birthDate).getTime()) / (1000 * 60 * 60 * 24))) + 1
+        : 0;
 
     const setBirthDateByOffset = (offset: number) => {
         if (!primaryUser) return;
-        updateUser(primaryUser.id, { fuwafuwaBirthDate: getDateKeyOffset(offset) });
+        const newDate = getDateKeyOffset(offset);
+        updateUser(primaryUser.id, { fuwafuwaBirthDate: newDate });
+        setLastSet(newDate);
+        window.setTimeout(() => setLastSet(null), 1500);
     };
 
     return (
@@ -48,6 +58,13 @@ export const FuwafuwaDebugSection: React.FC = () => {
             <p style={{ fontSize: 11, color: '#8395A7', margin: 0 }}>
                 ふわふわの年齢を偽装します (Homeに即時反映)
             </p>
+            <div style={{
+                fontSize: 11, color: '#2D3436', margin: '4px 0',
+                padding: '4px 8px', background: 'rgba(43,186,160,0.08)', borderRadius: 6,
+            }}>
+                現在: {birthDate ?? '未設定'} (Day {daysAlive})
+                {lastSet && <span style={{ color: '#2BBAA0', marginLeft: 8 }}>✓ 更新済み</span>}
+            </div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button onClick={() => setBirthDateByOffset(-4)} style={buttonStyle}>Day 5 (たまご)</button>
                 <button onClick={() => setBirthDateByOffset(-14)} style={buttonStyle}>Day 15 (妖精)</button>
