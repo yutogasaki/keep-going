@@ -11,7 +11,7 @@ export const CurrentContextBadge: React.FC = () => {
 
     const isTogetherMode = sessionUserIds.length > 1;
 
-    let displayText = '';
+    let displayText: string;
     if (isTogetherMode) {
         displayText = 'みんなで！';
     } else if (sessionUserIds.length === 1) {
@@ -31,7 +31,7 @@ export const CurrentContextBadge: React.FC = () => {
         }
 
         // Find current index
-        let currentIndex = 0;
+        let currentIndex: number;
         if (isTogetherMode) {
             currentIndex = swipePages.findIndex(p => p.id === 'TOGETHER');
         } else {

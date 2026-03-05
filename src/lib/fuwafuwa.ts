@@ -52,8 +52,8 @@ export function calculateFuwafuwaStatus(
     }
 
     // Within cycle: apply time-gated evolution rules
-    let stage = 1;
-    let scale = 1.0;
+    let stage: number;
+    let scale: number;
 
     if (daysAlive <= 3) {
         // Day 1-3: always Egg regardless of activeDays

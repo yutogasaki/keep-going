@@ -121,6 +121,7 @@ export async function fetchAllStudents(): Promise<StudentSummary[]> {
 
 export async function teacherDeleteFamilyMember(memberId: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
     const { error } = await (supabase.rpc as Function)('teacher_delete_family_member', {
         target_member_id: memberId,
     });
