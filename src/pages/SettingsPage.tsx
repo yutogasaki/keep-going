@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { ChevronRight, Globe, RefreshCw } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { useAuth } from '../contexts/AuthContext';
 import { PageHeader } from '../components/PageHeader';
@@ -134,6 +134,50 @@ export const SettingsPage: React.FC = () => {
                 <SoundNotificationSettingsSection />
                 <HelpCenterSection />
                 <FeedbackSection />
+
+                <div
+                    className="card"
+                    onClick={() => window.open('/website/', '_blank', 'noopener,noreferrer')}
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '16px 20px',
+                        cursor: 'pointer',
+                    }}
+                >
+                    <div style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 12,
+                        background: 'linear-gradient(135deg, #E8F8F0, #F0FDFA)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                    }}>
+                        <Globe size={22} color="#2BBAA0" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 14,
+                            fontWeight: 700,
+                            color: '#2D3436',
+                        }}>
+                            ウェブサイト
+                        </div>
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 12,
+                            color: '#8395A7',
+                        }}>
+                            更新情報・Tips・インストール方法
+                        </div>
+                    </div>
+                    <ChevronRight size={18} color="#B2BEC3" />
+                </div>
+
                 <AppInfoActionsSection />
             </div>
 

@@ -93,6 +93,83 @@
             box-shadow: 0 12px 40px rgba(0,0,0,0.12);
         }
 
+        /* ===== Updates ===== */
+        .updates-section {
+            background: linear-gradient(165deg, #F0FDFA 0%, #FFF5F0 100%);
+        }
+
+        .update-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .update-card .update-emoji {
+            font-size: 36px;
+            flex-shrink: 0;
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: rgba(43, 186, 160, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .update-card h3 {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .update-card p {
+            font-size: 14px;
+            color: #636E72;
+            line-height: 1.7;
+        }
+
+        .update-card .update-date {
+            font-size: 11px;
+            color: #B2BEC3;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        /* ===== Tips ===== */
+        .tips-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .tip-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+        }
+
+        .tip-card .tip-emoji {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .tip-card h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .tip-card p {
+            font-size: 13px;
+            color: #636E72;
+            line-height: 1.7;
+        }
+
         /* ===== Sections ===== */
         section {
             padding: 80px 24px;
@@ -420,6 +497,34 @@
         </div>
     </div>
 
+    <!-- Updates -->
+    <section class="updates-section" style="max-width: none; border-radius: 0;">
+        <div style="max-width: 720px; margin: 0 auto;">
+            <h2 class="section-title">更新情報</h2>
+            <p class="section-subtitle">最近追加された新しい機能</p>
+
+            <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="update-card">
+                    <div class="update-emoji">💪</div>
+                    <div>
+                        <div class="update-date">2026.03</div>
+                        <h3>休憩が使えるようになった</h3>
+                        <p>メニューに休憩を挟めるようになりました。「プランク → 休憩 → プランク → 休憩 → プランク」のような反復トレーニングが作れます。おまかせでも5分ごとに自動で休憩が入ります。</p>
+                    </div>
+                </div>
+
+                <div class="update-card">
+                    <div class="update-emoji">🎨</div>
+                    <div>
+                        <div class="update-date">2026.03</div>
+                        <h3>じぶん種目がくみあわせに対応</h3>
+                        <p>自分で作ったオリジナル種目を、くみあわせメニューに入れられるようになりました。先生が作った種目も選択できます。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Features -->
     <section>
         <h2 class="section-title">できること</h2>
@@ -503,6 +608,44 @@
                         <p>タイマーが自動カウント。終わったら次の種目へ自動で切り替わります。ふわふわにまほうエネルギーがたまっていきます。</p>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tips -->
+    <section>
+        <h2 class="section-title">Tips</h2>
+        <p class="section-subtitle">もっと楽しく、もっと効果的に</p>
+
+        <div class="tips-grid">
+            <div class="tip-card">
+                <div class="tip-emoji">⚙️</div>
+                <h3>おまかせを自分好みに</h3>
+                <p>「おまかせの設定」で必須・除外を設定すると、毎回自分に合ったメニューが自動で組まれます。まだやってない種目は除外、得意な種目は必須に。</p>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-emoji">☕</div>
+                <h3>休憩を上手に使おう</h3>
+                <p>プランクなどきつい種目の間に休憩を挟んで「プランク→休憩→プランク」のセットが作れます。くみあわせメニューで自由に組み合わせてみよう。</p>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-emoji">🔥</div>
+                <h3>毎日少しずつが大事</h3>
+                <p>短い時間でもいいから毎日続けることが上達のカギ。ストリークを途切れさせないようにがんばろう。</p>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-emoji">↔️</div>
+                <h3>左右のストレッチは均等に</h3>
+                <p>左右切替がある種目は、片方だけ長くならないように意識しよう。タイマーが自動で切り替えてくれるから安心。</p>
+            </div>
+
+            <div class="tip-card">
+                <div class="tip-emoji">🐣</div>
+                <h3>ふわふわのお世話を忘れずに</h3>
+                <p>毎日ストレッチすると、ふわふわが元気に成長するよ。28日間のライフサイクルで卵から妖精、大人へと変身します。</p>
             </div>
         </div>
     </section>
