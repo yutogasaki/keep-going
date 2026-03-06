@@ -22,6 +22,13 @@
 - コード品質: calculateStreak統合、mappers型安全化、dead code削除、menuGroups分離
 - コンテンツ: ヘルプセンター更新(9→12セクション)
 
+## 2026-03-06: 休憩種目・UX改善
+- 機能: 休憩3種（R01/R02/R03）追加、おまかせで5分ごとに15秒休憩自動挿入
+- セッション: 休憩専用UI（💤アニメーション）、休憩をtotalRunningTime/completedIds/種目数から除外
+- メニュー: GroupCard時間・種目数表示から休憩除外、CustomExerciseListを折りたたみ式に変更・秒数表示修正
+- UX: カウントダウンTTSで数字読み上げ（5〜1+スタート！）
+- テスト: generateSessionテスト3件追加、db.tsテスト25件追加
+
 ## 2026-03-06: コード品質・テスト改善
 - バグ修正: publishMenuで種目公開失敗時にメニュー公開を中止するよう変更
 - エラーハンドリング: SingleExerciseEditor保存失敗UI、teacherMenuSettings delete エラーチェック、signOut後匿名再サインイン失敗通知、useMenuPageData先生コンテンツ読み込み失敗トースト
