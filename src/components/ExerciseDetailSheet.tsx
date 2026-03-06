@@ -143,49 +143,52 @@ export const ExerciseDetailSheet: React.FC<ExerciseDetailSheetProps> = ({ exerci
                             </button>
                         </div>
 
-                        {/* Description */}
-                        {exercise.description && (
-                            <p style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 13,
-                                color: '#636E72',
-                                lineHeight: 1.6,
-                                padding: '12px 20px 0',
-                                margin: 0,
-                            }}>
-                                {exercise.description}
-                            </p>
-                        )}
-
-                        {/* Details */}
+                        {/* Scrollable content: Description + Details */}
                         <div style={{
+                            flex: 1,
+                            overflowY: 'auto',
                             padding: '16px 20px',
-                            display: 'flex',
-                            gap: 12,
-                            flexWrap: 'wrap',
                         }}>
-                            <span style={{
-                                padding: '6px 12px',
-                                borderRadius: 10,
-                                background: '#F0F3F5',
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 13,
-                                color: '#2D3436',
+                            {exercise.description && (
+                                <p style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 13,
+                                    color: '#636E72',
+                                    lineHeight: 1.6,
+                                    margin: '0 0 12px',
+                                }}>
+                                    {exercise.description}
+                                </p>
+                            )}
+
+                            <div style={{
+                                display: 'flex',
+                                gap: 12,
+                                flexWrap: 'wrap',
                             }}>
-                                ⏱ {exercise.sec}秒
-                            </span>
-                            {exercise.hasSplit && (
                                 <span style={{
                                     padding: '6px 12px',
                                     borderRadius: 10,
-                                    background: 'rgba(43, 186, 160, 0.1)',
+                                    background: '#F0F3F5',
                                     fontFamily: "'Noto Sans JP', sans-serif",
                                     fontSize: 13,
-                                    color: '#2BBAA0',
+                                    color: '#2D3436',
                                 }}>
-                                    切替あり
+                                    ⏱ {exercise.sec}秒
                                 </span>
-                            )}
+                                {exercise.hasSplit && (
+                                    <span style={{
+                                        padding: '6px 12px',
+                                        borderRadius: 10,
+                                        background: 'rgba(43, 186, 160, 0.1)',
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 13,
+                                        color: '#2BBAA0',
+                                    }}>
+                                        切替あり
+                                    </span>
+                                )}
+                            </div>
                         </div>
 
                         {/* Action Buttons */}

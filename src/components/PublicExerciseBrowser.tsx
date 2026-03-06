@@ -251,6 +251,10 @@ const BrowserExerciseCard: React.FC<{
                     color: '#636E72',
                     lineHeight: 1.5,
                     marginTop: 6,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical' as const,
+                    overflow: 'hidden',
                 }}>
                     {exercise.description}
                 </div>

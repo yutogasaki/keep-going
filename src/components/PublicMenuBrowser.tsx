@@ -254,6 +254,10 @@ const BrowserMenuCard: React.FC<{
                     color: '#636E72',
                     lineHeight: 1.5,
                     marginBottom: 4,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical' as const,
+                    overflow: 'hidden',
                 }}>
                     {menu.description}
                 </div>

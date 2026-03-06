@@ -146,26 +146,23 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
                             </button>
                         </div>
 
-                        {/* Description */}
-                        {menu.description && (
-                            <p style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 13,
-                                color: '#636E72',
-                                lineHeight: 1.6,
-                                padding: '12px 20px 0',
-                                margin: 0,
-                            }}>
-                                {menu.description}
-                            </p>
-                        )}
-
-                        {/* Exercise List */}
+                        {/* Scrollable content: Description + Exercise List */}
                         <div style={{
                             flex: 1,
                             overflowY: 'auto',
                             padding: '16px 20px',
                         }}>
+                            {menu.description && (
+                                <p style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 13,
+                                    color: '#636E72',
+                                    lineHeight: 1.6,
+                                    margin: '0 0 12px',
+                                }}>
+                                    {menu.description}
+                                </p>
+                            )}
                             <div style={{
                                 fontFamily: "'Noto Sans JP', sans-serif",
                                 fontSize: 11,
