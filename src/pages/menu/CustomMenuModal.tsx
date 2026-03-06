@@ -195,7 +195,13 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                     <div>
                         {[...EXERCISES, ...(teacherExercises ?? []), ...customExercises]
                             .filter(exercise => !teacherHiddenExerciseIds?.has(exercise.id))
+                            .sort((a, b) => {
+                                const aRest = 'type' in a && a.type === 'rest' ? 1 : 0;
+                                const bRest = 'type' in b && b.type === 'rest' ? 1 : 0;
+                                return aRest - bRest;
+                            })
                             .map(exercise => {
+                            const isRest = 'type' in exercise && exercise.type === 'rest';
                             const isTeacherRequired = teacherRequiredExerciseIds?.has(exercise.id) ?? false;
                             const isTeacherExcluded = teacherExcludedExerciseIds?.has(exercise.id) ?? false;
                             const isUserRequired = requiredExercises.includes(exercise.id);
@@ -245,7 +251,7 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                                                     fontFamily: "'Noto Sans JP', sans-serif",
                                                     fontSize: 14,
                                                     fontWeight: 600,
-                                                    color: isExcluded ? '#B2BEC3' : '#2D3436',
+                                                    color: isRest || isExcluded ? '#B2BEC3' : '#2D3436',
                                                 }}>
                                                     {exercise.name}
                                                 </div>
@@ -291,7 +297,7 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                                     </div>
 
                                     <button
-                                        onClick={handleCycle}
+                                        onClick={isRest ? undefined : handleCycle}
                                         style={{
                                             minWidth: 70,
                                             padding: '8px 12px',
@@ -300,13 +306,14 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                                             fontFamily: "'Noto Sans JP', sans-serif",
                                             fontSize: 12,
                                             fontWeight: 700,
-                                            cursor: 'pointer',
-                                            background: isRequired ? '#E8F8F0' : isExcluded ? '#FFE4E1' : '#F8F9FA',
-                                            color: isRequired ? '#2BBAA0' : isExcluded ? '#E17055' : '#8395A7',
+                                            cursor: isRest ? 'default' : 'pointer',
+                                            background: isRest ? '#FFE4E1' : isRequired ? '#E8F8F0' : isExcluded ? '#FFE4E1' : '#F8F9FA',
+                                            color: isRest ? '#E17055' : isRequired ? '#2BBAA0' : isExcluded ? '#E17055' : '#8395A7',
+                                            opacity: isRest ? 0.5 : 1,
                                             transition: 'all 0.2s ease',
                                         }}
                                     >
-                                        {isRequired ? '★ 必須' : isExcluded ? '🔴 除外' : '⚪ おまかせ'}
+                                        {isRest ? '🔒 除外' : isRequired ? '★ 必須' : isExcluded ? '🔴 除外' : '⚪ おまかせ'}
                                     </button>
                                 </div>
                             );
