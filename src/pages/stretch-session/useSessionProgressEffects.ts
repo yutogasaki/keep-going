@@ -134,15 +134,19 @@ export function useSessionProgressEffects({
         if (isCounting || !isPlaying || isTransitioning || isBigBreak || isCompleted || !currentExercise) return;
 
         if (timeLeft <= 0) {
-            const nextTotalTime = totalRunningTime + currentExercise.sec;
-            setTotalRunningTime(nextTotalTime);
-            setCompletedIds((prev) => [...prev, currentExercise.id]);
+            const isRest = currentExercise.type === 'rest';
+            // Rest exercises don't count toward running time or completed records
+            const nextTotalTime = isRest ? totalRunningTime : totalRunningTime + currentExercise.sec;
+            if (!isRest) {
+                setTotalRunningTime(nextTotalTime);
+                setCompletedIds((prev) => [...prev, currentExercise.id]);
+            }
 
             const BIG_BREAK_THRESHOLD = 900;
             const previousMultiple = Math.floor(totalRunningTime / BIG_BREAK_THRESHOLD);
             const currentMultiple = Math.floor(nextTotalTime / BIG_BREAK_THRESHOLD);
 
-            if (currentMultiple > previousMultiple) {
+            if (!isRest && currentMultiple > previousMultiple) {
                 audio.playSuccess();
                 setIsBigBreak(true);
                 setIsPlaying(false);
@@ -152,10 +156,12 @@ export function useSessionProgressEffects({
             const SMALL_BREAK_THRESHOLD = 300;
             const prevSmall = Math.floor(totalRunningTime / SMALL_BREAK_THRESHOLD);
             const currSmall = Math.floor(nextTotalTime / SMALL_BREAK_THRESHOLD);
-            const isSmallBreak = currSmall > prevSmall && currentMultiple === previousMultiple;
+            const isSmallBreak = !isRest && currSmall > prevSmall && currentMultiple === previousMultiple;
 
-            audio.playTransition();
-            haptics.pulse();
+            if (!isRest) {
+                audio.playTransition();
+                haptics.pulse();
+            }
             const nextExercise = sessionExercises[currentIndex + 1];
             if (nextExercise) {
                 audio.speak(`次は、${nextExercise.reading || nextExercise.name}です`);
@@ -165,7 +171,8 @@ export function useSessionProgressEffects({
             return;
         }
 
-        if (timeLeft === 10) {
+        // Skip "残り10秒" TTS for rest exercises (too short)
+        if (timeLeft === 10 && currentExercise.type !== 'rest') {
             audio.speak('残り10秒です');
         }
 

@@ -114,63 +114,97 @@ export const ExercisePanel: React.FC<ExercisePanelProps> = ({
             </AnimatePresence>
 
             <div style={{ zIndex: 20, textAlign: 'center' }}>
-                <div style={{
-                    width: 100,
-                    height: 100,
-                    margin: '0 auto 16px',
-                    background: 'white',
-                    borderRadius: 32,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                }}>
-                    <ExerciseIcon
-                        id={activeExercise.id}
-                        emoji={activeExercise.emoji}
-                        size={64}
-                        color={getExerciseColor(activeExercise.type)}
-                    />
-                </div>
-                <h2 style={{
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 28,
-                    fontWeight: 700,
-                    color: '#2D4741',
-                }}>
-                    <ExerciseName name={activeExercise.name} reading={activeExercise.reading} />
-                </h2>
+                {activeExercise.type === 'rest' ? (
+                    <>
+                        <motion.div
+                            animate={{ scale: [1, 1.1, 1] }}
+                            transition={{ duration: 3, ease: 'easeInOut', repeat: Infinity }}
+                            style={{
+                                fontSize: 80,
+                                marginBottom: 16,
+                                lineHeight: 1,
+                            }}
+                        >
+                            💤
+                        </motion.div>
+                        <h2 style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 32,
+                            fontWeight: 700,
+                            color: '#5B7B8F',
+                        }}>
+                            きゅうけい
+                        </h2>
+                        <p style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 16,
+                            color: '#8395A7',
+                            marginTop: 12,
+                        }}>
+                            リラックスしよう
+                        </p>
+                    </>
+                ) : (
+                    <>
+                        <div style={{
+                            width: 100,
+                            height: 100,
+                            margin: '0 auto 16px',
+                            background: 'white',
+                            borderRadius: 32,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                        }}>
+                            <ExerciseIcon
+                                id={activeExercise.id}
+                                emoji={activeExercise.emoji}
+                                size={64}
+                                color={getExerciseColor(activeExercise.type)}
+                            />
+                        </div>
+                        <h2 style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 28,
+                            fontWeight: 700,
+                            color: '#2D4741',
+                        }}>
+                            <ExerciseName name={activeExercise.name} reading={activeExercise.reading} />
+                        </h2>
 
-                {(hasLRSplit || isPointFlex) && currentSide && (
-                    <p style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 16,
-                        fontWeight: 700,
-                        color: '#2BBAA0',
-                        marginTop: 8,
-                        background: 'rgba(43, 186, 160, 0.1)',
-                        padding: '4px 16px',
-                        borderRadius: 20,
-                        display: 'inline-block',
-                    }}>
-                        {isPointFlex
-                            ? (currentSide === 'right' ? '🩰 ポイント (つま先伸ばす)' : '🦶 フレックス (かかと押し出す)')
-                            : (currentSide === 'right' ? '▶ みぎ' : '◀ ひだり')
-                        }
-                    </p>
-                )}
+                        {(hasLRSplit || isPointFlex) && currentSide && (
+                            <p style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 16,
+                                fontWeight: 700,
+                                color: '#2BBAA0',
+                                marginTop: 8,
+                                background: 'rgba(43, 186, 160, 0.1)',
+                                padding: '4px 16px',
+                                borderRadius: 20,
+                                display: 'inline-block',
+                            }}>
+                                {isPointFlex
+                                    ? (currentSide === 'right' ? '🩰 ポイント (つま先伸ばす)' : '🦶 フレックス (かかと押し出す)')
+                                    : (currentSide === 'right' ? '▶ みぎ' : '◀ ひだり')
+                                }
+                            </p>
+                        )}
 
-                {activeExercise.description && (
-                    <p style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 14,
-                        color: '#636E72',
-                        marginTop: 8,
-                        maxWidth: 280,
-                        lineHeight: 1.6,
-                    }}>
-                        {activeExercise.description}
-                    </p>
+                        {activeExercise.description && (
+                            <p style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 14,
+                                color: '#636E72',
+                                marginTop: 8,
+                                maxWidth: 280,
+                                lineHeight: 1.6,
+                            }}>
+                                {activeExercise.description}
+                            </p>
+                        )}
+                    </>
                 )}
             </div>
 

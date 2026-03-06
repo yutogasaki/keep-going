@@ -23,6 +23,7 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
     const [description, setDescription] = useState(initial?.description || '');
     const [isPublic, setIsPublic] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const isLoggedIn = !!getAccountId();
     const isEditing = !!initial;
@@ -36,6 +37,7 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
     const handleSave = async () => {
         if (!name.trim() || saving) return;
         setSaving(true);
+        setError(null);
         try {
             const ex: CustomExercise = {
                 id: initial?.id || `custom-ex-${Date.now()}`,
@@ -51,14 +53,15 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
             if (isPublic && !isEditing && isLoggedIn && authorName) {
                 try {
                     await publishExercise(ex, authorName);
-                } catch (error) {
-                    console.warn('[SingleExerciseEditor] publish failed:', error);
+                } catch (e) {
+                    console.warn('[SingleExerciseEditor] publish failed:', e);
                 }
             }
 
             onSave();
-        } catch (error) {
-            console.warn('[SingleExerciseEditor] save failed:', error);
+        } catch (e) {
+            console.warn('[SingleExerciseEditor] save failed:', e);
+            setError('ほぞんに失敗しました。もう一度お試しください。');
         } finally {
             setSaving(false);
         }
@@ -296,6 +299,19 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
             )}
 
             <div style={{ flex: 1 }} />
+
+            {error && (
+                <div style={{
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    background: 'rgba(255,71,87,0.08)',
+                    color: COLOR.danger,
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.sm,
+                }}>
+                    {error}
+                </div>
+            )}
 
             {/* Save button */}
             <motion.button

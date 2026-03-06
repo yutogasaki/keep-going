@@ -78,6 +78,7 @@ export function createAuthActions({ user, setIsAnonymous, setToastMessage }: Cre
         supabase.auth.signInAnonymously().then(({ error }) => {
             if (error) {
                 console.warn('[auth] anonymous re-sign-in failed:', error);
+                setToastMessage('再接続に失敗しました。アプリを再起動してください。');
             }
         });
     };

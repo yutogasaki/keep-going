@@ -257,19 +257,45 @@ describe('generateSession', () => {
 
     // ─── 繰り返し上限 ──────────────────────────────
 
-    it('同一種目は最大2回まで', () => {
+    it('同一種目は最大2回まで（rest除く）', () => {
         seedRandom(888);
         // 非常に長い目標で繰り返しを強制
         const session = generateSession(classLevel, { targetSeconds: 3600 });
 
         const countMap = new Map<string, number>();
         for (const e of session) {
+            if (e.type === 'rest') continue; // rest is auto-inserted, not counted
             countMap.set(e.id, (countMap.get(e.id) || 0) + 1);
         }
 
         for (const [, count] of countMap) {
             expect(count).toBeLessThanOrEqual(2);
         }
+    });
+
+    it('rest種目はおまかせプールに含まれない', () => {
+        seedRandom(100);
+        const session = generateSession(classLevel, { targetSeconds: 200 });
+        // 5分未満のセッションでは自動休憩なし → rest種目が入らない
+        const restExercises = session.filter(e => e.type === 'rest');
+        expect(restExercises.length).toBe(0);
+    });
+
+    it('5分超のセッションで休憩が自動挿入される', () => {
+        seedRandom(42);
+        const session = generateSession(classLevel, { targetSeconds: 600 });
+        const restExercises = session.filter(e => e.type === 'rest');
+        expect(restExercises.length).toBeGreaterThanOrEqual(1);
+        // All auto-inserted rests should be R03 (15秒)
+        for (const r of restExercises) {
+            expect(r.id).toBe('R03');
+        }
+    });
+
+    it('セッション末尾が休憩にならない', () => {
+        seedRandom(77);
+        const session = generateSession(classLevel, { targetSeconds: 600 });
+        expect(session[session.length - 1].type).not.toBe('rest');
     });
 });
 

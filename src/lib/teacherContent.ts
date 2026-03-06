@@ -1,4 +1,8 @@
 import { supabase } from './supabase';
+import type { Database } from './supabase-types';
+
+type TeacherExerciseRow = Database['public']['Tables']['teacher_exercises']['Row'];
+type TeacherMenuRow = Database['public']['Tables']['teacher_menus']['Row'];
 
 // ─── Types ───────────────────────────────────────────
 
@@ -196,7 +200,7 @@ export async function deleteTeacherMenu(id: string): Promise<void> {
 
 // ─── Mappers ─────────────────────────────────────────
 
-function mapTeacherExercise(row: any): TeacherExercise {
+function mapTeacherExercise(row: TeacherExerciseRow): TeacherExercise {
     return {
         id: row.id,
         name: row.name,
@@ -210,7 +214,7 @@ function mapTeacherExercise(row: any): TeacherExercise {
     };
 }
 
-function mapTeacherMenu(row: any): TeacherMenu {
+function mapTeacherMenu(row: TeacherMenuRow): TeacherMenu {
     return {
         id: row.id,
         name: row.name,

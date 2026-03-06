@@ -27,11 +27,16 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, index, exerciseMap,
 
     const resolveEx = (id: string) => {
         const builtIn = getExerciseById(id);
-        if (builtIn) return { name: builtIn.name, emoji: builtIn.emoji, sec: builtIn.sec };
-        return exerciseMap?.get(id) ?? null;
+        if (builtIn) return { name: builtIn.name, emoji: builtIn.emoji, sec: builtIn.sec, type: builtIn.type };
+        const mapped = exerciseMap?.get(id);
+        return mapped ? { ...mapped, type: 'stretch' as const } : null;
     };
 
-    const totalSec = group.exerciseIds.reduce((sum, id) => sum + (resolveEx(id)?.sec ?? 0), 0);
+    // Exclude rest exercises from total time display
+    const totalSec = group.exerciseIds.reduce((sum, id) => {
+        const ex = resolveEx(id);
+        return sum + (ex && ex.type !== 'rest' ? ex.sec : 0);
+    }, 0);
     const minutes = Math.ceil(totalSec / 60);
 
     return (
@@ -135,7 +140,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, index, exerciseMap,
                         <Clock size={12} />
                         <span>約{minutes}分</span>
                         <span>·</span>
-                        <span>{group.exerciseIds.length}種目</span>
+                        <span>{group.exerciseIds.filter(id => resolveEx(id)?.type !== 'rest').length}種目</span>
                     </div>
                 </div>
 

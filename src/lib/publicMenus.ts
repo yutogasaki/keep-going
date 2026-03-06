@@ -1,6 +1,9 @@
 import { supabase } from './supabase';
+import type { Database } from './supabase-types';
 import { getAccountId } from './sync';
 import { saveCustomGroup, type MenuGroup } from '../data/menuGroups';
+
+type PublicMenuRow = Database['public']['Tables']['public_menus']['Row'];
 import { getCustomExercises, saveCustomExercise, type CustomExercise } from './db';
 import { EXERCISES } from '../data/exercises';
 import { publishExercise, fetchMyPublishedExercises, unpublishExercise } from './publicExercises';
@@ -45,23 +48,19 @@ export async function publishMenu(menu: MenuGroup, authorName: string): Promise<
             .map(ex => ({ id: ex.id, name: ex.name, sec: ex.sec, emoji: ex.emoji, hasSplit: ex.hasSplit }));
     }
 
-    // Auto-publish custom exercises
+    // Auto-publish custom exercises (must succeed before menu publish)
     if (customExerciseData.length > 0) {
-        try {
-            const myPublished = await fetchMyPublishedExercises();
-            for (const ex of customExerciseData) {
-                const alreadyPublished = myPublished.find(
-                    p => p.name === ex.name && p.emoji === ex.emoji && p.sec === ex.sec,
+        const myPublished = await fetchMyPublishedExercises();
+        for (const ex of customExerciseData) {
+            const alreadyPublished = myPublished.find(
+                p => p.name === ex.name && p.emoji === ex.emoji && p.sec === ex.sec,
+            );
+            if (!alreadyPublished) {
+                await publishExercise(
+                    { id: ex.id, name: ex.name, sec: ex.sec, emoji: ex.emoji, hasSplit: ex.hasSplit },
+                    authorName,
                 );
-                if (!alreadyPublished) {
-                    await publishExercise(
-                        { id: ex.id, name: ex.name, sec: ex.sec, emoji: ex.emoji, hasSplit: ex.hasSplit },
-                        authorName,
-                    );
-                }
             }
-        } catch (e) {
-            console.warn('[publishMenu] auto-publish exercises failed:', e);
         }
     }
 
@@ -317,13 +316,13 @@ export async function unpublishMenu(id: string): Promise<void> {
 
 // ─── Mapper ─────────────────────────────────────────
 
-function mapPublicMenu(row: any): PublicMenu {
+function mapPublicMenu(row: PublicMenuRow): PublicMenu {
     return {
         id: row.id,
         name: row.name,
         emoji: row.emoji,
-        description: row.description,
-        exerciseIds: row.exercise_ids as string[],
+        description: row.description ?? '',
+        exerciseIds: row.exercise_ids,
         customExerciseData: (row.custom_exercise_data as CustomExerciseData[]) ?? [],
         authorName: row.author_name,
         accountId: row.account_id,

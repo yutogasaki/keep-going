@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { getExercisesByClass, type ClassLevel } from '../../data/exercises';
+import { EXERCISES, getExercisesByClass, type ClassLevel } from '../../data/exercises';
 import { saveCustomGroup, type MenuGroup } from '../../data/menuGroups';
 import type { CustomExercise } from '../../lib/db';
 import { publishMenu, unpublishMenu } from '../../lib/publicMenus';
@@ -63,9 +63,9 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
     const isLoggedIn = !!getAccountId();
     const isEditing = !!initial;
 
-    // Built-in exercises
+    // Built-in exercises (including rest exercises for manual menu building)
     const builtInExercises = useMemo(
-        () => getExercisesByClass(classLevel as ClassLevel),
+        () => [...getExercisesByClass(classLevel as ClassLevel), ...EXERCISES.filter(e => e.type === 'rest')],
         [classLevel],
     );
 

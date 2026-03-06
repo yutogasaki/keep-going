@@ -1,6 +1,6 @@
 // Stretch & Core exercise master data from specification
 
-export type ExerciseType = 'stretch' | 'core';
+export type ExerciseType = 'stretch' | 'core' | 'rest';
 export type ClassLevel = '先生' | 'プレ' | '初級' | '中級' | '上級' | 'その他';
 
 export interface ClassLevelInfo {
@@ -28,7 +28,7 @@ export const CLASS_EMOJI: Record<string, string> = Object.fromEntries(
 
 export type Priority = 'high' | 'medium';
 
-export type ExercisePhase = 'warmup' | 'main' | 'core';
+export type ExercisePhase = 'warmup' | 'main' | 'core' | 'rest';
 
 export interface Exercise {
     id: string;
@@ -60,6 +60,10 @@ export const EXERCISES: Exercise[] = [
     { id: 'S10', name: 'Y字バランス', sec: 60, type: 'stretch', internal: 'R30→L30', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💃', phase: 'core', hasSplit: true, reading: 'わいじばらんす', description: 'かたあしでたって、もうかたほうのあしをたかくあげよう。バランスにちょうせん！' },
     { id: 'C01', name: 'プランク', sec: 30, type: 'core', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💪', phase: 'core', description: 'うでとつまさきでからだをまっすぐキープ。おなかにちからをいれてね！' },
     { id: 'C02', name: 'サイドプランク', sec: 60, type: 'core', internal: 'R30→L30', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🏋️', phase: 'core', hasSplit: true, description: 'よこむきでからだをささえよう。わきばらがつよくなるよ！' },
+    // Rest (for custom menus; excluded from おまかせ pool)
+    { id: 'R01', name: '休憩5秒', sec: 5, type: 'rest', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💤', phase: 'rest', reading: 'きゅうけい', description: 'すこしやすんで、つぎにそなえよう！' },
+    { id: 'R02', name: '休憩10秒', sec: 10, type: 'rest', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💤', phase: 'rest', reading: 'きゅうけい', description: 'すこしやすんで、つぎにそなえよう！' },
+    { id: 'R03', name: '休憩15秒', sec: 15, type: 'rest', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💤', phase: 'rest', reading: 'きゅうけい', description: 'すこしやすんで、つぎにそなえよう！' },
 ];
 
 // Get exercise by ID
@@ -80,6 +84,9 @@ export const EXERCISE_COLORS: Record<string, string> = {
     S10: '#E8F5D9',
     C01: '#D4E8F5',
     C02: '#E5D9FF',
+    R01: '#E8F0F5',
+    R02: '#E8F0F5',
+    R03: '#E8F0F5',
 };
 
 export function getExerciseColor(id: string): string {
@@ -89,7 +96,7 @@ export function getExerciseColor(id: string): string {
 // Get exercises by class level
 export function getExercisesByClass(classLevel: ClassLevel): Exercise[] {
     const level = classLevel === 'その他' ? '初級' as ClassLevel : classLevel;
-    return EXERCISES.filter(e => e.classes.includes(level));
+    return EXERCISES.filter(e => e.classes.includes(level) && e.type !== 'rest');
 }
 
 // Default Session target duration in seconds (10 minutes)
@@ -238,7 +245,27 @@ export function generateSession(classLevel: ClassLevel, options: GenerateSession
     }
 
     // Combine: Warmup -> Main -> Core
-    return [...selectedWarmup, ...orderedMain, ...selectedCore];
+    const session = [...selectedWarmup, ...orderedMain, ...selectedCore];
+
+    // Auto-insert rest breaks every 5 minutes
+    const REST_INTERVAL = 300;
+    const restExercise = EXERCISES.find(e => e.id === 'R03')!;
+    const withRests: Exercise[] = [];
+    let accumulated = 0;
+    for (const ex of session) {
+        withRests.push(ex);
+        accumulated += ex.sec;
+        if (accumulated >= REST_INTERVAL) {
+            withRests.push(restExercise);
+            accumulated = 0;
+        }
+    }
+    // Remove trailing rest
+    if (withRests.length > 0 && withRests[withRests.length - 1].type === 'rest') {
+        withRests.pop();
+    }
+
+    return withRests;
 }
 
 // Get a replacement exercise when skipping

@@ -21,9 +21,13 @@ export const CountdownOverlay: React.FC<CountdownOverlayProps> = ({ onComplete, 
     useEffect(() => {
         if (count > 0 && count <= 3) {
             audio.playTick();
+        }
+        if (count > 0) {
+            audio.speak(String(count));
         } else if (count === 0 && !completedRef.current) {
             completedRef.current = true;
             audio.playGo();
+            audio.speak('スタート！');
             onComplete();
             return;
         }

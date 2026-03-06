@@ -337,6 +337,10 @@ export interface Database {
                     item_type: string;
                     name_override: string | null;
                     description_override: string | null;
+                    emoji_override: string | null;
+                    sec_override: number | null;
+                    has_split_override: boolean | null;
+                    exercise_ids_override: string[] | null;
                     created_by: string;
                     created_at: string;
                     updated_at: string;
@@ -347,6 +351,10 @@ export interface Database {
                     item_type: string;
                     name_override?: string | null;
                     description_override?: string | null;
+                    emoji_override?: string | null;
+                    sec_override?: number | null;
+                    has_split_override?: boolean | null;
+                    exercise_ids_override?: string[] | null;
                     created_by: string;
                 };
                 Update: Partial<Database['public']['Tables']['teacher_item_overrides']['Insert']>;

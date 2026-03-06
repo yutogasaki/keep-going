@@ -1,6 +1,9 @@
 import { supabase } from './supabase';
+import type { Database } from './supabase-types';
 import { getAccountId } from './sync';
 import { saveCustomExercise, type CustomExercise } from './db';
+
+type PublicExerciseRow = Database['public']['Tables']['public_exercises']['Row'];
 
 export interface PublicExercise {
     id: string;
@@ -135,7 +138,7 @@ export async function unpublishExercise(id: string): Promise<void> {
 
 // ─── Mapper ─────────────────────────────────────────
 
-function mapPublicExercise(row: any): PublicExercise {
+function mapPublicExercise(row: PublicExerciseRow): PublicExercise {
     return {
         id: row.id,
         name: row.name,

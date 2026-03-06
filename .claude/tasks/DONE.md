@@ -21,3 +21,11 @@
 - パフォーマンス: Footer個別セレクタ、ポーリング→イベント駆動、React.memo追加
 - コード品質: calculateStreak統合、mappers型安全化、dead code削除、menuGroups分離
 - コンテンツ: ヘルプセンター更新(9→12セクション)
+
+## 2026-03-06: コード品質・テスト改善
+- バグ修正: publishMenuで種目公開失敗時にメニュー公開を中止するよう変更
+- エラーハンドリング: SingleExerciseEditor保存失敗UI、teacherMenuSettings delete エラーチェック、signOut後匿名再サインイン失敗通知、useMenuPageData先生コンテンツ読み込み失敗トースト
+- 型安全: mapper関数6箇所のany型をSupabase生成型に置換（teacherContent/teacherMenuSettings/teacherItemOverrides/publicMenus/publicExercises）
+- 型定義: supabase-types.tsのteacher_item_overridesにemoji/sec/hasSplit/exerciseIdsカラム追加
+- テスト: db.ts（25テスト: formatDateKey/parseDateKey/shiftDateKey/getTodayKey 3AM境界/calculateStreak）
+- テスト: generateSession（18テスト）、migrateAppState（18テスト）

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { DEFAULT_SESSION_TARGET_SECONDS, getExercisesByClass, type Exercise } from '../../../data/exercises';
+import { DEFAULT_SESSION_TARGET_SECONDS, EXERCISES, getExercisesByClass, type Exercise } from '../../../data/exercises';
 import {
     deleteCustomGroup,
     getCustomGroups,
@@ -184,6 +184,7 @@ export function useMenuPageData({
             setOverrideMap(oMap);
         } catch (err) {
             console.warn('[menu] Failed to load teacher content:', err);
+            setToastMessage({ text: '先生の設定を読み込めませんでした', type: 'error' });
         }
     }, [isTogetherMode, sessionUserIds, users, classLevel]);
 
@@ -391,7 +392,11 @@ export function useMenuPageData({
                 phase: 'main' as const,
             }));
 
-        return [...builtIn, ...teacherAsExercise];
+        // Add rest exercises (excluded from getExercisesByClass but needed for manual menu building)
+        const restExercises = EXERCISES
+            .filter(e => e.type === 'rest' && !teacherHiddenExerciseIds.has(e.id));
+
+        return [...builtIn, ...teacherAsExercise, ...restExercises];
     }, [classLevel, teacherExercises, teacherHiddenExerciseIds, overrideMap]);
 
     // Lookup map for all exercise types (built-in with overrides + teacher + custom)

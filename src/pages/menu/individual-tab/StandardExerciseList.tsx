@@ -112,7 +112,7 @@ export const StandardExerciseList: React.FC<StandardExerciseListProps> = ({
                                 gap: 8,
                             }}>
                                 <span>{exercise.sec}秒</span>
-                                <span>{exercise.type === 'stretch' ? 'ストレッチ' : '体幹'}</span>
+                                <span>{exercise.type === 'stretch' ? 'ストレッチ' : exercise.type === 'rest' ? '休憩' : '体幹'}</span>
                                 {exercise.internal !== 'single' && (
                                     <span style={{ color: '#2BBAA0' }}>
                                         {exercise.internal === 'P10・F10×3' ? '切替あり' : '左右あり'}

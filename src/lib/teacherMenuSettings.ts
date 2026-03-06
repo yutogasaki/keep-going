@@ -1,4 +1,7 @@
 import { supabase } from './supabase';
+import type { Database } from './supabase-types';
+
+type TeacherMenuSettingRow = Database['public']['Tables']['teacher_menu_settings']['Row'];
 
 export type MenuSettingStatus = 'required' | 'optional' | 'excluded' | 'hidden';
 export type MenuSettingItemType = 'exercise' | 'menu_group';
@@ -62,12 +65,13 @@ export async function upsertTeacherMenuSetting(
 
     if (status === 'optional') {
         // Delete the row to revert to default
-        await supabase
+        const { error } = await supabase
             .from('teacher_menu_settings')
             .delete()
             .eq('item_id', itemId)
             .eq('item_type', itemType)
             .eq('class_level', classLevel);
+        if (error) throw error;
     } else {
         const { error } = await supabase
             .from('teacher_menu_settings')
@@ -87,13 +91,13 @@ export async function upsertTeacherMenuSetting(
 
 // ─── Mapper ──────────────────────────────────────────
 
-function mapSetting(row: any): TeacherMenuSetting {
+function mapSetting(row: TeacherMenuSettingRow): TeacherMenuSetting {
     return {
         id: row.id,
         itemId: row.item_id,
-        itemType: row.item_type,
+        itemType: row.item_type as MenuSettingItemType,
         classLevel: row.class_level,
-        status: row.status,
+        status: row.status as MenuSettingStatus,
         createdBy: row.created_by,
     };
 }

@@ -1,4 +1,7 @@
 import { supabase } from './supabase';
+import type { Database } from './supabase-types';
+
+type TeacherItemOverrideRow = Database['public']['Tables']['teacher_item_overrides']['Row'];
 
 export interface TeacherItemOverride {
     id: string;
@@ -101,11 +104,11 @@ export async function upsertTeacherItemOverride(
 
 // ─── Mapper ─────────────────────────────────────────
 
-function mapOverride(row: any): TeacherItemOverride {
+function mapOverride(row: TeacherItemOverrideRow): TeacherItemOverride {
     return {
         id: row.id,
         itemId: row.item_id,
-        itemType: row.item_type,
+        itemType: row.item_type as 'exercise' | 'menu_group',
         nameOverride: row.name_override,
         descriptionOverride: row.description_override,
         emojiOverride: row.emoji_override ?? null,

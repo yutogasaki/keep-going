@@ -1,6 +1,6 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Clock, Download, Edit2, EyeOff, Play, Trash2, Upload } from 'lucide-react';
+import React, { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronDown, Download, Edit2, EyeOff, Play, Trash2, Upload } from 'lucide-react';
 import type { CustomExercise } from '../../../lib/db';
 import type { PublicExercise } from '../../../lib/publicExercises';
 import { ExerciseIcon } from '../../../components/ExerciseIcon';
@@ -30,11 +30,14 @@ export const CustomExerciseList: React.FC<CustomExerciseListProps> = ({
     onPublish,
     onUnpublish,
 }) => {
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+
     return (
         <>
             {customExercises.map((exercise, index) => {
                 const published = findPublishedExercise?.(exercise);
                 const isPublished = !!published;
+                const expanded = expandedId === exercise.id;
 
                 return (
                     <motion.div
@@ -43,18 +46,17 @@ export const CustomExerciseList: React.FC<CustomExerciseListProps> = ({
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.25, delay: index * 0.03 }}
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 0,
-                            padding: '14px 16px',
-                        }}
+                        style={{ padding: 0, overflow: 'hidden' }}
                     >
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 12,
-                        }}>
+                        {/* Main row */}
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 12,
+                                padding: '14px 16px',
+                            }}
+                        >
                             <ExerciseIcon id={exercise.id} emoji={exercise.emoji} size={24} color="#2D3436" />
                             <div style={{ flex: 1 }}>
                                 <div style={{
@@ -80,7 +82,6 @@ export const CustomExerciseList: React.FC<CustomExerciseListProps> = ({
                                             background: 'rgba(43, 186, 160, 0.1)',
                                             padding: '2px 6px',
                                             borderRadius: 8,
-                                            marginLeft: 8,
                                             display: 'inline-block',
                                             verticalAlign: 'middle',
                                         }}>
@@ -90,22 +91,21 @@ export const CustomExerciseList: React.FC<CustomExerciseListProps> = ({
                                 </div>
                                 <div style={{
                                     fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     color: '#8395A7',
                                     display: 'flex',
                                     gap: 8,
-                                    alignItems: 'center',
                                 }}>
-                                    <Clock size={12} />
-                                    <span>約{Math.round(exercise.sec / 60)}分</span>
+                                    <span>{exercise.sec}秒</span>
                                     {exercise.hasSplit && (
-                                        <span style={{ color: '#2BBAA0', marginLeft: 4 }}>切替あり</span>
+                                        <span style={{ color: '#2BBAA0' }}>切替あり</span>
                                     )}
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+
+                            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                                 <button
-                                    onClick={() => onEdit(exercise)}
+                                    onClick={(e) => { e.stopPropagation(); setExpandedId(expanded ? null : exercise.id); }}
                                     style={{
                                         width: 32,
                                         height: 32,
@@ -118,32 +118,23 @@ export const CustomExerciseList: React.FC<CustomExerciseListProps> = ({
                                         justifyContent: 'center',
                                     }}
                                 >
-                                    <Edit2 size={16} color="#8395A7" />
+                                    <ChevronDown
+                                        size={16}
+                                        color="#B2BEC3"
+                                        style={{
+                                            transform: expanded ? 'rotate(180deg)' : 'rotate(0)',
+                                            transition: 'transform 0.2s ease',
+                                        }}
+                                    />
                                 </button>
-                                <button
-                                    onClick={() => onDelete(exercise.id)}
-                                    style={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: 10,
-                                        border: 'none',
-                                        background: 'rgba(231, 76, 60, 0.1)',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}
-                                >
-                                    <Trash2 size={16} color="#E74C3C" />
-                                </button>
-                                <div style={{ width: 8 }} />
-                                <button
+                                <motion.button
+                                    whileTap={{ scale: 0.9 }}
                                     onClick={() => onStart(exercise.id)}
                                     style={{
                                         width: 32,
                                         height: 32,
                                         borderRadius: '50%',
-                                        background: '#2BBAA0',
+                                        background: 'rgba(43, 186, 160, 0.1)',
                                         border: 'none',
                                         cursor: 'pointer',
                                         display: 'flex',
@@ -151,83 +142,135 @@ export const CustomExerciseList: React.FC<CustomExerciseListProps> = ({
                                         justifyContent: 'center',
                                     }}
                                 >
-                                    <Play size={14} color="white" fill="white" />
-                                </button>
+                                    <Play size={14} color="#2BBAA0" fill="#2BBAA0" />
+                                </motion.button>
                             </div>
                         </div>
 
-                        {/* Publish/unpublish row */}
-                        {canPublish && onPublish && onUnpublish && (
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 8,
-                                marginTop: 10,
-                                paddingTop: 10,
-                                borderTop: '1px solid rgba(0,0,0,0.04)',
-                            }}>
-                                {isPublished ? (
-                                    <>
-                                        <span style={{
-                                            fontFamily: "'Noto Sans JP', sans-serif",
-                                            fontSize: 11,
-                                            color: '#8395A7',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 4,
-                                            flex: 1,
-                                        }}>
-                                            <Download size={12} />
-                                            {published!.downloadCount}人がつかってるよ
-                                        </span>
-                                        <button
-                                            onClick={() => onUnpublish(exercise)}
-                                            style={{
-                                                padding: '4px 10px',
-                                                borderRadius: 8,
-                                                border: 'none',
-                                                background: 'rgba(225, 112, 85, 0.08)',
-                                                cursor: 'pointer',
+                        {/* Expanded section */}
+                        <AnimatePresence>
+                            {expanded && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    style={{ overflow: 'hidden', borderTop: '1px solid rgba(0,0,0,0.05)' }}
+                                >
+                                    <div style={{ padding: '10px 16px 12px' }}>
+                                        {exercise.description && (
+                                            <p style={{
                                                 fontFamily: "'Noto Sans JP', sans-serif",
-                                                fontSize: 11,
-                                                fontWeight: 700,
-                                                color: '#E17055',
+                                                fontSize: 12,
+                                                color: '#8395A7',
+                                                margin: '0 0 8px',
+                                            }}>
+                                                {exercise.description}
+                                            </p>
+                                        )}
+
+                                        {isPublished && published && (
+                                            <div style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 gap: 4,
-                                            }}
-                                        >
-                                            <EyeOff size={12} />
-                                            ひこうかい
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div style={{ flex: 1 }} />
-                                        <button
-                                            onClick={() => onPublish(exercise)}
-                                            style={{
-                                                padding: '4px 10px',
-                                                borderRadius: 8,
-                                                border: 'none',
-                                                background: 'rgba(9, 132, 227, 0.08)',
-                                                cursor: 'pointer',
+                                                marginBottom: 8,
                                                 fontFamily: "'Noto Sans JP', sans-serif",
                                                 fontSize: 11,
-                                                fontWeight: 700,
                                                 color: '#0984E3',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 4,
-                                            }}
-                                        >
-                                            <Upload size={12} />
-                                            こうかい
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        )}
+                                            }}>
+                                                <Download size={11} />
+                                                {published.downloadCount}人がつかってるよ
+                                            </div>
+                                        )}
+
+                                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onEdit(exercise); }}
+                                                style={{
+                                                    padding: '6px 12px',
+                                                    borderRadius: 8,
+                                                    border: '1px solid rgba(0,0,0,0.1)',
+                                                    background: 'white',
+                                                    cursor: 'pointer',
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontSize: 12,
+                                                    color: '#8395A7',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 4,
+                                                }}
+                                            >
+                                                <Edit2 size={12} />
+                                                へんしゅう
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); onDelete(exercise.id); }}
+                                                style={{
+                                                    padding: '6px 12px',
+                                                    borderRadius: 8,
+                                                    border: 'none',
+                                                    background: 'rgba(225, 112, 85, 0.08)',
+                                                    cursor: 'pointer',
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontSize: 12,
+                                                    color: '#E17055',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 4,
+                                                }}
+                                            >
+                                                <Trash2 size={12} />
+                                                さくじょ
+                                            </button>
+                                            {canPublish && onPublish && onUnpublish && (
+                                                isPublished ? (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); onUnpublish(exercise); }}
+                                                        style={{
+                                                            padding: '6px 12px',
+                                                            borderRadius: 8,
+                                                            border: 'none',
+                                                            background: 'rgba(225, 112, 85, 0.08)',
+                                                            cursor: 'pointer',
+                                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                                            fontSize: 12,
+                                                            color: '#E17055',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 4,
+                                                        }}
+                                                    >
+                                                        <EyeOff size={12} />
+                                                        ひこうかい
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); onPublish(exercise); }}
+                                                        style={{
+                                                            padding: '6px 12px',
+                                                            borderRadius: 8,
+                                                            border: 'none',
+                                                            background: 'rgba(9, 132, 227, 0.08)',
+                                                            cursor: 'pointer',
+                                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                                            fontSize: 12,
+                                                            color: '#0984E3',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 4,
+                                                        }}
+                                                    >
+                                                        <Upload size={12} />
+                                                        こうかい
+                                                    </button>
+                                                )
+                                            )}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </motion.div>
                 );
             })}
