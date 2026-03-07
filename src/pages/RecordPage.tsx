@@ -30,9 +30,9 @@ export const RecordPage: React.FC = () => {
     const sessionUserIdSet = useMemo(() => new Set(sessionUserIds), [sessionUserIds]);
     const isPageActive = currentTab === 'record';
 
-    const currentViewUsers = users.filter((user) => sessionUserIds.includes(user.id));
-    const pastFuwafuwas = currentViewUsers.flatMap((user) => user.pastFuwafuwas || []).filter((fuwafuwa) => fuwafuwa.finalStage === 3);
-    const chibifuwas = currentViewUsers.flatMap((user) => user.chibifuwas || []);
+    const currentViewUsers = useMemo(() => users.filter((user) => sessionUserIds.includes(user.id)), [users, sessionUserIds]);
+    const pastFuwafuwas = useMemo(() => currentViewUsers.flatMap((user) => user.pastFuwafuwas || []).filter((fuwafuwa) => fuwafuwa.finalStage === 3), [currentViewUsers]);
+    const chibifuwas = useMemo(() => currentViewUsers.flatMap((user) => user.chibifuwas || []), [currentViewUsers]);
 
     const filterSessionsByContext = useCallback((unfiltered: SessionRecord[]) => {
         const isTogetherMode = sessionUserIds.length > 1;
@@ -92,49 +92,62 @@ export const RecordPage: React.FC = () => {
         loadExMap();
     }, []);
 
-    const groupedSessions = new Map<string, SessionRecord[]>();
-    for (const session of sessions) {
-        const existing = groupedSessions.get(session.date) || [];
-        existing.push(session);
-        groupedSessions.set(session.date, existing);
-    }
-    const groupedEntries = Array.from(groupedSessions.entries());
-
-    const totalSessions = sessions.length;
-    const totalMinutes = Math.floor(sessions.reduce((acc, session) => acc + session.totalSeconds, 0) / 60);
-    const uniqueDays = groupedSessions.size;
-
-    const exerciseCounts = new Map<string, number>();
-    for (const session of sessions) {
-        for (const [exerciseId, count] of Object.entries(getSessionExerciseCounts(session))) {
-            exerciseCounts.set(exerciseId, (exerciseCounts.get(exerciseId) || 0) + count);
+    const { groupedEntries, totalSessions, totalMinutes, uniqueDays, exerciseCounts } = useMemo(() => {
+        const grouped = new Map<string, SessionRecord[]>();
+        for (const session of sessions) {
+            const existing = grouped.get(session.date) || [];
+            existing.push(session);
+            grouped.set(session.date, existing);
         }
-    }
-    const topExercises = Array.from(exerciseCounts.entries())
-        .map(([id, count]) => {
-            const info = exerciseMap.get(id);
-            return { id, count, name: info?.name, emoji: info?.emoji };
-        })
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 3);
+        const counts = new Map<string, number>();
+        for (const session of sessions) {
+            for (const [exerciseId, count] of Object.entries(getSessionExerciseCounts(session))) {
+                counts.set(exerciseId, (counts.get(exerciseId) || 0) + count);
+            }
+        }
+        return {
+            groupedEntries: Array.from(grouped.entries()),
+            totalSessions: sessions.length,
+            totalMinutes: Math.floor(sessions.reduce((acc, session) => acc + session.totalSeconds, 0) / 60),
+            uniqueDays: grouped.size,
+            exerciseCounts: counts,
+        };
+    }, [sessions]);
 
-    const activeUsers = users.filter((user) => sessionUserIds.includes(user.id));
-    const dailyTargetMinutes = activeUsers.reduce((sum, user) => sum + (user.dailyTargetMinutes ?? 10), 0);
-    const fallbackTargetMinutes = users.length > 0 ? (users[0].dailyTargetMinutes ?? 10) : 10;
-    const effectiveTargetMinutes = activeUsers.length > 0 ? dailyTargetMinutes : fallbackTargetMinutes;
+    const topExercises = useMemo(() =>
+        Array.from(exerciseCounts.entries())
+            .map(([id, count]) => {
+                const info = exerciseMap.get(id);
+                return { id, count, name: info?.name, emoji: info?.emoji };
+            })
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 3),
+    [exerciseCounts, exerciseMap]);
 
-    const todayTotalSeconds = todaySessions.reduce((acc, session) => acc + session.totalSeconds, 0);
-    const todayMinutes = Math.floor(todayTotalSeconds / 60);
-    const todayExerciseCount = todaySessions.reduce(
-        (acc, session) => acc + getSessionCompletedExerciseTotal(session),
-        0,
-    );
-    const targetSeconds = Math.max(1, effectiveTargetMinutes * 60);
-    const progressPercent = Math.min(100, Math.round((todayTotalSeconds / targetSeconds) * 100));
+    const { todayMinutes, todayExerciseCount, progressPercent, ringRadius, ringCircumference, ringOffset } = useMemo(() => {
+        const activeUsers = users.filter((user) => sessionUserIds.includes(user.id));
+        const dailyTargetMinutes = activeUsers.reduce((sum, user) => sum + (user.dailyTargetMinutes ?? 10), 0);
+        const fallbackTargetMinutes = users.length > 0 ? (users[0].dailyTargetMinutes ?? 10) : 10;
+        const effectiveTargetMinutes = activeUsers.length > 0 ? dailyTargetMinutes : fallbackTargetMinutes;
 
-    const ringRadius = 24;
-    const ringCircumference = 2 * Math.PI * ringRadius;
-    const ringOffset = ringCircumference * (1 - progressPercent / 100);
+        const todayTotalSeconds = todaySessions.reduce((acc, session) => acc + session.totalSeconds, 0);
+        const targetSec = Math.max(1, effectiveTargetMinutes * 60);
+        const progress = Math.min(100, Math.round((todayTotalSeconds / targetSec) * 100));
+        const radius = 24;
+        const circumference = 2 * Math.PI * radius;
+
+        return {
+            todayMinutes: Math.floor(todayTotalSeconds / 60),
+            todayExerciseCount: todaySessions.reduce(
+                (acc, session) => acc + getSessionCompletedExerciseTotal(session),
+                0,
+            ),
+            progressPercent: progress,
+            ringRadius: radius,
+            ringCircumference: circumference,
+            ringOffset: circumference * (1 - progress / 100),
+        };
+    }, [todaySessions, users, sessionUserIds]);
 
     return (
         <div style={{
