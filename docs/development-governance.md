@@ -10,6 +10,7 @@
 | 憲法 | 変わりにくい最上位ルール | `CONSTITUTION.md` |
 | エージェント実行ルール | Codex / Claude 向けの短い入口 | `AGENTS.md`, `CLAUDE.md` |
 | 共通 agent guide | 入口ファイルが参照する詳細の正本 | `.agents/agent-guide.md` |
+| CI verify | push / PR で回る共通検証導線 | `.github/workflows/verify.yml` |
 | Active task queue | 今回の実行対象だけを持つ | `.agents/tasks/TASKS.md` |
 | Done log | 完了した仕事の短い履歴 | `.agents/tasks/DONE.md` |
 | Durable memory | 再利用価値が高い決定・罠 | `.agents/MEMORY.md` |
@@ -49,6 +50,13 @@
 - Product backlog と spec gap の置き場。
 - 実行キューではない。
 - 長期課題、後回し項目、仕様との差分整理に使う。
+- 重くなったら、完了済みの snapshot は `docs/archive/tasks-*.md` へ逃がし、`docs/tasks.md` は current focus と未完了項目を優先する。
+
+### `.github/workflows/verify.yml`
+
+- `pull_request` と `main` への push で共通 verify を回す。
+- 実行順は `lint -> tsc --noEmit -> test -> build` に固定する。
+- ローカルの検証導線を変える時は、この workflow とのズレを作らない。
 
 ## Task Lifecycle
 
@@ -57,20 +65,32 @@
 3. 完了後は `.agents/tasks/DONE.md` に短く残す。
 4. 次回も効く判断だけ `.agents/MEMORY.md` に残す。
 
-## Verification Matrix
+## Required Skill And Verification Matrix
 
-| 変更種別 | 最低検証 |
-|---------|---------|
-| doc only | リンク整合性、参照先の重複確認 |
-| 型・ロジック変更 | `npx tsc --noEmit`, 対象テスト |
-| Zustand persist 変更 | `types/createState/migrate/test` 更新 + migrate テスト |
-| UI/UX 変更 | `npx tsc --noEmit`, 対象テスト、desktop/mobile の画面確認 |
-| sync / db 変更 | 単体テスト or mapper テスト、既存データ影響確認 |
-| リリース前 | `npm run verify` と主要導線の smoke check |
+複数の変更種別にまたがる時は、該当する行を全部満たす。
+迷ったら軽いルートではなく、より厳しい検証を選ぶ。
+
+| 変更種別 | 必須 skill / workflow | 最低検証 |
+|---------|-----------------------|---------|
+| doc only | 必須 skill なし。governance / task / memory を触るなら `governance-audit` | リンク整合性、参照先の重複確認 |
+| governance / task / memory / guide 更新 | `governance-audit` | canonical path 確認、サイズ閾値確認、stale path 確認 |
+| 型・ロジック変更 | `test` | `npx tsc --noEmit`, 対象テスト |
+| Zustand persist 変更 | `persist-migration-check` | `types/createState/migrate/test` 更新、必要なら `APP_STATE_VERSION` 更新、migrate テスト、`npx tsc --noEmit` |
+| UI/UX 変更 | `visual-qa` | `npx tsc --noEmit`, 対象テスト、desktop/mobile の画面確認、token 利用確認 |
+| sync / db 変更 | `test`。スキーマや SQL を触るなら `db` / `sql` も検討 | 単体テスト or mapper テスト、既存データ影響確認 |
+| リリース前 | `push` 相当の verify 手順 | `npm run verify` と主要導線の smoke check |
+| CI 変更 | `governance-audit` | workflow の対象 branch、実行順、依存 install、既存 script との整合確認 |
+
+### UI / UX 変更の追加ルール
+
+- `visual-qa` は KeepGoing では任意ではなく必須。
+- style を触る場合は `src/lib/styles.ts` と既存 CSS 変数を先に確認し、新しい直書き token を増やさない。
+- desktop / mobile の両方で主導線を 1 回通してから完了扱いにする。
 
 ## Suggested Working Rules
 
 - 変更前に、関連する single source を確認する。
+- 変更種別に対応する required skill / verify を最初に宣言してから作業する。
 - 最終回答で主張する内容は、検証結果と一致させる。
 - Help 文言や設定説明が古くなる変更では、関連文言も同時に更新する。
 - 大きいファイルの修正時は、ついでに責務分割可能性も判断する。
@@ -91,6 +111,7 @@
   - 何度も繰り返す
   - 失敗しやすい
   - 手順が比較的固定化できる
+- 既存 skill が required route に入っている変更では、省略せずに使う。
 - KeepGoing で効果が高い候補:
   - visual QA
   - migration check
@@ -102,6 +123,7 @@
 - `AGENTS.md` と `CLAUDE.md` に同じ長文を二重記載する
 - shared guide ではなく入口ファイル側を正本のように更新する
 - task, done, memory, backlog を同じファイルに混在させる
+- UI 変更で `visual-qa` と token 確認を省略する
 - UI 変更を型チェックだけで完了扱いにする
 - state migrate をテストなしで出す
 - 既存の canonical path を直さず、別の path を増やして逃げる

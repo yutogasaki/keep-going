@@ -50,7 +50,10 @@ npm run verify
 ## Engineering Rules
 
 - Zustand persist 変更時は `types/createState/migrate/test` をセットで更新
+- Zustand persist 変更では `persist-migration-check` を使う
 - `src/lib/styles.ts` の token を優先し、直書きを増やさない
+- UI / UX 変更では `visual-qa` を必須にし、desktop/mobile 確認と token 利用確認を行う
+- CI の正本は `.github/workflows/verify.yml` とし、`lint -> tsc --noEmit -> test -> build` を回す
 - モーダルは既存の `src/components/Modal.tsx` を優先する
 - user-visible な変更は、必要に応じて desktop/mobile の visual QA を行う
 - 巨大ファイルは早めに分割する。詳細閾値は `CONSTITUTION.md` を参照
