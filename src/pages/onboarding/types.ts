@@ -1,9 +1,9 @@
 export type OnboardingStep =
     | 'welcome'
-    | 'account'
-    | 'emailLogin'
-    | 'restoring'
     | 'name'
     | 'class'
-    | 'swipe'
-    | 'notification';
+    | 'start'
+    | 'account'
+    | 'notification'
+    | 'emailLogin'
+    | 'restoring';

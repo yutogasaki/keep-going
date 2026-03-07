@@ -11,7 +11,7 @@ import { AccountStep } from './onboarding/AccountStep';
 import { ClassStep } from './onboarding/ClassStep';
 import { NameStep } from './onboarding/NameStep';
 import { RestoringStep } from './onboarding/RestoringStep';
-import { SwipeStep } from './onboarding/SwipeStep';
+import { StartStep } from './onboarding/StartStep';
 import { WelcomeStep } from './onboarding/WelcomeStep';
 import { NotificationStep } from './onboarding/NotificationStep';
 import type { OnboardingStep } from './onboarding/types';
@@ -55,7 +55,7 @@ export const Onboarding: React.FC = () => {
             }
 
             setLoginContext(null);
-            setStep('name');
+            setStep('notification');
         } catch (error) {
             console.error('[onboarding] Post-login restore failed:', error);
             setRestoreError('復元に失敗しました。もう一度お試しください。');
@@ -154,7 +154,35 @@ export const Onboarding: React.FC = () => {
         >
             <AnimatePresence mode="wait">
                 {step === 'welcome' && (
-                    <WelcomeStep onNext={() => setStep('account')} />
+                    <WelcomeStep onNext={() => setStep('name')} />
+                )}
+
+                {step === 'restoring' && <RestoringStep />}
+
+                {step === 'name' && (
+                    <NameStep
+                        userName={userName}
+                        onNameChange={setUserName}
+                        onNext={() => setStep('class')}
+                        onBack={() => setStep('welcome')}
+                    />
+                )}
+
+                {step === 'class' && (
+                    <ClassStep
+                        onClassSelect={(level) => {
+                            setSelectedClass(level);
+                            setStep('start');
+                        }}
+                        onBack={() => setStep('name')}
+                    />
+                )}
+
+                {step === 'start' && (
+                    <StartStep
+                        onNext={() => setStep('account')}
+                        onBack={() => setStep('class')}
+                    />
                 )}
 
                 {step === 'account' && (
@@ -165,40 +193,15 @@ export const Onboarding: React.FC = () => {
                             setLoginContext('onboarding');
                             setStep('emailLogin');
                         }}
-                        onSkip={() => setStep('name')}
-                        onBack={() => setStep('welcome')}
+                        onSkip={() => setStep('notification')}
+                        onBack={() => setStep('start')}
                     />
-                )}
-
-                {step === 'restoring' && <RestoringStep />}
-
-                {step === 'name' && (
-                    <NameStep
-                        userName={userName}
-                        onNameChange={setUserName}
-                        onNext={() => setStep('class')}
-                        onBack={() => setStep('account')}
-                    />
-                )}
-
-                {step === 'class' && (
-                    <ClassStep
-                        onClassSelect={(level) => {
-                            setSelectedClass(level);
-                            setStep('swipe');
-                        }}
-                        onBack={() => setStep('name')}
-                    />
-                )}
-
-                {step === 'swipe' && (
-                    <SwipeStep onFinish={() => setStep('notification')} onBack={() => setStep('class')} />
                 )}
 
                 {step === 'notification' && (
                     <NotificationStep
                         onDone={handleFinish}
-                        onBack={() => setStep('swipe')}
+                        onBack={() => setStep('account')}
                     />
                 )}
             </AnimatePresence>

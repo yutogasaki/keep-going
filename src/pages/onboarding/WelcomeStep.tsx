@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { COLOR, FONT } from '../../lib/styles';
 
 interface WelcomeStepProps {
     onNext: () => void;
@@ -41,23 +42,25 @@ export const WelcomeStep: React.FC<WelcomeStepProps> = ({ onNext }) => {
 
             <h1
                 style={{
-                    fontFamily: "'Outfit', sans-serif",
+                    fontFamily: FONT.heading,
                     fontSize: 32,
                     fontWeight: 800,
-                    color: '#2D3436',
+                    color: COLOR.dark,
                 }}
             >
                 KeepGoing
             </h1>
             <p
                 style={{
-                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontFamily: FONT.body,
                     fontSize: 15,
-                    color: '#8395A7',
+                    color: COLOR.muted,
                     lineHeight: 1.8,
                 }}
             >
-                今日のちょっとが、未来のちからに。
+                なまえを いれて、START のおしかたを
+                <br />
+                ひとつだけ おぼえたら すぐにはじめられるよ。
             </p>
 
             <button
@@ -67,9 +70,9 @@ export const WelcomeStep: React.FC<WelcomeStepProps> = ({ onNext }) => {
                     padding: '14px 48px',
                     borderRadius: 9999,
                     border: 'none',
-                    background: '#2BBAA0',
+                    background: COLOR.primary,
                     color: 'white',
-                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontFamily: FONT.body,
                     fontSize: 16,
                     fontWeight: 700,
                     cursor: 'pointer',

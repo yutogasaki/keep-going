@@ -62,7 +62,7 @@ export const AccountStep: React.FC<AccountStepProps> = ({
                     color: '#2D3436',
                 }}
             >
-                アカウント
+                ほごしゃの かたへ
             </h2>
             <p
                 style={{
@@ -73,7 +73,9 @@ export const AccountStep: React.FC<AccountStepProps> = ({
                     marginTop: -4,
                 }}
             >
-                ログインするとデータが<br />クラウドに保存されます
+                ログインすると データをひきついだり
+                <br />
+                クラウドにほぞんできます
             </p>
 
             {restoreError && (
@@ -177,7 +179,7 @@ export const AccountStep: React.FC<AccountStepProps> = ({
                     marginTop: -8,
                 }}
             >
-                あとから設定で追加できます
+                あとから設定で つなげられます
             </p>
         </motion.div>
     );
