@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { Footer } from '../components/Footer';
 
@@ -47,8 +47,20 @@ const tabs = [
 export const MainLayout: React.FC = () => {
     const currentTab = useAppStore((state) => state.currentTab);
     const isInSession = useAppStore((state) => state.isInSession);
-    const activeTab = tabs.find((tab) => tab.key === currentTab) ?? tabs[0];
-    const ActiveComponent = activeTab.Component;
+    const [mountedTabs, setMountedTabs] = useState({
+        home: true,
+        record: false,
+        menu: false,
+        settings: false,
+    });
+
+    useEffect(() => {
+        setMountedTabs((previous) => (
+            previous[currentTab]
+                ? previous
+                : { ...previous, [currentTab]: true }
+        ));
+    }, [currentTab]);
 
     return (
         <>
@@ -61,11 +73,27 @@ export const MainLayout: React.FC = () => {
                 flexDirection: 'column',
                 overflow: 'hidden',
             }}>
-                {/* Tab content: render only active page to avoid hidden background work */}
                 <main style={{ flex: 1, height: '100%', width: '100%', overflow: 'hidden', position: 'relative' }}>
-                    <Suspense fallback={<PageFallback />}>
-                        <ActiveComponent />
-                    </Suspense>
+                    {tabs.map(({ key, Component }) => {
+                        if (!mountedTabs[key]) {
+                            return null;
+                        }
+
+                        return (
+                            <div
+                                key={key}
+                                style={{
+                                    display: currentTab === key ? 'block' : 'none',
+                                    width: '100%',
+                                    height: '100%',
+                                }}
+                            >
+                                <Suspense fallback={<PageFallback />}>
+                                    <Component />
+                                </Suspense>
+                            </div>
+                        );
+                    })}
                 </main>
 
                 {/* Bottom Navigation */}

@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { Database } from './supabase-types';
 import { calculateStreak } from './db';
 
 // Re-export so existing callers (TeacherDashboard, AccountCard) don't need to change imports
@@ -51,61 +52,163 @@ export function checkIsDeveloper(email: string | undefined): boolean {
 
 // ─── Fetch all students ──────────────────────────────
 
-export async function fetchAllStudents(): Promise<StudentSummary[]> {
-    if (!supabase) return [];
+const TEACHER_FETCH_PAGE_SIZE = 1000;
 
-    const [membersRes, sessionsRes, settingsRes] = await Promise.all([
-        supabase.from('family_members').select('id, account_id, name, class_level, avatar_url'),
-        supabase
+type TeacherFamilyMemberRow = Pick<
+    Database['public']['Tables']['family_members']['Row'],
+    'id' | 'account_id' | 'name' | 'class_level' | 'avatar_url'
+>;
+
+type TeacherSessionRow = Pick<
+    Database['public']['Tables']['sessions']['Row'],
+    'id' | 'account_id' | 'date' | 'started_at' | 'total_seconds' | 'user_ids'
+>;
+
+type TeacherAppSettingsRow = Pick<
+    Database['public']['Tables']['app_settings']['Row'],
+    'account_id' | 'suspended'
+>;
+
+async function fetchAllPages<T>(
+    fetchPage: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
+): Promise<T[]> {
+    const rows: T[] = [];
+
+    for (let from = 0; ; from += TEACHER_FETCH_PAGE_SIZE) {
+        const to = from + TEACHER_FETCH_PAGE_SIZE - 1;
+        const { data, error } = await fetchPage(from, to);
+        if (error) throw error;
+
+        const page = data ?? [];
+        rows.push(...page);
+
+        if (page.length < TEACHER_FETCH_PAGE_SIZE) {
+            return rows;
+        }
+    }
+}
+
+async function fetchTeacherMembers(): Promise<TeacherFamilyMemberRow[]> {
+    const client = supabase;
+    if (!client) return [];
+
+    return fetchAllPages((from, to) =>
+        client
+            .from('family_members')
+            .select('id, account_id, name, class_level, avatar_url')
+            .order('account_id', { ascending: true })
+            .order('id', { ascending: true })
+            .range(from, to)
+    );
+}
+
+async function fetchTeacherSessions(): Promise<TeacherSessionRow[]> {
+    const client = supabase;
+    if (!client) return [];
+
+    return fetchAllPages((from, to) =>
+        client
             .from('sessions')
             .select('id, account_id, date, started_at, total_seconds, user_ids')
             .order('date', { ascending: false })
-            .limit(5000),
-        supabase.from('app_settings').select('account_id, suspended'),
+            .order('started_at', { ascending: false })
+            .range(from, to)
+    );
+}
+
+async function fetchTeacherAppSettings(): Promise<TeacherAppSettingsRow[]> {
+    const client = supabase;
+    if (!client) return [];
+
+    return fetchAllPages((from, to) =>
+        client
+            .from('app_settings')
+            .select('account_id, suspended')
+            .order('account_id', { ascending: true })
+            .range(from, to)
+    );
+}
+
+export async function fetchAllStudents(): Promise<StudentSummary[]> {
+    if (!supabase) return [];
+
+    const [membersResult, sessionsResult, settingsResult] = await Promise.allSettled([
+        fetchTeacherMembers(),
+        fetchTeacherSessions(),
+        fetchTeacherAppSettings(),
     ]);
 
-    if (membersRes.error || sessionsRes.error) {
-        console.error('[teacher] fetch failed:', membersRes.error, sessionsRes.error);
+    if (membersResult.status === 'rejected' || sessionsResult.status === 'rejected') {
+        console.error(
+            '[teacher] fetch failed:',
+            membersResult.status === 'rejected' ? membersResult.reason : null,
+            sessionsResult.status === 'rejected' ? sessionsResult.reason : null,
+        );
         return [];
     }
 
-    const members = membersRes.data ?? [];
-    const sessions = sessionsRes.data ?? [];
+    if (settingsResult.status === 'rejected') {
+        console.warn('[teacher] Failed to load suspended account settings:', settingsResult.reason);
+    }
+
+    const members = membersResult.value;
+    const sessions = sessionsResult.value;
+    const settings = settingsResult.status === 'fulfilled' ? settingsResult.value : [];
+
     // Filter out suspended accounts
     const suspendedIds = new Set(
-        (settingsRes.data ?? []).filter(s => s.suspended).map(s => s.account_id)
+        settings.filter((setting) => setting.suspended).map((setting) => setting.account_id)
     );
 
-    // Group by account_id (exclude suspended)
-    const accountIds = new Set(
-        members.map(m => m.account_id).filter(id => !suspendedIds.has(id))
-    );
+    const membersByAccount = new Map<string, TeacherFamilyMemberRow[]>();
+    for (const member of members) {
+        if (suspendedIds.has(member.account_id)) continue;
+
+        const existing = membersByAccount.get(member.account_id);
+        if (existing) {
+            existing.push(member);
+        } else {
+            membersByAccount.set(member.account_id, [member]);
+        }
+    }
+
+    const sessionsByAccount = new Map<string, TeacherSessionRow[]>();
+    for (const session of sessions) {
+        if (suspendedIds.has(session.account_id)) continue;
+
+        const existing = sessionsByAccount.get(session.account_id);
+        if (existing) {
+            existing.push(session);
+        } else {
+            sessionsByAccount.set(session.account_id, [session]);
+        }
+    }
+
     const results: StudentSummary[] = [];
 
-    for (const accountId of accountIds) {
-        const acctMembers = members.filter(m => m.account_id === accountId);
-        const acctSessions = sessions.filter(s => s.account_id === accountId);
+    for (const [accountId, accountMembers] of membersByAccount.entries()) {
+        const accountSessions = sessionsByAccount.get(accountId) ?? [];
 
-        const streak = calculateStreak(acctSessions);
-        const lastActiveDate = acctSessions.length > 0 ? acctSessions[0].date : null;
+        const streak = calculateStreak(accountSessions);
+        const lastActiveDate = accountSessions.length > 0 ? accountSessions[0].date : null;
 
         results.push({
             accountId,
-            members: acctMembers.map(m => ({
-                id: m.id,
-                name: m.name,
-                classLevel: m.class_level,
-                avatarUrl: m.avatar_url || undefined,
+            members: accountMembers.map((member) => ({
+                id: member.id,
+                name: member.name,
+                classLevel: member.class_level,
+                avatarUrl: member.avatar_url || undefined,
             })),
-            sessions: acctSessions.slice(0, 100).map(s => ({
-                id: s.id,
-                date: s.date,
-                startedAt: s.started_at,
-                totalSeconds: s.total_seconds,
-                userIds: (s.user_ids as string[]) ?? [],
+            sessions: accountSessions.slice(0, 100).map((session) => ({
+                id: session.id,
+                date: session.date,
+                startedAt: session.started_at,
+                totalSeconds: session.total_seconds,
+                userIds: session.user_ids ?? [],
             })),
             streak,
-            totalSessions: acctSessions.length,
+            totalSessions: accountSessions.length,
             lastActiveDate,
         });
     }
@@ -130,4 +233,3 @@ export async function teacherDeleteFamilyMember(memberId: string): Promise<void>
     });
     if (error) throw error;
 }
-

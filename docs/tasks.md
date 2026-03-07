@@ -44,7 +44,7 @@
 
 - [ ] 先生メール管理の `user_roles` 移行
 - [x] `initialSync` の逐次 await を並列化
-- [ ] `fetchAllStudents` のページネーション
+- [x] `fetchAllStudents` のページネーション
 - [ ] BGM の本格導入
 - [ ] Figma 前提のデザイン運用
 

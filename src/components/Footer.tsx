@@ -10,6 +10,14 @@ export const Footer: React.FC = () => {
     const currentTab = useAppStore((state) => state.currentTab);
     const setTab = useAppStore((state) => state.setTab);
     const startSession = useAppStore((state) => state.startSession);
+    const handleTabChange = (tabId: TabId) => {
+        if (tabId === currentTab) {
+            return;
+        }
+
+        haptics.tick();
+        setTab(tabId);
+    };
 
     const leftTabs: { id: TabId; icon: React.ElementType; label: string }[] = [
         { id: 'home', icon: Home, label: 'ホーム' },
@@ -46,11 +54,7 @@ export const Footer: React.FC = () => {
             {leftTabs.map(({ id, icon: Icon, label }) => (
                 <button
                     key={id}
-                    onClick={() => {
-                        audio.playTick();
-                        haptics.tick();
-                        setTab(id);
-                    }}
+                    onClick={() => handleTabChange(id)}
                     aria-label={label}
                     aria-current={currentTab === id ? 'page' : undefined}
                     style={{
@@ -100,11 +104,7 @@ export const Footer: React.FC = () => {
             {rightTabs.map(({ id, icon: Icon, label }) => (
                 <button
                     key={id}
-                    onClick={() => {
-                        audio.playTick();
-                        haptics.tick();
-                        setTab(id);
-                    }}
+                    onClick={() => handleTabChange(id)}
                     aria-label={label}
                     aria-current={currentTab === id ? 'page' : undefined}
                     style={{

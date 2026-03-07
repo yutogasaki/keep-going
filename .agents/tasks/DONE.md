@@ -67,6 +67,13 @@
 - テスト: `initial.test.ts` を追加し、`未ログイン時は早期 return`, `preset 除外`, `先行 push を待たずに他カテゴリの同期が始まる` を固定
 - 確認: `npm test -- --run src/lib/sync/__tests__/initial.test.ts`, `npx eslint src/lib/sync/initial.ts src/lib/sync/__tests__/initial.test.ts`, `npx tsc --noEmit`, `npm run build`
 
+## 2026-03-07: fetchAllStudents ページネーション
+- `teacher.ts` にページ取得 helper を追加し、`family_members`, `sessions`, `app_settings` を 1000 件単位で全件取得するよう変更
+- `fetchAllStudents` は `Promise.allSettled` で required / optional query を分け、suspended account を除外しつつ `membersByAccount` / `sessionsByAccount` の Map で集計するよう整理
+- 先生ダッシュボード向けの summary は従来どおり `sessions` を 100 件だけ保持しつつ、`totalSessions` と `lastActiveDate` は全件ベースで計算
+- テスト: `teacher.test.ts` を追加し、`family_members/app_settings` の複数ページ取得、`sessions` の複数ページ取得、suspended account 除外を固定
+- 確認: `npm test -- --run src/lib/__tests__/teacher.test.ts`, `npx eslint src/lib/teacher.ts src/lib/__tests__/teacher.test.ts`, `npx tsc --noEmit`, `npm run build`
+
 ## 2026-03-04: 初回一括改善（52タスク）
 - データ整合性: Syncキュー耐性、Pull保護、Sync失敗UI
 - UX: モーダル置換（ふわふわ名前、キャッシュクリア、削除確認）、認証エラーUI

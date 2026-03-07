@@ -25,8 +25,10 @@ export const RecordPage: React.FC = () => {
     const [exerciseMap, setExerciseMap] = useState<Map<string, { name: string; emoji: string }>>(new Map());
 
     const users = useAppStore((state) => state.users);
+    const currentTab = useAppStore((state) => state.currentTab);
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const sessionUserIdSet = useMemo(() => new Set(sessionUserIds), [sessionUserIds]);
+    const isPageActive = currentTab === 'record';
 
     const currentViewUsers = users.filter((user) => sessionUserIds.includes(user.id));
     const pastFuwafuwas = currentViewUsers.flatMap((user) => user.pastFuwafuwas || []).filter((fuwafuwa) => fuwafuwa.finalStage === 3);
@@ -43,6 +45,10 @@ export const RecordPage: React.FC = () => {
     }, [sessionUserIdSet, sessionUserIds]);
 
     useEffect(() => {
+        if (!isPageActive) {
+            return;
+        }
+
         const load = () => {
             getSessionsByDate(getTodayKey()).then((allToday) => {
                 setTodaySessions(filterSessionsByContext(allToday));
@@ -71,7 +77,7 @@ export const RecordPage: React.FC = () => {
             clearInterval(interval);
             document.removeEventListener('visibilitychange', handleVisibility);
         };
-    }, [filterSessionsByContext]);
+    }, [filterSessionsByContext, isPageActive]);
 
     useEffect(() => {
         const loadExMap = async () => {
