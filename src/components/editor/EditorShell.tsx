@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
+import { useFocusTrap } from '../../hooks/useFocusTrap';
 import {
     COLOR,
     FONT,
@@ -108,51 +109,83 @@ export const EditorShell: React.FC<EditorShellProps> = ({
     title,
     onBack,
     children,
-}) => createPortal(
-    <div
-        style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%)',
-            zIndex: 100,
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '64px 20px 32px 20px',
-            gap: SPACE.xl,
-            overflowY: 'auto',
-        }}
-    >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <button
-                onClick={onBack}
-                style={{
-                    border: 'none',
-                    background: 'none',
-                    cursor: 'pointer',
-                    fontFamily: FONT.body,
-                    fontSize: FONT_SIZE.md,
-                    color: COLOR.muted,
-                }}
-            >
-                ← もどる
-            </button>
-            <h1
-                style={{
-                    fontFamily: FONT.heading,
-                    fontSize: FONT_SIZE['2xl'],
-                    fontWeight: 700,
-                    color: COLOR.dark,
-                    margin: 0,
-                }}
-            >
-                {title}
-            </h1>
-            <div style={{ width: 48 }} />
-        </div>
+}) => {
+    const trapRef = useFocusTrap<HTMLDivElement>(true);
+    const titleId = useId();
 
-        {children}
-    </div>,
-    document.body,
-);
+    useEffect(() => {
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                onBack();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [onBack]);
+
+    return createPortal(
+        <div
+            ref={trapRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            tabIndex={-1}
+            style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%)',
+                zIndex: 100,
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '64px 20px 32px 20px',
+                gap: SPACE.xl,
+                overflowY: 'auto',
+            }}
+        >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <button
+                    type="button"
+                    onClick={onBack}
+                    aria-label="前の画面にもどる"
+                    style={{
+                        border: 'none',
+                        background: 'none',
+                        cursor: 'pointer',
+                        fontFamily: FONT.body,
+                        fontSize: FONT_SIZE.md,
+                        color: COLOR.muted,
+                    }}
+                >
+                    ← もどる
+                </button>
+                <h1
+                    id={titleId}
+                    style={{
+                        fontFamily: FONT.heading,
+                        fontSize: FONT_SIZE['2xl'],
+                        fontWeight: 700,
+                        color: COLOR.dark,
+                        margin: 0,
+                    }}
+                >
+                    {title}
+                </h1>
+                <div style={{ width: 48 }} aria-hidden="true" />
+            </div>
+
+            {children}
+        </div>,
+        document.body,
+    );
+};

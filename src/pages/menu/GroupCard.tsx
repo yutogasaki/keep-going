@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Clock, Download, Edit2, EyeOff, Play, Trash2, Upload } from 'lucide-react';
 import { ExerciseIcon } from '../../components/ExerciseIcon';
@@ -24,6 +24,7 @@ interface GroupCardProps {
 
 export const GroupCard: React.FC<GroupCardProps> = ({ group, index, exerciseMap, creatorName, onTap, onEdit, onDelete, onPublish, onUnpublish, isCustom, isPublished, downloadCount, isTeacher, isNew }) => {
     const [expanded, setExpanded] = useState(false);
+    const detailsId = useId();
 
     const resolveEx = (id: string) => {
         const builtIn = getExerciseById(id);
@@ -38,6 +39,9 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, index, exerciseMap,
         return sum + (ex && ex.type !== 'rest' ? ex.sec : 0);
     }, 0);
     const minutes = Math.ceil(totalSec / 60);
+    const exerciseCount = group.exerciseIds.filter(id => resolveEx(id)?.type !== 'rest').length;
+    const openDetailsLabel = expanded ? `${group.name}の詳細を閉じる` : `${group.name}の詳細を開く`;
+    const playLabel = `${group.name}をはじめる。約${minutes}分、${exerciseCount}種目`;
 
     return (
         <motion.div
@@ -54,140 +58,164 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, index, exerciseMap,
                     alignItems: 'center',
                     gap: 14,
                     padding: '16px 16px',
-                    cursor: 'pointer',
                 }}
-                onClick={onTap}
             >
-                <div style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 16,
-                    background: 'linear-gradient(135deg, #E8F8F0, #FFE5D9)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                }}>
-                    <ExerciseIcon id={group.exerciseIds[0] || 'S01'} emoji={group.emoji} size={24} color="#2BBAA0" />
-                </div>
-
-                <div style={{ flex: 1 }}>
-                    <div style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 16,
-                        fontWeight: 700,
-                        color: '#2D3436',
-                        marginBottom: 2,
-                    }}>
-                        {group.name}
-                        {isTeacher && (
-                            <span style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 9,
-                                fontWeight: 700,
-                                color: '#0984E3',
-                                background: 'rgba(9, 132, 227, 0.1)',
-                                padding: '1px 5px',
-                                borderRadius: 6,
-                                marginLeft: 6,
-                                display: 'inline-block',
-                                verticalAlign: 'middle',
-                            }}>
-                                先生
-                            </span>
-                        )}
-                        {isNew && (
-                            <span style={{
-                                fontFamily: "'Outfit', sans-serif",
-                                fontSize: 9,
-                                fontWeight: 700,
-                                color: '#FFF',
-                                background: '#FF6B6B',
-                                padding: '1px 5px',
-                                borderRadius: 6,
-                                marginLeft: 4,
-                                display: 'inline-block',
-                                verticalAlign: 'middle',
-                            }}>
-                                New
-                            </span>
-                        )}
-                        {creatorName && (
-                            <span style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 10,
-                                fontWeight: 600,
-                                color: '#2BBAA0',
-                                background: 'rgba(43, 186, 160, 0.1)',
-                                padding: '2px 6px',
-                                borderRadius: 8,
-                                marginLeft: 8,
-                                display: 'inline-block',
-                                verticalAlign: 'middle',
-                            }}>
-                                👤 {creatorName}
-                            </span>
-                        )}
-                    </div>
-                    <div style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 12,
-                        color: '#8395A7',
+                <button
+                    type="button"
+                    onClick={onTap}
+                    aria-label={playLabel}
+                    style={{
+                        flex: 1,
                         display: 'flex',
-                        gap: 8,
                         alignItems: 'center',
+                        gap: 14,
+                        border: 'none',
+                        background: 'none',
+                        padding: 0,
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                    }}
+                >
+                    <div style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 16,
+                        background: 'linear-gradient(135deg, #E8F8F0, #FFE5D9)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
                     }}>
-                        <Clock size={12} />
-                        <span>約{minutes}分</span>
-                        <span>·</span>
-                        <span>{group.exerciseIds.filter(id => resolveEx(id)?.type !== 'rest').length}種目</span>
+                        <ExerciseIcon id={group.exerciseIds[0] || 'S01'} emoji={group.emoji} size={24} color="#2BBAA0" />
                     </div>
-                </div>
 
-                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                    {/* Expand button */}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+                    <div style={{ flex: 1 }}>
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 16,
+                            fontWeight: 700,
+                            color: '#2D3436',
+                            marginBottom: 2,
+                        }}>
+                            {group.name}
+                            {isTeacher && (
+                                <span style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    color: '#0984E3',
+                                    background: 'rgba(9, 132, 227, 0.1)',
+                                    padding: '1px 5px',
+                                    borderRadius: 6,
+                                    marginLeft: 6,
+                                    display: 'inline-block',
+                                    verticalAlign: 'middle',
+                                }}>
+                                    先生
+                                </span>
+                            )}
+                            {isNew && (
+                                <span style={{
+                                    fontFamily: "'Outfit', sans-serif",
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    color: '#FFF',
+                                    background: '#FF6B6B',
+                                    padding: '1px 5px',
+                                    borderRadius: 6,
+                                    marginLeft: 4,
+                                    display: 'inline-block',
+                                    verticalAlign: 'middle',
+                                }}>
+                                    New
+                                </span>
+                            )}
+                            {creatorName && (
+                                <span style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 10,
+                                    fontWeight: 600,
+                                    color: '#2BBAA0',
+                                    background: 'rgba(43, 186, 160, 0.1)',
+                                    padding: '2px 6px',
+                                    borderRadius: 8,
+                                    marginLeft: 8,
+                                    display: 'inline-block',
+                                    verticalAlign: 'middle',
+                                }}>
+                                    👤 {creatorName}
+                                </span>
+                            )}
+                        </div>
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 12,
+                            color: '#8395A7',
+                            display: 'flex',
+                            gap: 8,
+                            alignItems: 'center',
+                        }}>
+                            <Clock size={12} aria-hidden="true" />
+                            <span>約{minutes}分</span>
+                            <span aria-hidden="true">·</span>
+                            <span>{exerciseCount}種目</span>
+                        </div>
+                    </div>
+
+                    <div
+                        aria-hidden="true"
                         style={{
                             width: 32,
                             height: 32,
-                            borderRadius: 10,
-                            border: 'none',
-                            background: 'rgba(0,0,0,0.04)',
-                            cursor: 'pointer',
+                            borderRadius: '50%',
+                            background: '#2BBAA0',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                         }}
                     >
-                        <ChevronDown
-                            size={16}
-                            color="#B2BEC3"
-                            style={{
-                                transform: expanded ? 'rotate(180deg)' : 'rotate(0)',
-                                transition: 'transform 0.2s ease',
-                            }}
-                        />
-                    </button>
-                    {/* Play button */}
-                    <div style={{
+                        <Play size={14} color="white" fill="white" />
+                    </div>
+                </button>
+
+                <button
+                    type="button"
+                    onClick={() => setExpanded(!expanded)}
+                    aria-expanded={expanded}
+                    aria-controls={detailsId}
+                    aria-label={openDetailsLabel}
+                    style={{
                         width: 32,
                         height: 32,
-                        borderRadius: '50%',
-                        background: '#2BBAA0',
+                        borderRadius: 10,
+                        border: 'none',
+                        background: 'rgba(0,0,0,0.04)',
+                        cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                    }}>
-                        <Play size={14} color="white" fill="white" />
-                    </div>
-                </div>
+                        flexShrink: 0,
+                    }}
+                >
+                    <ChevronDown
+                        size={16}
+                        color="#B2BEC3"
+                        aria-hidden="true"
+                        style={{
+                            transform: expanded ? 'rotate(180deg)' : 'rotate(0)',
+                            transition: 'transform 0.2s ease',
+                        }}
+                    />
+                </button>
             </div>
 
             {/* Expanded exercise list */}
             <AnimatePresence>
                 {expanded && (
                     <motion.div
+                        id={detailsId}
+                        role="region"
+                        aria-label={`${group.name}の詳細`}
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
@@ -240,7 +268,9 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, index, exerciseMap,
                             {isCustom && (
                                 <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                                     <button
-                                        onClick={(e) => { e.stopPropagation(); onEdit?.(); }}
+                                        type="button"
+                                        onClick={() => onEdit?.()}
+                                        aria-label={`${group.name}をへんしゅう`}
                                         style={{
                                             padding: '6px 12px',
                                             borderRadius: 8,
@@ -259,7 +289,9 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, index, exerciseMap,
                                         へんしゅう
                                     </button>
                                     <button
-                                        onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
+                                        type="button"
+                                        onClick={() => onDelete?.()}
+                                        aria-label={`${group.name}をさくじょ`}
                                         style={{
                                             padding: '6px 12px',
                                             borderRadius: 8,
@@ -279,7 +311,9 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, index, exerciseMap,
                                     </button>
                                     {isPublished ? (
                                         <button
-                                            onClick={(e) => { e.stopPropagation(); onUnpublish?.(); }}
+                                            type="button"
+                                            onClick={() => onUnpublish?.()}
+                                            aria-label={`${group.name}をひこうかいにする`}
                                             style={{
                                                 padding: '6px 12px',
                                                 borderRadius: 8,
@@ -299,7 +333,9 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, index, exerciseMap,
                                         </button>
                                     ) : onPublish && (
                                         <button
-                                            onClick={(e) => { e.stopPropagation(); onPublish(); }}
+                                            type="button"
+                                            onClick={() => onPublish()}
+                                            aria-label={`${group.name}をこうかいする`}
                                             style={{
                                                 padding: '6px 12px',
                                                 borderRadius: 8,

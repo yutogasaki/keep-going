@@ -20,7 +20,10 @@ import {
 } from './stretch-session/SessionScreens';
 
 export const StretchSession: React.FC = () => {
+    const completeSession = useAppStore((state) => state.completeSession);
     const endSession = useAppStore((state) => state.endSession);
+    const sessionReturnTab = useAppStore((state) => state.sessionReturnTab);
+    const setSessionDraft = useAppStore((state) => state.setSessionDraft);
     const users = useAppStore((state) => state.users);
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const sessionExerciseIds = useAppStore((state) => state.sessionExerciseIds);
@@ -81,10 +84,30 @@ export const StretchSession: React.FC = () => {
         sessionExercises,
         setSessionExercises,
         sessionExerciseIds,
-        onSessionFinished: endSession,
+        onSessionFinished: completeSession,
         onAutoCompleteSaveRef: autoCompleteSaveRef,
     });
     const showControlsHint = controlsHintPending && !isBigBreak && !isCounting && !isCompleted && !isLoading;
+
+    useEffect(() => {
+        if (isTeacherPreview || isLoading || sessionExercises.length === 0) {
+            return;
+        }
+
+        setSessionDraft({
+            date: getTodayKey(),
+            exerciseIds: sessionExercises.map((exercise) => exercise.id),
+            userIds: [...sessionUserIds],
+            returnTab: sessionReturnTab,
+        });
+    }, [
+        isLoading,
+        isTeacherPreview,
+        sessionExercises,
+        sessionReturnTab,
+        sessionUserIds,
+        setSessionDraft,
+    ]);
 
     useEffect(() => {
         if (hasSeenSessionControlsHint) {

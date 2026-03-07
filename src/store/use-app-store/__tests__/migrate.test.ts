@@ -90,6 +90,7 @@ function makeCurrentState(overrides: Record<string, any> = {}) {
         hapticEnabled: true,
         joinedChallengeIds: {},
         hasSeenSessionControlsHint: false,
+        sessionDraft: null,
         ...overrides,
     };
 }
@@ -302,6 +303,32 @@ describe('v13 migration (session controls hint flag)', () => {
     });
 });
 
+// ─── v14: 同日再開ドラフト ───────────────────────────
+
+describe('v14 migration (session draft)', () => {
+    it('未定義ならnullをセット', () => {
+        const state = makeCurrentState();
+        delete state.sessionDraft;
+
+        const result = migrateAppState(state, 13);
+        expect(result.sessionDraft).toBeNull();
+    });
+
+    it('既存の正しいdraftを保持する', () => {
+        const state = makeCurrentState({
+            sessionDraft: {
+                date: '2026-03-07',
+                exerciseIds: ['S01'],
+                userIds: ['user-1'],
+                returnTab: 'home',
+            },
+        });
+
+        const result = migrateAppState(state, 13);
+        expect(result.sessionDraft).toEqual(state.sessionDraft);
+    });
+});
+
 // ─── 冪等性: 最新版に再適用しても変化なし ────────────
 
 describe('idempotency', () => {
@@ -316,6 +343,7 @@ describe('idempotency', () => {
         expect(result.bgmEnabled).toBe(state.bgmEnabled);
         expect(result.hapticEnabled).toBe(state.hapticEnabled);
         expect(result.hasSeenSessionControlsHint).toBe(state.hasSeenSessionControlsHint);
+        expect(result.sessionDraft).toBe(state.sessionDraft);
     });
 });
 
@@ -347,6 +375,7 @@ describe('full migration path (v0→current)', () => {
         expect((result.users[0] as any).consumedMagicDate).toBeUndefined();
         expect(result.joinedChallengeIds).toEqual({});
         expect(result.hasSeenSessionControlsHint).toBe(false);
+        expect(result.sessionDraft).toBeNull();
 
         // レガシーフィールドが削除
         expect((result as any).classLevel).toBeUndefined();

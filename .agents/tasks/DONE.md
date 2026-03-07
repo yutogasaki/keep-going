@@ -25,6 +25,36 @@
 - 行数は 3 editor 合計で `1338 -> 1044`、shell 追加後でも net 136 行削減
 - `npx eslint` 対象確認、`npx tsc --noEmit`, `npm run build` を通過
 
+## 2026-03-07: useMenuPageData 分割
+- `useMenuPageData` を `useMenuUsers`, `useTeacherContent`, `useMenuPublishActions`, `useMenuExercises` に分割し、責務ごとの hook へ整理
+- shared 型として `MenuOverrideMap` と `MenuToastMessage` を追加し、teacher override / toast のやり取りを明確化
+- main hook は `540 -> 216` 行に縮小、分割後の関連 hook 合計は 764 行で可読性と変更局所性を優先
+- `npx eslint` 対象確認、`npx tsc --noEmit`, `npm run build` を通過
+
+## 2026-03-07: MenuSettingsSection ロジック分離
+- `MenuSettingsSection` から teacher settings の load / status update / editor / delete state を `useMenuSettingsController` へ移し、画面側は subtab と rendering 中心に整理
+- built-in override と teacher content CRUD の保存処理を hook に集約し、class status 保存は `Promise.all` でまとめて実行する形に揃えた
+- section 本体は `638 -> 331` 行へ縮小、controller hook は 480 行で責務を分離
+- `npx eslint` 対象確認、`npx tsc --noEmit`, `npm run build` を通過
+
+## 2026-03-07: 記録データ強化
+- `sessionRecords` helper を追加し、completed / skipped の回数を `exerciseIds` / `skippedIds` から一元的に正規化するようにした
+- `saveSession`, `saveSessionDirect`, `getAllSessions`, `getSessionsByDate` で normalize を通し、既存記録も読込時に backfill される形で自動記録の集計整合性を揃えた
+- `RecordPage`, `SessionHistorySection`, `challenges`, `fuwafuwa` が同じ helper を使って集計するようになり、種目別回数と内部スキップ情報の解釈ブレを減らした
+- テスト: `sessionRecords.test.ts` を追加し、`npm test -- --run src/lib/__tests__/sessionRecords.test.ts src/lib/__tests__/fuwafuwa.test.ts src/lib/__tests__/db.test.ts`, `npx tsc --noEmit`, `npm run build` を通過
+
+## 2026-03-07: セッション戻り先と同日再開
+- store に `sessionDraft` と `sessionReturnTab` を追加し、同じ日の同じユーザー構成なら FAB から前回のストレッチを先頭から再開できるようにした
+- `startSessionWithExercises` は完了後の戻り先を `home` に固定し、メニューから選んだストレッチ完走後はパッシブなホームへ戻る挙動に整理した
+- `StretchSession` で実際の種目列を draft に保存し、auto complete 時だけ `completeSession()` で return tab へ戻すようにして、手動終了は元の画面に留まるよう分けた
+- テスト: `createState.test.ts` を追加し、`npm test -- --run src/store/use-app-store/__tests__/createState.test.ts src/store/use-app-store/__tests__/migrate.test.ts`, `npx tsc --noEmit`, `npm run build` を通過
+
+## 2026-03-07: アクセシビリティ基礎改善
+- `EditorShell` に `role="dialog"`, `aria-modal`, `aria-labelledby`, focus trap, Escape で閉じる挙動を追加し、full-screen editor でもキーボード操作しやすくした
+- `GroupCard` は主操作を `button` 化し、詳細トグルを別ボタンへ分離して `aria-expanded / aria-controls / region` を付与
+- 編集・削除・公開系の action button に `type="button"` と `aria-label` を追加し、カード内の click-only 操作を減らした
+- 確認: `npx eslint src/components/editor/EditorShell.tsx src/pages/menu/GroupCard.tsx`, `npx tsc --noEmit`, `npm run build`
+
 ## 2026-03-04: 初回一括改善（52タスク）
 - データ整合性: Syncキュー耐性、Pull保護、Sync失敗UI
 - UX: モーダル置換（ふわふわ名前、キャッシュクリア、削除確認）、認証エラーUI

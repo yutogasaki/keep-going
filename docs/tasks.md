@@ -28,15 +28,16 @@
 
 ### 今月やる 10 項目
 
-- [ ] pullAndMerge のコンフリクト処理実装
-- [ ] クラウド pull / 新端末 restore の仕様確定と実装
+- [x] pullAndMerge のコンフリクト処理実装
+- [x] クラウド pull / 新端末 restore の仕様確定と実装
 - [x] `menuGroups` / `customGroups` の循環依存解消
 - [x] React Hook dependency warning 解消
 - [x] TeacherMenuEditor / TeacherExerciseEditor / SingleExerciseEditor の共通シェル化
-- [ ] `useMenuPageData` 分割
-- [ ] MenuSettingsSection のロジック分離
-- [ ] 記録データに種目別回数とスキップ情報を追加
-- [ ] セッション終了後の戻り先と同日再開ルールを整理
+- [x] `useMenuPageData` 分割
+- [x] MenuSettingsSection のロジック分離
+- [x] 記録データに種目別回数とスキップ情報を追加
+- [x] セッション終了後の戻り先と同日再開ルールを整理
+- [x] アクセシビリティ基礎改善（editor modal, GroupCard, focus, aria）
 - [ ] TTS / 音量設定の MVP を決める
 
 ### いまは後ろに置くもの
@@ -128,7 +129,7 @@
 - [x] **グループタップ → 指定種目でセッション開始**
 - [x] **S10 Y字バランス追加**（左右種目、全クラス）
 - [x] クラスレベル連動フィルター
-- [ ] メニューから選んだ種目終了後、パッシブ体験に戻る（仕様§6.4 — 現在はセッション終了のみ）
+- [x] メニューから選んだ種目終了後、パッシブ体験に戻る（仕様§6.4）
 
 ### せってい画面（仕様§11.4）
 - [x] クラス選択（4択）→ Zustand永続化
@@ -160,9 +161,9 @@
 ### 記録・データ仕様（Logic §7 — 部分的）
 - [x] 実施日、合計実行時間 → 保存済み
 - [x] 実施種目ID → 保存済み
-- [ ] **種目ごとの実行回数** → 未保存（Logic §7.1）
-- [ ] **スキップ情報（内部参照）** → 未保存（Logic §7.1）
-- [ ] **記録は完全自動 + ユーザー修正不可** → 保存は自動だがUI上の整合性要確認
+- [x] **種目ごとの実行回数** → `sessionRecords` helper で保存/読込時に正規化（Logic §7.1）
+- [x] **スキップ情報（内部参照）** → `skippedIds` を正規化しつつ内部参照で保持（Logic §7.1）
+- [x] **記録は完全自動 + ユーザー修正不可** → 保存/読込/集計を同一 helper に統一
 
 ### バックエンド・クラウド
 - [x] **Supabase クライアントセットアップ**（`src/lib/supabase.ts`）

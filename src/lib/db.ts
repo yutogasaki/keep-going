@@ -1,5 +1,6 @@
 import localforage from 'localforage';
 import { pushSession as syncPushSession, pushCustomExercise as syncPushCustomExercise, deleteCustomExerciseRemote, getAccountId } from './sync';
+import { normalizeSessionRecord, type SessionCountMap } from './sessionRecords';
 import { useSyncStatus } from '../store/useSyncStatus';
 
 function onSyncError(error: unknown): void {
@@ -15,6 +16,8 @@ export interface SessionRecord {
     totalSeconds: number;
     exerciseIds: string[];
     skippedIds: string[]; // internal only
+    exerciseCounts?: SessionCountMap;
+    skippedCounts?: SessionCountMap;
     userIds?: string[];   // For multi-user support
 }
 
@@ -105,10 +108,11 @@ export function calculateStreak(sessions: { date: string }[]): number {
 
 // History operations
 export async function saveSession(record: SessionRecord): Promise<void> {
-    await historyDB.setItem(record.id, record);
+    const normalized = normalizeSessionRecord(record);
+    await historyDB.setItem(normalized.id, normalized);
     // Dual-write to Supabase if logged in
     if (getAccountId()) {
-        syncPushSession(record).catch(onSyncError);
+        syncPushSession(normalized).catch(onSyncError);
     }
     // Notify listeners (e.g. useHomeSessions) that a new session was saved
     window.dispatchEvent(new Event('sessionSaved'));
@@ -117,7 +121,7 @@ export async function saveSession(record: SessionRecord): Promise<void> {
 export async function getSessionsByDate(date: string): Promise<SessionRecord[]> {
     const sessions: SessionRecord[] = [];
     await historyDB.iterate<SessionRecord, void>((value) => {
-        if (value.date === date) sessions.push(value);
+        if (value.date === date) sessions.push(normalizeSessionRecord(value));
     });
     return sessions;
 }
@@ -125,7 +129,7 @@ export async function getSessionsByDate(date: string): Promise<SessionRecord[]> 
 export async function getAllSessions(): Promise<SessionRecord[]> {
     const sessions: SessionRecord[] = [];
     await historyDB.iterate<SessionRecord, void>((value) => {
-        sessions.push(value);
+        sessions.push(normalizeSessionRecord(value));
     });
     return sessions.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 }
@@ -184,7 +188,8 @@ export async function deleteCustomExercise(id: string): Promise<void> {
 
 // ─── Direct Write helpers (for cloud restore, bypass sync push) ──
 export async function saveSessionDirect(record: SessionRecord): Promise<void> {
-    await historyDB.setItem(record.id, record);
+    const normalized = normalizeSessionRecord(record);
+    await historyDB.setItem(normalized.id, normalized);
 }
 
 export async function saveCustomExerciseDirect(ex: CustomExercise): Promise<void> {

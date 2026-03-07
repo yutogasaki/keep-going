@@ -4,6 +4,7 @@ import { CalendarDays, Home } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { getAllSessions, getCustomExercises, getSessionsByDate, getTodayKey, type SessionRecord } from '../lib/db';
+import { getSessionCompletedExerciseTotal, getSessionExerciseCounts } from '../lib/sessionRecords';
 import { EXERCISES } from '../data/exercises';
 import { fetchTeacherExercises } from '../lib/teacherContent';
 import { useAppStore } from '../store/useAppStore';
@@ -99,8 +100,8 @@ export const RecordPage: React.FC = () => {
 
     const exerciseCounts = new Map<string, number>();
     for (const session of sessions) {
-        for (const exerciseId of session.exerciseIds) {
-            exerciseCounts.set(exerciseId, (exerciseCounts.get(exerciseId) || 0) + 1);
+        for (const [exerciseId, count] of Object.entries(getSessionExerciseCounts(session))) {
+            exerciseCounts.set(exerciseId, (exerciseCounts.get(exerciseId) || 0) + count);
         }
     }
     const topExercises = Array.from(exerciseCounts.entries())
@@ -118,7 +119,10 @@ export const RecordPage: React.FC = () => {
 
     const todayTotalSeconds = todaySessions.reduce((acc, session) => acc + session.totalSeconds, 0);
     const todayMinutes = Math.floor(todayTotalSeconds / 60);
-    const todayExerciseCount = todaySessions.reduce((acc, session) => acc + session.exerciseIds.length, 0);
+    const todayExerciseCount = todaySessions.reduce(
+        (acc, session) => acc + getSessionCompletedExerciseTotal(session),
+        0,
+    );
     const targetSeconds = Math.max(1, effectiveTargetMinutes * 60);
     const progressPercent = Math.min(100, Math.round((todayTotalSeconds / targetSeconds) * 100));
 

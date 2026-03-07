@@ -1,7 +1,8 @@
 import { getTodayKey } from '../../lib/db';
 import type { AppState } from './types';
 
-export const APP_STATE_VERSION = 13;
+export const APP_STATE_VERSION = 14;
+const VALID_TABS = new Set(['home', 'record', 'menu', 'settings']);
 
 export function migrateAppState(persistedState: any, version: number): AppState {
     if (version === 0) {
@@ -139,7 +140,8 @@ export function migrateAppState(persistedState: any, version: number): AppState 
         // consumedMagicDate は不要になったため削除
         if (persistedState.users && Array.isArray(persistedState.users)) {
             persistedState.users = persistedState.users.map((user: any) => {
-                const { consumedMagicDate: _, ...rest } = user;
+                const rest = { ...user };
+                delete rest.consumedMagicDate;
                 return rest;
             });
         }
@@ -147,6 +149,28 @@ export function migrateAppState(persistedState: any, version: number): AppState 
 
     if (version < 13) {
         persistedState.hasSeenSessionControlsHint = persistedState.hasSeenSessionControlsHint ?? false;
+    }
+
+    if (version < 14) {
+        const draft = persistedState.sessionDraft;
+        if (
+            draft
+            && typeof draft === 'object'
+            && typeof draft.date === 'string'
+            && Array.isArray(draft.exerciseIds)
+            && Array.isArray(draft.userIds)
+            && typeof draft.returnTab === 'string'
+            && VALID_TABS.has(draft.returnTab)
+        ) {
+            persistedState.sessionDraft = {
+                date: draft.date,
+                exerciseIds: draft.exerciseIds,
+                userIds: draft.userIds,
+                returnTab: draft.returnTab,
+            };
+        } else {
+            persistedState.sessionDraft = null;
+        }
     }
 
     return persistedState as AppState;
@@ -163,6 +187,7 @@ export function partializeAppState(state: AppState): Partial<AppState> {
         notificationsEnabled: state.notificationsEnabled,
         notificationTime: state.notificationTime,
         hasSeenSessionControlsHint: state.hasSeenSessionControlsHint,
+        sessionDraft: state.sessionDraft,
         debugFuwafuwaStage: state.debugFuwafuwaStage,
         debugFuwafuwaType: state.debugFuwafuwaType,
         debugActiveDays: state.debugActiveDays,

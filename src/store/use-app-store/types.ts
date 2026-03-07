@@ -36,6 +36,13 @@ export interface UserProfileStore {
 
 export type TabId = 'home' | 'record' | 'menu' | 'settings';
 
+export interface SessionDraft {
+    date: string;
+    exerciseIds: string[];
+    userIds: string[];
+    returnTab: TabId;
+}
+
 export interface AppState {
     users: UserProfileStore[];
     addUser: (user: Omit<UserProfileStore, 'id' | 'dailyTargetMinutes' | 'excludedExercises' | 'requiredExercises' | 'chibifuwas'>) => void;
@@ -54,11 +61,15 @@ export interface AppState {
     setSessionUserIds: (ids: string[]) => void;
     isInSession: boolean;
     sessionExerciseIds: string[] | null;
+    sessionReturnTab: TabId;
+    sessionDraft: SessionDraft | null;
+    setSessionDraft: (draft: SessionDraft | null) => void;
     isTeacherPreview: boolean;
     startSession: () => void;
     startSessionWithExercises: (ids: string[]) => void;
     startTeacherPreviewSession: (ids: string[]) => void;
     endSession: () => void;
+    completeSession: () => void;
 
     onboardingCompleted: boolean;
     setOnboardingCompleted: (completed: boolean) => void;

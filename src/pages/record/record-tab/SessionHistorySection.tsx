@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
 import type { SessionRecord } from '../../../lib/db';
+import { getSessionCompletedExerciseTotal } from '../../../lib/sessionRecords';
 import { formatDate } from '../recordUtils';
 
 interface SessionHistorySectionProps {
@@ -110,7 +111,7 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
                                 color: '#2D3436',
                                 flex: 1,
                             }}>
-                                {record.exerciseIds.length}種目 · {Math.floor(record.totalSeconds / 60)}分{record.totalSeconds % 60}秒
+                                {getSessionCompletedExerciseTotal(record)}種目 · {Math.floor(record.totalSeconds / 60)}分{record.totalSeconds % 60}秒
                             </span>
                             <span style={{
                                 fontFamily: "'JetBrains Mono', monospace",

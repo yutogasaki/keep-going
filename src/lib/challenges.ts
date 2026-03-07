@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import type { Database } from './supabase-types';
 import { getAccountId } from './sync';
 import { getAllSessions, getTodayKey } from './db';
+import { getSessionExerciseCounts } from './sessionRecords';
 
 export interface Challenge {
     id: string;
@@ -217,10 +218,7 @@ export async function countExerciseInPeriod(
             if (!session.userIds.some(uid => userIds.includes(uid))) continue;
         }
 
-        // Count occurrences of exerciseId in this session
-        for (const eid of session.exerciseIds) {
-            if (eid === exerciseId) count++;
-        }
+        count += getSessionExerciseCounts(session)[exerciseId] ?? 0;
     }
 
     return count;

@@ -1,5 +1,6 @@
 import { getTodayKey } from './db';
 import type { SessionRecord } from './db';
+import { hasCompletedExercises } from './sessionRecords';
 import type { PastFuwafuwaRecord } from '../store/useAppStore';
 
 // 28 days cycle
@@ -38,7 +39,7 @@ export function calculateFuwafuwaStatus(
     // Calculate active days since birth (always needed, even for sayonara)
     // Only count sessions where at least 1 exercise was completed
     const sessionsSinceBirth = sessions.filter(
-        s => s.date >= birthDate && s.date <= getTodayKey() && s.exerciseIds.length >= 1
+        s => s.date >= birthDate && s.date <= getTodayKey() && hasCompletedExercises(s)
     );
     const uniqueActiveDates = new Set(sessionsSinceBirth.map(s => s.date));
     const activeDays = uniqueActiveDates.size;

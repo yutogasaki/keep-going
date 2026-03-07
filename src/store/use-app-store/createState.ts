@@ -1,6 +1,34 @@
 import type { StateCreator } from 'zustand';
 import { getTodayKey } from '../../lib/db';
-import type { AppState, PastFuwafuwaRecord } from './types';
+import type { AppState, PastFuwafuwaRecord, SessionDraft, TabId } from './types';
+
+function hasSameUsers(a: string[], b: string[]): boolean {
+    if (a.length !== b.length) return false;
+    const aSet = new Set(a);
+    return b.every((id) => aSet.has(id));
+}
+
+function resolveSessionReturnTab(currentTab: TabId, sessionReturnTab: TabId): { currentTab: TabId; previousTab: TabId } {
+    if (currentTab === sessionReturnTab) {
+        return { currentTab, previousTab: currentTab };
+    }
+
+    return {
+        currentTab: sessionReturnTab,
+        previousTab: currentTab,
+    };
+}
+
+function getResumableSessionDraft(
+    sessionDraft: SessionDraft | null,
+    sessionUserIds: string[],
+): SessionDraft | null {
+    if (!sessionDraft) return null;
+    if (sessionDraft.date !== getTodayKey()) return null;
+    if (sessionDraft.exerciseIds.length === 0) return null;
+    if (!hasSameUsers(sessionDraft.userIds, sessionUserIds)) return null;
+    return sessionDraft;
+}
 
 export const createAppState: StateCreator<AppState, [], [], AppState> = (set, get) => ({
     users: [],
@@ -82,11 +110,44 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
 
     isInSession: false,
     sessionExerciseIds: null,
+    sessionReturnTab: 'home',
+    sessionDraft: null,
+    setSessionDraft: (sessionDraft) => set({ sessionDraft }),
     isTeacherPreview: false,
-    startSession: () => set({ isInSession: true, sessionExerciseIds: null, isTeacherPreview: false }),
-    startSessionWithExercises: (ids) => set({ isInSession: true, sessionExerciseIds: ids, isTeacherPreview: false }),
-    startTeacherPreviewSession: (ids) => set({ isInSession: true, sessionExerciseIds: ids, isTeacherPreview: true }),
+    startSession: () => set((state) => {
+        const resumableDraft = getResumableSessionDraft(state.sessionDraft, state.sessionUserIds);
+        return {
+            isInSession: true,
+            sessionExerciseIds: resumableDraft?.exerciseIds ?? null,
+            sessionReturnTab: resumableDraft?.returnTab ?? state.currentTab,
+            isTeacherPreview: false,
+        };
+    }),
+    startSessionWithExercises: (ids) => set((state) => ({
+        isInSession: true,
+        sessionExerciseIds: ids,
+        sessionReturnTab: 'home',
+        sessionDraft: {
+            date: getTodayKey(),
+            exerciseIds: ids,
+            userIds: [...state.sessionUserIds],
+            returnTab: 'home',
+        },
+        isTeacherPreview: false,
+    })),
+    startTeacherPreviewSession: (ids) => set((state) => ({
+        isInSession: true,
+        sessionExerciseIds: ids,
+        sessionReturnTab: state.currentTab,
+        isTeacherPreview: true,
+    })),
     endSession: () => set({ isInSession: false, sessionExerciseIds: null, isTeacherPreview: false }),
+    completeSession: () => set((state) => ({
+        ...resolveSessionReturnTab(state.currentTab, state.sessionReturnTab),
+        isInSession: false,
+        sessionExerciseIds: null,
+        isTeacherPreview: false,
+    })),
 
     onboardingCompleted: false,
     setOnboardingCompleted: (completed) => set({ onboardingCompleted: completed }),
