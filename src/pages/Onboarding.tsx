@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 import { getTodayKey } from '../lib/db';
 import { useAuth } from '../contexts/AuthContext';
-import { pullAndMerge } from '../lib/sync/pull';
 import { initialSync } from '../lib/sync/initial';
+import { runPostLoginSync } from '../contexts/auth/syncFlows';
 import { LoginPage } from './LoginPage';
 import { type ClassLevel } from '../data/exercises';
 import { AccountStep } from './onboarding/AccountStep';
@@ -25,31 +25,34 @@ export const Onboarding: React.FC = () => {
     const [selectedClass, setSelectedClass] = useState<ClassLevel | null>(null);
     const [restoreError, setRestoreError] = useState<string | null>(null);
 
-    const { user, signInWithGoogle, loginContext, setLoginContext } = useAuth();
+    const {
+        user,
+        signInWithGoogle,
+        loginContext,
+        requestSyncConflictResolution,
+        setLoginContext,
+    } = useAuth();
 
-    useEffect(() => {
-        if (user && !user.is_anonymous && loginContext === 'onboarding' && step !== 'restoring') {
-            handlePostLogin(user.id);
-        }
-    }, [user, loginContext, step]);
-
-    const handlePostLogin = async (accountId: string) => {
+    const handlePostLogin = useCallback(async (accountId: string) => {
         setStep('restoring');
         setRestoreError(null);
 
         try {
-            const result = await pullAndMerge(accountId);
-            if (result.success && result.hadData) {
+            const result = await runPostLoginSync({
+                accountId,
+                resolveConflict: requestSyncConflictResolution,
+            });
+
+            if (!result.success) {
+                throw new Error(result.error ?? 'sync failed');
+            }
+
+            const restoredState = useAppStore.getState();
+            if (restoredState.onboardingCompleted && restoredState.users.length > 0) {
                 setLoginContext(null);
                 return;
             }
-            // Even if hadData is false, check if onboarding was already completed
-            // (pullAndMerge may have restored settings, or store already has the flag)
-            if (result.success && useAppStore.getState().onboardingCompleted) {
-                console.warn('[onboarding] No cloud data but onboardingCompleted=true, skipping onboarding');
-                setLoginContext(null);
-                return;
-            }
+
             setLoginContext(null);
             setStep('name');
         } catch (error) {
@@ -58,7 +61,13 @@ export const Onboarding: React.FC = () => {
             setLoginContext(null);
             setStep('account');
         }
-    };
+    }, [requestSyncConflictResolution, setLoginContext]);
+
+    useEffect(() => {
+        if (user && !user.is_anonymous && loginContext === 'onboarding' && step !== 'restoring') {
+            void handlePostLogin(user.id);
+        }
+    }, [user, loginContext, step, handlePostLogin]);
 
     const handleGoogleLogin = async () => {
         setLoginContext('onboarding');
@@ -72,7 +81,7 @@ export const Onboarding: React.FC = () => {
 
     const handleEmailLoginSuccess = () => {
         if (user && step !== 'restoring') {
-            handlePostLogin(user.id);
+            void handlePostLogin(user.id);
         }
     };
 

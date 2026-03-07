@@ -11,8 +11,12 @@ interface ModalProps {
     zIndex?: number;
     /** モーダル本体の最大幅 (default: 320) */
     maxWidth?: number;
+    /** 表示位置 (default: center) */
+    align?: 'center' | 'bottom';
     /** aria-label */
     ariaLabel?: string;
+    /** モーダル本体への追加 style */
+    contentStyle?: React.CSSProperties;
     children: React.ReactNode;
 }
 
@@ -35,7 +39,9 @@ export const Modal: React.FC<ModalProps> = ({
     onClose,
     zIndex = Z.modal,
     maxWidth = 320,
+    align = 'center',
     ariaLabel,
+    contentStyle,
     children,
 }) => {
     const trapRef = useFocusTrap<HTMLDivElement>(open);
@@ -56,9 +62,9 @@ export const Modal: React.FC<ModalProps> = ({
                         backdropFilter: 'blur(var(--overlay-blur))',
                         WebkitBackdropFilter: 'blur(var(--overlay-blur))',
                         display: 'flex',
-                        alignItems: 'center',
+                        alignItems: align === 'bottom' ? 'flex-end' : 'center',
                         justifyContent: 'center',
-                        padding: 20,
+                        padding: align === 'bottom' ? 0 : 20,
                     }}
                     onClick={onClose}
                 >
@@ -82,6 +88,7 @@ export const Modal: React.FC<ModalProps> = ({
                             maxWidth,
                             width: '100%',
                             boxShadow: 'var(--shadow-xl)',
+                            ...contentStyle,
                         }}
                     >
                         {children}

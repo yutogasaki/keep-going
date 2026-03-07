@@ -14,11 +14,13 @@ import { checkIsDeveloper, checkIsTeacher } from '../lib/teacher';
 import { initialSync, processQueue, setAccountId, setupOnlineListener } from '../lib/sync';
 import { useAppStore } from '../store/useAppStore';
 import { useSyncStatus } from '../store/useSyncStatus';
+import { SyncConflictModal } from '../components/SyncConflictModal';
 import { createAuthActions } from './auth/authActions';
 import { LOGIN_CONTEXT_KEY } from './auth/constants';
 import { getAppSettingsSnapshot } from './auth/settingsSnapshot';
 import { runSettingsLoginSync } from './auth/syncFlows';
 import type { AuthContextValue, LoginContext } from './auth/types';
+import type { SyncConflictPromptData, SyncConflictResolution } from '../lib/sync';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -35,9 +37,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [authError, setAuthError] = useState<string | null>(null);
+    const [syncConflictPrompt, setSyncConflictPrompt] = useState<SyncConflictPromptData | null>(null);
 
     const hasSyncedRef = useRef(false);
     const prevUserIdRef = useRef<string | null>(null);
+    const syncConflictResolverRef = useRef<((choice: SyncConflictResolution) => void) | null>(null);
 
     const setLoginContext = useCallback((ctx: LoginContext) => {
         setLoginContextState(ctx);
@@ -50,14 +54,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const clearToast = useCallback(() => setToastMessage(null), []);
 
+    const requestSyncConflictResolution = useCallback((prompt: SyncConflictPromptData) => {
+        return new Promise<SyncConflictResolution>((resolve) => {
+            syncConflictResolverRef.current = resolve;
+            setSyncConflictPrompt(prompt);
+        });
+    }, []);
+
+    const resolveSyncConflict = useCallback((choice: SyncConflictResolution) => {
+        syncConflictResolverRef.current?.(choice);
+        syncConflictResolverRef.current = null;
+        setSyncConflictPrompt(null);
+    }, []);
+
     const handleSettingsLogin = useCallback(async (accountId: string) => {
         await runSettingsLoginSync({
             accountId,
+            resolveConflict: requestSyncConflictResolution,
             setIsSyncing,
             setToastMessage,
             setLoginContext,
         });
-    }, [setLoginContext]);
+    }, [requestSyncConflictResolution, setLoginContext]);
 
     const { signUp, signIn, signInWithGoogle, signOut } = useMemo(
         () => createAuthActions({ user, setIsAnonymous, setToastMessage }),
@@ -206,6 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 retryAuth: initAuth,
                 toastMessage,
                 clearToast,
+                requestSyncConflictResolution,
                 signUp,
                 signIn,
                 signInWithGoogle,
@@ -213,6 +232,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }}
         >
             {children}
+            <SyncConflictModal
+                open={syncConflictPrompt != null}
+                localSummary={syncConflictPrompt?.localSummary ?? null}
+                cloudSummary={syncConflictPrompt?.cloudSummary ?? null}
+                onChooseCloud={() => resolveSyncConflict('cloud')}
+                onChooseLocal={() => resolveSyncConflict('local')}
+            />
         </AuthContext.Provider>
     );
 }

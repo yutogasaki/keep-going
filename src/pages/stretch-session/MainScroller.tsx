@@ -83,29 +83,6 @@ export const MainScroller: React.FC<MainScrollerProps> = ({
                 nextExercise={nextExercise}
                 transitionTime={transitionTime}
             />
-
-            <div style={{
-                position: 'absolute',
-                top: 80,
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'center',
-                zIndex: 40,
-                pointerEvents: 'none',
-                opacity: 0.2,
-            }}>
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 12,
-                    color: '#8395A7',
-                }}>
-                    <span>↑</span>
-                    <span>スワイプでも次へ</span>
-                </div>
-            </div>
         </motion.div>
     );
 };

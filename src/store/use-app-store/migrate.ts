@@ -1,7 +1,7 @@
 import { getTodayKey } from '../../lib/db';
 import type { AppState } from './types';
 
-export const APP_STATE_VERSION = 12;
+export const APP_STATE_VERSION = 13;
 
 export function migrateAppState(persistedState: any, version: number): AppState {
     if (version === 0) {
@@ -145,6 +145,10 @@ export function migrateAppState(persistedState: any, version: number): AppState 
         }
     }
 
+    if (version < 13) {
+        persistedState.hasSeenSessionControlsHint = persistedState.hasSeenSessionControlsHint ?? false;
+    }
+
     return persistedState as AppState;
 }
 
@@ -158,6 +162,7 @@ export function partializeAppState(state: AppState): Partial<AppState> {
         hapticEnabled: state.hapticEnabled,
         notificationsEnabled: state.notificationsEnabled,
         notificationTime: state.notificationTime,
+        hasSeenSessionControlsHint: state.hasSeenSessionControlsHint,
         debugFuwafuwaStage: state.debugFuwafuwaStage,
         debugFuwafuwaType: state.debugFuwafuwaType,
         debugActiveDays: state.debugActiveDays,

@@ -102,6 +102,8 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
     setNotificationsEnabled: (notificationsEnabled) => set({ notificationsEnabled }),
     notificationTime: '21:00',
     setNotificationTime: (notificationTime) => set({ notificationTime }),
+    hasSeenSessionControlsHint: false,
+    setHasSeenSessionControlsHint: (hasSeenSessionControlsHint) => set({ hasSeenSessionControlsHint }),
 
     debugFuwafuwaStage: null,
     debugFuwafuwaType: null,

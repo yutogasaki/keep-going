@@ -6,9 +6,19 @@ interface MagicTankProps {
     currentSeconds: number;
     maxSeconds: number;
     onReset?: () => void; // Optional callback for when the tank is full and tapped
+    label?: string;
+    fullLabel?: string;
+    fullHint?: string;
 }
 
-export const MagicTank: React.FC<MagicTankProps> = ({ currentSeconds, maxSeconds, onReset }) => {
+export const MagicTank: React.FC<MagicTankProps> = ({
+    currentSeconds,
+    maxSeconds,
+    onReset,
+    label = 'まほうエネルギーを あつめよう！',
+    fullLabel = 'まほうがいっぱい！✨',
+    fullHint = 'タップしてふわふわに送る',
+}) => {
     // Fill percentage capped at 100%
     const fillPercentage = Math.min((currentSeconds / maxSeconds) * 100, 100);
     const isFull = currentSeconds >= maxSeconds;
@@ -133,11 +143,11 @@ export const MagicTank: React.FC<MagicTankProps> = ({ currentSeconds, maxSeconds
             >
                 {isFull ? (
                     <>
-                        <span>まほうがいっぱい！✨</span>
-                        {onReset && <span style={{ fontSize: 10, color: '#E67E22', opacity: 0.8 }}>タップしてふわふわに送る</span>}
+                        <span>{fullLabel}</span>
+                        {onReset && <span style={{ fontSize: 10, color: '#E67E22', opacity: 0.8 }}>{fullHint}</span>}
                     </>
                 ) : (
-                    'まほうエネルギーを あつめよう！'
+                    label
                 )}
             </motion.div>
         </div>

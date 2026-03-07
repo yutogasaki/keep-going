@@ -1,10 +1,11 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useMemo } from 'react';
 import { FuwafuwaCharacter } from '../../components/FuwafuwaCharacter';
 import { MagicTank } from '../../components/MagicTank';
 import type { SessionRecord } from '../../lib/db';
+import { calculateFuwafuwaStatus } from '../../lib/fuwafuwa';
+import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../lib/styles';
 import type { UserProfileStore } from '../../store/useAppStore';
-import type { PerUserMagic, SwipePage } from './types';
+import type { PerUserMagic } from './types';
 
 interface FuwafuwaHomeCardProps {
     isTogetherMode: boolean;
@@ -12,12 +13,119 @@ interface FuwafuwaHomeCardProps {
     displaySeconds: number;
     targetSeconds: number;
     onTankReset: () => void;
-    swipePages: SwipePage[];
-    currentPageIndex: number;
-    onDragEnd: (_event: unknown, info: { offset: { x: number } }) => void;
-    users: UserProfileStore[];
+    selectedUser: UserProfileStore | null;
+    activeUsers: UserProfileStore[];
     allSessions: SessionRecord[];
+    onSelectUser: (userId: string) => void;
 }
+
+const formatDuration = (seconds: number) => {
+    if (seconds < 60) {
+        return `${seconds}秒`;
+    }
+
+    return `${Math.floor(seconds / 60)}分`;
+};
+
+const getStageLabel = (stage: number) => {
+    if (stage === 1) return 'たまご';
+    if (stage === 2) return 'ようせい';
+    return 'おとな';
+};
+
+const getFamilyMessage = (activeCount: number, displaySeconds: number, targetSeconds: number) => {
+    const remainingSeconds = Math.max(0, targetSeconds - displaySeconds);
+    const peopleLabel = activeCount === 2 ? 'ふたりで' : `${activeCount}にんで`;
+
+    if (displaySeconds >= targetSeconds) {
+        return 'みんな すごい！ まんたんだよ';
+    }
+
+    if (displaySeconds === 0) {
+        return `${peopleLabel} ちからを あわせよう！`;
+    }
+
+    if (remainingSeconds <= 60) {
+        return `${peopleLabel} あと ${formatDuration(remainingSeconds)}！`;
+    }
+
+    return `みんなの まほう、あと ${formatDuration(remainingSeconds)} で まんたん！`;
+};
+
+const getUserMessage = (displaySeconds: number, targetSeconds: number, stage: number, activeDays: number) => {
+    const remainingSeconds = Math.max(0, targetSeconds - displaySeconds);
+
+    if (displaySeconds >= targetSeconds) {
+        return 'わあ！ まほうが いっぱいだよ';
+    }
+
+    if (displaySeconds === 0) {
+        if (stage === 1) {
+            return 'きょうも まってたよ';
+        }
+        return 'いっしょに まほうを あつめよう？';
+    }
+
+    if (stage === 2 && activeDays >= 6) {
+        return 'もうすぐ おおきくなれそう！';
+    }
+
+    if (remainingSeconds <= 60) {
+        return `あと ${formatDuration(remainingSeconds)} で まんたん！`;
+    }
+
+    return `いいかんじ！ あと ${formatDuration(remainingSeconds)} だよ`;
+};
+
+interface SpeechBubbleProps {
+    message: string;
+    accent: 'primary' | 'info';
+}
+
+const SpeechBubble: React.FC<SpeechBubbleProps> = ({ message, accent }) => {
+    const accentColor = accent === 'info' ? COLOR.info : COLOR.primary;
+    const accentBackground = accent === 'info' ? 'rgba(9, 132, 227, 0.08)' : 'rgba(43, 186, 160, 0.08)';
+
+    return (
+        <div
+            style={{
+                position: 'relative',
+                maxWidth: 300,
+                padding: '12px 16px',
+                borderRadius: 20,
+                background: accentBackground,
+                border: `1px solid ${accent === 'info' ? 'rgba(9, 132, 227, 0.15)' : 'rgba(43, 186, 160, 0.16)'}`,
+                boxShadow: '0 8px 20px rgba(0,0,0,0.04)',
+                textAlign: 'center',
+            }}
+        >
+            <div
+                style={{
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.md,
+                    fontWeight: 700,
+                    lineHeight: 1.6,
+                    color: accentColor,
+                }}
+            >
+                {message}
+            </div>
+            <div
+                style={{
+                    position: 'absolute',
+                    left: '50%',
+                    bottom: -7,
+                    width: 14,
+                    height: 14,
+                    background: accentBackground,
+                    borderRight: `1px solid ${accent === 'info' ? 'rgba(9, 132, 227, 0.15)' : 'rgba(43, 186, 160, 0.16)'}`,
+                    borderBottom: `1px solid ${accent === 'info' ? 'rgba(9, 132, 227, 0.15)' : 'rgba(43, 186, 160, 0.16)'}`,
+                    transform: 'translateX(-50%) rotate(45deg)',
+                }}
+            />
+        </div>
+    );
+};
 
 export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     isTogetherMode,
@@ -25,168 +133,370 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     displaySeconds,
     targetSeconds,
     onTankReset,
-    swipePages,
-    currentPageIndex,
-    onDragEnd,
-    users,
+    selectedUser,
+    activeUsers,
     allSessions,
+    onSelectUser,
 }) => {
+    const perUserMagicMap = useMemo(
+        () => new Map(perUserMagic.map((userMagic) => [userMagic.userId, userMagic])),
+        [perUserMagic],
+    );
+
+    const sessionsByUserId = useMemo(
+        () => new Map(
+            activeUsers.map((user) => [
+                user.id,
+                allSessions.filter((session) => !session.userIds || session.userIds.includes(user.id)),
+            ]),
+        ),
+        [activeUsers, allSessions],
+    );
+
+    const familyProgressPercent = Math.min(100, Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100));
+    const familyRemainingSeconds = Math.max(0, targetSeconds - displaySeconds);
+    const selectedUserSessions = selectedUser ? sessionsByUserId.get(selectedUser.id) ?? [] : [];
+    const selectedUserStatus = selectedUser
+        ? calculateFuwafuwaStatus(selectedUser.fuwafuwaBirthDate, selectedUserSessions)
+        : null;
+    const selectedUserMagic = selectedUser ? perUserMagicMap.get(selectedUser.id) : null;
+    const familyMessage = useMemo(
+        () => getFamilyMessage(activeUsers.length, displaySeconds, targetSeconds),
+        [activeUsers.length, displaySeconds, targetSeconds],
+    );
+    const selectedUserMessage = useMemo(
+        () => selectedUserStatus
+            ? getUserMessage(
+                selectedUserMagic?.displaySeconds ?? displaySeconds,
+                selectedUserMagic?.targetSeconds ?? targetSeconds,
+                selectedUserStatus.stage,
+                selectedUserStatus.activeDays,
+            )
+            : '',
+        [displaySeconds, selectedUserMagic, selectedUserStatus, targetSeconds],
+    );
+
     return (
         <div
             style={{
                 width: 'calc(100% - 32px)',
-                maxWidth: 400,
+                maxWidth: 420,
                 background: 'var(--card-bg)',
                 backdropFilter: 'blur(var(--blur-md))',
                 WebkitBackdropFilter: 'blur(var(--blur-md))',
-                borderRadius: 24,
+                borderRadius: RADIUS['3xl'],
                 boxShadow: 'var(--card-shadow)',
                 border: 'var(--glass-border)',
-                padding: '16px 0 20px',
+                padding: '18px 0 22px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
+                gap: isTogetherMode ? SPACE.lg : SPACE.md,
             }}
         >
             {isTogetherMode ? (
-                <div
-                    style={{
-                        display: 'flex',
-                        gap: 16,
-                        justifyContent: 'center',
-                        alignItems: 'flex-start',
-                        marginBottom: 16,
-                    }}
-                >
-                    {perUserMagic.map((userMagic) => (
+                <>
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: SPACE.xs,
+                            width: '100%',
+                            padding: `0 ${SPACE.xl}px`,
+                        }}
+                    >
                         <div
-                            key={userMagic.userId}
+                            style={{
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.sm,
+                                fontWeight: 700,
+                                color: COLOR.info,
+                                background: 'rgba(9, 132, 227, 0.1)',
+                                padding: '6px 12px',
+                                borderRadius: RADIUS.full,
+                            }}
+                        >
+                            みんなの まほうタンク
+                        </div>
+                        <MagicTank
+                            currentSeconds={displaySeconds}
+                            maxSeconds={targetSeconds}
+                            onReset={onTankReset}
+                            label="みんなの まほうを あつめよう！"
+                            fullLabel="みんなの まほうがいっぱい！✨"
+                            fullHint="タップしてみんなのふわふわに送る"
+                        />
+                        <div
                             style={{
                                 display: 'flex',
-                                flexDirection: 'column',
+                                alignItems: 'baseline',
+                                gap: SPACE.sm,
+                                marginTop: -2,
+                            }}
+                        >
+                            <span
+                                style={{
+                                    fontFamily: FONT.heading,
+                                    fontSize: FONT_SIZE['2xl'],
+                                    fontWeight: 800,
+                                    color: COLOR.dark,
+                                }}
+                            >
+                                {familyProgressPercent}%
+                            </span>
+                            <span
+                                style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.sm,
+                                    color: COLOR.text,
+                                }}
+                            >
+                                {formatDuration(displaySeconds)} / {formatDuration(targetSeconds)}
+                            </span>
+                        </div>
+                        <div
+                            style={{
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.sm,
+                                color: familyRemainingSeconds > 0 ? COLOR.text : COLOR.gold,
+                                fontWeight: 600,
+                            }}
+                        >
+                            {familyRemainingSeconds > 0
+                                ? `あと ${formatDuration(familyRemainingSeconds)} で まんたん`
+                                : 'みんなで まんたん！'}
+                        </div>
+                        <div style={{ marginTop: SPACE.sm }}>
+                            <SpeechBubble
+                                message={familyMessage}
+                                accent="info"
+                            />
+                        </div>
+                    </div>
+
+                    <div
+                        style={{
+                            width: '100%',
+                            padding: `0 ${SPACE.lg}px`,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: SPACE.sm,
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: 'flex',
                                 alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: SPACE.md,
+                                padding: `0 ${SPACE.xs}px`,
                             }}
                         >
                             <div
                                 style={{
-                                    transform: 'scale(0.75)',
-                                    transformOrigin: 'top center',
-                                    marginBottom: -33,
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.md,
+                                    fontWeight: 700,
+                                    color: COLOR.dark,
                                 }}
                             >
-                                <MagicTank
-                                    currentSeconds={userMagic.displaySeconds}
-                                    maxSeconds={userMagic.targetSeconds}
-                                    onReset={onTankReset}
-                                />
+                                みんなのふわふわ
                             </div>
-                            <span
-                                style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    color: '#8395A7',
-                                }}
-                            >
-                                {userMagic.userName}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <div style={{ marginBottom: 8 }}>
-                    <MagicTank
-                        currentSeconds={displaySeconds}
-                        maxSeconds={targetSeconds}
-                        onReset={onTankReset}
-                    />
-                </div>
-            )}
-
-            <div style={{ width: '100%', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
-                <motion.div
-                    drag="x"
-                    dragConstraints={{ left: 0, right: 0 }}
-                    dragElastic={0.2}
-                    dragDirectionLock
-                    onDragEnd={onDragEnd}
-                    animate={{ x: `calc(-${currentPageIndex * 100}%)` }}
-                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                    style={{ display: 'flex', width: '100%', alignItems: 'flex-start' }}
-                >
-                    {swipePages.map((page, index) => {
-                        const isTogetherPage = page.kind === 'together';
-                        const renderUsers = isTogetherPage ? users : [page.user];
-
-                        return (
                             <div
-                                key={page.id}
                                 style={{
-                                    width: '100%',
-                                    flexShrink: 0,
-                                    padding: '0 20px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    gap: 8,
-                                    opacity: currentPageIndex === index ? 1 : 0.5,
-                                    transition: 'opacity 0.3s ease',
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.sm,
+                                    color: COLOR.muted,
                                 }}
                             >
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        gap: isTogetherPage ? 12 : 0,
-                                        justifyContent: 'center',
-                                        alignItems: isTogetherPage ? 'flex-start' : 'center',
-                                        width: '100%',
-                                    }}
-                                >
-                                    {renderUsers.map((user) => (
-                                        <div
-                                            key={user.id}
-                                            style={{
-                                                transform: isTogetherPage ? 'scale(0.85)' : 'scale(1)',
-                                                transformOrigin: isTogetherPage ? 'top center' : undefined,
-                                                position: 'relative',
-                                            }}
-                                        >
-                                            <FuwafuwaCharacter
-                                                user={user}
-                                                sessions={allSessions}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
+                                タップでこの子を見る
                             </div>
-                        );
-                    })}
-                </motion.div>
-            </div>
+                        </div>
 
-            {swipePages.length > 1 && (
-                <div
-                    style={{
-                        display: 'flex',
-                        gap: 6,
-                        marginTop: 8,
-                        alignItems: 'center',
-                    }}
-                >
-                    {swipePages.map((_, index) => (
                         <div
-                            key={index}
                             style={{
-                                width: currentPageIndex === index ? 20 : 6,
-                                height: 6,
-                                borderRadius: 3,
-                                background: currentPageIndex === index ? '#2BBAA0' : 'rgba(43, 186, 160, 0.25)',
-                                transition: 'all 0.3s ease',
+                                display: 'flex',
+                                gap: SPACE.md,
+                                overflowX: 'auto',
+                                padding: `4px ${SPACE.xs}px 2px`,
+                                width: '100%',
+                                WebkitOverflowScrolling: 'touch',
+                                scrollSnapType: 'x proximity',
                             }}
+                        >
+                            {activeUsers.map((user) => {
+                                const userMagic = perUserMagicMap.get(user.id);
+                                const userSessions = sessionsByUserId.get(user.id) ?? [];
+                                const status = calculateFuwafuwaStatus(user.fuwafuwaBirthDate, userSessions);
+                                const imagePath = `/ikimono/${user.fuwafuwaType}-${status.stage}.webp`;
+                                const progressPercent = Math.min(
+                                    100,
+                                    Math.round(((userMagic?.displaySeconds ?? 0) / Math.max(1, userMagic?.targetSeconds ?? 1)) * 100),
+                                );
+                                const remainingSeconds = Math.max(0, (userMagic?.targetSeconds ?? 0) - (userMagic?.displaySeconds ?? 0));
+
+                                return (
+                                    <button
+                                        key={user.id}
+                                        type="button"
+                                        onClick={() => onSelectUser(user.id)}
+                                        style={{
+                                            minWidth: 164,
+                                            maxWidth: 164,
+                                            padding: '14px 14px 12px',
+                                            borderRadius: RADIUS.xl,
+                                            border: '1px solid rgba(0,0,0,0.06)',
+                                            background: 'rgba(255,255,255,0.9)',
+                                            boxShadow: '0 6px 20px rgba(0,0,0,0.05)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: SPACE.md,
+                                            cursor: 'pointer',
+                                            textAlign: 'left',
+                                            scrollSnapAlign: 'start',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: SPACE.sm }}>
+                                            <div
+                                                style={{
+                                                    width: 58,
+                                                    height: 58,
+                                                    borderRadius: RADIUS.circle,
+                                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(232,248,240,0.9))',
+                                                    border: '1px solid rgba(43, 186, 160, 0.1)',
+                                                    boxShadow: '0 6px 16px rgba(43, 186, 160, 0.12)',
+                                                    overflow: 'hidden',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                <img
+                                                    src={imagePath}
+                                                    alt={user.name}
+                                                    style={{
+                                                        width: '100%',
+                                                        height: '100%',
+                                                        objectFit: 'cover',
+                                                        transform: 'scale(1.08)',
+                                                    }}
+                                                />
+                                            </div>
+
+                                            <div style={{ minWidth: 0, flex: 1 }}>
+                                                <div
+                                                    style={{
+                                                        fontFamily: FONT.body,
+                                                        fontSize: FONT_SIZE.md,
+                                                        fontWeight: 700,
+                                                        color: COLOR.dark,
+                                                        marginBottom: 2,
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                    }}
+                                                >
+                                                    {user.name}
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        fontFamily: FONT.body,
+                                                        fontSize: FONT_SIZE.sm,
+                                                        color: COLOR.muted,
+                                                        marginBottom: 4,
+                                                    }}
+                                                >
+                                                    {getStageLabel(status.stage)}
+                                                </div>
+                                                <div
+                                                    style={{
+                                                        fontFamily: FONT.body,
+                                                        fontSize: FONT_SIZE.xs,
+                                                        color: COLOR.text,
+                                                    }}
+                                                >
+                                                    {status.activeDays}日 がんばった
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: SPACE.xs }}>
+                                            <div
+                                                style={{
+                                                    width: '100%',
+                                                    height: 8,
+                                                    borderRadius: RADIUS.full,
+                                                    background: 'rgba(43, 186, 160, 0.14)',
+                                                    overflow: 'hidden',
+                                                }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        width: `${progressPercent}%`,
+                                                        height: '100%',
+                                                        borderRadius: RADIUS.full,
+                                                        background: progressPercent >= 100
+                                                            ? 'linear-gradient(135deg, #FFEAA7 0%, #FDCB6E 100%)'
+                                                            : 'linear-gradient(135deg, #2BBAA0 0%, #66D9C2 100%)',
+                                                    }}
+                                                />
+                                            </div>
+                                            <div
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    gap: SPACE.sm,
+                                                    fontFamily: FONT.body,
+                                                    fontSize: FONT_SIZE.xs,
+                                                    color: COLOR.text,
+                                                }}
+                                            >
+                                                <span>{progressPercent}%</span>
+                                                <span>
+                                                    {remainingSeconds > 0 ? `あと ${formatDuration(remainingSeconds)}` : 'まんたん'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </>
+            ) : selectedUser ? (
+                <>
+                    <div style={{ marginBottom: 4 }}>
+                        <MagicTank
+                            currentSeconds={displaySeconds}
+                            maxSeconds={targetSeconds}
+                            onReset={onTankReset}
                         />
-                    ))}
-                </div>
-            )}
+                    </div>
+
+                    <SpeechBubble
+                        message={selectedUserMessage}
+                        accent="primary"
+                    />
+
+                    <div
+                        style={{
+                            width: '100%',
+                            padding: `0 ${SPACE.xl}px`,
+                            display: 'flex',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <FuwafuwaCharacter
+                            user={selectedUser}
+                            sessions={allSessions}
+                        />
+                    </div>
+                </>
+            ) : null}
         </div>
     );
 };

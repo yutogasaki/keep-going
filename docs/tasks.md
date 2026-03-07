@@ -1,8 +1,51 @@
-# KeepGoing — 開発タスク管理
+# KeepGoing — Product Backlog / Spec Gap
+
+> このファイルは product backlog と仕様差分の整理用。
+> Active execution queue は `.agents/tasks/TASKS.md` を使う。
 
 > セッション間で進捗を共有するために `docs/` に保管。
 > 4仕様書（Core v1.4 / UI v7 / Logic v2.0 / Operation v1.0）と照合済み。
-> 最終更新: 2026-02-27
+> 最終更新: 2026-03-07
+
+---
+
+## 2026-03 ブラッシュアップ・ロードマップ
+
+今月は「子どもに楽しい」「保護者に安全」を壊さず、まず信頼性と重い箇所を整える。
+
+| 優先 | 項目 | 狙い | 注意点 |
+|------|------|------|--------|
+| P0 | Sync 競合解決 / pull restore | データ喪失と不信感を防ぐ | 正常系だけでなく既存データと競合時 UX まで決める |
+| P0 | persist / migrate 安全性 | 状態追加時の事故を防ぐ | `types/createState/migrate/test` を常にセットで更新 |
+| P0 | `menuGroups` / `customGroups` 循環依存解消 | build warning を実害化させない | import の責務を整理しないと再発する |
+| P0 | effect warning 解消 | 見えにくい UI バグを減らす | `useEffect` を黙らせるだけの修正は禁止 |
+| P1 | 巨大ファイル分割 | 修正精度と開発速度を上げる | 先に責務を切らないと分割だけで終わる |
+| P1 | セッション再開 / 戻り先の一貫性 | 「終わったあとどうなるか」を明確にする | FAB 方式と仕様差分を整理してから決める |
+| P1 | 記録データ強化 | 保護者と先生に説明しやすくする | 内部ログを増やしすぎると実装が重くなる |
+| P1 | 先生 / 家族 UX の意味明確化 | 誤操作を減らす | 可愛さより明示性を優先する |
+| P2 | アクセシビリティとレスポンシブ | 長期運用の事故を減らす | modal / focus / aria を横断で見る必要がある |
+| P2 | TTS / 音量 / 演出 polish | 継続体験を上げる | 過剰演出で圧を出さない |
+
+### 今月やる 10 項目
+
+- [ ] pullAndMerge のコンフリクト処理実装
+- [ ] クラウド pull / 新端末 restore の仕様確定と実装
+- [x] `menuGroups` / `customGroups` の循環依存解消
+- [x] React Hook dependency warning 解消
+- [x] TeacherMenuEditor / TeacherExerciseEditor / SingleExerciseEditor の共通シェル化
+- [ ] `useMenuPageData` 分割
+- [ ] MenuSettingsSection のロジック分離
+- [ ] 記録データに種目別回数とスキップ情報を追加
+- [ ] セッション終了後の戻り先と同日再開ルールを整理
+- [ ] TTS / 音量設定の MVP を決める
+
+### いまは後ろに置くもの
+
+- [ ] 先生メール管理の `user_roles` 移行
+- [ ] `initialSync` の逐次 await を並列化
+- [ ] `fetchAllStudents` のページネーション
+- [ ] BGM の本格導入
+- [ ] Figma 前提のデザイン運用
 
 ---
 

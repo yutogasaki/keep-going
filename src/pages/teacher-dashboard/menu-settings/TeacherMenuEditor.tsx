@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { Play, Plus, Trash2 } from 'lucide-react';
 import { CLASS_LEVELS, EXERCISES } from '../../../data/exercises';
 import { ExerciseIcon } from '../../../components/ExerciseIcon';
+import {
+    EditorSection,
+    EditorShell,
+    editorLabelStyle,
+    getEditorActionButtonStyle,
+    getEditorSubmitButtonStyle,
+} from '../../../components/editor/EditorShell';
 import type { TeacherMenu, TeacherExercise } from '../../../lib/teacherContent';
 import type { MenuSettingStatus } from '../../../lib/teacherMenuSettings';
 
@@ -92,59 +98,12 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
 
     const canSave = name.trim().length > 0 && exerciseIds.length > 0;
 
-    const cardStyle: React.CSSProperties = { padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' };
-    const labelStyle: React.CSSProperties = {
-        fontFamily: "'Noto Sans JP', sans-serif",
-        fontSize: 13,
-        fontWeight: 700,
-        color: '#2D3436',
-        display: 'block',
-        marginBottom: 12,
-    };
-
-    return createPortal(
-        <div style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%)',
-            zIndex: 100,
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '64px 20px 32px 20px',
-            gap: 20,
-            overflowY: 'auto',
-        }}>
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <button
-                    onClick={onCancel}
-                    style={{
-                        border: 'none',
-                        background: 'none',
-                        cursor: 'pointer',
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 14,
-                        color: '#8395A7',
-                    }}
-                >
-                    ← もどる
-                </button>
-                <h1 style={{
-                    fontFamily: "'Outfit', sans-serif",
-                    fontSize: 20,
-                    fontWeight: 700,
-                    color: '#2D3436',
-                }}>
-                    {initial ? '先生のメニューを編集' : '先生のメニューを作成'}
-                </h1>
-                <div style={{ width: 48 }} />
-            </div>
-
-            {/* Emoji selector */}
-            <div className="card" style={cardStyle}>
-                <label style={labelStyle}>アイコン</label>
+    return (
+        <EditorShell
+            title={initial ? '先生のメニューを編集' : '先生のメニューを作成'}
+            onBack={onCancel}
+        >
+            <EditorSection label="アイコン">
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {EMOJI_OPTIONS.map(e => (
                         <motion.button
@@ -169,11 +128,9 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
                         </motion.button>
                     ))}
                 </div>
-            </div>
+            </EditorSection>
 
-            {/* Name */}
-            <div className="card" style={cardStyle}>
-                <label style={labelStyle}>メニュー名</label>
+            <EditorSection label="メニュー名">
                 <input
                     type="text"
                     value={name}
@@ -193,11 +150,9 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
                         transition: 'all 0.2s',
                     }}
                 />
-            </div>
+            </EditorSection>
 
-            {/* Description */}
-            <div className="card" style={cardStyle}>
-                <label style={labelStyle}>せつめい</label>
+            <EditorSection label="せつめい">
                 <textarea
                     value={description}
                     onChange={e => setDescription(e.target.value)}
@@ -218,17 +173,16 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
                         resize: 'vertical',
                     }}
                 />
-            </div>
+            </EditorSection>
 
-            {/* Selected exercises (chips) */}
-            <div className="card" style={cardStyle}>
+            <EditorSection>
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     marginBottom: 16,
                 }}>
-                    <label style={{ ...labelStyle, marginBottom: 0 }}>
+                    <label style={{ ...editorLabelStyle, marginBottom: 0 }}>
                         えらんだ種目（{exerciseIds.length}）
                     </label>
                 </div>
@@ -303,9 +257,8 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
                         })}
                     </div>
                 )}
-            </div>
+            </EditorSection>
 
-            {/* Exercise picker list (tap to add, duplicates OK) */}
             <div>
                 <label style={{
                     fontFamily: "'Noto Sans JP', sans-serif",
@@ -409,9 +362,7 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
                 </div>
             </div>
 
-            {/* Per-class status */}
-            <div className="card" style={cardStyle}>
-                <label style={labelStyle}>クラスごとの設定</label>
+            <EditorSection label="クラスごとの設定">
                 <div style={{
                     display: 'flex',
                     gap: 6,
@@ -478,33 +429,17 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
                         );
                     })}
                 </div>
-            </div>
+            </EditorSection>
 
             <div style={{ flex: 1 }} />
 
-            {/* Play & Delete buttons (edit mode only) */}
             {initial && (
                 <div style={{ display: 'flex', gap: 8 }}>
                     {onPlay && (
                         <motion.button
                             whileTap={{ scale: 0.97 }}
                             onClick={onPlay}
-                            style={{
-                                flex: 1,
-                                padding: '14px 0',
-                                borderRadius: 16,
-                                border: 'none',
-                                background: 'rgba(43,186,160,0.1)',
-                                color: '#2BBAA0',
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 15,
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 6,
-                            }}
+                            style={getEditorActionButtonStyle('soft')}
                         >
                             <Play size={14} />
                             ためす
@@ -514,21 +449,7 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
                         <motion.button
                             whileTap={{ scale: 0.97 }}
                             onClick={onDelete}
-                            style={{
-                                padding: '14px 20px',
-                                borderRadius: 16,
-                                border: 'none',
-                                background: 'rgba(225,112,85,0.08)',
-                                color: '#E17055',
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 15,
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 6,
-                            }}
+                            style={getEditorActionButtonStyle('danger', false)}
                         >
                             <Trash2 size={14} />
                             削除
@@ -537,33 +458,14 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
                 </div>
             )}
 
-            {/* Save button */}
             <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={handleSubmit}
                 disabled={!canSave || submitting}
-                style={{
-                    position: 'sticky',
-                    bottom: 0,
-                    padding: '16px 0',
-                    borderRadius: 16,
-                    border: 'none',
-                    background: canSave ? 'linear-gradient(135deg, #2BBAA0, #1A937D)' : '#DFE6E9',
-                    color: canSave ? 'white' : '#B2BEC3',
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 16,
-                    fontWeight: 700,
-                    cursor: canSave && !submitting ? 'pointer' : 'not-allowed',
-                    boxShadow: canSave
-                        ? '0 8px 20px rgba(43, 186, 160, 0.3)'
-                        : 'none',
-                    transition: 'all 0.3s ease',
-                    marginTop: 16,
-                }}
+                style={getEditorSubmitButtonStyle(canSave && !submitting)}
             >
                 {submitting ? '保存中...' : initial ? '保存' : '作成'}
             </motion.button>
-        </div>,
-        document.body
+        </EditorShell>
     );
 };

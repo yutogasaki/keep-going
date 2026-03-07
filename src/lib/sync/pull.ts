@@ -1,16 +1,16 @@
 import { supabase } from '../supabase';
+import type { Database } from '../supabase-types';
 import type { CustomExercise, SessionRecord } from '../db';
 import {
+    clearCustomExercisesDB,
+    clearHistoryDB,
     getAllSessions,
     getCustomExercises,
     saveCustomExerciseDirect,
     saveSessionDirect,
 } from '../db';
-import {
-    getCustomGroups,
-    saveCustomGroupDirect,
-    type MenuGroup,
-} from '../../data/menuGroups';
+import { clearGroupsDB, getCustomGroups, saveCustomGroupDirect } from '../customGroups';
+import type { MenuGroup } from '../../data/menuGroups';
 import type { UserProfileStore } from '../../store/useAppStore';
 import {
     toLocalCustomExercise,
@@ -20,7 +20,10 @@ import {
 } from './mappers';
 import { isPulling, setPulling } from './authState';
 import { getRegisteredStoreState, setRegisteredStoreState } from './storeAccess';
-import { pushSession, pushCustomExercise, pushMenuGroup, pushFamilyMember } from './push';
+import { pushCustomExercise, pushFamilyMember, pushMenuGroup, pushSession } from './push';
+
+type CloudFamilyMember = Database['public']['Tables']['family_members']['Row'];
+type CloudAppSettings = Database['public']['Tables']['app_settings']['Row'];
 
 export interface PullResult {
     success: boolean;
@@ -28,148 +31,320 @@ export interface PullResult {
     hadData: boolean;
 }
 
+export interface CloudSyncSnapshot {
+    families: CloudFamilyMember[];
+    sessions: SessionRecord[];
+    exercises: CustomExercise[];
+    groups: MenuGroup[];
+    settings: CloudAppSettings | null;
+}
+
+interface PullOptions {
+    pushLocalOnly?: boolean;
+}
+
+function getLocalStateRecord(): Record<string, unknown> {
+    return (getRegisteredStoreState() ?? {}) as Record<string, unknown>;
+}
+
+function getLocalUsers(localState: Record<string, unknown>): UserProfileStore[] {
+    return Array.isArray(localState['users']) ? (localState['users'] as UserProfileStore[]) : [];
+}
+
+function getStringArray(value: unknown): string[] {
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function getNumber(value: unknown, fallback: number): number {
+    return typeof value === 'number' ? value : fallback;
+}
+
+function getBoolean(value: unknown, fallback: boolean): boolean {
+    return typeof value === 'boolean' ? value : fallback;
+}
+
+function getString(value: unknown, fallback: string): string {
+    return typeof value === 'string' ? value : fallback;
+}
+
+function deriveSessionUserIds(localState: Record<string, unknown>, users: UserProfileStore[]): string[] {
+    const existing = getStringArray(localState['sessionUserIds']);
+    const valid = existing.filter((id) => users.some((user) => user.id === id));
+    if (valid.length > 0) {
+        return valid;
+    }
+    return users[0] ? [users[0].id] : [];
+}
+
+function filterJoinedChallengeIds(
+    localState: Record<string, unknown>,
+    users: UserProfileStore[],
+): Record<string, string[]> {
+    const source = localState['joinedChallengeIds'];
+    if (!source || typeof source !== 'object') {
+        return {};
+    }
+
+    const validUserIds = new Set(users.map((user) => user.id));
+    const result: Record<string, string[]> = {};
+
+    for (const [userId, value] of Object.entries(source as Record<string, unknown>)) {
+        if (!validUserIds.has(userId)) continue;
+        result[userId] = getStringArray(value);
+    }
+
+    return result;
+}
+
+export function buildRestoredStoreState({
+    localState,
+    users,
+    settings,
+}: {
+    localState: Record<string, unknown>;
+    users: UserProfileStore[];
+    settings: CloudAppSettings | null;
+}): Record<string, unknown> {
+    const hasUsers = users.length > 0;
+
+    return {
+        users,
+        sessionUserIds: deriveSessionUserIds(localState, users),
+        joinedChallengeIds: filterJoinedChallengeIds(localState, users),
+        onboardingCompleted: hasUsers
+            ? settings?.onboarding_completed ?? true
+            : false,
+        soundVolume: settings?.sound_volume ?? getNumber(localState['soundVolume'], 1.0),
+        ttsEnabled: settings?.tts_enabled ?? getBoolean(localState['ttsEnabled'], true),
+        bgmEnabled: settings?.bgm_enabled ?? getBoolean(localState['bgmEnabled'], true),
+        hapticEnabled: settings?.haptic_enabled ?? getBoolean(localState['hapticEnabled'], true),
+        notificationsEnabled: settings?.notifications_enabled ?? getBoolean(localState['notificationsEnabled'], false),
+        notificationTime: settings?.notification_time ?? getString(localState['notificationTime'], '21:00'),
+    };
+}
+
+function buildMergedSettingsState(
+    localState: Record<string, unknown>,
+    settings: CloudAppSettings | null,
+): Record<string, unknown> {
+    return {
+        onboardingCompleted: settings?.onboarding_completed ?? getBoolean(localState['onboardingCompleted'], false),
+        soundVolume: settings?.sound_volume ?? getNumber(localState['soundVolume'], 1.0),
+        ttsEnabled: settings?.tts_enabled ?? getBoolean(localState['ttsEnabled'], true),
+        bgmEnabled: settings?.bgm_enabled ?? getBoolean(localState['bgmEnabled'], true),
+        hapticEnabled: settings?.haptic_enabled ?? getBoolean(localState['hapticEnabled'], true),
+        notificationsEnabled: settings?.notifications_enabled ?? getBoolean(localState['notificationsEnabled'], false),
+        notificationTime: settings?.notification_time ?? getString(localState['notificationTime'], '21:00'),
+    };
+}
+
+export async function fetchCloudSyncSnapshot(accountId: string): Promise<CloudSyncSnapshot> {
+    if (!supabase) {
+        return {
+            families: [],
+            sessions: [],
+            exercises: [],
+            groups: [],
+            settings: null,
+        };
+    }
+
+    const [familyRes, sessionsRes, exercisesRes, groupsRes, settingsRes] = await Promise.all([
+        supabase.from('family_members').select('*').eq('account_id', accountId),
+        supabase.from('sessions').select('*').eq('account_id', accountId),
+        supabase.from('custom_exercises').select('*').eq('account_id', accountId),
+        supabase.from('menu_groups').select('*').eq('account_id', accountId),
+        supabase.from('app_settings').select('*').eq('account_id', accountId).maybeSingle(),
+    ]);
+
+    if (familyRes.error) throw new Error(`family_members: ${familyRes.error.message}`);
+    if (sessionsRes.error) throw new Error(`sessions: ${sessionsRes.error.message}`);
+    if (exercisesRes.error) throw new Error(`custom_exercises: ${exercisesRes.error.message}`);
+    if (groupsRes.error) throw new Error(`menu_groups: ${groupsRes.error.message}`);
+    if (settingsRes.error) throw new Error(`app_settings: ${settingsRes.error.message}`);
+
+    return {
+        families: familyRes.data ?? [],
+        sessions: (sessionsRes.data ?? []).map(toLocalSessionRecord),
+        exercises: (exercisesRes.data ?? []).map(toLocalCustomExercise),
+        groups: (groupsRes.data ?? [])
+            .filter((group) => !group.is_preset)
+            .map(toLocalCustomMenuGroup),
+        settings: settingsRes.data,
+    };
+}
+
+async function applyCloudSnapshot(snapshot: CloudSyncSnapshot): Promise<void> {
+    const localState = getLocalStateRecord();
+    const users = snapshot.families.map((family) => toLocalUserFromCloudFamily(family));
+
+    await Promise.all([
+        clearHistoryDB(),
+        clearCustomExercisesDB(),
+        clearGroupsDB(),
+    ]);
+
+    await Promise.all(snapshot.sessions.map((record) => saveSessionDirect(record)));
+    await Promise.all(snapshot.exercises.map((exercise) => saveCustomExerciseDirect(exercise)));
+    await Promise.all(snapshot.groups.map((group) => saveCustomGroupDirect(group)));
+
+    setRegisteredStoreState(buildRestoredStoreState({
+        localState,
+        users,
+        settings: snapshot.settings,
+    }));
+}
+
 /**
- * Union-merge sync: fetches cloud data, merges with local, pushes local-only items up.
- * - Sessions: append-only union (both cloud + local kept)
- * - Exercises / Groups: cloud wins on same ID, local-only pushed to cloud
- * - Users: cloud wins with local fuwafuwa array merge
- * - Settings: cloud wins (fallback to local if null)
+ * Cloud restore: replace local sync data with the cloud snapshot.
+ * This is used for new-device restore and explicit "use cloud" conflict resolution.
  */
-export async function pullAndMerge(accountId: string): Promise<PullResult> {
+export async function restoreFromCloud(accountId: string): Promise<PullResult> {
     if (!supabase) {
         return { success: false, error: 'Supabase not configured', hadData: false };
     }
 
-    // Guard against concurrent pulls
     if (isPulling()) {
-        console.warn('[sync] pullAndMerge already in progress, skipping');
+        console.warn('[sync] restoreFromCloud already in progress, skipping');
         return { success: false, error: 'Pull already in progress', hadData: false };
     }
 
     setPulling(true);
 
     try {
-        const [familyRes, sessionsRes, exercisesRes, groupsRes, settingsRes] = await Promise.all([
-            supabase.from('family_members').select('*').eq('account_id', accountId),
-            supabase.from('sessions').select('*').eq('account_id', accountId),
-            supabase.from('custom_exercises').select('*').eq('account_id', accountId),
-            supabase.from('menu_groups').select('*').eq('account_id', accountId),
-            supabase.from('app_settings').select('*').eq('account_id', accountId).maybeSingle(),
-        ]);
+        const snapshot = await fetchCloudSyncSnapshot(accountId);
+        await applyCloudSnapshot(snapshot);
 
-        if (familyRes.error) throw new Error(`family_members: ${familyRes.error.message}`);
-        if (sessionsRes.error) throw new Error(`sessions: ${sessionsRes.error.message}`);
-        if (exercisesRes.error) throw new Error(`custom_exercises: ${exercisesRes.error.message}`);
-        if (groupsRes.error) throw new Error(`menu_groups: ${groupsRes.error.message}`);
-        if (settingsRes.error) throw new Error(`app_settings: ${settingsRes.error.message}`);
+        const hadData = snapshot.families.length > 0 ||
+            snapshot.sessions.length > 0 ||
+            snapshot.exercises.length > 0 ||
+            snapshot.groups.length > 0 ||
+            snapshot.settings != null;
 
-        const families = familyRes.data ?? [];
-        const cloudSessions: SessionRecord[] = (sessionsRes.data ?? []).map(toLocalSessionRecord);
-        const cloudExercises: CustomExercise[] = (exercisesRes.data ?? []).map(toLocalCustomExercise);
-        const cloudGroups: MenuGroup[] = (groupsRes.data ?? [])
-            .filter((g) => !g.is_preset)
-            .map(toLocalCustomMenuGroup);
-        const cloudSettings = settingsRes.data;
+        return { success: true, hadData };
+    } catch (error) {
+        console.error('[sync] restoreFromCloud failed:', error);
+        return { success: false, error: String(error), hadData: false };
+    } finally {
+        setPulling(false);
+    }
+}
 
-        // --- Sessions: union merge ---
+/**
+ * Union-merge sync: fetches cloud data, merges with local, and optionally pushes local-only items up.
+ * - Sessions: append-only union (both cloud + local kept)
+ * - Exercises / Groups: cloud wins on same ID, local-only pushed to cloud when enabled
+ * - Users: cloud wins with local array merge, local-only users can be pushed when enabled
+ * - Settings: cloud wins (fallback to local if null)
+ */
+export async function pullAndMerge(
+    accountId: string,
+    options: PullOptions = {},
+): Promise<PullResult> {
+    if (!supabase) {
+        return { success: false, error: 'Supabase not configured', hadData: false };
+    }
+
+    if (isPulling()) {
+        console.warn('[sync] pullAndMerge already in progress, skipping');
+        return { success: false, error: 'Pull already in progress', hadData: false };
+    }
+
+    const pushLocalOnly = options.pushLocalOnly ?? true;
+    setPulling(true);
+
+    try {
+        const snapshot = await fetchCloudSyncSnapshot(accountId);
+        const cloudSessions = snapshot.sessions;
+        const cloudExercises = snapshot.exercises;
+        const cloudGroups = snapshot.groups;
+        const cloudSettings = snapshot.settings;
+
         const localSessions = await getAllSessions();
-        const localSessionIds = new Set(localSessions.map((s) => s.id));
-        const cloudSessionIds = new Set(cloudSessions.map((s) => s.id));
+        const localSessionIds = new Set(localSessions.map((session) => session.id));
+        const cloudSessionIds = new Set(cloudSessions.map((session) => session.id));
 
-        for (const cs of cloudSessions) {
-            if (!localSessionIds.has(cs.id)) {
-                await saveSessionDirect(cs);
-            }
-        }
-        for (const ls of localSessions) {
-            if (!cloudSessionIds.has(ls.id)) {
-                pushSession(ls).catch(() => {}); // fire-and-forget, queue handles retries
+        for (const cloudSession of cloudSessions) {
+            if (!localSessionIds.has(cloudSession.id)) {
+                await saveSessionDirect(cloudSession);
             }
         }
 
-        // --- Exercises: cloud wins, push local-only ---
+        if (pushLocalOnly) {
+            for (const localSession of localSessions) {
+                if (!cloudSessionIds.has(localSession.id)) {
+                    pushSession(localSession).catch(() => {});
+                }
+            }
+        }
+
         const localExercises = await getCustomExercises();
-        const cloudExerciseIds = new Set(cloudExercises.map((e) => e.id));
+        const cloudExerciseIds = new Set(cloudExercises.map((exercise) => exercise.id));
 
-        for (const ce of cloudExercises) {
-            await saveCustomExerciseDirect(ce);
+        for (const cloudExercise of cloudExercises) {
+            await saveCustomExerciseDirect(cloudExercise);
         }
-        for (const le of localExercises) {
-            if (!cloudExerciseIds.has(le.id)) {
-                pushCustomExercise(le).catch(() => {});
+
+        if (pushLocalOnly) {
+            for (const localExercise of localExercises) {
+                if (!cloudExerciseIds.has(localExercise.id)) {
+                    pushCustomExercise(localExercise).catch(() => {});
+                }
             }
         }
 
-        // --- Groups: cloud wins, push local-only ---
         const localGroups = await getCustomGroups();
-        const cloudGroupIds = new Set(cloudGroups.map((g) => g.id));
+        const cloudGroupIds = new Set(cloudGroups.map((group) => group.id));
 
-        for (const cg of cloudGroups) {
-            await saveCustomGroupDirect(cg);
+        for (const cloudGroup of cloudGroups) {
+            await saveCustomGroupDirect(cloudGroup);
         }
-        for (const lg of localGroups) {
-            if (!lg.isPreset && !cloudGroupIds.has(lg.id)) {
-                pushMenuGroup(lg).catch(() => {});
+
+        if (pushLocalOnly) {
+            for (const localGroup of localGroups) {
+                if (!localGroup.isPreset && !cloudGroupIds.has(localGroup.id)) {
+                    pushMenuGroup(localGroup).catch(() => {});
+                }
             }
         }
 
-        // --- Users: cloud wins with local array merge ---
-        const localState = (getRegisteredStoreState() ?? {}) as Record<string, unknown>;
+        const localState = getLocalStateRecord();
+        const localUsers = getLocalUsers(localState);
 
-        if (families.length > 0) {
-            const localUsers = (localState['users'] ?? []) as UserProfileStore[];
-
-            const cloudUserIds = new Set(families.map((f) => f.id));
-            const users: UserProfileStore[] = families.map((family) => {
-                const localUser = localUsers.find((u) => u.id === family.id);
+        if (snapshot.families.length > 0) {
+            const cloudUserIds = new Set(snapshot.families.map((family) => family.id));
+            const users: UserProfileStore[] = snapshot.families.map((family) => {
+                const localUser = localUsers.find((user) => user.id === family.id);
                 return toLocalUserFromCloudFamily(family, localUser);
             });
 
-            // Keep local-only users and push them to cloud
-            for (const lu of localUsers) {
-                if (!cloudUserIds.has(lu.id)) {
-                    users.push(lu);
-                    pushFamilyMember(lu).catch(() => {});
+            if (pushLocalOnly) {
+                for (const localUser of localUsers) {
+                    if (!cloudUserIds.has(localUser.id)) {
+                        users.push(localUser);
+                        pushFamilyMember(localUser).catch(() => {});
+                    }
                 }
             }
 
-            // Preserve existing sessionUserIds if they are valid, otherwise default to first user
-            const existingSessionUserIds = (localState['sessionUserIds'] ?? []) as string[];
-            const validSessionUserIds = existingSessionUserIds.filter((id) =>
-                users.some((u) => u.id === id),
-            );
-            const sessionUserIds = validSessionUserIds.length > 0
-                ? validSessionUserIds
-                : [users[0]?.id].filter(Boolean);
-
             setRegisteredStoreState({
+                ...buildMergedSettingsState(localState, cloudSettings),
                 users,
-                sessionUserIds,
-                onboardingCompleted: cloudSettings?.onboarding_completed ?? localState['onboardingCompleted'] ?? true,
-                soundVolume: cloudSettings?.sound_volume ?? localState['soundVolume'] ?? 1.0,
-                ttsEnabled: cloudSettings?.tts_enabled ?? localState['ttsEnabled'] ?? true,
-                bgmEnabled: cloudSettings?.bgm_enabled ?? localState['bgmEnabled'] ?? true,
-                hapticEnabled: cloudSettings?.haptic_enabled ?? localState['hapticEnabled'] ?? true,
-                notificationsEnabled: cloudSettings?.notifications_enabled ?? localState['notificationsEnabled'] ?? false,
-                notificationTime: cloudSettings?.notification_time ?? localState['notificationTime'] ?? '21:00',
+                sessionUserIds: deriveSessionUserIds(localState, users),
+                joinedChallengeIds: filterJoinedChallengeIds(localState, users),
+                onboardingCompleted: cloudSettings?.onboarding_completed ?? true,
             });
         } else if (cloudSettings) {
-            // No family members but cloud settings exist — restore settings
-            // This handles the case where a user logs in on a new browser
-            // and family_members sync failed but settings were saved
             console.warn('[sync] No family_members but cloud settings found, restoring settings only');
-            setRegisteredStoreState({
-                onboardingCompleted: cloudSettings.onboarding_completed ?? localState['onboardingCompleted'] ?? true,
-                soundVolume: cloudSettings.sound_volume ?? localState['soundVolume'] ?? 1.0,
-                ttsEnabled: cloudSettings.tts_enabled ?? localState['ttsEnabled'] ?? true,
-                bgmEnabled: cloudSettings.bgm_enabled ?? localState['bgmEnabled'] ?? true,
-                hapticEnabled: cloudSettings.haptic_enabled ?? localState['hapticEnabled'] ?? true,
-                notificationsEnabled: cloudSettings.notifications_enabled ?? localState['notificationsEnabled'] ?? false,
-                notificationTime: cloudSettings.notification_time ?? localState['notificationTime'] ?? '21:00',
-            });
+            setRegisteredStoreState(buildMergedSettingsState(localState, cloudSettings));
         }
 
-        const hadData = families.length > 0 || cloudSessions.length > 0 || cloudSettings != null;
+        const hadData = snapshot.families.length > 0 ||
+            cloudSessions.length > 0 ||
+            cloudExercises.length > 0 ||
+            cloudGroups.length > 0 ||
+            cloudSettings != null;
+
         return { success: true, hadData };
     } catch (error) {
         console.error('[sync] pullAndMerge failed:', error);

@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { ExerciseIcon } from '../../components/ExerciseIcon';
 import { EXERCISES } from '../../data/exercises';
-import type { CustomExercise } from '../../lib/db';
-import type { TeacherExercise } from '../../lib/teacherContent';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import type { CustomExercise } from '../../lib/db';
+import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE, Z } from '../../lib/styles';
+import type { TeacherExercise } from '../../lib/teacherContent';
 
 interface CustomMenuModalProps {
     show: boolean;
@@ -24,6 +25,27 @@ interface CustomMenuModalProps {
     onSetRequiredExercises: (ids: string[]) => void;
 }
 
+type FilterId = 'all' | 'changed' | 'teacher' | 'custom';
+type MenuExercise = (typeof EXERCISES)[number] | TeacherExercise | CustomExercise;
+
+const FILTER_OPTIONS: Array<{ id: FilterId; label: string }> = [
+    { id: 'all', label: 'ぜんぶ' },
+    { id: 'changed', label: '変更あり' },
+    { id: 'teacher', label: '先生' },
+    { id: 'custom', label: 'じぶん種目' },
+];
+
+const getDescription = (exercise: MenuExercise) =>
+    'description' in exercise && typeof exercise.description === 'string'
+        ? exercise.description
+        : '';
+
+const isTeacherExercise = (exercise: MenuExercise): exercise is TeacherExercise =>
+    'classLevels' in exercise;
+
+const isCustomExercise = (exercise: MenuExercise): exercise is CustomExercise =>
+    'creatorId' in exercise;
+
 export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
     show,
     isTogetherMode,
@@ -41,7 +63,84 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
     onSetRequiredExercises,
 }) => {
     const trapRef = useFocusTrap<HTMLDivElement>(show);
+    const [query, setQuery] = useState('');
+    const [filter, setFilter] = useState<FilterId>('all');
+
     if (!show) return null;
+
+    const normalizedQuery = query.trim().toLowerCase();
+
+    const exerciseItems = [...EXERCISES, ...(teacherExercises ?? []), ...customExercises]
+        .filter((exercise) => !teacherHiddenExerciseIds?.has(exercise.id))
+        .sort((a, b) => {
+            const aRest = 'type' in a && a.type === 'rest' ? 1 : 0;
+            const bRest = 'type' in b && b.type === 'rest' ? 1 : 0;
+            return aRest - bRest;
+        })
+        .map((exercise) => {
+            const isRest = 'type' in exercise && exercise.type === 'rest';
+            const isTeacherRequired = teacherRequiredExerciseIds?.has(exercise.id) ?? false;
+            const isTeacherExcluded = teacherExcludedExerciseIds?.has(exercise.id) ?? false;
+            const isUserRequired = requiredExercises.includes(exercise.id);
+            const isUserExcluded = excludedExercises.includes(exercise.id);
+            const isRequired = isUserRequired || (isTeacherRequired && !isUserExcluded);
+            const isExcluded = !isRequired && (isUserExcluded || (isTeacherExcluded && !isUserRequired));
+            const teacherBadge = isTeacherRequired ? '先生: 必須' : isTeacherExcluded ? '先生: 除外' : null;
+            const userBadge = isUserRequired ? 'じぶん: 必須' : isUserExcluded ? 'じぶん: 除外' : null;
+            const description = getDescription(exercise);
+            const source = isTeacherExercise(exercise)
+                ? 'teacher'
+                : isCustomExercise(exercise)
+                    ? 'custom'
+                    : 'builtIn';
+            const sourceLabel = source === 'teacher' ? '先生' : source === 'custom' ? 'じぶん種目' : null;
+            const hasAdjustment = isTeacherRequired || isTeacherExcluded || isUserRequired || isUserExcluded;
+            const helperText = userBadge
+                ?? teacherBadge
+                ?? (isRest ? 'きゅうけい種目' : 'いまは おまかせ');
+
+            const querySource = [
+                exercise.name,
+                description,
+                helperText,
+                sourceLabel,
+            ]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
+
+            const matchesQuery = normalizedQuery.length === 0 || querySource.includes(normalizedQuery);
+            const matchesFilter = filter === 'all'
+                || (filter === 'changed' && hasAdjustment)
+                || (filter === 'teacher' && (source === 'teacher' || isTeacherRequired || isTeacherExcluded))
+                || (filter === 'custom' && source === 'custom');
+
+            return {
+                exercise,
+                isRest,
+                isTeacherRequired,
+                isTeacherExcluded,
+                isUserRequired,
+                isUserExcluded,
+                isRequired,
+                isExcluded,
+                teacherBadge,
+                userBadge,
+                helperText,
+                sourceLabel,
+                source,
+                matchesQuery,
+                matchesFilter,
+            };
+        });
+
+    const visibleItems = exerciseItems.filter((item) => item.matchesQuery && item.matchesFilter);
+    const configurableItems = exerciseItems.filter((item) => !item.isRest);
+    const requiredCount = configurableItems.filter((item) => item.isRequired).length;
+    const excludedCount = configurableItems.filter((item) => item.isExcluded).length;
+    const changedCount = configurableItems.filter(
+        (item) => item.isTeacherRequired || item.isTeacherExcluded || item.isUserRequired || item.isUserExcluded,
+    ).length;
 
     return createPortal(
         <div
@@ -52,38 +151,44 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
             style={{
                 position: 'fixed',
                 inset: 0,
-                background: 'rgb(248, 249, 250)',
-                zIndex: 200,
+                background: COLOR.bgLight,
+                zIndex: Z.sheet,
                 display: 'flex',
                 flexDirection: 'column',
             }}
         >
-            <div style={{
-                padding: '24px 24px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: 'white',
-                borderBottom: '1px solid rgba(0,0,0,0.06)',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-            }}>
+            <div
+                style={{
+                    padding: '24px 24px 20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: COLOR.white,
+                    borderBottom: `1px solid ${COLOR.border}`,
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+                }}
+            >
                 <div>
-                    <h2 style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 18,
-                        fontWeight: 700,
-                        color: '#2D3436',
-                        margin: 0,
-                        marginBottom: 4,
-                    }}>
+                    <h2
+                        style={{
+                            fontFamily: FONT.body,
+                            fontSize: FONT_SIZE.xl,
+                            fontWeight: 700,
+                            color: COLOR.dark,
+                            margin: 0,
+                            marginBottom: 4,
+                        }}
+                    >
                         おまかせの設定
                     </h2>
-                    <p style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 12,
-                        color: '#8395A7',
-                        margin: 0,
-                    }}>
+                    <p
+                        style={{
+                            fontFamily: FONT.body,
+                            fontSize: FONT_SIZE.sm,
+                            color: COLOR.muted,
+                            margin: 0,
+                        }}
+                    >
                         毎日のルーティン内容を調整します
                     </p>
                 </div>
@@ -93,57 +198,70 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                     style={{
                         width: 40,
                         height: 40,
-                        borderRadius: '50%',
+                        borderRadius: RADIUS.circle,
                         border: 'none',
-                        background: '#F1F2F6',
+                        background: COLOR.bgMuted,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        transition: 'background 0.2s ease',
                     }}
                 >
-                    <X size={20} color="#2D3436" />
+                    <X size={20} color={COLOR.dark} />
                 </button>
             </div>
 
             <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px', position: 'relative' }}>
                 {isTogetherMode && (
-                    <div style={{
-                        background: '#FFF3E0',
-                        border: '1px solid #FFE0B2',
-                        borderRadius: 12,
-                        padding: '12px 16px',
-                        marginBottom: 20,
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: 12,
-                    }}>
+                    <div
+                        style={{
+                            background: '#FFF3E0',
+                            border: '1px solid #FFE0B2',
+                            borderRadius: RADIUS.md,
+                            padding: '12px 16px',
+                            marginBottom: 20,
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: SPACE.md,
+                        }}
+                    >
                         <span style={{ fontSize: 20 }}>👩‍👧‍👦</span>
-                        <div style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 13,
-                            color: '#E65100',
-                            lineHeight: 1.5,
-                        }}>
+                        <div
+                            style={{
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.md - 1,
+                                color: '#E65100',
+                                lineHeight: 1.6,
+                            }}
+                        >
                             「みんなで！」モード中は全員のおまかせ設定が合算されます。<br />
-                            <strong>個人の設定を変更するには、ホーム画面で設定したい人を選んでから開いてね。</strong>
+                            <strong>個人の設定を変えるときは、ヘッダーのバッジから見たい人を選んでね。</strong>
                         </div>
                     </div>
                 )}
 
-                <div className="card" style={{ marginBottom: 24, padding: '24px 20px', opacity: isTogetherMode ? 0.6 : 1, pointerEvents: isTogetherMode ? 'none' : 'auto' }}>
-                    <div style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 15,
-                        fontWeight: 700,
-                        color: '#2D3436',
-                        marginBottom: 16,
-                    }}>
+                <div
+                    className="card"
+                    style={{
+                        marginBottom: 24,
+                        padding: '24px 20px',
+                        opacity: isTogetherMode ? 0.6 : 1,
+                        pointerEvents: isTogetherMode ? 'none' : 'auto',
+                    }}
+                >
+                    <div
+                        style={{
+                            fontFamily: FONT.body,
+                            fontSize: FONT_SIZE.lg - 1,
+                            fontWeight: 700,
+                            color: COLOR.dark,
+                            marginBottom: 16,
+                        }}
+                    >
                         1日の目標じかん
                     </div>
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                        {[5, 10, 15, 20, 30].map(mins => (
+                        {[5, 10, 15, 20, 30].map((mins) => (
                             <button
                                 key={mins}
                                 onClick={() => onSetDailyTargetMinutes(mins)}
@@ -151,12 +269,12 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                                     flex: 1,
                                     minWidth: '28%',
                                     padding: '14px 0',
-                                    borderRadius: 14,
-                                    border: dailyTargetMinutes === mins ? '2px solid #2BBAA0' : '2px solid transparent',
-                                    background: dailyTargetMinutes === mins ? 'rgba(43, 186, 160, 0.08)' : '#F8F9FA',
-                                    color: dailyTargetMinutes === mins ? '#2BBAA0' : '#8395A7',
-                                    fontFamily: "'Outfit', sans-serif",
-                                    fontSize: 16,
+                                    borderRadius: RADIUS.lg,
+                                    border: dailyTargetMinutes === mins ? `2px solid ${COLOR.primary}` : '2px solid transparent',
+                                    background: dailyTargetMinutes === mins ? 'rgba(43, 186, 160, 0.08)' : COLOR.bgLight,
+                                    color: dailyTargetMinutes === mins ? COLOR.primary : COLOR.muted,
+                                    fontFamily: FONT.heading,
+                                    fontSize: FONT_SIZE.lg,
                                     fontWeight: 700,
                                     cursor: 'pointer',
                                     transition: 'all 0.2s ease',
@@ -169,156 +287,366 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                     </div>
                 </div>
 
-                <div className="card" style={{ overflow: 'hidden', opacity: isTogetherMode ? 0.6 : 1, pointerEvents: isTogetherMode ? 'none' : 'auto' }}>
-                    <div style={{
-                        padding: '20px 20px 12px',
-                        borderBottom: '1px solid rgba(0,0,0,0.06)',
-                    }}>
-                        <div style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 15,
-                            fontWeight: 700,
-                            color: '#2D3436',
-                            marginBottom: 4,
-                        }}>
-                            種目のカスタマイズ
+                <div
+                    className="card"
+                    style={{
+                        overflow: 'hidden',
+                        opacity: isTogetherMode ? 0.6 : 1,
+                        pointerEvents: isTogetherMode ? 'none' : 'auto',
+                    }}
+                >
+                    <div
+                        style={{
+                            padding: '20px 20px 16px',
+                            borderBottom: `1px solid ${COLOR.border}`,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: SPACE.md,
+                        }}
+                    >
+                        <div>
+                            <div
+                                style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.lg - 1,
+                                    fontWeight: 700,
+                                    color: COLOR.dark,
+                                    marginBottom: 4,
+                                }}
+                            >
+                                種目のカスタマイズ
+                            </div>
+                            <div
+                                style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.sm,
+                                    color: COLOR.muted,
+                                    lineHeight: 1.6,
+                                }}
+                            >
+                                ★ 必須 / ⚪ おまかせ / 🔴 除外。青いヒントは先生の指定です。
+                            </div>
                         </div>
-                        <div style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 12,
-                            color: '#8395A7',
-                        }}>
-                            ★ 必須 / ⚪ おまかせ / 🔴 除外
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: SPACE.sm }}>
+                            <div
+                                style={{
+                                    padding: '8px 12px',
+                                    borderRadius: RADIUS.full,
+                                    background: 'rgba(43, 186, 160, 0.08)',
+                                    color: COLOR.primary,
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.sm,
+                                    fontWeight: 700,
+                                }}
+                            >
+                                ★ 必須 {requiredCount}
+                            </div>
+                            <div
+                                style={{
+                                    padding: '8px 12px',
+                                    borderRadius: RADIUS.full,
+                                    background: 'rgba(225, 112, 85, 0.1)',
+                                    color: COLOR.danger,
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.sm,
+                                    fontWeight: 700,
+                                }}
+                            >
+                                🔴 除外 {excludedCount}
+                            </div>
+                            <div
+                                style={{
+                                    padding: '8px 12px',
+                                    borderRadius: RADIUS.full,
+                                    background: 'rgba(9, 132, 227, 0.08)',
+                                    color: COLOR.info,
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.sm,
+                                    fontWeight: 700,
+                                }}
+                            >
+                                変更あり {changedCount}
+                            </div>
                         </div>
-                    </div>
 
-                    <div>
-                        {[...EXERCISES, ...(teacherExercises ?? []), ...customExercises]
-                            .filter(exercise => !teacherHiddenExerciseIds?.has(exercise.id))
-                            .sort((a, b) => {
-                                const aRest = 'type' in a && a.type === 'rest' ? 1 : 0;
-                                const bRest = 'type' in b && b.type === 'rest' ? 1 : 0;
-                                return aRest - bRest;
-                            })
-                            .map(exercise => {
-                            const isRest = 'type' in exercise && exercise.type === 'rest';
-                            const isTeacherRequired = teacherRequiredExerciseIds?.has(exercise.id) ?? false;
-                            const isTeacherExcluded = teacherExcludedExerciseIds?.has(exercise.id) ?? false;
-                            const isUserRequired = requiredExercises.includes(exercise.id);
-                            const isUserExcluded = excludedExercises.includes(exercise.id);
+                        <div
+                            style={{
+                                position: 'relative',
+                                display: 'flex',
+                                alignItems: 'center',
+                            }}
+                        >
+                            <Search
+                                size={16}
+                                color={COLOR.muted}
+                                style={{
+                                    position: 'absolute',
+                                    left: 12,
+                                    pointerEvents: 'none',
+                                }}
+                            />
+                            <input
+                                value={query}
+                                onChange={(event) => setQuery(event.target.value)}
+                                placeholder="種目をさがす"
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 14px 12px 38px',
+                                    borderRadius: RADIUS.lg,
+                                    border: '1px solid rgba(0,0,0,0.08)',
+                                    background: COLOR.bgLight,
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.md,
+                                    color: COLOR.dark,
+                                    outline: 'none',
+                                }}
+                            />
+                        </div>
 
-                            // 実際に適用される状態（ユーザー設定 > 先生デフォルト）
-                            const isRequired = isUserRequired || (isTeacherRequired && !isUserExcluded);
-                            const isExcluded = !isRequired && (isUserExcluded || (isTeacherExcluded && !isUserRequired));
-
-                            const handleCycle = () => {
-                                if (isUserRequired) {
-                                    // ユーザー明示「必須」→「おまかせ」（先生デフォルトに戻る場合あり）
-                                    onSetRequiredExercises(requiredExercises.filter(id => id !== exercise.id));
-                                } else if (isUserExcluded) {
-                                    // ユーザー明示「除外」→「必須」
-                                    onSetExcludedExercises(excludedExercises.filter(id => id !== exercise.id));
-                                    onSetRequiredExercises([...requiredExercises, exercise.id]);
-                                } else if (isTeacherRequired) {
-                                    // 先生デフォルト「必須」→ユーザーが「除外」で上書き
-                                    onSetExcludedExercises([...excludedExercises, exercise.id]);
-                                } else if (isTeacherExcluded) {
-                                    // 先生デフォルト「除外」→ユーザーが「必須」で上書き
-                                    onSetRequiredExercises([...requiredExercises, exercise.id]);
-                                } else {
-                                    // おまかせ → 除外
-                                    onSetExcludedExercises([...excludedExercises, exercise.id]);
-                                }
-                            };
-
-                            return (
-                                <div key={exercise.id} style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    padding: '16px 20px',
-                                    borderBottom: '1px solid rgba(0,0,0,0.04)',
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                        <ExerciseIcon id={exercise.id} emoji={exercise.emoji} size={24} color="#2D3436" />
-                                        <div>
-                                            <div style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 6,
-                                            }}>
-                                                <div style={{
-                                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                                    fontSize: 14,
-                                                    fontWeight: 600,
-                                                    color: isRest || isExcluded ? '#B2BEC3' : '#2D3436',
-                                                }}>
-                                                    {exercise.name}
-                                                </div>
-                                                {'creatorId' in exercise && (
-                                                    <span style={{
-                                                        fontFamily: "'Noto Sans JP', sans-serif",
-                                                        fontSize: 9,
-                                                        fontWeight: 700,
-                                                        color: '#2BBAA0',
-                                                        background: 'rgba(43, 186, 160, 0.1)',
-                                                        padding: '1px 4px',
-                                                        borderRadius: 6,
-                                                        display: 'inline-block',
-                                                        verticalAlign: 'middle',
-                                                    }}>
-                                                        じぶん種目
-                                                    </span>
-                                                )}
-                                                {'classLevels' in exercise && (
-                                                    <span style={{
-                                                        fontFamily: "'Noto Sans JP', sans-serif",
-                                                        fontSize: 9,
-                                                        fontWeight: 700,
-                                                        color: '#0984E3',
-                                                        background: 'rgba(9, 132, 227, 0.1)',
-                                                        padding: '1px 4px',
-                                                        borderRadius: 6,
-                                                        display: 'inline-block',
-                                                        verticalAlign: 'middle',
-                                                    }}>
-                                                        先生
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div style={{
-                                                fontFamily: "'Outfit', sans-serif",
-                                                fontSize: 11,
-                                                color: '#8395A7',
-                                            }}>
-                                                {exercise.sec}s • {'phase' in exercise ? exercise.phase : 'main'}
-                                            </div>
-                                        </div>
-                                    </div>
-
+                        <div style={{ display: 'flex', gap: SPACE.sm, overflowX: 'auto', paddingBottom: 2 }}>
+                            {FILTER_OPTIONS.map((option) => {
+                                const isActive = filter === option.id;
+                                return (
                                     <button
-                                        onClick={isRest ? undefined : handleCycle}
+                                        key={option.id}
+                                        type="button"
+                                        onClick={() => setFilter(option.id)}
                                         style={{
-                                            minWidth: 70,
-                                            padding: '8px 12px',
-                                            borderRadius: 999,
+                                            padding: '8px 14px',
+                                            borderRadius: RADIUS.full,
                                             border: 'none',
-                                            fontFamily: "'Noto Sans JP', sans-serif",
-                                            fontSize: 12,
+                                            background: isActive ? COLOR.dark : COLOR.bgMuted,
+                                            color: isActive ? COLOR.white : COLOR.text,
+                                            fontFamily: FONT.body,
+                                            fontSize: FONT_SIZE.sm,
                                             fontWeight: 700,
-                                            cursor: isRest ? 'default' : 'pointer',
-                                            background: isRest ? '#FFE4E1' : isRequired ? '#E8F8F0' : isExcluded ? '#FFE4E1' : '#F8F9FA',
-                                            color: isRest ? '#E17055' : isRequired ? '#2BBAA0' : isExcluded ? '#E17055' : '#8395A7',
-                                            opacity: isRest ? 0.5 : 1,
-                                            transition: 'all 0.2s ease',
+                                            cursor: 'pointer',
+                                            flexShrink: 0,
                                         }}
                                     >
-                                        {isRest ? '🔒 除外' : isRequired ? '★ 必須' : isExcluded ? '🔴 除外' : '⚪ おまかせ'}
+                                        {option.label}
                                     </button>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
+                        </div>
                     </div>
+
+                    {visibleItems.length === 0 ? (
+                        <div
+                            style={{
+                                padding: '32px 20px',
+                                textAlign: 'center',
+                                fontFamily: FONT.body,
+                                color: COLOR.muted,
+                                lineHeight: 1.7,
+                            }}
+                        >
+                            <div
+                                style={{
+                                    fontSize: FONT_SIZE.lg,
+                                    fontWeight: 700,
+                                    color: COLOR.dark,
+                                    marginBottom: 8,
+                                }}
+                            >
+                                条件にあう種目がありません
+                            </div>
+                            <div style={{ fontSize: FONT_SIZE.sm }}>
+                                しぼりこみや検索ワードを変えてみてね
+                            </div>
+                        </div>
+                    ) : (
+                        <div>
+                            {visibleItems.map((item) => {
+                                const { exercise } = item;
+
+                                const handleCycle = () => {
+                                    if (item.isRest) {
+                                        return;
+                                    }
+
+                                    if (item.isUserRequired) {
+                                        onSetRequiredExercises(requiredExercises.filter((id) => id !== exercise.id));
+                                    } else if (item.isUserExcluded) {
+                                        onSetExcludedExercises(excludedExercises.filter((id) => id !== exercise.id));
+                                        onSetRequiredExercises([...requiredExercises, exercise.id]);
+                                    } else if (item.isTeacherRequired) {
+                                        onSetExcludedExercises([...excludedExercises, exercise.id]);
+                                    } else if (item.isTeacherExcluded) {
+                                        onSetRequiredExercises([...requiredExercises, exercise.id]);
+                                    } else {
+                                        onSetExcludedExercises([...excludedExercises, exercise.id]);
+                                    }
+                                };
+
+                                return (
+                                    <div
+                                        key={exercise.id}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            gap: SPACE.md,
+                                            padding: '16px 20px',
+                                            borderBottom: `1px solid ${COLOR.border}`,
+                                            background: item.isUserRequired
+                                                ? 'rgba(43, 186, 160, 0.04)'
+                                                : item.isUserExcluded
+                                                    ? 'rgba(225, 112, 85, 0.04)'
+                                                    : item.isTeacherRequired || item.isTeacherExcluded
+                                                        ? 'rgba(9, 132, 227, 0.035)'
+                                                        : 'transparent',
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, minWidth: 0 }}>
+                                            <ExerciseIcon id={exercise.id} emoji={exercise.emoji} size={24} color={COLOR.dark} />
+                                            <div style={{ minWidth: 0 }}>
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 6,
+                                                        flexWrap: 'wrap',
+                                                        marginBottom: 4,
+                                                    }}
+                                                >
+                                                    <div
+                                                        style={{
+                                                            fontFamily: FONT.body,
+                                                            fontSize: FONT_SIZE.md,
+                                                            fontWeight: 600,
+                                                            color: item.isRest || item.isExcluded ? COLOR.light : COLOR.dark,
+                                                            wordBreak: 'break-word',
+                                                        }}
+                                                    >
+                                                        {exercise.name}
+                                                    </div>
+                                                    {item.sourceLabel && (
+                                                        <span
+                                                            style={{
+                                                                fontFamily: FONT.body,
+                                                                fontSize: 9,
+                                                                fontWeight: 700,
+                                                                color: item.source === 'teacher' ? COLOR.info : COLOR.primary,
+                                                                background: item.source === 'teacher'
+                                                                    ? 'rgba(9, 132, 227, 0.1)'
+                                                                    : 'rgba(43, 186, 160, 0.1)',
+                                                                padding: '2px 5px',
+                                                                borderRadius: 6,
+                                                            }}
+                                                        >
+                                                            {item.sourceLabel}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <div
+                                                    style={{
+                                                        fontFamily: FONT.heading,
+                                                        fontSize: FONT_SIZE.sm - 1,
+                                                        color: COLOR.muted,
+                                                        marginBottom: 8,
+                                                    }}
+                                                >
+                                                    {exercise.sec}s • {'phase' in exercise ? exercise.phase : 'main'}
+                                                </div>
+
+                                                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                                    {(item.teacherBadge || item.userBadge) ? (
+                                                        <>
+                                                            {item.teacherBadge && (
+                                                                <span
+                                                                    style={{
+                                                                        padding: '3px 8px',
+                                                                        borderRadius: RADIUS.full,
+                                                                        background: 'rgba(9, 132, 227, 0.08)',
+                                                                        color: COLOR.info,
+                                                                        fontFamily: FONT.body,
+                                                                        fontSize: 11,
+                                                                        fontWeight: 700,
+                                                                    }}
+                                                                >
+                                                                    {item.teacherBadge}
+                                                                </span>
+                                                            )}
+                                                            {item.userBadge && (
+                                                                <span
+                                                                    style={{
+                                                                        padding: '3px 8px',
+                                                                        borderRadius: RADIUS.full,
+                                                                        background: item.isUserExcluded
+                                                                            ? 'rgba(225, 112, 85, 0.1)'
+                                                                            : 'rgba(43, 186, 160, 0.08)',
+                                                                        color: item.isUserExcluded ? COLOR.danger : COLOR.primary,
+                                                                        fontFamily: FONT.body,
+                                                                        fontSize: 11,
+                                                                        fontWeight: 700,
+                                                                    }}
+                                                                >
+                                                                    {item.userBadge}
+                                                                </span>
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        <span
+                                                            style={{
+                                                                fontFamily: FONT.body,
+                                                                fontSize: 11,
+                                                                color: COLOR.muted,
+                                                            }}
+                                                        >
+                                                            {item.helperText}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={handleCycle}
+                                            disabled={item.isRest}
+                                            style={{
+                                                minWidth: 82,
+                                                padding: '10px 12px',
+                                                borderRadius: RADIUS.full,
+                                                border: 'none',
+                                                fontFamily: FONT.body,
+                                                fontSize: FONT_SIZE.sm,
+                                                fontWeight: 700,
+                                                cursor: item.isRest ? 'default' : 'pointer',
+                                                background: item.isRest
+                                                    ? '#FFE4E1'
+                                                    : item.isRequired
+                                                        ? 'rgba(43, 186, 160, 0.1)'
+                                                        : item.isExcluded
+                                                            ? 'rgba(225, 112, 85, 0.1)'
+                                                            : COLOR.bgLight,
+                                                color: item.isRest
+                                                    ? COLOR.danger
+                                                    : item.isRequired
+                                                        ? COLOR.primary
+                                                        : item.isExcluded
+                                                            ? COLOR.danger
+                                                            : COLOR.muted,
+                                                opacity: item.isRest ? 0.55 : 1,
+                                                transition: 'all 0.2s ease',
+                                                flexShrink: 0,
+                                            }}
+                                        >
+                                            {item.isRest
+                                                ? '🔒 除外'
+                                                : item.isRequired
+                                                    ? '★ 必須'
+                                                    : item.isExcluded
+                                                        ? '🔴 除外'
+                                                        : '⚪ おまかせ'}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>,

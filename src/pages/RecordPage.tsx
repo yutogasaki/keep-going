@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { CalendarDays, Home } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
@@ -31,7 +31,7 @@ export const RecordPage: React.FC = () => {
     const pastFuwafuwas = currentViewUsers.flatMap((user) => user.pastFuwafuwas || []).filter((fuwafuwa) => fuwafuwa.finalStage === 3);
     const chibifuwas = currentViewUsers.flatMap((user) => user.chibifuwas || []);
 
-    const filterSessionsByContext = (unfiltered: SessionRecord[]) => {
+    const filterSessionsByContext = useCallback((unfiltered: SessionRecord[]) => {
         const isTogetherMode = sessionUserIds.length > 1;
         return unfiltered.filter((session) => {
             if (isTogetherMode) {
@@ -39,7 +39,7 @@ export const RecordPage: React.FC = () => {
             }
             return !session.userIds || session.userIds.includes(sessionUserIds[0]);
         });
-    };
+    }, [sessionUserIdSet, sessionUserIds]);
 
     useEffect(() => {
         const load = () => {
@@ -70,7 +70,7 @@ export const RecordPage: React.FC = () => {
             clearInterval(interval);
             document.removeEventListener('visibilitychange', handleVisibility);
         };
-    }, [sessionUserIds]);
+    }, [filterSessionsByContext]);
 
     useEffect(() => {
         const loadExMap = async () => {

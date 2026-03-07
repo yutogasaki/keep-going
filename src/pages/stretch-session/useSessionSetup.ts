@@ -76,10 +76,6 @@ export function useSessionSetup({
         [contextUsers]
     );
 
-    const sessionUserKey = sessionUserIds.join('|');
-    const excludedIdsKey = [...globalExcludedIds].sort().join('|');
-    const requiredIdsKey = [...globalRequiredIds].sort().join('|');
-
     useEffect(() => {
         const loadSession = async () => {
             setIsLoading(true);
@@ -205,10 +201,10 @@ export function useSessionSetup({
     }, [
         classLevel,
         dailyTargetMinutes,
-        excludedIdsKey,
-        requiredIdsKey,
+        globalExcludedIds,
+        globalRequiredIds,
         sessionExerciseIds,
-        sessionUserKey,
+        sessionUserIds,
     ]);
 
     return {

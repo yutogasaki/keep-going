@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
+import {
+    EditorSection,
+    EditorShell,
+    editorLabelStyle,
+    getEditorSubmitButtonStyle,
+} from '../../components/editor/EditorShell';
 import { saveCustomExercise, type CustomExercise } from '../../lib/db';
 import { publishExercise } from '../../lib/publicExercises';
 import { getAccountId } from '../../lib/sync';
@@ -67,58 +72,12 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
         }
     };
 
-    return createPortal(
-        <div style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%)',
-            zIndex: 100,
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '64px 20px 32px 20px',
-            gap: 20,
-            overflowY: 'auto',
-        }}>
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <button
-                    onClick={onCancel}
-                    style={{
-                        border: 'none',
-                        background: 'none',
-                        cursor: 'pointer',
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 14,
-                        color: '#8395A7',
-                    }}
-                >
-                    ← もどる
-                </button>
-                <h1 style={{
-                    fontFamily: "'Outfit', sans-serif",
-                    fontSize: 20,
-                    fontWeight: 700,
-                    color: '#2D3436',
-                }}>
-                    {initial ? 'じぶん種目をへんしゅう' : 'じぶん種目をつくる'}
-                </h1>
-                <div style={{ width: 48 }} />
-            </div>
-
-            {/* Emoji selector */}
-            <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
-                <label style={{
-                    fontFamily: FONT.body,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: COLOR.dark,
-                    display: 'block',
-                    marginBottom: 12,
-                }}>
-                    アイコン
-                </label>
+    return (
+        <EditorShell
+            title={initial ? 'じぶん種目をへんしゅう' : 'じぶん種目をつくる'}
+            onBack={onCancel}
+        >
+            <EditorSection label="アイコン">
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {EMOJI_OPTIONS.map(e => (
                         <motion.button
@@ -143,20 +102,9 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                         </motion.button>
                     ))}
                 </div>
-            </div>
+            </EditorSection>
 
-            {/* Name input */}
-            <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
-                <label style={{
-                    fontFamily: FONT.body,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: COLOR.dark,
-                    display: 'block',
-                    marginBottom: 12,
-                }}>
-                    なまえ
-                </label>
+            <EditorSection label="なまえ">
                 <input
                     type="text"
                     value={name}
@@ -169,20 +117,9 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                         transition: 'all 0.2s',
                     }}
                 />
-            </div>
+            </EditorSection>
 
-            {/* Description */}
-            <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
-                <label style={{
-                    fontFamily: FONT.body,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: COLOR.dark,
-                    display: 'block',
-                    marginBottom: 12,
-                }}>
-                    せつめい
-                </label>
+            <EditorSection label="せつめい">
                 <textarea
                     value={description}
                     onChange={e => setDescription(e.target.value)}
@@ -196,20 +133,9 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                         resize: 'vertical',
                     }}
                 />
-            </div>
+            </EditorSection>
 
-            {/* Time Settings */}
-            <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
-                <label style={{
-                    fontFamily: FONT.body,
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: COLOR.dark,
-                    display: 'block',
-                    marginBottom: 12,
-                }}>
-                    時間（秒）
-                </label>
+            <EditorSection label="時間（秒）">
                 <div style={{ display: 'flex', gap: 10 }}>
                     {[15, 30, 60, 120].map(s => (
                         <motion.button
@@ -234,24 +160,20 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                         </motion.button>
                     ))}
                 </div>
-            </div>
+            </EditorSection>
 
-            {/* Split Toggle */}
-            <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
+            <EditorSection>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
                         <label style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
+                            ...editorLabelStyle,
                             fontSize: 15,
-                            fontWeight: 700,
-                            color: '#2D3436',
-                            display: 'block',
                             marginBottom: 4,
                         }}>
                             切替あり
                         </label>
                         <span style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontFamily: FONT.body,
                             fontSize: 12,
                             color: '#8395A7',
                         }}>
@@ -288,7 +210,7 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                         />
                     </button>
                 </div>
-            </div>
+            </EditorSection>
 
             {isLoggedIn && !isEditing && (
                 <PublishToggleCard
@@ -313,33 +235,14 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                 </div>
             )}
 
-            {/* Save button */}
             <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={handleSave}
                 disabled={!name.trim() || saving}
-                style={{
-                    position: 'sticky',
-                    bottom: 0,
-                    padding: '16px 0',
-                    borderRadius: 16,
-                    border: 'none',
-                    background: name.trim() && !saving ? 'linear-gradient(135deg, #2BBAA0, #1A937D)' : COLOR.disabled,
-                    color: name.trim() && !saving ? COLOR.white : COLOR.light,
-                    fontFamily: FONT.body,
-                    fontSize: 16,
-                    fontWeight: 700,
-                    cursor: name.trim() && !saving ? 'pointer' : 'not-allowed',
-                    boxShadow: name.trim() && !saving
-                        ? '0 8px 20px rgba(43, 186, 160, 0.3)'
-                        : 'none',
-                    transition: 'all 0.3s ease',
-                    marginTop: 16,
-                }}
+                style={getEditorSubmitButtonStyle(Boolean(name.trim()) && !saving)}
             >
                 {saving ? 'ほぞん中...' : initial ? 'ほぞん' : 'つくる！'}
             </motion.button>
-        </div>,
-        document.body
+        </EditorShell>
     );
 };

@@ -65,13 +65,6 @@ export function useHomeSessions({ users, sessionUserIds }: UseHomeSessionsParams
         [users, sessionUserIds],
     );
 
-    const singleUserTargetMinutes =
-        activeUsers.length > 0
-            ? (activeUsers[0].dailyTargetMinutes || 10)
-            : (users.length > 0 ? (users[0].dailyTargetMinutes || 10) : 10);
-
-    const targetSeconds = singleUserTargetMinutes * 60;
-
     const perUserMagic = useMemo<PerUserMagic[]>(() => {
         return activeUsers.map((user) => {
             const userSessions = allSessions.filter((session) => {
@@ -91,26 +84,30 @@ export function useHomeSessions({ users, sessionUserIds }: UseHomeSessionsParams
         });
     }, [activeUsers, allSessions]);
 
+    const targetSeconds = useMemo(() => {
+        if (perUserMagic.length === 0) {
+            const fallbackTargetMinutes = users.length > 0 ? (users[0].dailyTargetMinutes || 10) : 10;
+            return fallbackTargetMinutes * 60;
+        }
 
+        if (isTogetherMode) {
+            return perUserMagic.reduce((sum, userMagic) => sum + userMagic.targetSeconds, 0);
+        }
 
+        return perUserMagic[0]?.targetSeconds ?? 10 * 60;
+    }, [isTogetherMode, perUserMagic, users]);
 
-    const allTimeSeconds = useMemo(
-        () => allSessions
-            .filter((session) => {
-                if (isTogetherMode) {
-                    return !session.userIds || session.userIds.some((id) => sessionUserIdSet.has(id));
-                }
-                return !session.userIds || session.userIds.includes(sessionUserIds[0]);
-            })
-            .reduce((acc, session) => acc + session.totalSeconds, 0),
-        [allSessions, isTogetherMode, sessionUserIdSet, sessionUserIds],
-    );
+    const displaySeconds = useMemo(() => {
+        if (perUserMagic.length === 0) {
+            return 0;
+        }
 
-    const consumedSeconds = activeUsers.reduce((sum, user) => {
-        return sum + (user.consumedMagicSeconds || 0);
-    }, 0);
+        if (isTogetherMode) {
+            return perUserMagic.reduce((sum, userMagic) => sum + userMagic.displaySeconds, 0);
+        }
 
-    const displaySeconds = Math.max(0, allTimeSeconds - consumedSeconds);
+        return perUserMagic[0]?.displaySeconds ?? 0;
+    }, [isTogetherMode, perUserMagic]);
 
     return {
         allSessions,

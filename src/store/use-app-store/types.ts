@@ -75,6 +75,8 @@ export interface AppState {
     setNotificationsEnabled: (enabled: boolean) => void;
     notificationTime: string;
     setNotificationTime: (time: string) => void;
+    hasSeenSessionControlsHint: boolean;
+    setHasSeenSessionControlsHint: (seen: boolean) => void;
 
     debugFuwafuwaStage: number | null;
     debugFuwafuwaType: number | null;

@@ -89,6 +89,7 @@ function makeCurrentState(overrides: Record<string, any> = {}) {
         bgmEnabled: true,
         hapticEnabled: true,
         joinedChallengeIds: {},
+        hasSeenSessionControlsHint: false,
         ...overrides,
     };
 }
@@ -282,6 +283,25 @@ describe('v11 migration (old defaults cleanup)', () => {
     });
 });
 
+// ─── v13: セッション操作ヒント既読フラグ ───────────────
+
+describe('v13 migration (session controls hint flag)', () => {
+    it('未定義ならfalseをセット', () => {
+        const state = makeCurrentState();
+        delete state.hasSeenSessionControlsHint;
+
+        const result = migrateAppState(state, 12);
+        expect(result.hasSeenSessionControlsHint).toBe(false);
+    });
+
+    it('既存値があれば保持する', () => {
+        const state = makeCurrentState({ hasSeenSessionControlsHint: true });
+
+        const result = migrateAppState(state, 12);
+        expect(result.hasSeenSessionControlsHint).toBe(true);
+    });
+});
+
 // ─── 冪等性: 最新版に再適用しても変化なし ────────────
 
 describe('idempotency', () => {
@@ -295,6 +315,7 @@ describe('idempotency', () => {
         expect(result.joinedChallengeIds).toEqual(state.joinedChallengeIds);
         expect(result.bgmEnabled).toBe(state.bgmEnabled);
         expect(result.hapticEnabled).toBe(state.hapticEnabled);
+        expect(result.hasSeenSessionControlsHint).toBe(state.hasSeenSessionControlsHint);
     });
 });
 
@@ -325,6 +346,7 @@ describe('full migration path (v0→current)', () => {
         expect(result.users[0].consumedMagicSeconds).toBe(0);
         expect((result.users[0] as any).consumedMagicDate).toBeUndefined();
         expect(result.joinedChallengeIds).toEqual({});
+        expect(result.hasSeenSessionControlsHint).toBe(false);
 
         // レガシーフィールドが削除
         expect((result as any).classLevel).toBeUndefined();

@@ -64,13 +64,3 @@ export function getPresetsForClass(classLevel: ClassLevel): MenuGroup[] {
         exerciseIds: group.exerciseIds.filter(id => availableIds.has(id)),
     })).filter(group => group.exerciseIds.length > 0);
 }
-
-// ─── Re-export CRUD from src/lib/customGroups.ts for backward compatibility ──
-// New code should import directly from '../../lib/customGroups'
-export {
-    getCustomGroups,
-    saveCustomGroup,
-    deleteCustomGroup,
-    saveCustomGroupDirect,
-    clearGroupsDB,
-} from '../lib/customGroups';

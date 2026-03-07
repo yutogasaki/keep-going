@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DEFAULT_SESSION_TARGET_SECONDS, EXERCISES, getExercisesByClass, type Exercise } from '../../../data/exercises';
 import {
-    deleteCustomGroup,
-    getCustomGroups,
     getPresetsForClass,
     type MenuGroup,
 } from '../../../data/menuGroups';
 import { audio } from '../../../lib/audio';
+import { deleteCustomGroup, getCustomGroups } from '../../../lib/customGroups';
 import { deleteCustomExercise, getCustomExercises, type CustomExercise } from '../../../lib/db';
 import { getAccountId } from '../../../lib/sync';
 import {

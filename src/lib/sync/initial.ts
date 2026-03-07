@@ -1,5 +1,5 @@
 import { getAllSessions, getCustomExercises } from '../db';
-import { getCustomGroups } from '../../data/menuGroups';
+import { getCustomGroups } from '../customGroups';
 import type { UserProfileStore } from '../../store/useAppStore';
 import type { AppSettingsInput } from './mappers';
 import { getAccountId } from './authState';

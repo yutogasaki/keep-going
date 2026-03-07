@@ -1,7 +1,8 @@
 import { supabase } from './supabase';
 import type { Database } from './supabase-types';
+import type { MenuGroup } from '../data/menuGroups';
+import { saveCustomGroup } from './customGroups';
 import { getAccountId } from './sync';
-import { saveCustomGroup, type MenuGroup } from '../data/menuGroups';
 
 type PublicMenuRow = Database['public']['Tables']['public_menus']['Row'];
 import { getCustomExercises, saveCustomExercise, type CustomExercise } from './db';

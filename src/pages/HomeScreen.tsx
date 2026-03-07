@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 const lazyConfetti = () => import('canvas-confetti').then((m) => m.default);
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { PageHeader } from '../components/PageHeader';
@@ -14,7 +14,6 @@ import { HomeChallengesAndMenus } from './home/HomeChallengesAndMenus';
 import { useHomeChallenges } from './home/hooks/useHomeChallenges';
 import { useHomeSessions } from './home/hooks/useHomeSessions';
 import { useHomeMilestoneWatcher } from './home/hooks/useHomeMilestoneWatcher';
-import { useHomeSwipe } from './home/hooks/useHomeSwipe';
 
 export const HomeScreen: React.FC = () => {
     const users = useAppStore((state) => state.users);
@@ -34,11 +33,28 @@ export const HomeScreen: React.FC = () => {
         sessionUserIds,
     });
 
-    const { isTogetherMode, swipePages, currentPageIndex, handleDragEnd } = useHomeSwipe({
-        users,
-        sessionUserIds,
-        setSessionUserIds,
-    });
+    useEffect(() => {
+        if (users.length === 0) {
+            return;
+        }
+
+        if (sessionUserIds.length === 0) {
+            setSessionUserIds([users[0].id]);
+            return;
+        }
+
+        const userIdSet = new Set(users.map((user) => user.id));
+        const validIds = sessionUserIds.filter((id) => userIdSet.has(id));
+        if (validIds.length !== sessionUserIds.length) {
+            setSessionUserIds(validIds.length > 0 ? validIds : [users[0].id]);
+        }
+    }, [users, sessionUserIds, setSessionUserIds]);
+
+    const isTogetherMode = sessionUserIds.length > 1;
+    const selectedUser = useMemo(
+        () => activeUsers[0] ?? users.find((user) => user.id === sessionUserIds[0]) ?? null,
+        [activeUsers, sessionUserIds, users],
+    );
 
     const {
         filteredChallenges,
@@ -140,11 +156,10 @@ export const HomeScreen: React.FC = () => {
                     displaySeconds={displaySeconds}
                     targetSeconds={targetSeconds}
                     onTankReset={handleTankReset}
-                    swipePages={swipePages}
-                    currentPageIndex={currentPageIndex}
-                    onDragEnd={handleDragEnd}
-                    users={users}
+                    selectedUser={selectedUser}
+                    activeUsers={activeUsers}
                     allSessions={allSessions}
+                    onSelectUser={(userId) => setSessionUserIds([userId])}
                 />
 
                 <HomeChallengesAndMenus

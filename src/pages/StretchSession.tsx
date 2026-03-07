@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { CountdownOverlay } from '../components/CountdownOverlay';
@@ -11,6 +11,8 @@ import { useSessionSetup } from './stretch-session/useSessionSetup';
 import { useSessionTimer } from './stretch-session/useSessionTimer';
 import { MainScroller } from './stretch-session/MainScroller';
 import { ControlBar } from './stretch-session/ControlBar';
+import { SessionControlsHint } from './stretch-session/SessionControlsHint';
+import { shouldIgnoreInitialHintInteraction } from './stretch-session/sessionControlsHintUtils';
 import {
     StretchCompletionScreen,
     StretchLoadingScreen,
@@ -23,6 +25,8 @@ export const StretchSession: React.FC = () => {
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const sessionExerciseIds = useAppStore((state) => state.sessionExerciseIds);
     const isTeacherPreview = useAppStore((state) => state.isTeacherPreview);
+    const hasSeenSessionControlsHint = useAppStore((state) => state.hasSeenSessionControlsHint);
+    const setHasSeenSessionControlsHint = useAppStore((state) => state.setHasSeenSessionControlsHint);
     const {
         classLevel,
         dailyTargetMinutes,
@@ -39,6 +43,8 @@ export const StretchSession: React.FC = () => {
     const hasSavedRef = useRef(false);
     const [isMuted, setIsMuted] = useState(audio.getMuted());
     const [showExitConfirm, setShowExitConfirm] = useState(false);
+    const [controlsHintPending, setControlsHintPending] = useState(() => !hasSeenSessionControlsHint);
+    const controlsHintOpenedAtRef = useRef<number | null>(null);
     const toggleMute = () => {
         audio.toggleMute();
         setIsMuted(audio.getMuted());
@@ -78,6 +84,75 @@ export const StretchSession: React.FC = () => {
         onSessionFinished: endSession,
         onAutoCompleteSaveRef: autoCompleteSaveRef,
     });
+    const showControlsHint = controlsHintPending && !isBigBreak && !isCounting && !isCompleted && !isLoading;
+
+    useEffect(() => {
+        if (hasSeenSessionControlsHint) {
+            setControlsHintPending(false);
+        }
+    }, [hasSeenSessionControlsHint]);
+
+    const dismissControlsHint = useCallback(() => {
+        setControlsHintPending(false);
+        controlsHintOpenedAtRef.current = null;
+        if (!hasSeenSessionControlsHint) {
+            setHasSeenSessionControlsHint(true);
+        }
+    }, [hasSeenSessionControlsHint, setHasSeenSessionControlsHint]);
+
+    useEffect(() => {
+        if (showControlsHint) {
+            controlsHintOpenedAtRef.current = performance.now();
+            return;
+        }
+
+        controlsHintOpenedAtRef.current = null;
+    }, [showControlsHint]);
+
+    useEffect(() => {
+        if (!showControlsHint) {
+            return;
+        }
+
+        const timeoutId = window.setTimeout(() => {
+            dismissControlsHint();
+        }, 7000);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [dismissControlsHint, showControlsHint]);
+
+    const handleSessionTap = useCallback(() => {
+        if (showControlsHint) {
+            if (shouldIgnoreInitialHintInteraction(controlsHintOpenedAtRef.current, performance.now())) {
+                return;
+            }
+            dismissControlsHint();
+            return;
+        }
+        handleTap();
+    }, [dismissControlsHint, handleTap, showControlsHint]);
+
+    const handleSessionSwipeUp = useCallback(() => {
+        if (showControlsHint) {
+            if (shouldIgnoreInitialHintInteraction(controlsHintOpenedAtRef.current, performance.now())) {
+                return;
+            }
+            dismissControlsHint();
+            return;
+        }
+        handleSwipeUp();
+    }, [dismissControlsHint, handleSwipeUp, showControlsHint]);
+
+    const handleSessionDragEnd = useCallback((_e: unknown, info: { offset: { y: number } }) => {
+        if (showControlsHint) {
+            if (shouldIgnoreInitialHintInteraction(controlsHintOpenedAtRef.current, performance.now())) {
+                return;
+            }
+            dismissControlsHint();
+            return;
+        }
+        handleDragEnd(_e, info);
+    }, [dismissControlsHint, handleDragEnd, showControlsHint]);
 
     const saveSessionData = useCallback(async () => {
         // Skip recording for teacher preview sessions
@@ -169,6 +244,11 @@ export const StretchSession: React.FC = () => {
                 )}
             </AnimatePresence>
 
+            <SessionControlsHint
+                open={showControlsHint && !isBigBreak && !isCounting}
+                onClose={dismissControlsHint}
+            />
+
             {/* Close button */}
             <button
                 onClick={() => setShowExitConfirm(true)}
@@ -251,16 +331,16 @@ export const StretchSession: React.FC = () => {
                 phaseTimeLeft={phaseTimeLeft}
                 sessionExercises={sessionExercises}
                 transitionTime={transitionTime}
-                onDragEnd={handleDragEnd}
-                onTap={handleTap}
+                onDragEnd={handleSessionDragEnd}
+                onTap={handleSessionTap}
             />
 
             <ControlBar
                 isMuted={isMuted}
                 isPlaying={isPlaying}
                 onToggleMute={toggleMute}
-                onTogglePlayPause={handleTap}
-                onSkip={handleSwipeUp}
+                onTogglePlayPause={handleSessionTap}
+                onSkip={handleSessionSwipeUp}
             />
         </div >
     );
