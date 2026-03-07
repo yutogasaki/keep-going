@@ -9,6 +9,7 @@
 |------|------|----------------|
 | 憲法 | 変わりにくい最上位ルール | `CONSTITUTION.md` |
 | エージェント実行ルール | Codex / Claude 向けの短い入口 | `AGENTS.md`, `CLAUDE.md` |
+| 共通 agent guide | 入口ファイルが参照する詳細の正本 | `.agents/agent-guide.md` |
 | Active task queue | 今回の実行対象だけを持つ | `.agents/tasks/TASKS.md` |
 | Done log | 完了した仕事の短い履歴 | `.agents/tasks/DONE.md` |
 | Durable memory | 再利用価値が高い決定・罠 | `.agents/MEMORY.md` |
@@ -17,6 +18,12 @@
 | Skill | 定型ワークフロー | `.agents/skills/*/SKILL.md` |
 
 ## File Roles
+
+### `AGENTS.md`, `CLAUDE.md`, `.agents/agent-guide.md`
+
+- `AGENTS.md` と `CLAUDE.md` は短い入口に保つ。
+- 共通の詳細は `.agents/agent-guide.md` だけを更新する。
+- read order や共通コマンドを変える時は、shared guide を正本として直し、入口ファイルは参照だけに留める。
 
 ### `.agents/tasks/TASKS.md`
 
@@ -29,7 +36,7 @@
 
 - 仕事の履歴は日単位・テーマ単位で要約する。
 - typo 修正や小さな見た目修正を粒度細かく残しすぎない。
-- 50 行を超えたら圧縮・月別アーカイブを検討する。
+- 50 行を超えたら `.agents/tasks/archive/YYYY-MM.md` へ詳細を移し、`DONE.md` は要約と archive 導線だけを残す。
 
 ### `.agents/MEMORY.md`
 
@@ -72,7 +79,8 @@
 
 - React page / modal / editor: 500 行超で警戒、700 行超は分割優先
 - Hook / util / service: 250-300 行超で責務分離を検討
-- `AGENTS.md`, `CLAUDE.md`: 120 行前後で収める
+- `AGENTS.md`, `CLAUDE.md`: 30 行前後の入口に保つ
+- `.agents/agent-guide.md`: 120 行前後で収める
 - `TASKS.md`: 30 行超なら整理
 - `DONE.md`: 50 行超なら圧縮
 - `MEMORY.md`: 40 行超なら整理
@@ -92,6 +100,7 @@
 ## Anti-Patterns
 
 - `AGENTS.md` と `CLAUDE.md` に同じ長文を二重記載する
+- shared guide ではなく入口ファイル側を正本のように更新する
 - task, done, memory, backlog を同じファイルに混在させる
 - UI 変更を型チェックだけで完了扱いにする
 - state migrate をテストなしで出す

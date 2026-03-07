@@ -7,8 +7,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[4]
 
 CHECKS = [
-    ("AGENTS.md", 120),
-    ("CLAUDE.md", 120),
+    ("AGENTS.md", 30),
+    ("CLAUDE.md", 30),
+    (".agents/agent-guide.md", 120),
     (".agents/tasks/TASKS.md", 30),
     (".agents/tasks/DONE.md", 50),
     (".agents/MEMORY.md", 40),

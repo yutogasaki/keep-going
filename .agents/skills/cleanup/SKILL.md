@@ -8,8 +8,9 @@
 |---------|---------|
 | `.agents/tasks/DONE.md` | 重要度。大きな機能追加・設計変更は残す。細かい修正・typo修正は削除候補 |
 | `.agents/MEMORY.md` | 重要度。有用なパターン・アーキテクチャ決定は残す。解決済みの一時メモは削除候補 |
-| `AGENTS.md` | 冗長な記述を圧縮。詳細は別ファイル参照に留める |
-| `CLAUDE.md` | 冗長な記述を圧縮。詳細は別ファイル参照に留める |
+| `AGENTS.md` | 短い入口に保ち、詳細は `.agents/agent-guide.md` に集約する |
+| `CLAUDE.md` | 短い入口に保ち、詳細は `.agents/agent-guide.md` に集約する |
+| `.agents/agent-guide.md` | 入口ファイルが参照する共通の正本。肥大化したら詳細を別の canonical doc へ逃がす |
 | `.agents/tasks/TASKS.md` | 完了済みタスクが残っていれば DONE.md に移動 |
 
 ## 閾値ガイドライン
@@ -17,10 +18,11 @@
 | ファイル | 警告行数 | アクション |
 |---------|---------|-----------|
 | TASKS.md | >30行 | 完了タスクをDONE.mdに移動 |
-| DONE.md | >50行 | 重要度で整理（細かい修正を削除） |
+| DONE.md | >50行 | 要約を残し、詳細は `.agents/tasks/archive/YYYY-MM.md` に移す |
 | MEMORY.md | >40行 | 解決済みメモ削除 |
-| AGENTS.md | >120行 | 詳細を外部ファイル参照に |
-| CLAUDE.md | >120行 | 詳細を外部ファイル参照に |
+| AGENTS.md | >30行 | 入口化できているか見直す |
+| CLAUDE.md | >30行 | 入口化できているか見直す |
+| .agents/agent-guide.md | >120行 | 共有ガイドの責務分離を検討 |
 
 ## 手順
 

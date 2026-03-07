@@ -15,6 +15,7 @@ KeepGoing の開発運用が canonical path からズレていないか、ファ
 2. canonical path を確認する
    - `CONSTITUTION.md`
    - `docs/development-governance.md`
+   - `.agents/agent-guide.md`
    - `.agents/tasks/TASKS.md`
    - `.agents/tasks/DONE.md`
    - `.agents/MEMORY.md`
@@ -31,7 +32,8 @@ KeepGoing の開発運用が canonical path からズレていないか、ファ
 
 ## KeepGoing の閾値
 
-- `AGENTS.md`, `CLAUDE.md`: 120 行前後
+- `AGENTS.md`, `CLAUDE.md`: 30 行前後
+- `.agents/agent-guide.md`: 120 行前後
 - `TASKS.md`: 30 行超で整理検討
 - `DONE.md`: 50 行超で圧縮検討
 - `MEMORY.md`: 40 行超で整理検討

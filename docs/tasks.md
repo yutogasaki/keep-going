@@ -5,7 +5,7 @@
 
 > セッション間で進捗を共有するために `docs/` に保管。
 > 4仕様書（Core v1.4 / UI v7 / Logic v2.0 / Operation v1.0）と照合済み。
-> 最終更新: 2026-03-07
+> 最終更新: 2026-03-08
 
 ---
 
@@ -47,6 +47,37 @@
 - [x] `fetchAllStudents` のページネーション
 - [ ] BGM の本格導入
 - [ ] Figma 前提のデザイン運用
+
+---
+
+## 2026-03 開発運用 backlog
+
+プロダクト改善を継続しつつ、開発効率・精度・運用しやすさを落とさないための backlog。
+active execution queue へ移すのは `.agents/tasks/TASKS.md` に限定する。
+
+### 今すぐやる 5 項目
+
+| 状況 | 優先 | 項目 | 狙い | 注意点 |
+|------|------|------|------|--------|
+| [x] | P0 | `AGENTS.md` / `CLAUDE.md` canonical 化 | guide の重複更新と context 消費を減らす | 参照先を増やしすぎず、入口は短く保つ |
+| [x] | P0 | `.agents/tasks/DONE.md` 月次圧縮 | 履歴を要約ログへ戻し、探索コストを下げる | 大きな設計判断は消さずに残す |
+| [ ] | P1 | `docs/tasks.md` 軽量化 | 毎回読む backlog のコンテキスト量を下げる | archive を増やしすぎて single source を壊さない |
+| [ ] | P1 | skill / verify の必須化 | persist / UI / governance 変更の漏れを減らす | 儀式化しすぎて手数だけ増やさない |
+| [ ] | P1 | CI で `lint + tsc + test + build` 実行 | ローカル運用依存を減らし、精度を安定させる | 失敗時の修復コストが高い flaky check は避ける |
+
+### まだやらなくてよいもの
+
+- [ ] E2E / visual snapshot の常設化
+- [ ] coverage threshold の厳格化
+- [ ] Figma 前提のデザイン運用
+- [ ] ADR / release runbook / rollback 手順の整備
+- [ ] design token 直書き色の全画面一括掃除
+
+### 補足メモ
+
+- UI 変更では desktop / mobile の visual QA を先に運用へ定着させ、その後に自動化を検討する
+- design token の徹底は、一括置換より変更頻度の高い画面から段階的に進める
+- security / privacy / observability は別軸で継続確認するが、今月の最優先は governance と verification の安定化
 
 ---
 
@@ -234,4 +265,4 @@
 
 ---
 
-*最終更新: 2026-03-07*
+*最終更新: 2026-03-08*
