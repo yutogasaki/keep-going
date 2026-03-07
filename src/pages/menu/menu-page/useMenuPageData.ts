@@ -50,11 +50,13 @@ export function useMenuPageData({
         setToastMessage(toast);
     }, []);
 
+    const onLoadError = useCallback(() => {
+        showToast({ text: '先生の設定を読み込めませんでした', type: 'error' });
+    }, [showToast]);
+
     const teacherContent = useTeacherContent({
         classLevel: userContext.classLevel,
-        onLoadError: () => {
-            showToast({ text: '先生の設定を読み込めませんでした', type: 'error' });
-        },
+        onLoadError,
     });
 
     const publishActions = useMenuPublishActions({
