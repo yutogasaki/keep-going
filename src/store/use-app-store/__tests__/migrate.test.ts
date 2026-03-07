@@ -52,7 +52,6 @@ function makeV5State(overrides: Record<string, any> = {}) {
             dailyTargetMinutes: 10,
             excludedExercises: ['C01', 'C02'],
             requiredExercises: ['S01', 'S02', 'S07'],
-            consumedMagicDate: '',
             consumedMagicSeconds: 0,
         }],
         sessionUserIds: ['user-1'],
@@ -80,7 +79,6 @@ function makeCurrentState(overrides: Record<string, any> = {}) {
             dailyTargetMinutes: 10,
             excludedExercises: [],
             requiredExercises: [],
-            consumedMagicDate: '',
             consumedMagicSeconds: 0,
             chibifuwas: [],
         }],
@@ -324,7 +322,8 @@ describe('full migration path (v0→current)', () => {
 
         // 新フィールドが存在
         expect(result.users[0].chibifuwas).toEqual([]);
-        expect(result.users[0].consumedMagicDate).toBe('');
+        expect(result.users[0].consumedMagicSeconds).toBe(0);
+        expect((result.users[0] as any).consumedMagicDate).toBeUndefined();
         expect(result.joinedChallengeIds).toEqual({});
 
         // レガシーフィールドが削除

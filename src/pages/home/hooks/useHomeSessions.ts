@@ -75,14 +75,11 @@ export function useHomeSessions({ users, sessionUserIds }: UseHomeSessionsParams
     const perUserMagic = useMemo<PerUserMagic[]>(() => {
         return activeUsers.map((user) => {
             const userSessions = allSessions.filter((session) => {
-                if (session.date !== todayStr) {
-                    return false;
-                }
                 return !session.userIds || session.userIds.includes(user.id);
             });
 
             const trained = userSessions.reduce((acc, session) => acc + session.totalSeconds, 0);
-            const consumed = user.consumedMagicDate === todayStr ? (user.consumedMagicSeconds || 0) : 0;
+            const consumed = user.consumedMagicSeconds || 0;
             const userTarget = (user.dailyTargetMinutes || 10) * 60;
 
             return {
@@ -92,18 +89,28 @@ export function useHomeSessions({ users, sessionUserIds }: UseHomeSessionsParams
                 targetSeconds: userTarget,
             };
         });
-    }, [activeUsers, allSessions, todayStr]);
+    }, [activeUsers, allSessions]);
 
-    const todaySeconds = todaySessions.reduce((acc, session) => acc + session.totalSeconds, 0);
+
+
+
+    const allTimeSeconds = useMemo(
+        () => allSessions
+            .filter((session) => {
+                if (isTogetherMode) {
+                    return !session.userIds || session.userIds.some((id) => sessionUserIdSet.has(id));
+                }
+                return !session.userIds || session.userIds.includes(sessionUserIds[0]);
+            })
+            .reduce((acc, session) => acc + session.totalSeconds, 0),
+        [allSessions, isTogetherMode, sessionUserIdSet, sessionUserIds],
+    );
 
     const consumedSeconds = activeUsers.reduce((sum, user) => {
-        if (user.consumedMagicDate === todayStr) {
-            return sum + (user.consumedMagicSeconds || 0);
-        }
-        return sum;
+        return sum + (user.consumedMagicSeconds || 0);
     }, 0);
 
-    const displaySeconds = Math.max(0, todaySeconds - consumedSeconds);
+    const displaySeconds = Math.max(0, allTimeSeconds - consumedSeconds);
 
     return {
         allSessions,

@@ -18,7 +18,6 @@ export interface Database {
                     daily_target_minutes: number;
                     excluded_exercises: string[];
                     required_exercises: string[];
-                    consumed_magic_date: string | null;
                     consumed_magic_seconds: number;
                     avatar_url: string | null;
                     chibifuwas: unknown[];
@@ -39,7 +38,6 @@ export interface Database {
                     daily_target_minutes?: number;
                     excluded_exercises?: string[];
                     required_exercises?: string[];
-                    consumed_magic_date?: string | null;
                     consumed_magic_seconds?: number;
                     avatar_url?: string | null;
                     chibifuwas?: unknown[];

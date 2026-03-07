@@ -1,7 +1,7 @@
 import { getTodayKey } from '../../lib/db';
 import type { AppState } from './types';
 
-export const APP_STATE_VERSION = 11;
+export const APP_STATE_VERSION = 12;
 
 export function migrateAppState(persistedState: any, version: number): AppState {
     if (version === 0) {
@@ -131,6 +131,17 @@ export function migrateAppState(persistedState: any, version: number): AppState 
                     (id: string) => !OLD_EXCLUDED.includes(id)
                 ),
             }));
+        }
+    }
+
+    if (version < 12) {
+        // 魔法エネルギーをデイリーリセットから蓄積方式に変更
+        // consumedMagicDate は不要になったため削除
+        if (persistedState.users && Array.isArray(persistedState.users)) {
+            persistedState.users = persistedState.users.map((user: any) => {
+                const { consumedMagicDate: _, ...rest } = user;
+                return rest;
+            });
         }
     }
 

@@ -483,3 +483,10 @@ begin
   return false;
 end;
 $$ language plpgsql security definer;
+
+-- ─── 魔法エネルギー蓄積方式マイグレーション ─────────────
+-- consumed_magic_date は不要になったため削除
+do $$ begin
+  alter table family_members drop column consumed_magic_date;
+exception when undefined_column then null;
+end $$;

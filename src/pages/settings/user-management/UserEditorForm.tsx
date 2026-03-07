@@ -39,7 +39,7 @@ export const UserEditorForm: React.FC<UserEditorFormProps> = ({
                     fontSize: FONT_SIZE.md,
                 }}
             />
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {USER_CLASS_LEVELS.map((classLevel) => (
                     <button
                         key={classLevel.id}
@@ -48,8 +48,8 @@ export const UserEditorForm: React.FC<UserEditorFormProps> = ({
                             padding: '6px 12px',
                             borderRadius: 20,
                             whiteSpace: 'nowrap',
-                            background: values.classLevel === classLevel.id ? '#2BBAA0' : '#F0F3F5',
-                            color: values.classLevel === classLevel.id ? 'white' : '#2D3436',
+                            background: values.classLevel === classLevel.id ? COLOR.primary : COLOR.bgLight,
+                            color: values.classLevel === classLevel.id ? COLOR.white : COLOR.text,
                             border: 'none',
                             fontSize: 12,
                             fontWeight: 700,

@@ -29,14 +29,12 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
         users: state.users.filter((user) => user.id !== id),
         sessionUserIds: state.sessionUserIds.filter((userId) => userId !== id),
     })),
-    consumeUserMagicEnergy: (id, seconds, date) => set((state) => ({
+    consumeUserMagicEnergy: (id, seconds) => set((state) => ({
         users: state.users.map((user) => {
             if (user.id !== id) return user;
-            const prevSeconds = user.consumedMagicDate === date ? (user.consumedMagicSeconds || 0) : 0;
             return {
                 ...user,
-                consumedMagicDate: date,
-                consumedMagicSeconds: prevSeconds + seconds,
+                consumedMagicSeconds: (user.consumedMagicSeconds || 0) + seconds,
             };
         }),
     })),

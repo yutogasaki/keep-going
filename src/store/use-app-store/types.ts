@@ -29,7 +29,6 @@ export interface UserProfileStore {
     dailyTargetMinutes: number;
     excludedExercises: string[];
     requiredExercises: string[];
-    consumedMagicDate?: string;
     consumedMagicSeconds?: number;
     avatarUrl?: string;
     chibifuwas: ChibifuwaRecord[];
@@ -43,7 +42,7 @@ export interface AppState {
     updateUser: (id: string, updates: Partial<UserProfileStore>) => void;
     deleteUser: (id: string) => void;
     updateUserSettings: (id: string, updates: Partial<Pick<UserProfileStore, 'dailyTargetMinutes' | 'excludedExercises' | 'requiredExercises'>>) => void;
-    consumeUserMagicEnergy: (id: string, seconds: number, date: string) => void;
+    consumeUserMagicEnergy: (id: string, seconds: number) => void;
     resetUserFuwafuwa: (id: string, newType: number, activeDays: number, finalStage: number) => void;
     addChibifuwa: (userId: string, record: Omit<ChibifuwaRecord, 'id'>) => void;
 

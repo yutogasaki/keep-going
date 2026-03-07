@@ -131,7 +131,6 @@ describe('toLocalUserFromCloudFamily', () => {
         daily_target_minutes: 15,
         excluded_exercises: ['ex-hard'],
         required_exercises: ['ex-basic'],
-        consumed_magic_date: null,
         consumed_magic_seconds: 0,
         avatar_url: null,
         chibifuwas: [],

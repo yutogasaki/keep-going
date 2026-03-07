@@ -29,7 +29,7 @@ export const HomeScreen: React.FC = () => {
     const [menuBrowserOpen, setMenuBrowserOpen] = useState(false);
     const [selectedPublicMenu, setSelectedPublicMenu] = useState<PublicMenu | null>(null);
 
-    const { allSessions, todayStr, activeUsers, targetSeconds, perUserMagic, displaySeconds } = useHomeSessions({
+    const { allSessions, activeUsers, targetSeconds, perUserMagic, displaySeconds } = useHomeSessions({
         users,
         sessionUserIds,
     });
@@ -66,7 +66,7 @@ export const HomeScreen: React.FC = () => {
 
         activeUsers.forEach((user) => {
             const userTarget = (user.dailyTargetMinutes || 10) * 60;
-            consumeUserMagicEnergy(user.id, userTarget, todayStr);
+            consumeUserMagicEnergy(user.id, userTarget);
         });
 
         const duration = 3000;

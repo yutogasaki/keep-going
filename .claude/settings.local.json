@@ -27,7 +27,16 @@
       "Bash(find src -name \"*.tsx\" -type f -exec grep -oh \"#[0-9A-Fa-f]\\\\{6\\\\}\\\\|#[0-9A-Fa-f]\\\\{3\\\\}\" {} ;)",
       "Bash(find src -name \"*.tsx\" -type f -exec grep -oh \"padding[^:]*: ''[^'']*''\\\\|padding[^:]*: [0-9]*\" {} ;)",
       "Bash(find src -name \"*.tsx\" -type f -exec grep -oh \"fontFamily[^:]*: ''[^'']*''\" {} ;)",
-      "Bash(find src -name \"*.tsx\" -type f -exec grep -h \"fontFamily\" {} ;)"
+      "Bash(find src -name \"*.tsx\" -type f -exec grep -h \"fontFamily\" {} ;)",
+      "Bash(wc -l /Users/yutogasaki/Projects/keep-going/src/**/*.ts /Users/yutogasaki/Projects/keep-going/src/**/*.tsx)",
+      "Bash(wc -l /Users/yutogasaki/Projects/keep-going/.claude/skills/*/*.md)",
+      "Bash(find /Users/yutogasaki/Projects/keep-going/src -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" \\\\\\) -exec wc -l {} +)",
+      "Bash(du -sh /Users/yutogasaki/Projects/keep-going/.claude/tasks/* /Users/yutogasaki/Projects/keep-going/CLAUDE.md)",
+      "Bash(wc -l /Users/yutogasaki/Projects/keep-going/src/store/use-app-store/*.ts)",
+      "Bash(wc -l /Users/yutogasaki/Projects/keep-going/src/pages/menu/*.tsx)",
+      "Bash(find /Users/yutogasaki/Projects/keep-going/src -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) -exec wc -l {} +)",
+      "Bash(wc -l /Users/yutogasaki/Projects/keep-going/src/pages/*.tsx)",
+      "Bash(sort -t: -k2 -rn)"
     ]
   }
 }
