@@ -19,7 +19,7 @@ export const StudentsOverviewCards: React.FC<StudentsOverviewCardsProps> = ({
 
     return (
         <>
-            <div style={{
+            <div className="wide-grid" style={{
                 display: 'flex',
                 gap: 10,
                 padding: '0 20px',

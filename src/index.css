@@ -301,9 +301,86 @@ html {
     padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* ─── Responsive Breakpoints ──────────────── */
+
+/* Small screens (320px以下): 防御的縮小 */
+@media (max-width: 320px) {
+    .page-content {
+        padding-left: 10px;
+        padding-right: 10px;
+        gap: 12px;
+    }
+
+    .card {
+        padding: var(--card-padding-sm);
+        border-radius: var(--card-radius-sm);
+    }
+
+    .fab {
+        width: 56px;
+        height: 56px;
+        top: -16px;
+    }
+}
+
+/* Tablet (600px+): コンテナ拡張 */
+@media (min-width: 600px) {
+    .app-container {
+        max-width: 600px;
+    }
+}
+
+/* Desktop (900px+): さらに広く、背景にグラデーション */
+@media (min-width: 900px) {
+    .app-container {
+        max-width: 768px;
+        border-radius: 24px;
+        margin-top: 16px;
+        margin-bottom: 16px;
+        height: calc(100% - 32px);
+    }
+}
+
+/* Wideレイアウト用グリッド */
+@media (min-width: 600px) {
+    .wide-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 16px;
+    }
+}
+
 /* ─── Landscape mode ──────────────── */
 @media (orientation: landscape) and (max-height: 500px) {
     .stretch-session {
         flex-direction: row;
+    }
+
+    /* セッション中のタイマーリングを縮小 */
+    .stretch-session .progress-ring {
+        transform: rotate(-90deg) scale(0.75);
+    }
+
+    .page-content {
+        padding-top: 8px;
+        padding-bottom: 70px;
+    }
+
+    .footer-nav {
+        height: 44px !important;
+    }
+
+    .fab {
+        width: 48px;
+        height: 48px;
+        top: -12px;
+    }
+}
+
+/* ─── Print (hide non-essential) ──────────────── */
+@media print {
+    .footer-nav,
+    .fab {
+        display: none !important;
     }
 }
