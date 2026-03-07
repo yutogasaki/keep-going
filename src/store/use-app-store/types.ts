@@ -61,12 +61,14 @@ export interface AppState {
     setSessionUserIds: (ids: string[]) => void;
     isInSession: boolean;
     sessionExerciseIds: string[] | null;
+    sessionHybridMode: boolean;
     sessionReturnTab: TabId;
     sessionDraft: SessionDraft | null;
     setSessionDraft: (draft: SessionDraft | null) => void;
     isTeacherPreview: boolean;
     startSession: () => void;
     startSessionWithExercises: (ids: string[]) => void;
+    startHybridSession: (requiredIds: string[]) => void;
     startTeacherPreviewSession: (ids: string[]) => void;
     endSession: () => void;
     completeSession: () => void;

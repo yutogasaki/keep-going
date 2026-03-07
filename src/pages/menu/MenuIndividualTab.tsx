@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
+import { ListChecks } from 'lucide-react';
 import { CustomExerciseList } from './individual-tab/CustomExerciseList';
 import { StandardExerciseList } from './individual-tab/StandardExerciseList';
 import { CreateCustomExerciseCard } from './individual-tab/CreateCustomExerciseCard';
+import { SelectionBar } from './individual-tab/SelectionBar';
 import type { MenuIndividualTabProps } from './individual-tab/types';
 
-export const MenuIndividualTab: React.FC<MenuIndividualTabProps> = ({
+export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
+    onStartHybridSession?: (requiredIds: string[]) => void;
+}> = ({
     exercises,
     requiredExercises,
     customExercises,
@@ -23,15 +27,83 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps> = ({
     onPublishExercise,
     onUnpublishExercise,
     onOpenPublicExerciseBrowser,
+    onStartHybridSession,
 }) => {
+    const [selectionMode, setSelectionMode] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    const handleToggleSelect = useCallback((exerciseId: string) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(exerciseId)) {
+                next.delete(exerciseId);
+            } else {
+                next.add(exerciseId);
+            }
+            return next;
+        });
+    }, []);
+
+    const handleReset = useCallback(() => {
+        setSelectedIds(new Set());
+    }, []);
+
+    const handleStartHybrid = useCallback(() => {
+        if (selectedIds.size > 0 && onStartHybridSession) {
+            onStartHybridSession([...selectedIds]);
+            setSelectionMode(false);
+            setSelectedIds(new Set());
+        }
+    }, [selectedIds, onStartHybridSession]);
+
+    const handleToggleMode = useCallback(() => {
+        setSelectionMode((prev) => {
+            if (prev) {
+                setSelectedIds(new Set());
+            }
+            return !prev;
+        });
+    }, []);
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '0 20px' }}>
+            {/* えらぶモード切替ボタン */}
+            {onStartHybridSession && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <motion.button
+                        whileTap={{ scale: 0.95 }}
+                        onClick={handleToggleMode}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 5,
+                            padding: '6px 14px',
+                            borderRadius: 12,
+                            border: selectionMode ? '2px solid #2BBAA0' : '2px solid #DFE6E9',
+                            background: selectionMode ? 'rgba(43, 186, 160, 0.08)' : 'transparent',
+                            cursor: 'pointer',
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: selectionMode ? '#2BBAA0' : '#8395A7',
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        <ListChecks size={15} />
+                        えらぶ
+                    </motion.button>
+                </div>
+            )}
+
             <StandardExerciseList
                 exercises={exercises}
                 requiredExerciseIds={requiredExercises}
                 onStartExercise={onStartExercise}
                 teacherExerciseIds={teacherExerciseIds}
                 isNewTeacherContent={isNewTeacherContent}
+                selectionMode={selectionMode}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
             />
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
@@ -127,6 +199,12 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps> = ({
                     </motion.button>
                 </div>
             )}
+
+            <SelectionBar
+                count={selectedIds.size}
+                onStart={handleStartHybrid}
+                onReset={handleReset}
+            />
         </div>
     );
 };

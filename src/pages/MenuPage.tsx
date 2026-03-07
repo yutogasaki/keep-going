@@ -18,6 +18,7 @@ export const MenuPage: React.FC = () => {
     const users = useAppStore((state) => state.users);
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const startSessionWithExercises = useAppStore((state) => state.startSessionWithExercises);
+    const startHybridSession = useAppStore((state) => state.startHybridSession);
     const updateUserSettings = useAppStore((state) => state.updateUserSettings);
 
     const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
@@ -68,6 +69,7 @@ export const MenuPage: React.FC = () => {
         handleUnpublishGroup,
         handleStartSingleExercise,
         handleStartCustomExercise,
+        handleStartHybridSession,
         teacherExercises,
         teacherExerciseIds,
         teacherMenuIds,
@@ -87,6 +89,7 @@ export const MenuPage: React.FC = () => {
         users,
         sessionUserIds,
         startSessionWithExercises,
+        startHybridSession,
         updateUserSettings,
     });
 
@@ -185,6 +188,7 @@ export const MenuPage: React.FC = () => {
                     onPublishExercise={handlePublishExercise}
                     onUnpublishExercise={handleUnpublishExercise}
                     onOpenPublicExerciseBrowser={() => setShowPublicExerciseBrowser(true)}
+                    onStartHybridSession={handleStartHybridSession}
                 />
             )}
 

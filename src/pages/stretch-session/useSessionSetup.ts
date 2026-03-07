@@ -15,6 +15,7 @@ interface UseSessionSetupParams {
     users: UserProfileStore[];
     sessionUserIds: string[];
     sessionExerciseIds: string[] | null;
+    sessionHybridMode?: boolean;
 }
 
 interface UseSessionSetupResult {
@@ -29,6 +30,7 @@ export function useSessionSetup({
     users,
     sessionUserIds,
     sessionExerciseIds,
+    sessionHybridMode,
 }: UseSessionSetupParams): UseSessionSetupResult {
     const [isLoading, setIsLoading] = useState(true);
     const [sessionExercises, setSessionExercises] = useState<Exercise[]>([]);
@@ -131,7 +133,8 @@ export function useSessionSetup({
                     .filter(s => s.itemType === 'exercise' && s.status === 'required')
                     .map(s => s.itemId);
 
-                if (!sessionExerciseIds) {
+                if (!sessionExerciseIds || sessionHybridMode) {
+                    // 自動生成モード（ハイブリッド時は選択種目を requiredIds にマージ）
                     const allSessions = await getAllSessions();
                     const historicalCounts: Record<string, number> = {};
 
@@ -156,7 +159,12 @@ export function useSessionSetup({
                         ...teacherExcludedIds.filter(id => !userSetIds.has(id)),  // 先生の除外（ユーザー未設定分のみ）
                     ];
 
-                    const mergedRequired = [...new Set(effectiveRequired)];
+                    // ハイブリッドモード: 選択した種目を必須に追加
+                    const hybridRequired = sessionHybridMode && sessionExerciseIds
+                        ? [...effectiveRequired, ...sessionExerciseIds]
+                        : effectiveRequired;
+
+                    const mergedRequired = [...new Set(hybridRequired)];
                     const today = todaySessions.flatMap((session) => [...session.exerciseIds, ...session.skippedIds]);
                     const mergedExcluded = [...new Set([...today, ...effectiveExcluded])]
                         .filter(id => !mergedRequired.includes(id));
@@ -204,6 +212,7 @@ export function useSessionSetup({
         globalExcludedIds,
         globalRequiredIds,
         sessionExerciseIds,
+        sessionHybridMode,
         sessionUserIds,
     ]);
 

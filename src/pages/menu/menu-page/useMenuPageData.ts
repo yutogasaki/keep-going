@@ -16,6 +16,7 @@ interface UseMenuPageDataParams {
     users: UserProfileStore[];
     sessionUserIds: string[];
     startSessionWithExercises: (ids: string[]) => void;
+    startHybridSession: (requiredIds: string[]) => void;
     updateUserSettings: (
         id: string,
         updates: Partial<Pick<UserProfileStore, 'dailyTargetMinutes' | 'excludedExercises' | 'requiredExercises'>>,
@@ -26,6 +27,7 @@ export function useMenuPageData({
     users,
     sessionUserIds,
     startSessionWithExercises,
+    startHybridSession,
     updateUserSettings,
 }: UseMenuPageDataParams) {
     const [tab, setTab] = useState<MenuTab>('group');
@@ -154,6 +156,11 @@ export function useMenuPageData({
         startSessionWithExercises([exerciseId]);
     }, [startSessionWithExercises]);
 
+    const handleStartHybridSession = useCallback((requiredIds: string[]) => {
+        audio.initTTS();
+        startHybridSession(requiredIds);
+    }, [startHybridSession]);
+
     return {
         tab,
         setTab,
@@ -200,6 +207,7 @@ export function useMenuPageData({
         handleUnpublishGroup: publishActions.handleUnpublishGroup,
         handleStartSingleExercise,
         handleStartCustomExercise,
+        handleStartHybridSession,
         teacherExercises: teacherContent.teacherExercises,
         teacherExerciseIds: teacherContent.teacherExerciseIds,
         teacherMenuIds: teacherContent.teacherMenuIds,

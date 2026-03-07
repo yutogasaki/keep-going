@@ -27,6 +27,7 @@ export const StretchSession: React.FC = () => {
     const users = useAppStore((state) => state.users);
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const sessionExerciseIds = useAppStore((state) => state.sessionExerciseIds);
+    const sessionHybridMode = useAppStore((state) => state.sessionHybridMode);
     const isTeacherPreview = useAppStore((state) => state.isTeacherPreview);
     const hasSeenSessionControlsHint = useAppStore((state) => state.hasSeenSessionControlsHint);
     const setHasSeenSessionControlsHint = useAppStore((state) => state.setHasSeenSessionControlsHint);
@@ -40,6 +41,7 @@ export const StretchSession: React.FC = () => {
         users,
         sessionUserIds,
         sessionExerciseIds,
+        sessionHybridMode,
     });
     const [startedAt] = useState(() => new Date().toISOString());
     const autoCompleteSaveRef = useRef<() => Promise<void> | void>(() => { });

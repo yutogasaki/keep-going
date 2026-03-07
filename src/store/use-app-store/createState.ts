@@ -110,6 +110,7 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
 
     isInSession: false,
     sessionExerciseIds: null,
+    sessionHybridMode: false,
     sessionReturnTab: 'home',
     sessionDraft: null,
     setSessionDraft: (sessionDraft) => set({ sessionDraft }),
@@ -135,17 +136,25 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
         },
         isTeacherPreview: false,
     })),
+    startHybridSession: (requiredIds) => set((state) => ({
+        isInSession: true,
+        sessionExerciseIds: requiredIds,
+        sessionHybridMode: true,
+        sessionReturnTab: state.currentTab,
+        isTeacherPreview: false,
+    })),
     startTeacherPreviewSession: (ids) => set((state) => ({
         isInSession: true,
         sessionExerciseIds: ids,
         sessionReturnTab: state.currentTab,
         isTeacherPreview: true,
     })),
-    endSession: () => set({ isInSession: false, sessionExerciseIds: null, isTeacherPreview: false }),
+    endSession: () => set({ isInSession: false, sessionExerciseIds: null, sessionHybridMode: false, isTeacherPreview: false }),
     completeSession: () => set((state) => ({
         ...resolveSessionReturnTab(state.currentTab, state.sessionReturnTab),
         isInSession: false,
         sessionExerciseIds: null,
+        sessionHybridMode: false,
         isTeacherPreview: false,
     })),
 
