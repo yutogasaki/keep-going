@@ -2,6 +2,27 @@
 -- 冪等（何回実行しても安全）
 -- Supabase SQL Editor にコピペして実行してください
 
+-- ─── 権限テーブル ────────────────────────────────────────
+
+create table if not exists user_roles (
+  id uuid primary key default gen_random_uuid(),
+  email text not null check (email = lower(email)),
+  role text not null check (role in ('teacher', 'developer')),
+  created_at timestamptz default now(),
+  unique (email, role)
+);
+
+create index if not exists idx_user_roles_role on user_roles (role);
+
+alter table user_roles enable row level security;
+
+insert into user_roles (email, role)
+values
+  ('yu.togasaki@gmail.com', 'teacher'),
+  ('yu.togasaki@gmail.com', 'developer'),
+  ('ayami.ballet.studio@gmail.com', 'teacher')
+on conflict (email, role) do nothing;
+
 -- ─── 関数定義 ──────────────────────────────────────────
 
 -- updated_at 自動更新トリガー関数
@@ -19,13 +40,13 @@ returns boolean
 language sql
 security definer
 stable
+set search_path = public
 as $$
-  select coalesce(
-    (select email from auth.users where id = auth.uid()) = any(array[
-      'yu.togasaki@gmail.com',
-      'ayami.ballet.studio@gmail.com'
-    ]),
-    false
+  select exists(
+    select 1
+    from public.user_roles
+    where email = lower(coalesce((select email from auth.users where id = auth.uid()), ''))
+      and role = 'teacher'
   );
 $$;
 
@@ -35,10 +56,13 @@ returns boolean
 language sql
 security definer
 stable
+set search_path = public
 as $$
-  select coalesce(
-    (select email from auth.users where id = auth.uid()) = 'yu.togasaki@gmail.com',
-    false
+  select exists(
+    select 1
+    from public.user_roles
+    where email = lower(coalesce((select email from auth.users where id = auth.uid()), ''))
+      and role = 'developer'
   );
 $$;
 
@@ -101,6 +125,12 @@ exception when duplicate_object then null;
 end $$;
 
 -- ─── RLSポリシー（安全に作成） ────────────────────────
+
+do $$ begin
+  create policy "Developers can manage user_roles" on user_roles
+    for all using (is_developer()) with check (is_developer());
+exception when duplicate_object then null;
+end $$;
 
 -- 先生: 全family_membersをSELECT
 do $$ begin

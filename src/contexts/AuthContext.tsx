@@ -10,11 +10,11 @@ import {
 } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { checkIsDeveloper, checkIsTeacher } from '../lib/teacher';
 import { initialSync, processQueue, setAccountId, setupOnlineListener } from '../lib/sync';
 import { useAppStore } from '../store/useAppStore';
 import { useSyncStatus } from '../store/useSyncStatus';
 import { SyncConflictModal } from '../components/SyncConflictModal';
+import { fetchCurrentUserRoleFlags } from '../lib/userRoles';
 import { createAuthActions } from './auth/authActions';
 import { LOGIN_CONTEXT_KEY } from './auth/constants';
 import { getAppSettingsSnapshot } from './auth/settingsSnapshot';
@@ -106,8 +106,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setAccountId(user.id);
         setIsAnonymous(user.is_anonymous ?? false);
-        setIsTeacher(checkIsTeacher(user.email));
-        setIsDeveloper(checkIsDeveloper(user.email));
 
         if (hasSyncedRef.current) return;
         hasSyncedRef.current = true;
@@ -142,6 +140,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
         }
     }, [user, loginContext, handleSettingsLogin, setLoginContext]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        if (!user || user.is_anonymous) {
+            setIsTeacher(false);
+            setIsDeveloper(false);
+            return;
+        }
+
+        setIsTeacher(false);
+        setIsDeveloper(false);
+
+        fetchCurrentUserRoleFlags().then((roles) => {
+            if (cancelled) return;
+            setIsTeacher(roles.isTeacher);
+            setIsDeveloper(roles.isDeveloper);
+        }).catch((error) => {
+            console.warn('[auth] Failed to fetch role flags:', error);
+            if (cancelled) return;
+            setIsTeacher(false);
+            setIsDeveloper(false);
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [user]);
 
     useEffect(() => {
         const cleanup = setupOnlineListener();

@@ -78,6 +78,15 @@ create table app_settings (
   updated_at timestamptz default now()
 );
 
+-- ユーザー権限（teacher / developer）
+create table user_roles (
+  id uuid primary key default gen_random_uuid(),
+  email text not null check (email = lower(email)),
+  role text not null check (role in ('teacher', 'developer')),
+  created_at timestamptz default now(),
+  unique (email, role)
+);
+
 -- チャレンジ（先生が作成する月間チャレンジ）
 create table challenges (
   id uuid primary key default gen_random_uuid(),
@@ -120,6 +129,7 @@ create table public_menus (
 create index idx_family_members_account on family_members (account_id);
 create index idx_sessions_account on sessions (account_id);
 create index idx_sessions_date on sessions (account_id, date);
+create index idx_user_roles_role on user_roles (role);
 create index idx_challenges_dates on challenges (start_date, end_date);
 create index idx_challenge_completions_account on challenge_completions (account_id);
 create index idx_public_menus_downloads on public_menus (download_count desc);
@@ -130,6 +140,7 @@ alter table sessions enable row level security;
 alter table custom_exercises enable row level security;
 alter table menu_groups enable row level security;
 alter table app_settings enable row level security;
+alter table user_roles enable row level security;
 alter table challenges enable row level security;
 alter table challenge_completions enable row level security;
 alter table public_menus enable row level security;
@@ -163,6 +174,43 @@ create policy "Anyone can read public menus" on public_menus
 create policy "Users can manage own public menus" on public_menus
   for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
 
+insert into user_roles (email, role)
+values
+  ('yu.togasaki@gmail.com', 'teacher'),
+  ('yu.togasaki@gmail.com', 'developer'),
+  ('ayami.ballet.studio@gmail.com', 'teacher')
+on conflict (email, role) do nothing;
+
+create or replace function is_teacher()
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists(
+    select 1
+    from public.user_roles
+    where email = lower(coalesce((select email from auth.users where id = auth.uid()), ''))
+      and role = 'teacher'
+  );
+$$;
+
+create or replace function is_developer()
+returns boolean
+language sql
+security definer
+stable
+set search_path = public
+as $$
+  select exists(
+    select 1
+    from public.user_roles
+    where email = lower(coalesce((select email from auth.users where id = auth.uid()), ''))
+      and role = 'developer'
+  );
+$$;
+
 -- updated_at 自動更新トリガー
 create or replace function update_updated_at()
 returns trigger as $$
@@ -178,22 +226,6 @@ create trigger app_settings_updated_at before update on app_settings
   for each row execute function update_updated_at();
 
 -- ─── 先生モード ──────────────────────────────────────
-
--- 先生判定関数（メールアドレスをここで変更する）
-create or replace function is_teacher()
-returns boolean
-language sql
-security definer
-stable
-as $$
-  select coalesce(
-    (select email from auth.users where id = auth.uid()) = any(array[
-      'yu.togasaki@gmail.com',
-      'ayami.ballet.studio@gmail.com'
-    ]),
-    false
-  );
-$$;
 
 -- 先生は全生徒の family_members を SELECT できる
 create policy "Teachers can read all family_members" on family_members
@@ -215,18 +247,8 @@ $$ language plpgsql security definer;
 
 -- ─── 開発者モード ────────────────────────────────────
 
--- 開発者判定関数
-create or replace function is_developer()
-returns boolean
-language sql
-security definer
-stable
-as $$
-  select coalesce(
-    (select email from auth.users where id = auth.uid()) = 'yu.togasaki@gmail.com',
-    false
-  );
-$$;
+create policy "Developers can manage user_roles" on user_roles
+  for all using (is_developer()) with check (is_developer());
 
 -- 先生・開発者は app_settings を全アカウント分 SELECT できる
 create policy "Teachers can read all app_settings" on app_settings

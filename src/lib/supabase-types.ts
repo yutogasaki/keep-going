@@ -147,6 +147,21 @@ export interface Database {
                 Update: Partial<Database['public']['Tables']['app_settings']['Insert']>;
                 Relationships: [];
             };
+            user_roles: {
+                Row: {
+                    id: string;
+                    email: string;
+                    role: string;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    email: string;
+                    role: string;
+                };
+                Update: Partial<Database['public']['Tables']['user_roles']['Insert']>;
+                Relationships: [];
+            };
             challenges: {
                 Row: {
                     id: string;
@@ -364,6 +379,10 @@ export interface Database {
             increment_download_count: {
                 Args: { menu_id: string };
                 Returns: undefined;
+            };
+            is_teacher: {
+                Args: Record<string, never>;
+                Returns: boolean;
             };
             is_developer: {
                 Args: Record<string, never>;

@@ -31,25 +31,6 @@ export interface StudentSummary {
     lastActiveDate: string | null;
 }
 
-// ─── Teacher check (hardcoded email) ─────────────────
-
-const TEACHER_EMAILS = [
-    'yu.togasaki@gmail.com',
-    'ayami.ballet.studio@gmail.com',
-];
-
-export function checkIsTeacher(email: string | undefined): boolean {
-    return !!email && TEACHER_EMAILS.includes(email);
-}
-
-// ─── Developer check ─────────────────────────────────
-
-const DEVELOPER_EMAILS = ['yu.togasaki@gmail.com'];
-
-export function checkIsDeveloper(email: string | undefined): boolean {
-    return !!email && DEVELOPER_EMAILS.includes(email);
-}
-
 // ─── Fetch all students ──────────────────────────────
 
 const TEACHER_FETCH_PAGE_SIZE = 1000;
