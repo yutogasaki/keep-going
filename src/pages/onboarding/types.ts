@@ -5,4 +5,5 @@ export type OnboardingStep =
     | 'restoring'
     | 'name'
     | 'class'
-    | 'swipe';
+    | 'swipe'
+    | 'notification';

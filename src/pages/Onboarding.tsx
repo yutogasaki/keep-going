@@ -13,6 +13,7 @@ import { NameStep } from './onboarding/NameStep';
 import { RestoringStep } from './onboarding/RestoringStep';
 import { SwipeStep } from './onboarding/SwipeStep';
 import { WelcomeStep } from './onboarding/WelcomeStep';
+import { NotificationStep } from './onboarding/NotificationStep';
 import type { OnboardingStep } from './onboarding/types';
 
 export const Onboarding: React.FC = () => {
@@ -191,7 +192,14 @@ export const Onboarding: React.FC = () => {
                 )}
 
                 {step === 'swipe' && (
-                    <SwipeStep onFinish={handleFinish} onBack={() => setStep('class')} />
+                    <SwipeStep onFinish={() => setStep('notification')} onBack={() => setStep('class')} />
+                )}
+
+                {step === 'notification' && (
+                    <NotificationStep
+                        onDone={handleFinish}
+                        onBack={() => setStep('swipe')}
+                    />
                 )}
             </AnimatePresence>
         </div>
