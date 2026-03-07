@@ -19,25 +19,35 @@ interface FuwafuwaHomeCardProps {
     onSelectUser: (userId: string) => void;
 }
 
-const formatDuration = (seconds: number) => {
-    if (seconds < 60) {
-        return `${seconds}秒`;
-    }
-
-    return `${Math.floor(seconds / 60)}分`;
-};
-
 const getStageLabel = (stage: number) => {
     if (stage === 1) return 'たまご';
     if (stage === 2) return 'ようせい';
     return 'おとな';
 };
 
+const getSoftProgress = (percent: number) => {
+    if (percent >= 100) return 'まんたん！✨';
+    if (percent >= 90) return 'もうすこしで まんたん！';
+    if (percent >= 61) return 'けっこう たまった！';
+    if (percent >= 31) return 'いいかんじ！';
+    if (percent >= 1) return 'すこし たまってきた';
+    return 'からっぽ';
+};
+
+const getSoftProgressShort = (percent: number) => {
+    if (percent >= 100) return 'まんたん✨';
+    if (percent >= 90) return 'あとすこし';
+    if (percent >= 61) return 'いっぱい';
+    if (percent >= 31) return 'いいかんじ';
+    if (percent >= 1) return 'すこし';
+    return 'からっぽ';
+};
+
 const getFamilyMessage = (activeCount: number, displaySeconds: number, targetSeconds: number) => {
-    const remainingSeconds = Math.max(0, targetSeconds - displaySeconds);
+    const percent = Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100);
     const peopleLabel = activeCount === 2 ? 'ふたりで' : `${activeCount}にんで`;
 
-    if (displaySeconds >= targetSeconds) {
+    if (percent >= 100) {
         return 'みんな すごい！ まんたんだよ';
     }
 
@@ -45,17 +55,17 @@ const getFamilyMessage = (activeCount: number, displaySeconds: number, targetSec
         return `${peopleLabel} ちからを あわせよう！`;
     }
 
-    if (remainingSeconds <= 60) {
-        return `${peopleLabel} あと ${formatDuration(remainingSeconds)}！`;
+    if (percent >= 90) {
+        return `${peopleLabel} もうすこしで まんたん！`;
     }
 
-    return `みんなの まほう、あと ${formatDuration(remainingSeconds)} で まんたん！`;
+    return `みんなの まほう、たまってきたよ！`;
 };
 
 const getUserMessage = (displaySeconds: number, targetSeconds: number, stage: number, activeDays: number) => {
-    const remainingSeconds = Math.max(0, targetSeconds - displaySeconds);
+    const percent = Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100);
 
-    if (displaySeconds >= targetSeconds) {
+    if (percent >= 100) {
         return 'わあ！ まほうが いっぱいだよ';
     }
 
@@ -70,11 +80,11 @@ const getUserMessage = (displaySeconds: number, targetSeconds: number, stage: nu
         return 'もうすぐ おおきくなれそう！';
     }
 
-    if (remainingSeconds <= 60) {
-        return `あと ${formatDuration(remainingSeconds)} で まんたん！`;
+    if (percent >= 90) {
+        return 'もうすこしで まんたん！';
     }
 
-    return `いいかんじ！ あと ${formatDuration(remainingSeconds)} だよ`;
+    return 'いいかんじ！ まほうが たまってきたよ';
 };
 
 interface SpeechBubbleProps {
@@ -154,7 +164,6 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     );
 
     const familyProgressPercent = Math.min(100, Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100));
-    const familyRemainingSeconds = Math.max(0, targetSeconds - displaySeconds);
     const selectedUserSessions = selectedUser ? sessionsByUserId.get(selectedUser.id) ?? [] : [];
     const selectedUserStatus = selectedUser
         ? calculateFuwafuwaStatus(selectedUser.fuwafuwaBirthDate, selectedUserSessions)
@@ -229,43 +238,14 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                         />
                         <div
                             style={{
-                                display: 'flex',
-                                alignItems: 'baseline',
-                                gap: SPACE.sm,
+                                fontFamily: FONT.heading,
+                                fontSize: FONT_SIZE.lg,
+                                fontWeight: 800,
+                                color: familyProgressPercent >= 100 ? COLOR.gold : COLOR.dark,
                                 marginTop: -2,
                             }}
                         >
-                            <span
-                                style={{
-                                    fontFamily: FONT.heading,
-                                    fontSize: FONT_SIZE['2xl'],
-                                    fontWeight: 800,
-                                    color: COLOR.dark,
-                                }}
-                            >
-                                {familyProgressPercent}%
-                            </span>
-                            <span
-                                style={{
-                                    fontFamily: FONT.body,
-                                    fontSize: FONT_SIZE.sm,
-                                    color: COLOR.text,
-                                }}
-                            >
-                                {formatDuration(displaySeconds)} / {formatDuration(targetSeconds)}
-                            </span>
-                        </div>
-                        <div
-                            style={{
-                                fontFamily: FONT.body,
-                                fontSize: FONT_SIZE.sm,
-                                color: familyRemainingSeconds > 0 ? COLOR.text : COLOR.gold,
-                                fontWeight: 600,
-                            }}
-                        >
-                            {familyRemainingSeconds > 0
-                                ? `あと ${formatDuration(familyRemainingSeconds)} で まんたん`
-                                : 'みんなで まんたん！'}
+                            {getSoftProgress(familyProgressPercent)}
                         </div>
                         <div style={{ marginTop: SPACE.sm }}>
                             <SpeechBubble
@@ -334,8 +314,6 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                                     100,
                                     Math.round(((userMagic?.displaySeconds ?? 0) / Math.max(1, userMagic?.targetSeconds ?? 1)) * 100),
                                 );
-                                const remainingSeconds = Math.max(0, (userMagic?.targetSeconds ?? 0) - (userMagic?.displaySeconds ?? 0));
-
                                 return (
                                     <button
                                         key={user.id}
@@ -446,19 +424,14 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                                             </div>
                                             <div
                                                 style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'space-between',
-                                                    gap: SPACE.sm,
                                                     fontFamily: FONT.body,
                                                     fontSize: FONT_SIZE.xs,
-                                                    color: COLOR.text,
+                                                    color: progressPercent >= 100 ? COLOR.gold : COLOR.text,
+                                                    fontWeight: 600,
+                                                    textAlign: 'center',
                                                 }}
                                             >
-                                                <span>{progressPercent}%</span>
-                                                <span>
-                                                    {remainingSeconds > 0 ? `あと ${formatDuration(remainingSeconds)}` : 'まんたん'}
-                                                </span>
+                                                {getSoftProgressShort(progressPercent)}
                                             </div>
                                         </div>
                                     </button>
