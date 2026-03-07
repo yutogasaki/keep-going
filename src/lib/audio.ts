@@ -98,9 +98,9 @@ class AudioEngine {
                 }
             }
 
-            // Adjust rate and pitch to sound more calming and natural
-            utterance.rate = 0.95; // Slightly slower
-            utterance.pitch = 1.05; // Slightly higher but soft
+            // Adjust rate and pitch — user-configurable via settings
+            utterance.rate = state.ttsRate ?? 0.95;
+            utterance.pitch = state.ttsPitch ?? 1.05;
 
             window.speechSynthesis.speak(utterance);
         }

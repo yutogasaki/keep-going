@@ -2,6 +2,7 @@ import React from 'react';
 import { useAppStore } from '../../store/useAppStore';
 import { audio } from '../../lib/audio';
 import { VolumeCard } from './sound-notification/VolumeCard';
+import { VoiceSettingsCard } from './sound-notification/VoiceSettingsCard';
 import { AudioTogglesCard } from './sound-notification/AudioTogglesCard';
 import { HapticCard } from './sound-notification/HapticCard';
 import { NotificationCard } from './sound-notification/NotificationCard';
@@ -15,6 +16,10 @@ export const SoundNotificationSettingsSection: React.FC = () => {
     const setHapticEnabled = useAppStore((state) => state.setHapticEnabled);
     const notificationsEnabled = useAppStore((state) => state.notificationsEnabled);
     const setNotificationsEnabled = useAppStore((state) => state.setNotificationsEnabled);
+    const ttsRate = useAppStore((state) => state.ttsRate);
+    const setTtsRate = useAppStore((state) => state.setTtsRate);
+    const ttsPitch = useAppStore((state) => state.ttsPitch);
+    const setTtsPitch = useAppStore((state) => state.setTtsPitch);
     const notificationTime = useAppStore((state) => state.notificationTime);
     const setNotificationTime = useAppStore((state) => state.setNotificationTime);
 
@@ -67,6 +72,15 @@ export const SoundNotificationSettingsSection: React.FC = () => {
                     audio.speak('つぎは、かいきゃくストレッチです');
                 }}
             />
+
+            {ttsEnabled && (
+                <VoiceSettingsCard
+                    rate={ttsRate}
+                    pitch={ttsPitch}
+                    onRateChange={setTtsRate}
+                    onPitchChange={setTtsPitch}
+                />
+            )}
 
             <AudioTogglesCard
                 ttsEnabled={ttsEnabled}

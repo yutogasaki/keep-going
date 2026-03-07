@@ -1,7 +1,7 @@
 import { getTodayKey } from '../../lib/db';
 import type { AppState } from './types';
 
-export const APP_STATE_VERSION = 14;
+export const APP_STATE_VERSION = 15;
 const VALID_TABS = new Set(['home', 'record', 'menu', 'settings']);
 
 export function migrateAppState(persistedState: any, version: number): AppState {
@@ -173,6 +173,11 @@ export function migrateAppState(persistedState: any, version: number): AppState 
         }
     }
 
+    if (version < 15) {
+        persistedState.ttsRate = persistedState.ttsRate ?? 0.95;
+        persistedState.ttsPitch = persistedState.ttsPitch ?? 1.05;
+    }
+
     return persistedState as AppState;
 }
 
@@ -182,6 +187,8 @@ export function partializeAppState(state: AppState): Partial<AppState> {
         onboardingCompleted: state.onboardingCompleted,
         soundVolume: state.soundVolume,
         ttsEnabled: state.ttsEnabled,
+        ttsRate: state.ttsRate,
+        ttsPitch: state.ttsPitch,
         bgmEnabled: state.bgmEnabled,
         hapticEnabled: state.hapticEnabled,
         notificationsEnabled: state.notificationsEnabled,

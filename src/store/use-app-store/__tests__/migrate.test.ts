@@ -380,5 +380,34 @@ describe('full migration path (v0→current)', () => {
         // レガシーフィールドが削除
         expect((result as any).classLevel).toBeUndefined();
         expect((result as any).fuwafuwaName).toBeUndefined();
+
+        // TTS settings (v15)
+        expect(result.ttsRate).toBe(0.95);
+        expect(result.ttsPitch).toBe(1.05);
+    });
+});
+
+// ─── v15: TTS rate / pitch ─────────────────────────────
+
+describe('v15 migration — ttsRate / ttsPitch', () => {
+    it('adds defaults when missing', () => {
+        const state = { users: [] } as any;
+        const result = migrateAppState(state, 14);
+        expect(result.ttsRate).toBe(0.95);
+        expect(result.ttsPitch).toBe(1.05);
+    });
+
+    it('preserves existing values', () => {
+        const state = { users: [], ttsRate: 0.8, ttsPitch: 1.2 } as any;
+        const result = migrateAppState(state, 14);
+        expect(result.ttsRate).toBe(0.8);
+        expect(result.ttsPitch).toBe(1.2);
+    });
+
+    it('skips for already-migrated state', () => {
+        const state = { users: [], ttsRate: 1.0, ttsPitch: 0.9 } as any;
+        const result = migrateAppState(state, 15);
+        expect(result.ttsRate).toBe(1.0);
+        expect(result.ttsPitch).toBe(0.9);
     });
 });

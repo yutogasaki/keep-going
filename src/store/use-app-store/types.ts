@@ -78,6 +78,10 @@ export interface AppState {
     setSoundVolume: (vol: number) => void;
     ttsEnabled: boolean;
     setTtsEnabled: (enabled: boolean) => void;
+    ttsRate: number;
+    setTtsRate: (rate: number) => void;
+    ttsPitch: number;
+    setTtsPitch: (pitch: number) => void;
     bgmEnabled: boolean;
     setBgmEnabled: (enabled: boolean) => void;
     hapticEnabled: boolean;
