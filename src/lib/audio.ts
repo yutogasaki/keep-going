@@ -83,24 +83,25 @@ class AudioEngine {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'ja-JP';
             utterance.volume = getSpeechVolume(state.soundVolume);
-            // Voice selection logic for premium natural voices
             // Use cached voices (iOS Safari returns [] from getVoices() until voiceschanged fires)
             const voices = this.cachedVoices.length > 0 ? this.cachedVoices : window.speechSynthesis.getVoices();
-            const jpVoices = voices.filter(v => v.lang.includes('ja'));
+            const jpVoices = voices.filter(v => v.lang.startsWith('ja'));
 
             if (jpVoices.length > 0) {
-                // Priority: Google (Android/Chrome) > Kyoko (Mac/iOS) > Otoya > Default
-                const premiumVoice = jpVoices.find(v => v.name.includes('Google') || v.name.includes('Kyoko') || v.name.includes('Otoya'));
-                if (premiumVoice) {
-                    utterance.voice = premiumVoice;
-                } else {
-                    utterance.voice = jpVoices[0];
-                }
+                // Priority (high → low):
+                //   1. iOS Enhanced neural voices (Kyoko Enhanced / Otoya Enhanced) — iOS 16+
+                //   2. Google Japanese (Android Chrome)
+                //   3. Kyoko / Otoya compact (iOS fallback)
+                //   4. First available ja voice
+                utterance.voice =
+                    jpVoices.find(v => /Kyoko|Otoya/.test(v.name) && v.name.includes('Enhanced')) ??
+                    jpVoices.find(v => v.name.includes('Google')) ??
+                    jpVoices.find(v => /Kyoko|Otoya/.test(v.name)) ??
+                    jpVoices[0];
             }
 
-            // Adjust rate and pitch — user-configurable via settings
-            utterance.rate = state.ttsRate ?? 0.95;
-            utterance.pitch = state.ttsPitch ?? 1.05;
+            utterance.rate = 0.95;
+            utterance.pitch = 1.05;
 
             window.speechSynthesis.speak(utterance);
         }
