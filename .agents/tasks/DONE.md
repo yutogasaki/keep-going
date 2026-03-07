@@ -55,6 +55,18 @@
 - 編集・削除・公開系の action button に `type="button"` と `aria-label` を追加し、カード内の click-only 操作を減らした
 - 確認: `npx eslint src/components/editor/EditorShell.tsx src/pages/menu/GroupCard.tsx`, `npx tsc --noEmit`, `npm run build`
 
+## 2026-03-07: TTS / 音量設定の MVP 整理
+- 設定画面の音量カードに `おとをきく / こえをきく` のプレビューを追加し、音量が `こえ + こうかおん` の両方に効くことを明示
+- `audio.ts` に `getSpeechVolume` と `stopSpeech` を追加し、TTS 音量をスライダーに追従しやすく調整、ミュートや TTS OFF で進行中の読み上げを止めるよう改善
+- 未実装だった BGM はトグルを外して `じゅんび中` 表示に変更し、ヘルプ文言も現状に合わせて更新
+- テスト: `audio.test.ts` を追加し、`npx tsc --noEmit`, `npm test -- --run src/lib/__tests__/audio.test.ts`, `npm run build` を通過
+
+## 2026-03-07: initialSync 並列化
+- `initialSync` で sessions / custom exercises / custom groups の読込を `Promise.all` 化し、family members / sessions / exercises / custom groups / app settings の push をカテゴリ並列で実行するよう変更
+- push は `pushWithConcurrency` で上限つき並列にし、preset menu groups は従来どおり同期対象から除外
+- テスト: `initial.test.ts` を追加し、`未ログイン時は早期 return`, `preset 除外`, `先行 push を待たずに他カテゴリの同期が始まる` を固定
+- 確認: `npm test -- --run src/lib/sync/__tests__/initial.test.ts`, `npx eslint src/lib/sync/initial.ts src/lib/sync/__tests__/initial.test.ts`, `npx tsc --noEmit`, `npm run build`
+
 ## 2026-03-04: 初回一括改善（52タスク）
 - データ整合性: Syncキュー耐性、Pull保護、Sync失敗UI
 - UX: モーダル置換（ふわふわ名前、キャッシュクリア、削除確認）、認証エラーUI

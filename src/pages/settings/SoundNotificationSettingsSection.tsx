@@ -11,8 +11,6 @@ export const SoundNotificationSettingsSection: React.FC = () => {
     const setSoundVolume = useAppStore((state) => state.setSoundVolume);
     const ttsEnabled = useAppStore((state) => state.ttsEnabled);
     const setTtsEnabled = useAppStore((state) => state.setTtsEnabled);
-    const bgmEnabled = useAppStore((state) => state.bgmEnabled);
-    const setBgmEnabled = useAppStore((state) => state.setBgmEnabled);
     const hapticEnabled = useAppStore((state) => state.hapticEnabled);
     const setHapticEnabled = useAppStore((state) => state.setHapticEnabled);
     const notificationsEnabled = useAppStore((state) => state.notificationsEnabled);
@@ -23,7 +21,6 @@ export const SoundNotificationSettingsSection: React.FC = () => {
     const handleVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = parseFloat(event.target.value);
         setSoundVolume(value);
-        audio.playTick();
     };
 
     const requestNotificationPermission = async (enable: boolean) => {
@@ -52,18 +49,28 @@ export const SoundNotificationSettingsSection: React.FC = () => {
         if (next) {
             audio.initTTS();
             audio.speak('音声ガイダンスをオンにしました');
+            return;
         }
+
+        audio.stopSpeech();
     };
 
     return (
         <>
-            <VolumeCard volume={soundVolume} onChange={handleVolumeChange} />
+            <VolumeCard
+                volume={soundVolume}
+                ttsEnabled={ttsEnabled}
+                onChange={handleVolumeChange}
+                onPreviewSound={() => audio.playTransition()}
+                onPreviewTts={() => {
+                    audio.initTTS();
+                    audio.speak('つぎは、かいきゃくストレッチです');
+                }}
+            />
 
             <AudioTogglesCard
                 ttsEnabled={ttsEnabled}
-                bgmEnabled={bgmEnabled}
                 onToggleTts={toggleTts}
-                onToggleBgm={() => setBgmEnabled(!bgmEnabled)}
             />
 
             <HapticCard

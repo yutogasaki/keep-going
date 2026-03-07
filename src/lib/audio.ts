@@ -3,6 +3,15 @@ import { useAppStore } from '../store/useAppStore';
 // Simple Web Audio API Synthesizer for UI Sounds
 // Generates beeps and chimes without external audio assets
 
+export const getSpeechVolume = (soundVolume: number) => {
+    const clamped = Math.max(0, Math.min(1, soundVolume));
+    if (clamped === 0) return 0;
+
+    // Speech synthesis is quieter than Web Audio on many mobile devices,
+    // so keep a small boost while still letting the slider behave predictably.
+    return Math.min(1, 0.2 + clamped * 0.8);
+};
+
 class AudioEngine {
     private ctx: AudioContext | null = null;
     private isMuted: boolean = false;
@@ -10,7 +19,7 @@ class AudioEngine {
 
     constructor() {
         // iOS Safari loads voices asynchronously — cache them when ready
-        if ('speechSynthesis' in window) {
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
             this.cachedVoices = window.speechSynthesis.getVoices();
             window.speechSynthesis.addEventListener('voiceschanged', () => {
                 this.cachedVoices = window.speechSynthesis.getVoices();
@@ -20,8 +29,15 @@ class AudioEngine {
 
     // Initialize context only on user interaction
     public init() {
+        if (typeof window === 'undefined') return;
+
         if (!this.ctx) {
-            this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const AudioContextClass = window.AudioContext
+                ?? (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+
+            if (!AudioContextClass) return;
+
+            this.ctx = new AudioContextClass();
         }
         if (this.ctx.state === 'suspended') {
             this.ctx.resume();
@@ -30,15 +46,24 @@ class AudioEngine {
 
     public toggleMute() {
         this.isMuted = !this.isMuted;
+        if (this.isMuted) {
+            this.stopSpeech();
+        }
     }
 
     public getMuted() {
         return this.isMuted;
     }
 
+    public stopSpeech() {
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+    }
+
     // Initialize TTS engine (needed for iOS Safari)
     public initTTS() {
-        if ('speechSynthesis' in window) {
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
             const utterance = new SpeechSynthesisUtterance('');
             utterance.volume = 0;
             window.speechSynthesis.speak(utterance);
@@ -52,14 +77,12 @@ class AudioEngine {
         const state = useAppStore.getState();
         if (!state.ttsEnabled || state.soundVolume === 0) return;
 
-        if ('speechSynthesis' in window) {
+        if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
             window.speechSynthesis.cancel();
 
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'ja-JP';
-            // Scale up voice volume because default TTS is often quiet compared to media
-            // Increase TTS volume substantially to ensure it cuts through BGM and is audible on mobile.
-            utterance.volume = Math.min(1.0, state.soundVolume * 5.0);
+            utterance.volume = getSpeechVolume(state.soundVolume);
             // Voice selection logic for premium natural voices
             // Use cached voices (iOS Safari returns [] from getVoices() until voiceschanged fires)
             const voices = this.cachedVoices.length > 0 ? this.cachedVoices : window.speechSynthesis.getVoices();

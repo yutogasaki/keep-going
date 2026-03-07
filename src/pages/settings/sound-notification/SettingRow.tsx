@@ -1,4 +1,5 @@
 import React from 'react';
+import { COLOR, FONT, FONT_SIZE, SPACE } from '../../../lib/styles';
 
 interface SettingRowProps {
     icon: React.ReactNode;
@@ -19,11 +20,12 @@ export const SettingRow: React.FC<SettingRowProps> = ({
 }) => {
     return (
         <div style={{
-            padding: '16px 20px',
+            padding: `${SPACE.lg}px ${SPACE.xl}px`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            borderBottom: borderBottom ? '1px solid rgba(0,0,0,0.06)' : 'none',
+            gap: SPACE.md,
+            borderBottom: borderBottom ? `1px solid ${COLOR.border}` : 'none',
         }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{
@@ -39,18 +41,18 @@ export const SettingRow: React.FC<SettingRowProps> = ({
                 </div>
                 <div>
                     <div style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 14,
+                        fontFamily: FONT.body,
+                        fontSize: FONT_SIZE.md,
                         fontWeight: 700,
-                        color: '#2D3436',
+                        color: COLOR.dark,
                     }}>
                         {title}
                     </div>
                     {description && (
                         <div style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontFamily: FONT.body,
                             fontSize: 11,
-                            color: '#8395A7',
+                            color: COLOR.muted,
                             marginTop: 2,
                         }}>
                             {description}
