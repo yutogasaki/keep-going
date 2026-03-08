@@ -90,6 +90,44 @@ describe('modern migrations', () => {
         expect(result.sessionDraft).toEqual(state.sessionDraft);
     });
 
+    it('sanitizes corrupted current-state persisted values', () => {
+        const state = makeCurrentState({
+            sessionUserIds: ['ghost', 'user-1', 'user-1'],
+            joinedChallengeIds: {
+                'user-1': ['challenge-1', 42, 'challenge-1'],
+                ghost: ['challenge-2'],
+            },
+            soundVolume: 9,
+            notificationTime: '99:99',
+            ttsEnabled: 'yes',
+            bgmEnabled: undefined,
+            hapticEnabled: null,
+            notificationsEnabled: 'sometimes',
+            hasSeenSessionControlsHint: 'done',
+            sessionDraft: {
+                date: '2026-03-07',
+                exerciseIds: ['S01', 1],
+                userIds: ['user-1', 'user-1'],
+                returnTab: 'unknown',
+            },
+        });
+
+        const result = migrateAppState(state, APP_STATE_VERSION);
+
+        expect(result.sessionUserIds).toEqual(['user-1']);
+        expect(result.joinedChallengeIds).toEqual({
+            'user-1': ['challenge-1'],
+        });
+        expect(result.soundVolume).toBe(1);
+        expect(result.notificationTime).toBe('21:00');
+        expect(result.ttsEnabled).toBe(true);
+        expect(result.bgmEnabled).toBe(true);
+        expect(result.hapticEnabled).toBe(true);
+        expect(result.notificationsEnabled).toBe(false);
+        expect(result.hasSeenSessionControlsHint).toBe(false);
+        expect(result.sessionDraft).toBeNull();
+    });
+
     it('is idempotent when re-run on the current app state version', () => {
         const state = makeCurrentState();
         const stateCopy = JSON.parse(JSON.stringify(state));

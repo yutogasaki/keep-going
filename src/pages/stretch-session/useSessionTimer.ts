@@ -2,6 +2,7 @@ import { useState, type Dispatch, type MutableRefObject, type SetStateAction } f
 import { type ClassLevel, type Exercise } from '../../data/exercises';
 import { useSessionControlHandlers } from './useSessionControlHandlers';
 import { useSessionProgressEffects } from './useSessionProgressEffects';
+import { getPhaseTimeLeft } from './sessionProgressHelpers';
 
 interface UseSessionTimerParams {
     isLoading: boolean;
@@ -69,13 +70,12 @@ export function useSessionTimer({
     const hasLRSplit = currentExercise?.internal?.includes('→') || currentExercise?.hasSplit || false;
     const isPointFlex = currentExercise?.internal === 'P30・F30';
     const halfTime = currentExercise ? Math.floor(currentExercise.sec / 2) : 0;
-
-    let phaseTimeLeft = 0;
-    if (isPointFlex) {
-        phaseTimeLeft = (timeLeft - 1) % 30 + 1;
-    } else if (hasLRSplit && halfTime > 0) {
-        phaseTimeLeft = (timeLeft - 1) % halfTime + 1;
-    }
+    const phaseTimeLeft = getPhaseTimeLeft({
+        timeLeft,
+        isPointFlex,
+        hasLRSplit,
+        halfTime,
+    });
 
     const { goToNext } = useSessionProgressEffects({
         isLoading,

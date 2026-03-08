@@ -1,61 +1,63 @@
 import { getTodayKey } from '../../lib/db';
 import type { AppState } from './types';
+import { sanitizePersistedState, sanitizeSessionDraft } from './migrateHelpers';
 
 export const APP_STATE_VERSION = 16;
-const VALID_TABS = new Set(['home', 'record', 'menu', 'settings']);
 
 export function migrateAppState(persistedState: any, version: number): AppState {
+    const state = persistedState as any;
+
     if (version === 0) {
-        if (persistedState.requiredExercises && !persistedState.requiredExercises.includes('S07')) {
-            persistedState.requiredExercises.push('S07');
+        if (state.requiredExercises && !state.requiredExercises.includes('S07')) {
+            state.requiredExercises.push('S07');
         }
     }
 
     if (version < 2) {
-        persistedState.bgmEnabled = persistedState.bgmEnabled ?? true;
-        persistedState.hapticEnabled = persistedState.hapticEnabled ?? true;
+        state.bgmEnabled = state.bgmEnabled ?? true;
+        state.hapticEnabled = state.hapticEnabled ?? true;
     }
 
     if (version < 3) {
-        if (!persistedState.users || persistedState.users.length === 0) {
+        if (!state.users || state.users.length === 0) {
             const legacyUser: any = {
                 id: crypto.randomUUID(),
-                name: persistedState.fuwafuwaName || 'ゲスト',
-                classLevel: persistedState.classLevel || '初級',
-                fuwafuwaBirthDate: persistedState.fuwafuwaBirthDate || getTodayKey(),
-                fuwafuwaType: persistedState.fuwafuwaType || Math.floor(Math.random() * 10),
-                fuwafuwaCycleCount: persistedState.fuwafuwaCycleCount || 1,
-                fuwafuwaName: persistedState.fuwafuwaName || null,
-                pastFuwafuwas: persistedState.pastFuwafuwas || [],
-                notifiedFuwafuwaStages: persistedState.notifiedFuwafuwaStages || [],
+                name: state.fuwafuwaName || 'ゲスト',
+                classLevel: state.classLevel || '初級',
+                fuwafuwaBirthDate: state.fuwafuwaBirthDate || getTodayKey(),
+                fuwafuwaType: state.fuwafuwaType || Math.floor(Math.random() * 10),
+                fuwafuwaCycleCount: state.fuwafuwaCycleCount || 1,
+                fuwafuwaName: state.fuwafuwaName || null,
+                pastFuwafuwas: state.pastFuwafuwas || [],
+                notifiedFuwafuwaStages: state.notifiedFuwafuwaStages || [],
             };
 
-            persistedState.users = [legacyUser];
-            persistedState.sessionUserIds = [legacyUser.id];
+            state.users = [legacyUser];
+            state.sessionUserIds = [legacyUser.id];
         }
 
-        delete persistedState.classLevel;
-        delete persistedState.fuwafuwaBirthDate;
-        delete persistedState.fuwafuwaType;
-        delete persistedState.fuwafuwaCycleCount;
-        delete persistedState.fuwafuwaName;
-        delete persistedState.pastFuwafuwas;
-        delete persistedState.notifiedFuwafuwaStages;
+        delete state.classLevel;
+        delete state.fuwafuwaBirthDate;
+        delete state.fuwafuwaType;
+        delete state.fuwafuwaCycleCount;
+        delete state.fuwafuwaName;
+        delete state.pastFuwafuwas;
+        delete state.notifiedFuwafuwaStages;
     }
 
     if (version < 4) {
-        if (!persistedState.excludedExercises || persistedState.excludedExercises.length === 0) {
-            persistedState.excludedExercises = ['C01', 'C02'];
+        if (!state.excludedExercises || state.excludedExercises.length === 0) {
+            state.excludedExercises = ['C01', 'C02'];
         }
     }
 
     if (version < 5) {
-        const globalTarget = persistedState.dailyTargetMinutes ?? 10;
-        const globalExcluded = persistedState.excludedExercises ?? ['C01', 'C02'];
-        const globalRequired = persistedState.requiredExercises ?? ['S01', 'S02', 'S07'];
+        const globalTarget = state.dailyTargetMinutes ?? 10;
+        const globalExcluded = state.excludedExercises ?? ['C01', 'C02'];
+        const globalRequired = state.requiredExercises ?? ['S01', 'S02', 'S07'];
 
-        if (persistedState.users && Array.isArray(persistedState.users)) {
-            persistedState.users = persistedState.users.map((user: any, index: number) => {
+        if (state.users && Array.isArray(state.users)) {
+            state.users = state.users.map((user: any, index: number) => {
                 if (index === 0) {
                     return {
                         ...user,
@@ -74,14 +76,14 @@ export function migrateAppState(persistedState: any, version: number): AppState 
             });
         }
 
-        delete persistedState.dailyTargetMinutes;
-        delete persistedState.excludedExercises;
-        delete persistedState.requiredExercises;
+        delete state.dailyTargetMinutes;
+        delete state.excludedExercises;
+        delete state.requiredExercises;
     }
 
     if (version < 6) {
-        if (persistedState.users && Array.isArray(persistedState.users)) {
-            persistedState.users = persistedState.users.map((user: any) => ({
+        if (state.users && Array.isArray(state.users)) {
+            state.users = state.users.map((user: any) => ({
                 ...user,
                 consumedMagicDate: user.consumedMagicDate || '',
                 consumedMagicSeconds: user.consumedMagicSeconds || 0,
@@ -90,8 +92,8 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     if (version < 8) {
-        if (persistedState.users && Array.isArray(persistedState.users)) {
-            persistedState.users = persistedState.users.map((user: any) => ({
+        if (state.users && Array.isArray(state.users)) {
+            state.users = state.users.map((user: any) => ({
                 ...user,
                 chibifuwas: user.chibifuwas ?? [],
             }));
@@ -99,31 +101,29 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     if (version < 9) {
-        persistedState.joinedChallengeIds = persistedState.joinedChallengeIds ?? [];
+        state.joinedChallengeIds = state.joinedChallengeIds ?? [];
     }
 
     if (version < 10) {
-        const oldIds: string[] = Array.isArray(persistedState.joinedChallengeIds)
-            ? persistedState.joinedChallengeIds
+        const oldIds: string[] = Array.isArray(state.joinedChallengeIds)
+            ? state.joinedChallengeIds
             : [];
 
         const newRecord: Record<string, string[]> = {};
-        if (oldIds.length > 0 && persistedState.users && Array.isArray(persistedState.users)) {
-            for (const user of persistedState.users) {
+        if (oldIds.length > 0 && state.users && Array.isArray(state.users)) {
+            for (const user of state.users) {
                 newRecord[user.id] = [...oldIds];
             }
         }
 
-        persistedState.joinedChallengeIds = newRecord;
+        state.joinedChallengeIds = newRecord;
     }
 
     if (version < 11) {
-        // ハードコードされた旧デフォルト値を削除し、先生ダッシュボード設定が適用されるようにする
-        // ユーザーが明示的に追加した他の種目は残す
         const OLD_REQUIRED = ['S01', 'S02', 'S07'];
         const OLD_EXCLUDED = ['C01', 'C02'];
-        if (persistedState.users && Array.isArray(persistedState.users)) {
-            persistedState.users = persistedState.users.map((user: any) => ({
+        if (state.users && Array.isArray(state.users)) {
+            state.users = state.users.map((user: any) => ({
                 ...user,
                 requiredExercises: (user.requiredExercises ?? []).filter(
                     (id: string) => !OLD_REQUIRED.includes(id)
@@ -136,10 +136,8 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     if (version < 12) {
-        // 魔法エネルギーをデイリーリセットから蓄積方式に変更
-        // consumedMagicDate は不要になったため削除
-        if (persistedState.users && Array.isArray(persistedState.users)) {
-            persistedState.users = persistedState.users.map((user: any) => {
+        if (state.users && Array.isArray(state.users)) {
+            state.users = state.users.map((user: any) => {
                 const rest = { ...user };
                 delete rest.consumedMagicDate;
                 return rest;
@@ -148,38 +146,20 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     if (version < 13) {
-        persistedState.hasSeenSessionControlsHint = persistedState.hasSeenSessionControlsHint ?? false;
+        state.hasSeenSessionControlsHint = state.hasSeenSessionControlsHint ?? false;
     }
 
     if (version < 14) {
-        const draft = persistedState.sessionDraft;
-        if (
-            draft
-            && typeof draft === 'object'
-            && typeof draft.date === 'string'
-            && Array.isArray(draft.exerciseIds)
-            && Array.isArray(draft.userIds)
-            && typeof draft.returnTab === 'string'
-            && VALID_TABS.has(draft.returnTab)
-        ) {
-            persistedState.sessionDraft = {
-                date: draft.date,
-                exerciseIds: draft.exerciseIds,
-                userIds: draft.userIds,
-                returnTab: draft.returnTab,
-            };
-        } else {
-            persistedState.sessionDraft = null;
-        }
+        state.sessionDraft = sanitizeSessionDraft(state.sessionDraft);
     }
 
     if (version < 16) {
-        // ttsRate / ttsPitch を UI から削除したため、保存済みデータをクリーンアップ
-        delete persistedState.ttsRate;
-        delete persistedState.ttsPitch;
+        delete state.ttsRate;
+        delete state.ttsPitch;
     }
 
-    return persistedState as AppState;
+    sanitizePersistedState(state as Record<string, unknown>);
+    return state as AppState;
 }
 
 export function partializeAppState(state: AppState): Partial<AppState> {
@@ -201,3 +181,4 @@ export function partializeAppState(state: AppState): Partial<AppState> {
         joinedChallengeIds: state.joinedChallengeIds,
     };
 }
+

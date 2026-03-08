@@ -15,6 +15,7 @@ import { StartStep } from './onboarding/StartStep';
 import { WelcomeStep } from './onboarding/WelcomeStep';
 import { NotificationStep } from './onboarding/NotificationStep';
 import type { OnboardingStep } from './onboarding/types';
+import { getLoginSyncFailureMessage } from '../contexts/auth/syncFlowMessages';
 
 export const Onboarding: React.FC = () => {
     const setOnboardingCompleted = useAppStore((state) => state.setOnboardingCompleted);
@@ -45,7 +46,10 @@ export const Onboarding: React.FC = () => {
             });
 
             if (!result.success) {
-                throw new Error(result.error ?? 'sync failed');
+                setRestoreError(`${getLoginSyncFailureMessage(result)}。もう一度お試しください。`);
+                setLoginContext(null);
+                setStep('account');
+                return;
             }
 
             const restoredState = useAppStore.getState();
@@ -208,3 +212,4 @@ export const Onboarding: React.FC = () => {
         </div>
     );
 };
+

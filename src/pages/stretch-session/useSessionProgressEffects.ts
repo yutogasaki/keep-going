@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 const lazyConfetti = () => import('canvas-confetti').then((m) => m.default);
-import { isRestExercise, type Exercise } from '../../data/exercises';
+import type { Exercise } from '../../data/exercises';
 import { audio } from '../../lib/audio';
 import { haptics } from '../../lib/haptics';
+import { getExerciseCompletionState, getSessionSideCue } from './sessionProgressHelpers';
 
 interface UseSessionProgressEffectsParams {
     isLoading: boolean;
@@ -82,48 +83,51 @@ export function useSessionProgressEffects({
     }, [isLoading, sessionExercises, setTimeLeft]);
 
     useEffect(() => {
-        if (!currentExercise) return;
+        if (!currentExercise) {
+            return;
+        }
 
         const elapsed = currentExercise.sec - timeLeft;
-
         if (elapsed > 0 && elapsed % 10 === 0 && timeLeft > 3 && !isTransitioning && !isCounting) {
             audio.playTick();
         }
 
-        if (isCounting) return;
-
-        if (isPointFlex) {
-            const intervalIndex = Math.floor(elapsed / 30);
-            const isPoint = intervalIndex % 2 === 0;
-
-            if (elapsed > 0 && elapsed % 30 === 0) {
-                audio.speak('チェンジ');
-                haptics.pulse();
-                setShowSideSwitch(true);
-                const timer = setTimeout(() => setShowSideSwitch(false), 2000);
-                setCurrentSide(isPoint ? 'right' : 'left');
-                return () => clearTimeout(timer);
-            }
-            setCurrentSide(isPoint ? 'right' : 'left');
+        if (isCounting) {
             return;
         }
 
-        if (!hasLRSplit) return;
+        const cue = getSessionSideCue({
+            currentExercise,
+            timeLeft,
+            hasLRSplit,
+            isPointFlex,
+            halfTime,
+        });
+        setCurrentSide(cue.currentSide);
+        setShowSideSwitch(cue.showSideSwitch);
 
-        if (elapsed < halfTime) {
-            setCurrentSide('right');
-            setShowSideSwitch(false);
-        } else if (elapsed === halfTime) {
-            audio.speak('はんたいがわへ');
+        if (cue.announcement) {
+            audio.speak(cue.announcement);
             haptics.pulse();
-            setCurrentSide('left');
-            setShowSideSwitch(true);
-            const timer = setTimeout(() => setShowSideSwitch(false), 2000);
-            return () => clearTimeout(timer);
-        } else {
-            setCurrentSide('left');
         }
-    }, [timeLeft, hasLRSplit, currentExercise, halfTime, isTransitioning, isCounting, isPointFlex, setCurrentSide, setShowSideSwitch]);
+
+        if (!cue.showSideSwitch || !cue.hideDelayMs) {
+            return;
+        }
+
+        const timer = setTimeout(() => setShowSideSwitch(false), cue.hideDelayMs);
+        return () => clearTimeout(timer);
+    }, [
+        timeLeft,
+        hasLRSplit,
+        currentExercise,
+        halfTime,
+        isTransitioning,
+        isCounting,
+        isPointFlex,
+        setCurrentSide,
+        setShowSideSwitch,
+    ]);
 
     useEffect(() => {
         setCurrentSide(hasLRSplit ? 'right' : null);
@@ -131,48 +135,43 @@ export function useSessionProgressEffects({
     }, [currentIndex, hasLRSplit, setCurrentSide, setShowSideSwitch]);
 
     useEffect(() => {
-        if (isCounting || !isPlaying || isTransitioning || isBigBreak || isCompleted || !currentExercise) return;
+        if (isCounting || !isPlaying || isTransitioning || isBigBreak || isCompleted || !currentExercise) {
+            return;
+        }
 
         if (timeLeft <= 0) {
-            const isRest = isRestExercise(currentExercise);
-            // Rest exercises don't count toward running time or completed records
-            const nextTotalTime = isRest ? totalRunningTime : totalRunningTime + currentExercise.sec;
-            if (!isRest) {
-                setTotalRunningTime(nextTotalTime);
+            const completion = getExerciseCompletionState({
+                currentExercise,
+                totalRunningTime,
+                nextExercise: sessionExercises[currentIndex + 1],
+            });
+
+            if (completion.shouldTrackCompletion) {
+                setTotalRunningTime(completion.nextTotalRunningTime);
                 setCompletedIds((prev) => [...prev, currentExercise.id]);
             }
 
-            const BIG_BREAK_THRESHOLD = 900;
-            const previousMultiple = Math.floor(totalRunningTime / BIG_BREAK_THRESHOLD);
-            const currentMultiple = Math.floor(nextTotalTime / BIG_BREAK_THRESHOLD);
-
-            if (!isRest && currentMultiple > previousMultiple) {
+            if (completion.breakType === 'big') {
                 audio.playSuccess();
                 setIsBigBreak(true);
                 setIsPlaying(false);
                 return;
             }
 
-            const SMALL_BREAK_THRESHOLD = 300;
-            const prevSmall = Math.floor(totalRunningTime / SMALL_BREAK_THRESHOLD);
-            const currSmall = Math.floor(nextTotalTime / SMALL_BREAK_THRESHOLD);
-            const isSmallBreak = !isRest && currSmall > prevSmall && currentMultiple === previousMultiple;
-
-            if (!isRest) {
+            if (completion.shouldPulseTransition) {
                 audio.playTransition();
                 haptics.pulse();
             }
-            const nextExercise = sessionExercises[currentIndex + 1];
-            if (nextExercise) {
-                audio.speak(`次は、${nextExercise.reading || nextExercise.name}です`);
+            if (completion.nextExerciseAnnouncement) {
+                audio.speak(completion.nextExerciseAnnouncement);
             }
+
             setIsTransitioning(true);
-            setTransitionTime(isSmallBreak ? 5 : 3);
+            setTransitionTime(completion.transitionSeconds);
             return;
         }
 
-        // Skip "残り10秒" TTS for rest exercises (too short)
-        if (timeLeft === 10 && !isRestExercise(currentExercise)) {
+        if (timeLeft === 10 && currentExercise.placement !== 'rest') {
             audio.speak('残り10秒です');
         }
 
@@ -208,7 +207,9 @@ export function useSessionProgressEffects({
     ]);
 
     useEffect(() => {
-        if (!isTransitioning) return;
+        if (!isTransitioning) {
+            return;
+        }
 
         if (transitionTime <= 0) {
             audio.playGo();

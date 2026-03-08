@@ -13,6 +13,7 @@ import { useAppStore } from '../../store/useAppStore';
 import type { LoginContext } from './types';
 import { SYNCED_ACCOUNT_KEY } from './constants';
 import { getAppSettingsSnapshot } from './settingsSnapshot';
+import { getLoginSyncFailureMessage, getLoginSyncSuccessMessage } from './syncFlowMessages';
 
 export interface LoginSyncOutcome {
     success: boolean;
@@ -34,25 +35,118 @@ interface SettingsLoginSyncParams {
     setLoginContext: (ctx: LoginContext) => void;
 }
 
-function getSuccessMessage(outcome: LoginSyncOutcome): string {
-    if (outcome.resolution === 'cloud' || outcome.action === 'restore_from_cloud') {
-        return 'クラウドのデータを復元しました';
-    }
-
-    if (outcome.resolution === 'local' || outcome.action === 'push_local') {
-        return 'この端末のデータを同期しました';
-    }
-
-    if (outcome.action === 'merge') {
-        return '同期が完了しました';
-    }
-
-    return 'ログインしました';
-}
-
 async function pushCurrentLocalState(): Promise<void> {
     const state = useAppStore.getState();
     await initialSync(state.users, getAppSettingsSnapshot());
+}
+
+function toFailureOutcome({
+    action,
+    error,
+    hadCloudData,
+    resolution,
+}: {
+    action: LoginSyncPlanKind;
+    error: unknown;
+    hadCloudData: boolean;
+    resolution?: SyncConflictResolution;
+}): LoginSyncOutcome {
+    return {
+        success: false,
+        action,
+        hadCloudData,
+        resolution,
+        error: String(error),
+    };
+}
+
+async function restoreCloudData({
+    accountId,
+    action,
+    hadCloudData,
+    resolution,
+}: {
+    accountId: string;
+    action: LoginSyncPlanKind;
+    hadCloudData: boolean;
+    resolution?: SyncConflictResolution;
+}): Promise<LoginSyncOutcome> {
+    try {
+        const result = await restoreFromCloud(accountId);
+        if (!result.success) {
+            return toFailureOutcome({
+                action,
+                error: result.error ?? 'Cloud restore failed',
+                hadCloudData,
+                resolution,
+            });
+        }
+
+        localStorage.setItem(SYNCED_ACCOUNT_KEY, accountId);
+        return {
+            success: true,
+            action,
+            hadCloudData: result.hadData,
+            resolution,
+        };
+    } catch (error) {
+        return toFailureOutcome({ action, error, hadCloudData, resolution });
+    }
+}
+
+async function mergeCloudData({
+    accountId,
+    hadCloudData,
+    resolution,
+}: {
+    accountId: string;
+    hadCloudData: boolean;
+    resolution?: SyncConflictResolution;
+}): Promise<LoginSyncOutcome> {
+    try {
+        const result = await pullAndMerge(accountId);
+        if (!result.success) {
+            return toFailureOutcome({
+                action: 'merge',
+                error: result.error ?? 'Merge failed',
+                hadCloudData,
+                resolution,
+            });
+        }
+
+        localStorage.setItem(SYNCED_ACCOUNT_KEY, accountId);
+        return {
+            success: true,
+            action: 'merge',
+            hadCloudData: result.hadData,
+            resolution,
+        };
+    } catch (error) {
+        return toFailureOutcome({ action: 'merge', error, hadCloudData, resolution });
+    }
+}
+
+async function pushLocalData({
+    accountId,
+    hadCloudData,
+    resolution,
+}: {
+    accountId: string;
+    hadCloudData: boolean;
+    resolution?: SyncConflictResolution;
+}): Promise<LoginSyncOutcome> {
+    try {
+        await pushCurrentLocalState();
+        localStorage.setItem(SYNCED_ACCOUNT_KEY, accountId);
+        return {
+            success: true,
+            action: 'push_local',
+            hadCloudData,
+            resolution,
+        };
+    } catch (error) {
+        return toFailureOutcome({ action: 'push_local', error, hadCloudData, resolution });
+    }
 }
 
 export async function runPostLoginSync({
@@ -66,54 +160,29 @@ export async function runPostLoginSync({
         setAccountId(accountId);
         const syncedAccountId = localStorage.getItem(SYNCED_ACCOUNT_KEY);
         const plan = await inspectLoginSyncPlan(accountId, syncedAccountId);
+        const hadCloudData = hasCloudData(plan.cloudSummary);
 
         switch (plan.kind) {
         case 'restore_from_cloud': {
-            const result = await restoreFromCloud(accountId);
-            if (!result.success) {
-                return {
-                    success: false,
-                    action: plan.kind,
-                    hadCloudData: hasCloudData(plan.cloudSummary),
-                    error: result.error,
-                };
-            }
-
-            localStorage.setItem(SYNCED_ACCOUNT_KEY, accountId);
-            return {
-                success: true,
+            return restoreCloudData({
+                accountId,
                 action: plan.kind,
-                hadCloudData: result.hadData,
-            };
+                hadCloudData,
+            });
         }
 
         case 'push_local': {
-            await pushCurrentLocalState();
-            localStorage.setItem(SYNCED_ACCOUNT_KEY, accountId);
-            return {
-                success: true,
-                action: plan.kind,
-                hadCloudData: false,
-            };
+            return pushLocalData({
+                accountId,
+                hadCloudData,
+            });
         }
 
         case 'merge': {
-            const result = await pullAndMerge(accountId);
-            if (!result.success) {
-                return {
-                    success: false,
-                    action: plan.kind,
-                    hadCloudData: hasCloudData(plan.cloudSummary),
-                    error: result.error,
-                };
-            }
-
-            localStorage.setItem(SYNCED_ACCOUNT_KEY, accountId);
-            return {
-                success: true,
-                action: plan.kind,
-                hadCloudData: result.hadData,
-            };
+            return mergeCloudData({
+                accountId,
+                hadCloudData,
+            });
         }
 
         case 'conflict': {
@@ -123,45 +192,28 @@ export async function runPostLoginSync({
             });
 
             if (resolution === 'cloud') {
-                const result = await restoreFromCloud(accountId);
-                if (!result.success) {
-                    return {
-                        success: false,
-                        action: 'restore_from_cloud',
-                        hadCloudData: hasCloudData(plan.cloudSummary),
-                        resolution,
-                        error: result.error,
-                    };
-                }
-
-                localStorage.setItem(SYNCED_ACCOUNT_KEY, accountId);
-                return {
-                    success: true,
+                return restoreCloudData({
+                    accountId,
                     action: 'restore_from_cloud',
-                    hadCloudData: result.hadData,
+                    hadCloudData,
                     resolution,
-                };
+                });
             }
 
-            await pushCurrentLocalState();
-            const result = await pullAndMerge(accountId);
-            if (!result.success) {
-                return {
-                    success: false,
-                    action: 'merge',
-                    hadCloudData: hasCloudData(plan.cloudSummary),
-                    resolution,
-                    error: result.error,
-                };
-            }
-
-            localStorage.setItem(SYNCED_ACCOUNT_KEY, accountId);
-            return {
-                success: true,
-                action: 'merge',
-                hadCloudData: result.hadData,
+            const pushed = await pushLocalData({
+                accountId,
+                hadCloudData,
                 resolution,
-            };
+            });
+            if (!pushed.success) {
+                return pushed;
+            }
+
+            return mergeCloudData({
+                accountId,
+                hadCloudData,
+                resolution,
+            });
         }
 
         case 'none':
@@ -194,10 +246,11 @@ export async function runSettingsLoginSync({
     try {
         const outcome = await runPostLoginSync({ accountId, resolveConflict });
         if (!outcome.success) {
-            throw new Error(outcome.error ?? 'Unknown sync error');
+            setToastMessage(getLoginSyncFailureMessage(outcome));
+            return;
         }
 
-        setToastMessage(getSuccessMessage(outcome));
+        setToastMessage(getLoginSyncSuccessMessage(outcome));
     } catch (error) {
         console.warn('[auth] handleSettingsLogin failed:', error);
         setToastMessage('同期に失敗しました');
