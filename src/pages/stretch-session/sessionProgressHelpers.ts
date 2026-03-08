@@ -17,6 +17,14 @@ export interface ExerciseCompletionState {
     shouldPulseTransition: boolean;
 }
 
+export interface SessionVisibilityUpdate {
+    rememberPlayback: boolean;
+    shouldPausePlayback: boolean;
+    shouldResumeCountdown: boolean;
+    shouldClearTransition: boolean;
+    announcement: string | null;
+}
+
 export function getPhaseTimeLeft({
     timeLeft,
     isPointFlex,
@@ -102,6 +110,45 @@ export function getSessionSideCue({
         announcement: null,
         showSideSwitch: false,
         hideDelayMs: null,
+    };
+}
+
+export function getSessionVisibilityUpdate({
+    visibilityState,
+    hasCurrentExercise,
+    wasPlayingBeforeHidden,
+    isPlaying,
+    isCounting,
+    isTransitioning,
+    isBigBreak,
+    isCompleted,
+}: {
+    visibilityState: DocumentVisibilityState;
+    hasCurrentExercise: boolean;
+    wasPlayingBeforeHidden: boolean;
+    isPlaying: boolean;
+    isCounting: boolean;
+    isTransitioning: boolean;
+    isBigBreak: boolean;
+    isCompleted: boolean;
+}): SessionVisibilityUpdate {
+    if (visibilityState === 'hidden') {
+        return {
+            rememberPlayback: isPlaying && !isCounting && !isTransitioning && !isBigBreak && !isCompleted,
+            shouldPausePlayback: true,
+            shouldResumeCountdown: false,
+            shouldClearTransition: false,
+            announcement: null,
+        };
+    }
+
+    const shouldResumeCountdown = visibilityState === 'visible' && hasCurrentExercise && wasPlayingBeforeHidden;
+    return {
+        rememberPlayback: false,
+        shouldPausePlayback: false,
+        shouldResumeCountdown,
+        shouldClearTransition: shouldResumeCountdown,
+        announcement: shouldResumeCountdown ? '再開します。' : null,
     };
 }
 

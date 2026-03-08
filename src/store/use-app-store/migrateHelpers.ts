@@ -4,7 +4,7 @@ const VALID_TABS = new Set<TabId>(['home', 'record', 'menu', 'settings']);
 const DEFAULT_NOTIFICATION_TIME = '21:00';
 const NOTIFICATION_TIME_PATTERN = /^(\d{2}):(\d{2})$/;
 
-function getStringArray(value: unknown): string[] {
+export function sanitizeStringArray(value: unknown): string[] {
     if (!Array.isArray(value)) {
         return [];
     }
@@ -31,8 +31,8 @@ export function sanitizeSessionDraft(draft: unknown): SessionDraft | null {
         return null;
     }
 
-    const exerciseIds = getStringArray(candidate.exerciseIds);
-    const userIds = getStringArray(candidate.userIds);
+    const exerciseIds = sanitizeStringArray(candidate.exerciseIds);
+    const userIds = sanitizeStringArray(candidate.userIds);
     const returnTab = candidate.returnTab;
     if (!VALID_TABS.has(returnTab as TabId)) {
         return null;
@@ -46,23 +46,27 @@ export function sanitizeSessionDraft(draft: unknown): SessionDraft | null {
     };
 }
 
-export function sanitizeNotificationTime(value: unknown): string {
+export function isValidNotificationTime(value: unknown): value is string {
     if (typeof value !== 'string') {
-        return DEFAULT_NOTIFICATION_TIME;
+        return false;
     }
 
     const match = NOTIFICATION_TIME_PATTERN.exec(value);
     if (!match) {
-        return DEFAULT_NOTIFICATION_TIME;
+        return false;
     }
 
     const hour = Number(match[1]);
     const minute = Number(match[2]);
     if (hour < 0 || hour > 23 || minute < 0 || minute > 59) {
-        return DEFAULT_NOTIFICATION_TIME;
+        return false;
     }
 
-    return value;
+    return true;
+}
+
+export function sanitizeNotificationTime(value: unknown): string {
+    return isValidNotificationTime(value) ? value : DEFAULT_NOTIFICATION_TIME;
 }
 
 export function sanitizeJoinedChallengeIds(
@@ -78,7 +82,7 @@ export function sanitizeJoinedChallengeIds(
         if (!validUserIds.has(userId)) {
             continue;
         }
-        result[userId] = getStringArray(ids);
+        result[userId] = sanitizeStringArray(ids);
     }
 
     return result;
@@ -86,7 +90,7 @@ export function sanitizeJoinedChallengeIds(
 
 export function sanitizeSessionUserIds(value: unknown, validUserIds: string[]): string[] {
     const validSet = new Set(validUserIds);
-    const filtered = getStringArray(value).filter((id) => validSet.has(id));
+    const filtered = sanitizeStringArray(value).filter((id) => validSet.has(id));
     if (filtered.length > 0) {
         return filtered;
     }
@@ -94,11 +98,11 @@ export function sanitizeSessionUserIds(value: unknown, validUserIds: string[]): 
     return validUserIds[0] ? [validUserIds[0]] : [];
 }
 
-function sanitizeBoolean(value: unknown, fallback: boolean): boolean {
+export function sanitizeBooleanSetting(value: unknown, fallback: boolean): boolean {
     return typeof value === 'boolean' ? value : fallback;
 }
 
-function sanitizeSoundVolume(value: unknown): number {
+export function sanitizeSoundVolume(value: unknown): number {
     if (typeof value !== 'number' || !Number.isFinite(value)) {
         return 1;
     }
@@ -113,14 +117,14 @@ export function sanitizePersistedState(state: Record<string, unknown>): void {
     const validUserIds = users.map((user) => user.id);
     const validUserIdSet = new Set(validUserIds);
 
-    state.onboardingCompleted = sanitizeBoolean(state.onboardingCompleted, false);
+    state.onboardingCompleted = sanitizeBooleanSetting(state.onboardingCompleted, false);
     state.soundVolume = sanitizeSoundVolume(state.soundVolume);
-    state.ttsEnabled = sanitizeBoolean(state.ttsEnabled, true);
-    state.bgmEnabled = sanitizeBoolean(state.bgmEnabled, true);
-    state.hapticEnabled = sanitizeBoolean(state.hapticEnabled, true);
-    state.notificationsEnabled = sanitizeBoolean(state.notificationsEnabled, false);
+    state.ttsEnabled = sanitizeBooleanSetting(state.ttsEnabled, true);
+    state.bgmEnabled = sanitizeBooleanSetting(state.bgmEnabled, true);
+    state.hapticEnabled = sanitizeBooleanSetting(state.hapticEnabled, true);
+    state.notificationsEnabled = sanitizeBooleanSetting(state.notificationsEnabled, false);
     state.notificationTime = sanitizeNotificationTime(state.notificationTime);
-    state.hasSeenSessionControlsHint = sanitizeBoolean(state.hasSeenSessionControlsHint, false);
+    state.hasSeenSessionControlsHint = sanitizeBooleanSetting(state.hasSeenSessionControlsHint, false);
     state.joinedChallengeIds = sanitizeJoinedChallengeIds(state.joinedChallengeIds, validUserIdSet);
     state.sessionUserIds = sanitizeSessionUserIds(state.sessionUserIds, validUserIds);
     state.sessionDraft = sanitizeSessionDraft(state.sessionDraft);

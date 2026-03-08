@@ -3,7 +3,11 @@ const lazyConfetti = () => import('canvas-confetti').then((m) => m.default);
 import type { Exercise } from '../../data/exercises';
 import { audio } from '../../lib/audio';
 import { haptics } from '../../lib/haptics';
-import { getExerciseCompletionState, getSessionSideCue } from './sessionProgressHelpers';
+import {
+    getExerciseCompletionState,
+    getSessionSideCue,
+    getSessionVisibilityUpdate,
+} from './sessionProgressHelpers';
 
 interface UseSessionProgressEffectsParams {
     isLoading: boolean;
@@ -227,16 +231,29 @@ export function useSessionProgressEffects({
 
     useEffect(() => {
         const handleVisibility = () => {
-            if (document.visibilityState === 'hidden') {
-                wasPlayingBeforeHiddenRef.current = isPlaying && !isCounting && !isTransitioning && !isBigBreak && !isCompleted;
+            const visibilityUpdate = getSessionVisibilityUpdate({
+                visibilityState: document.visibilityState,
+                hasCurrentExercise: Boolean(currentExercise),
+                wasPlayingBeforeHidden: wasPlayingBeforeHiddenRef.current,
+                isPlaying,
+                isCounting,
+                isTransitioning,
+                isBigBreak,
+                isCompleted,
+            });
+
+            wasPlayingBeforeHiddenRef.current = visibilityUpdate.rememberPlayback;
+            if (visibilityUpdate.shouldPausePlayback) {
                 setIsPlaying(false);
-            } else if (document.visibilityState === 'visible') {
-                if (currentExercise && wasPlayingBeforeHiddenRef.current) {
-                    setIsCounting(true);
-                    setIsTransitioning(false);
-                    audio.speak('再開します。');
-                }
-                wasPlayingBeforeHiddenRef.current = false;
+            }
+            if (visibilityUpdate.shouldResumeCountdown) {
+                setIsCounting(true);
+            }
+            if (visibilityUpdate.shouldClearTransition) {
+                setIsTransitioning(false);
+            }
+            if (visibilityUpdate.announcement) {
+                audio.speak(visibilityUpdate.announcement);
             }
         };
 
@@ -290,3 +307,4 @@ export function useSessionProgressEffects({
 
     return { goToNext };
 }
+

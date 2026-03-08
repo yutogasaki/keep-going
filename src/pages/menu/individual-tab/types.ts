@@ -2,6 +2,12 @@ import type { Exercise } from '../../../data/exercises';
 import type { CustomExercise } from '../../../lib/db';
 import type { PublicExercise } from '../../../lib/publicExercises';
 
+export interface IndividualSelectionProps {
+    selectionMode?: boolean;
+    selectedIds?: Set<string>;
+    onToggleSelect?: (exerciseId: string) => void;
+}
+
 export interface MenuIndividualTabProps {
     exercises: Exercise[];
     requiredExercises: string[];

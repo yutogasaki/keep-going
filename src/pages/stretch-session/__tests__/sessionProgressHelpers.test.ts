@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { getExerciseCompletionState, getPhaseTimeLeft, getSessionSideCue } from '../sessionProgressHelpers';
+import {
+    getExerciseCompletionState,
+    getPhaseTimeLeft,
+    getSessionSideCue,
+    getSessionVisibilityUpdate,
+} from '../sessionProgressHelpers';
 import type { Exercise } from '../../../data/exercises';
 
 const baseExercise: Exercise = {
@@ -59,5 +64,70 @@ describe('sessionProgressHelpers', () => {
         expect(smallBreak.breakType).toBe('small');
         expect(smallBreak.transitionSeconds).toBe(5);
         expect(smallBreak.nextExerciseAnnouncement).toBe('次は、ぶりっじです');
+    });
+
+    it('captures active playback on hide and resumes countdown on return', () => {
+        const hidden = getSessionVisibilityUpdate({
+            visibilityState: 'hidden',
+            hasCurrentExercise: true,
+            wasPlayingBeforeHidden: false,
+            isPlaying: true,
+            isCounting: false,
+            isTransitioning: false,
+            isBigBreak: false,
+            isCompleted: false,
+        });
+        const visible = getSessionVisibilityUpdate({
+            visibilityState: 'visible',
+            hasCurrentExercise: true,
+            wasPlayingBeforeHidden: hidden.rememberPlayback,
+            isPlaying: false,
+            isCounting: false,
+            isTransitioning: true,
+            isBigBreak: false,
+            isCompleted: false,
+        });
+
+        expect(hidden).toEqual({
+            rememberPlayback: true,
+            shouldPausePlayback: true,
+            shouldResumeCountdown: false,
+            shouldClearTransition: false,
+            announcement: null,
+        });
+        expect(visible).toEqual({
+            rememberPlayback: false,
+            shouldPausePlayback: false,
+            shouldResumeCountdown: true,
+            shouldClearTransition: true,
+            announcement: '再開します。',
+        });
+    });
+
+    it('does not resume when the session was counting or otherwise inactive before hide', () => {
+        const hidden = getSessionVisibilityUpdate({
+            visibilityState: 'hidden',
+            hasCurrentExercise: true,
+            wasPlayingBeforeHidden: false,
+            isPlaying: true,
+            isCounting: true,
+            isTransitioning: false,
+            isBigBreak: false,
+            isCompleted: false,
+        });
+        const visible = getSessionVisibilityUpdate({
+            visibilityState: 'visible',
+            hasCurrentExercise: true,
+            wasPlayingBeforeHidden: hidden.rememberPlayback,
+            isPlaying: false,
+            isCounting: true,
+            isTransitioning: false,
+            isBigBreak: false,
+            isCompleted: false,
+        });
+
+        expect(hidden.rememberPlayback).toBe(false);
+        expect(visible.shouldResumeCountdown).toBe(false);
+        expect(visible.announcement).toBeNull();
     });
 });
