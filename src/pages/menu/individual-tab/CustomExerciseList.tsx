@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, Download, Edit2, EyeOff, Play, Trash2, Upload } from 'lucide-react';
+import { Check, ChevronDown, Download, Edit2, EyeOff, Play, Trash2, Upload } from 'lucide-react';
 import type { CustomExercise } from '../../../lib/db';
 import type { PublicExercise } from '../../../lib/publicExercises';
 import { ExerciseIcon } from '../../../components/ExerciseIcon';
@@ -16,6 +16,9 @@ interface CustomExerciseListProps {
     findPublishedExercise?: (exercise: CustomExercise) => PublicExercise | undefined;
     onPublish?: (exercise: CustomExercise) => void;
     onUnpublish?: (exercise: CustomExercise) => void;
+    selectionMode?: boolean;
+    selectedIds?: Set<string>;
+    onToggleSelect?: (exerciseId: string) => void;
 }
 
 export const CustomExerciseList: React.FC<CustomExerciseListProps> = ({
@@ -29,6 +32,9 @@ export const CustomExerciseList: React.FC<CustomExerciseListProps> = ({
     findPublishedExercise,
     onPublish,
     onUnpublish,
+    selectionMode,
+    selectedIds,
+    onToggleSelect,
 }) => {
     const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -38,6 +44,7 @@ export const CustomExerciseList: React.FC<CustomExerciseListProps> = ({
                 const published = findPublishedExercise?.(exercise);
                 const isPublished = !!published;
                 const expanded = expandedId === exercise.id;
+                const isSelected = selectionMode && selectedIds?.has(exercise.id);
 
                 return (
                     <motion.div
@@ -46,7 +53,14 @@ export const CustomExerciseList: React.FC<CustomExerciseListProps> = ({
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.25, delay: index * 0.03 }}
-                        style={{ padding: 0, overflow: 'hidden' }}
+                        onClick={selectionMode ? () => onToggleSelect?.(exercise.id) : undefined}
+                        style={{
+                            padding: 0,
+                            overflow: 'hidden',
+                            cursor: selectionMode ? 'pointer' : undefined,
+                            outline: isSelected ? '2px solid #2BBAA0' : 'none',
+                            outlineOffset: -2,
+                        }}
                     >
                         {/* Main row */}
                         <div
@@ -57,7 +71,24 @@ export const CustomExerciseList: React.FC<CustomExerciseListProps> = ({
                                 padding: '14px 16px',
                             }}
                         >
-                            <ExerciseIcon id={exercise.id} emoji={exercise.emoji} size={24} color="#2D3436" />
+                            {selectionMode ? (
+                                <div style={{
+                                    width: 28,
+                                    height: 28,
+                                    borderRadius: 10,
+                                    border: isSelected ? 'none' : '2px solid #DFE6E9',
+                                    background: isSelected ? '#2BBAA0' : 'transparent',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0,
+                                    transition: 'all 0.15s ease',
+                                }}>
+                                    {isSelected && <Check size={16} color="#FFF" strokeWidth={3} />}
+                                </div>
+                            ) : (
+                                <ExerciseIcon id={exercise.id} emoji={exercise.emoji} size={24} color="#2D3436" />
+                            )}
                             <div style={{ flex: 1 }}>
                                 <div style={{
                                     display: 'flex',
@@ -103,53 +134,55 @@ export const CustomExerciseList: React.FC<CustomExerciseListProps> = ({
                                 </div>
                             </div>
 
-                            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); setExpandedId(expanded ? null : exercise.id); }}
-                                    style={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: 10,
-                                        border: 'none',
-                                        background: 'rgba(0,0,0,0.04)',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}
-                                >
-                                    <ChevronDown
-                                        size={16}
-                                        color="#B2BEC3"
+                            {!selectionMode && (
+                                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); setExpandedId(expanded ? null : exercise.id); }}
                                         style={{
-                                            transform: expanded ? 'rotate(180deg)' : 'rotate(0)',
-                                            transition: 'transform 0.2s ease',
+                                            width: 32,
+                                            height: 32,
+                                            borderRadius: 10,
+                                            border: 'none',
+                                            background: 'rgba(0,0,0,0.04)',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
                                         }}
-                                    />
-                                </button>
-                                <motion.button
-                                    whileTap={{ scale: 0.9 }}
-                                    onClick={() => onStart(exercise.id)}
-                                    style={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: '50%',
-                                        background: 'rgba(43, 186, 160, 0.1)',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}
-                                >
-                                    <Play size={14} color="#2BBAA0" fill="#2BBAA0" />
-                                </motion.button>
-                            </div>
+                                    >
+                                        <ChevronDown
+                                            size={16}
+                                            color="#B2BEC3"
+                                            style={{
+                                                transform: expanded ? 'rotate(180deg)' : 'rotate(0)',
+                                                transition: 'transform 0.2s ease',
+                                            }}
+                                        />
+                                    </button>
+                                    <motion.button
+                                        whileTap={{ scale: 0.9 }}
+                                        onClick={() => onStart(exercise.id)}
+                                        style={{
+                                            width: 32,
+                                            height: 32,
+                                            borderRadius: '50%',
+                                            background: 'rgba(43, 186, 160, 0.1)',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}
+                                    >
+                                        <Play size={14} color="#2BBAA0" fill="#2BBAA0" />
+                                    </motion.button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Expanded section */}
                         <AnimatePresence>
-                            {expanded && (
+                            {!selectionMode && expanded && (
                                 <motion.div
                                     initial={{ height: 0, opacity: 0 }}
                                     animate={{ height: 'auto', opacity: 1 }}

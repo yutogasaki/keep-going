@@ -1,11 +1,19 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ListChecks } from 'lucide-react';
+import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../lib/styles';
 import { CustomExerciseList } from './individual-tab/CustomExerciseList';
 import { StandardExerciseList } from './individual-tab/StandardExerciseList';
 import { CreateCustomExerciseCard } from './individual-tab/CreateCustomExerciseCard';
 import { SelectionBar } from './individual-tab/SelectionBar';
 import type { MenuIndividualTabProps } from './individual-tab/types';
+import {
+    filterStandardExercisesByCategory,
+    getAvailableIndividualCategories,
+    INDIVIDUAL_CATEGORY_OPTIONS,
+    type IndividualCategoryId,
+    shouldShowCustomExercises,
+} from './individual-tab/selectionCategories';
 
 export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
     onStartHybridSession?: (requiredIds: string[]) => void;
@@ -29,8 +37,29 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
     onOpenPublicExerciseBrowser,
     onStartHybridSession,
 }) => {
+    const selectionEnabled = Boolean(onStartHybridSession);
     const [selectionMode, setSelectionMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [category, setCategory] = useState<IndividualCategoryId>('all');
+
+    const availableCategories = useMemo(
+        () => getAvailableIndividualCategories(exercises, customExercises),
+        [customExercises, exercises],
+    );
+    const filteredExercises = useMemo(
+        () => filterStandardExercisesByCategory(exercises, category),
+        [category, exercises],
+    );
+    const showCustomSection = useMemo(
+        () => shouldShowCustomExercises(customExercises, category),
+        [category, customExercises],
+    );
+
+    useEffect(() => {
+        if (!availableCategories.includes(category)) {
+            setCategory('all');
+        }
+    }, [availableCategories, category]);
 
     const handleToggleSelect = useCallback((exerciseId: string) => {
         setSelectedIds((prev) => {
@@ -67,36 +96,119 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '0 20px' }}>
-            {/* えらぶモード切替ボタン */}
-            {onStartHybridSession && (
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <motion.button
-                        whileTap={{ scale: 0.95 }}
-                        onClick={handleToggleMode}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 5,
-                            padding: '6px 14px',
-                            borderRadius: 12,
-                            border: selectionMode ? '2px solid #2BBAA0' : '2px solid #DFE6E9',
-                            background: selectionMode ? 'rgba(43, 186, 160, 0.08)' : 'transparent',
-                            cursor: 'pointer',
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 13,
+            <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                    <div>
+                        <h2 style={{
+                            margin: 0,
+                            fontFamily: FONT.body,
+                            fontSize: FONT_SIZE.sm,
                             fontWeight: 700,
-                            color: selectionMode ? '#2BBAA0' : '#8395A7',
-                            transition: 'all 0.15s ease',
+                            color: COLOR.muted,
+                            letterSpacing: 1,
+                        }}>
+                            カテゴリでさがす
+                        </h2>
+                        <p style={{
+                            margin: '6px 0 0',
+                            fontFamily: FONT.body,
+                            fontSize: 12,
+                            color: COLOR.light,
+                            lineHeight: 1.5,
+                        }}>
+                            みたい種目だけに しぼれます
+                        </p>
+                    </div>
+
+                    {selectionEnabled && (
+                        <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={handleToggleMode}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                padding: '6px 14px',
+                                borderRadius: 12,
+                                border: selectionMode ? `2px solid ${COLOR.primary}` : '2px solid #DFE6E9',
+                                background: selectionMode ? 'rgba(43, 186, 160, 0.08)' : 'transparent',
+                                cursor: 'pointer',
+                                fontFamily: FONT.body,
+                                fontSize: 13,
+                                fontWeight: 700,
+                                color: selectionMode ? COLOR.primary : COLOR.muted,
+                                transition: 'all 0.15s ease',
+                                flexShrink: 0,
+                            }}
+                        >
+                            <ListChecks size={15} />
+                            {selectionMode ? 'えらびおわり' : 'えらぶ'}
+                        </motion.button>
+                    )}
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {INDIVIDUAL_CATEGORY_OPTIONS
+                        .filter((option) => availableCategories.includes(option.id))
+                        .map((option) => {
+                            const active = option.id === category;
+                            return (
+                                <button
+                                    key={option.id}
+                                    type="button"
+                                    onClick={() => setCategory(option.id)}
+                                    style={{
+                                        padding: '8px 12px',
+                                        borderRadius: RADIUS.full,
+                                        border: active ? `1.5px solid ${COLOR.primary}` : '1px solid rgba(0,0,0,0.08)',
+                                        background: active ? 'rgba(43, 186, 160, 0.12)' : 'rgba(255,255,255,0.8)',
+                                        color: active ? COLOR.primaryDark : COLOR.text,
+                                        fontFamily: FONT.body,
+                                        fontSize: 13,
+                                        fontWeight: active ? 700 : 600,
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    {option.label}
+                                </button>
+                            );
+                        })}
+                </div>
+
+                {selectionEnabled && selectionMode && (
+                    <div
+                        className="card card-sm"
+                        style={{
+                            padding: `${SPACE.md}px ${SPACE.lg}px`,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 4,
+                            border: '1px solid rgba(43, 186, 160, 0.16)',
+                            background: 'linear-gradient(135deg, rgba(232,248,240,0.92) 0%, rgba(255,255,255,0.94) 100%)',
                         }}
                     >
-                        <ListChecks size={15} />
-                        えらぶ
-                    </motion.button>
-                </div>
-            )}
+                        <div style={{
+                            fontFamily: FONT.body,
+                            fontSize: 14,
+                            fontWeight: 700,
+                            color: COLOR.dark,
+                        }}>
+                            えらんだ種目を優先して おまかせスタート
+                        </div>
+                        <div style={{
+                            fontFamily: FONT.body,
+                            fontSize: 12,
+                            color: COLOR.muted,
+                            lineHeight: 1.5,
+                        }}>
+                            えらんだ種目は おまかせメニューに優先して入ります。じぶん種目も いっしょに選べます。
+                        </div>
+                    </div>
+                )}
+            </section>
 
             <StandardExerciseList
-                exercises={exercises}
+                exercises={filteredExercises}
                 requiredExerciseIds={requiredExercises}
                 onStartExercise={onStartExercise}
                 teacherExerciseIds={teacherExerciseIds}
@@ -118,18 +230,35 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                     じぶん種目
                 </h2>
 
-                <CustomExerciseList
-                    customExercises={customExercises}
-                    isTogetherMode={isTogetherMode}
-                    getCreatorName={getCreatorName}
-                    onEdit={onEditCustomExercise}
-                    onDelete={onDeleteCustomExercise}
-                    onStart={onStartCustomExercise}
-                    canPublish={canPublish}
-                    findPublishedExercise={findPublishedExercise}
-                    onPublish={onPublishExercise}
-                    onUnpublish={onUnpublishExercise}
-                />
+                {showCustomSection ? (
+                    <CustomExerciseList
+                        customExercises={customExercises}
+                        isTogetherMode={isTogetherMode}
+                        getCreatorName={getCreatorName}
+                        onEdit={onEditCustomExercise}
+                        onDelete={onDeleteCustomExercise}
+                        onStart={onStartCustomExercise}
+                        canPublish={canPublish}
+                        findPublishedExercise={findPublishedExercise}
+                        onPublish={onPublishExercise}
+                        onUnpublish={onUnpublishExercise}
+                        selectionMode={selectionMode}
+                        selectedIds={selectedIds}
+                        onToggleSelect={handleToggleSelect}
+                    />
+                ) : (
+                    <div
+                        className="card card-sm"
+                        style={{
+                            padding: '14px 16px',
+                            fontFamily: FONT.body,
+                            fontSize: 12,
+                            color: COLOR.light,
+                        }}
+                    >
+                        このカテゴリでは じぶん種目は表示していません。
+                    </div>
+                )}
 
                 <CreateCustomExerciseCard onCreate={onCreateCustomExercise} />
             </div>
@@ -200,11 +329,13 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                 </div>
             )}
 
-            <SelectionBar
-                count={selectedIds.size}
-                onStart={handleStartHybrid}
-                onReset={handleReset}
-            />
+            {selectionEnabled && (
+                <SelectionBar
+                    count={selectedIds.size}
+                    onStart={handleStartHybrid}
+                    onReset={handleReset}
+                />
+            )}
         </div>
     );
 };

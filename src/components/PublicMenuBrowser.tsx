@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2 } from 'lucide-react';
+import { X, Loader2, Clock, Download } from 'lucide-react';
 import { fetchPopularMenus, type PublicMenu } from '../lib/publicMenus';
 import { EXERCISES } from '../data/exercises';
 import { MenuDetailSheet } from './MenuDetailSheet';
 import { useAppStore } from '../store/useAppStore';
+import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../lib/styles';
 
 interface PublicMenuBrowserProps {
     open: boolean;
@@ -211,49 +212,78 @@ const BrowserMenuCard: React.FC<{
             ?? id
         );
     const remaining = menu.exerciseIds.length - 4;
+    const totalSec = menu.exerciseIds.reduce((sum, id) => {
+        const exercise = EXERCISES.find(e => e.id === id)
+            ?? menu.customExerciseData?.find(e => e.id === id);
+        return sum + (exercise?.sec ?? 0);
+    }, 0);
+    const minutes = Math.ceil(totalSec / 60);
 
     return (
         <button
             onClick={onTap}
             style={{
-                background: '#FFF',
-                borderRadius: 14,
-                padding: '14px 16px',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                background: COLOR.white,
+                borderRadius: RADIUS.lg,
+                padding: `${SPACE.lg}px`,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.05)',
                 border: 'none',
                 cursor: 'pointer',
                 textAlign: 'left',
                 width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: SPACE.sm,
             }}
         >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                <span style={{ fontSize: 24 }}>{menu.emoji}</span>
-                <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: SPACE.md, width: '100%' }}>
+                <div style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: RADIUS.lg,
+                    background: 'rgba(43, 186, 160, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                }}>
+                    <span style={{ fontSize: 24, lineHeight: 1 }}>{menu.emoji}</span>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 14,
+                        fontFamily: FONT.body,
+                        fontSize: FONT_SIZE.md,
                         fontWeight: 700,
-                        color: '#2D3436',
+                        color: COLOR.dark,
+                        lineHeight: 1.4,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical' as const,
+                        overflow: 'hidden',
                     }}>
                         {menu.name}
                     </div>
                     <div style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 11,
-                        color: '#8395A7',
+                        fontFamily: FONT.body,
+                        fontSize: FONT_SIZE.sm,
+                        color: COLOR.muted,
+                        marginTop: 2,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical' as const,
+                        overflow: 'hidden',
                     }}>
-                        {menu.authorName} · {menu.downloadCount}回もらわれた
+                        {menu.authorName} さんのメニュー
                     </div>
                 </div>
             </div>
 
             {menu.description ? (
                 <div style={{
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 12,
-                    color: '#636E72',
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.sm,
+                    color: COLOR.text,
                     lineHeight: 1.5,
-                    marginBottom: 4,
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical' as const,
@@ -264,12 +294,51 @@ const BrowserMenuCard: React.FC<{
             ) : null}
 
             <div style={{
-                fontFamily: "'Noto Sans JP', sans-serif",
-                fontSize: 11,
-                color: '#8395A7',
+                fontFamily: FONT.body,
+                fontSize: FONT_SIZE.sm,
+                color: COLOR.muted,
                 lineHeight: 1.6,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical' as const,
+                overflow: 'hidden',
             }}>
                 {exerciseNames.join('、')}{remaining > 0 ? `、+${remaining}` : ''}
+            </div>
+
+            <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: SPACE.sm,
+            }}>
+                <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '4px 8px',
+                    borderRadius: RADIUS.full,
+                    background: 'rgba(0,0,0,0.04)',
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.xs + 1,
+                    color: COLOR.light,
+                }}>
+                    <Clock size={11} />
+                    約{minutes}分
+                </span>
+                <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '4px 8px',
+                    borderRadius: RADIUS.full,
+                    background: 'rgba(0,0,0,0.04)',
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.xs + 1,
+                    color: COLOR.light,
+                }}>
+                    <Download size={11} />
+                    {menu.downloadCount}回もらわれた
+                </span>
             </div>
         </button>
     );

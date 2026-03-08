@@ -19,10 +19,10 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ count, onStart, onRe
                     transition={{ type: 'spring', damping: 24, stiffness: 300 }}
                     style={{
                         position: 'fixed',
-                        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
-                        left: 16,
-                        right: 16,
-                        zIndex: 50,
+                        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 132px)',
+                        left: 'max(16px, calc(50vw - 199px))',
+                        right: 'max(16px, calc(50vw - 199px))',
+                        zIndex: 60,
                         display: 'flex',
                         alignItems: 'center',
                         gap: 10,
@@ -57,7 +57,7 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ count, onStart, onRe
                         }}>
                             {count}
                         </span>
-                        えらんだ
+                        えらんだ種目
                     </div>
 
                     <motion.button
@@ -86,7 +86,7 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ count, onStart, onRe
                             display: 'flex',
                             alignItems: 'center',
                             gap: 6,
-                            padding: '10px 18px',
+                            padding: '10px 16px',
                             borderRadius: 14,
                             border: 'none',
                             background: 'linear-gradient(135deg, #2BBAA0, #26A68D)',
@@ -100,7 +100,7 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ count, onStart, onRe
                         }}
                     >
                         <Sparkles size={15} />
-                        おまかせスタート
+                        優先してスタート
                     </motion.button>
                 </motion.div>
             )}
