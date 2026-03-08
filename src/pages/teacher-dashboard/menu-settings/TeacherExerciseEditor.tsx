@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Trash2 } from 'lucide-react';
-import { CLASS_LEVELS } from '../../../data/exercises';
+import { EditorSection, EditorShell, editorLabelStyle } from '../../../components/editor/EditorShell';
 import {
     EXERCISE_PLACEMENTS,
     getExercisePlacementLabel,
     type ExercisePlacement,
 } from '../../../data/exercisePlacement';
-import {
-    EditorSection,
-    EditorShell,
-    editorLabelStyle,
-    getEditorActionButtonStyle,
-    getEditorSubmitButtonStyle,
-} from '../../../components/editor/EditorShell';
 import type { TeacherExercise } from '../../../lib/teacherContent';
 import type { MenuSettingStatus } from '../../../lib/teacherMenuSettings';
 import { COLOR, FONT, FONT_SIZE, inputField } from '../../../lib/styles';
+import { TeacherEditorEmojiPicker } from './TeacherEditorEmojiPicker';
+import { TeacherEditorFooterActions } from './TeacherEditorFooterActions';
+import { TeacherEditorStatusSection } from './TeacherEditorStatusSection';
+import {
+    buildDefaultStatusByClass,
+    deriveVisibleClassLevels,
+    type TeacherEditorStatusOption,
+} from './teacherEditorHelpers';
 
 interface TeacherExerciseEditorProps {
     initial?: TeacherExercise | null;
@@ -38,7 +38,7 @@ interface TeacherExerciseEditorProps {
     submitting: boolean;
 }
 
-const STATUS_OPTIONS: { status: MenuSettingStatus; bg: string; color: string; label: string }[] = [
+const STATUS_OPTIONS: TeacherEditorStatusOption[] = [
     { status: 'required', bg: '#E8F8F0', color: '#2BBAA0', label: '必須' },
     { status: 'optional', bg: '#F8F9FA', color: '#8395A7', label: 'おまかせ' },
     { status: 'excluded', bg: '#FFE4E1', color: '#E17055', label: '除外' },
@@ -67,26 +67,22 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
     const [placement, setPlacement] = useState<ExercisePlacement>(initial?.placement ?? 'stretch');
     const [hasSplit, setHasSplit] = useState(initial?.hasSplit ?? false);
     const [description, setDescription] = useState(initial?.description ?? '');
+    const [statusByClass, setStatusByClass] = useState<Record<string, MenuSettingStatus>>(() => buildDefaultStatusByClass(initialStatuses));
 
-    // Per-class status (default: optional for all)
-    const [statusByClass, setStatusByClass] = useState<Record<string, MenuSettingStatus>>(() => {
-        if (initialStatuses) return { ...initialStatuses };
-        const defaults: Record<string, MenuSettingStatus> = {};
-        for (const cl of CLASS_LEVELS) defaults[cl.id] = 'optional';
-        return defaults;
-    });
-
-    const handleStatusChange = (classLevel: string, newStatus: MenuSettingStatus) => {
-        setStatusByClass(prev => ({ ...prev, [classLevel]: newStatus }));
-    };
+    const canSave = name.trim().length > 0;
 
     const handleSubmit = () => {
-        if (!name.trim() || submitting) return;
-        // Derive classLevels from statusByClass (non-hidden classes)
-        const classLevels = Object.entries(statusByClass)
-            .filter(([, s]) => s !== 'hidden')
-            .map(([cl]) => cl);
-        onSave({ name: name.trim(), sec, emoji, placement, hasSplit, description: description.trim(), classLevels, statusByClass });
+        if (!canSave || submitting) return;
+        onSave({
+            name: name.trim(),
+            sec,
+            emoji,
+            placement,
+            hasSplit,
+            description: description.trim(),
+            classLevels: deriveVisibleClassLevels(statusByClass),
+            statusByClass,
+        });
     };
 
     return (
@@ -95,37 +91,18 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
             onBack={onCancel}
         >
             <EditorSection label="アイコン">
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {EMOJI_OPTIONS.map(e => (
-                        <motion.button
-                            key={e}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => setEmoji(e)}
-                            style={{
-                                width: 44,
-                                height: 44,
-                                borderRadius: 14,
-                                border: emoji === e ? '2px solid #2BBAA0' : '2px solid transparent',
-                                background: emoji === e ? 'rgba(43,186,160,0.08)' : '#F8F9FA',
-                                cursor: 'pointer',
-                                fontSize: 22,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                transition: 'all 0.2s',
-                            }}
-                        >
-                            {e}
-                        </motion.button>
-                    ))}
-                </div>
+                <TeacherEditorEmojiPicker
+                    options={EMOJI_OPTIONS}
+                    selectedEmoji={emoji}
+                    onSelect={setEmoji}
+                />
             </EditorSection>
 
             <EditorSection label="なまえ">
                 <input
                     type="text"
                     value={name}
-                    onChange={e => setName(e.target.value)}
+                    onChange={(event) => setName(event.target.value)}
                     placeholder="新しい種目の名前"
                     style={{
                         ...inputField,
@@ -139,7 +116,7 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
             <EditorSection label="せつめい">
                 <textarea
                     value={description}
-                    onChange={e => setDescription(e.target.value)}
+                    onChange={(event) => setDescription(event.target.value)}
                     placeholder="種目の説明やポイント"
                     rows={3}
                     style={{
@@ -154,26 +131,27 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
 
             <EditorSection label="時間（秒）">
                 <div style={{ display: 'flex', gap: 10 }}>
-                    {[15, 30, 60, 120].map(s => (
+                    {[15, 30, 60, 120].map((seconds) => (
                         <motion.button
-                            key={s}
+                            key={seconds}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => setSec(s)}
+                            type="button"
+                            onClick={() => setSec(seconds)}
                             style={{
                                 flex: 1,
                                 padding: '12px 0',
                                 borderRadius: 12,
-                                border: sec === s ? '2px solid #2BBAA0' : '2px solid transparent',
-                                background: sec === s ? 'rgba(43,186,160,0.08)' : '#F8F9FA',
+                                border: sec === seconds ? '2px solid #2BBAA0' : '2px solid transparent',
+                                background: sec === seconds ? 'rgba(43,186,160,0.08)' : '#F8F9FA',
                                 cursor: 'pointer',
                                 fontFamily: "'Outfit', sans-serif",
                                 fontSize: 16,
                                 fontWeight: 700,
-                                color: sec === s ? '#2BBAA0' : '#8395A7',
+                                color: sec === seconds ? '#2BBAA0' : '#8395A7',
                                 transition: 'all 0.2s',
                             }}
                         >
-                            {s}秒
+                            {seconds}秒
                         </motion.button>
                     ))}
                 </div>
@@ -210,32 +188,37 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
                         );
                     })}
                 </div>
-                {placementLocked && (
-                    <div style={{
-                        marginTop: 8,
-                        fontFamily: FONT.body,
-                        fontSize: 12,
-                        color: COLOR.muted,
-                        lineHeight: 1.5,
-                    }}>
+                {placementLocked ? (
+                    <div
+                        style={{
+                            marginTop: 8,
+                            fontFamily: FONT.body,
+                            fontSize: 12,
+                            color: COLOR.muted,
+                            lineHeight: 1.5,
+                        }}
+                    >
                         標準種目の配置は固定です。新しい先生の種目では自由に選べます。
                     </div>
-                )}
+                ) : null}
             </EditorSection>
 
             <EditorSection>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div>
                         <label style={{ ...editorLabelStyle, fontSize: 15, marginBottom: 4 }}>切替あり</label>
-                        <span style={{
-                            fontFamily: FONT.body,
-                            fontSize: 12,
-                            color: '#8395A7',
-                        }}>
+                        <span
+                            style={{
+                                fontFamily: FONT.body,
+                                fontSize: 12,
+                                color: '#8395A7',
+                            }}
+                        >
                             半分の時間で「反対」「切り替え」の合図が鳴ります
                         </span>
                     </div>
                     <button
+                        type="button"
                         onClick={() => setHasSplit(!hasSplit)}
                         style={{
                             width: 52,
@@ -268,111 +251,34 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
             </EditorSection>
 
             <EditorSection label="クラスごとの設定">
-                <div style={{
-                    display: 'flex',
-                    gap: 4,
-                    marginBottom: 10,
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 10,
-                    color: '#8395A7',
-                }}>
-                    <span style={{ color: '#2BBAA0' }}>★ 必須</span>
-                    <span>⚪ おまかせ</span>
-                    <span style={{ color: '#E17055' }}>✕ 除外</span>
-                    <span style={{ color: '#8B5CF6' }}>👁 非表示</span>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {CLASS_LEVELS.map(cl => {
-                        const currentStatus = statusByClass[cl.id] || 'optional';
-                        return (
-                            <div
-                                key={cl.id}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 8,
-                                    padding: '6px 0',
-                                    borderBottom: '1px solid rgba(0,0,0,0.04)',
-                                }}
-                            >
-                                <span style={{ fontSize: 14, flexShrink: 0 }}>{cl.emoji}</span>
-                                <span style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 12,
-                                    fontWeight: 600,
-                                    color: '#636E72',
-                                    width: 36,
-                                    flexShrink: 0,
-                                }}>
-                                    {cl.id}
-                                </span>
-                                <div style={{ display: 'flex', gap: 4, flex: 1 }}>
-                                    {STATUS_OPTIONS.map(opt => {
-                                        const isActive = currentStatus === opt.status;
-                                        return (
-                                            <button
-                                                key={opt.status}
-                                                onClick={() => handleStatusChange(cl.id, opt.status)}
-                                                style={{
-                                                    flex: 1,
-                                                    padding: '5px 2px',
-                                                    borderRadius: 8,
-                                                    border: isActive ? `2px solid ${opt.color}` : '2px solid transparent',
-                                                    background: isActive ? opt.bg : '#F8F9FA',
-                                                    color: isActive ? opt.color : '#B2BEC3',
-                                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                                    fontSize: 10,
-                                                    fontWeight: 700,
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.15s ease',
-                                                }}
-                                            >
-                                                {opt.label}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
+                <TeacherEditorStatusSection
+                    legend={(
+                        <>
+                            <span style={{ color: '#2BBAA0' }}>★ 必須</span>
+                            <span>⚪ おまかせ</span>
+                            <span style={{ color: '#E17055' }}>✕ 除外</span>
+                            <span style={{ color: '#8B5CF6' }}>👁 非表示</span>
+                        </>
+                    )}
+                    options={STATUS_OPTIONS}
+                    statusByClass={statusByClass}
+                    onStatusChange={(classLevel, status) => setStatusByClass((previous) => ({
+                        ...previous,
+                        [classLevel]: status,
+                    }))}
+                />
             </EditorSection>
 
             <div style={{ flex: 1 }} />
 
-            {initial && (
-                <div style={{ display: 'flex', gap: 8 }}>
-                    {onPlay && (
-                        <motion.button
-                            whileTap={{ scale: 0.97 }}
-                            onClick={onPlay}
-                            style={getEditorActionButtonStyle('soft')}
-                        >
-                            <Play size={14} />
-                            ためす
-                        </motion.button>
-                    )}
-                    {onDelete && (
-                        <motion.button
-                            whileTap={{ scale: 0.97 }}
-                            onClick={onDelete}
-                            style={getEditorActionButtonStyle('danger', false)}
-                        >
-                            <Trash2 size={14} />
-                            削除
-                        </motion.button>
-                    )}
-                </div>
-            )}
-
-            <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={handleSubmit}
-                disabled={!name.trim() || submitting}
-                style={getEditorSubmitButtonStyle(Boolean(name.trim()) && !submitting)}
-            >
-                {submitting ? '保存中...' : initial ? '保存' : '作成'}
-            </motion.button>
+            <TeacherEditorFooterActions
+                canSave={canSave}
+                isEditing={Boolean(initial)}
+                onDelete={onDelete}
+                onPlay={onPlay}
+                onSubmit={handleSubmit}
+                submitting={submitting}
+            />
         </EditorShell>
     );
 };

@@ -1,0 +1,86 @@
+import { describe, expect, it } from 'vitest';
+import type { TeacherItemOverride } from '../../../lib/teacherItemOverrides';
+import {
+    buildBuiltInExerciseInitial,
+    buildBuiltInMenuInitial,
+    getMenuSettingStatusByClass,
+} from './menuSettingsControllerHelpers';
+
+function createOverride(overrides: Partial<TeacherItemOverride> & Pick<TeacherItemOverride, 'id' | 'itemId' | 'itemType'>): TeacherItemOverride {
+    return {
+        id: overrides.id,
+        itemId: overrides.itemId,
+        itemType: overrides.itemType,
+        nameOverride: overrides.nameOverride ?? null,
+        descriptionOverride: overrides.descriptionOverride ?? null,
+        emojiOverride: overrides.emojiOverride ?? null,
+        secOverride: overrides.secOverride ?? null,
+        hasSplitOverride: overrides.hasSplitOverride ?? null,
+        exerciseIdsOverride: overrides.exerciseIdsOverride ?? null,
+        createdBy: overrides.createdBy ?? 'teacher@example.com',
+    };
+}
+
+describe('menuSettingsControllerHelpers', () => {
+    it('builds built-in exercise initial values with teacher overrides applied', () => {
+        const initial = buildBuiltInExerciseInitial('S01', [
+            createOverride({
+                id: 'ov-ex-1',
+                itemId: 'S01',
+                itemType: 'exercise',
+                nameOverride: '先生のS01',
+                emojiOverride: '✨',
+                secOverride: 45,
+                descriptionOverride: '上書き説明',
+                hasSplitOverride: true,
+            }),
+        ]);
+
+        expect(initial).toMatchObject({
+            id: 'S01',
+            name: '先生のS01',
+            emoji: '✨',
+            sec: 45,
+            description: '上書き説明',
+            hasSplit: true,
+        });
+    });
+
+    it('builds built-in menu initial values with teacher overrides applied', () => {
+        const initial = buildBuiltInMenuInitial('preset-basic', [
+            createOverride({
+                id: 'ov-menu-1',
+                itemId: 'preset-basic',
+                itemType: 'menu_group',
+                nameOverride: '先生の基本',
+                emojiOverride: '📋',
+                descriptionOverride: '上書きメニュー',
+                exerciseIdsOverride: ['S01', 'S02'],
+            }),
+        ]);
+
+        expect(initial).toMatchObject({
+            id: 'preset-basic',
+            name: '先生の基本',
+            emoji: '📋',
+            description: '上書きメニュー',
+            exerciseIds: ['S01', 'S02'],
+        });
+    });
+
+    it('derives per-class statuses with optional as default', () => {
+        const statusByClass = getMenuSettingStatusByClass([
+            {
+                id: 'setting-1',
+                itemId: 'S01',
+                itemType: 'exercise',
+                classLevel: '初級',
+                status: 'required',
+                createdBy: 'teacher@example.com',
+            },
+        ], 'S01', 'exercise');
+
+        expect(statusByClass['初級']).toBe('required');
+        expect(statusByClass['中級']).toBe('optional');
+    });
+});

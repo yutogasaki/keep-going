@@ -1,222 +1,84 @@
-import { useCallback, useEffect, useState } from 'react';
-import { CLASS_LEVELS, EXERCISES } from '../../../data/exercises';
+import { useCallback, useState } from 'react';
+import { EXERCISES } from '../../../data/exercises';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
 import {
     createTeacherExercise,
     createTeacherMenu,
     deleteTeacherExercise,
     deleteTeacherMenu,
-    fetchTeacherExercises,
-    fetchTeacherMenus,
-    type TeacherExercise,
-    type TeacherMenu,
     updateTeacherExercise,
     updateTeacherMenu,
 } from '../../../lib/teacherContent';
+import { dispatchTeacherContentUpdated } from '../../../lib/teacherContentEvents';
+import { upsertTeacherItemOverride } from '../../../lib/teacherItemOverrides';
 import {
-    fetchAllTeacherItemOverrides,
-    type TeacherItemOverride,
-    upsertTeacherItemOverride,
-} from '../../../lib/teacherItemOverrides';
-import {
-    fetchAllTeacherMenuSettings,
+    upsertTeacherMenuSetting,
     type MenuSettingItemType,
     type MenuSettingStatus,
-    type TeacherMenuSetting,
-    upsertTeacherMenuSetting,
 } from '../../../lib/teacherMenuSettings';
-import { dispatchTeacherContentUpdated } from '../../../lib/teacherContentEvents';
-
-interface UseMenuSettingsControllerParams {
-    teacherEmail: string;
-}
-
-interface DeleteTarget {
-    id: string;
-    type: 'exercise' | 'menu';
-    name: string;
-}
-
-interface ExerciseEditorValues {
-    name: string;
-    sec: number;
-    emoji: string;
-    placement: TeacherExercise['placement'];
-    hasSplit: boolean;
-    description: string;
-    classLevels: string[];
-    statusByClass?: Record<string, MenuSettingStatus>;
-}
-
-interface MenuEditorValues {
-    name: string;
-    emoji: string;
-    description: string;
-    exerciseIds: string[];
-    classLevels: string[];
-    statusByClass?: Record<string, MenuSettingStatus>;
-}
-
-async function saveStatuses(
-    itemId: string,
-    itemType: MenuSettingItemType,
-    statusByClass: Record<string, MenuSettingStatus> | undefined,
-    teacherEmail: string,
-): Promise<void> {
-    if (!statusByClass) return;
-
-    await Promise.all(
-        Object.entries(statusByClass).map(([classLevel, status]) =>
-            upsertTeacherMenuSetting(itemId, itemType, classLevel, status, teacherEmail)
-        )
-    );
-}
+import {
+    buildBuiltInExerciseInitial,
+    buildBuiltInMenuInitial,
+    getMenuSettingStatusByClass,
+    getTeacherItemOverride,
+    saveStatuses,
+} from './menuSettingsControllerHelpers';
+import type {
+    ExerciseEditorValues,
+    MenuEditorValues,
+    UseMenuSettingsControllerParams,
+} from './menuSettingsControllerTypes';
+import { useMenuSettingsData } from './useMenuSettingsData';
+import { useMenuSettingsEditorState } from './useMenuSettingsEditorState';
 
 export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsControllerParams) {
-    const [settings, setSettings] = useState<TeacherMenuSetting[]>([]);
-    const [overrides, setOverrides] = useState<TeacherItemOverride[]>([]);
-    const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
-    const [teacherMenus, setTeacherMenus] = useState<TeacherMenu[]>([]);
-    const [loading, setLoading] = useState(true);
+    const {
+        error,
+        loadAll,
+        loading,
+        overrides,
+        setError,
+        setSettings,
+        settings,
+        teacherExercises,
+        teacherMenus,
+    } = useMenuSettingsData();
+    const {
+        clearDeleteTarget,
+        closeExerciseForm,
+        closeMenuForm,
+        deleteTarget,
+        editingBuiltInExerciseId,
+        editingBuiltInMenuId,
+        editingExercise,
+        editingMenu,
+        expandedItemId,
+        handleDeleteExerciseFromEditor,
+        handleDeleteMenuFromEditor,
+        openBuiltInExerciseEditor,
+        openBuiltInMenuEditor,
+        openNewExerciseForm,
+        openNewMenuForm,
+        openTeacherExerciseEditor,
+        openTeacherMenuEditor,
+        promptDeleteExercise,
+        promptDeleteMenu,
+        resetTransientUi,
+        setDeleteTarget,
+        showExerciseForm,
+        showMenuForm,
+        toggleExpandedItem,
+    } = useMenuSettingsEditorState();
     const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
-    const [showExerciseForm, setShowExerciseForm] = useState(false);
-    const [editingExercise, setEditingExercise] = useState<TeacherExercise | null>(null);
-    const [editingBuiltInExerciseId, setEditingBuiltInExerciseId] = useState<string | null>(null);
-    const [showMenuForm, setShowMenuForm] = useState(false);
-    const [editingMenu, setEditingMenu] = useState<TeacherMenu | null>(null);
-    const [editingBuiltInMenuId, setEditingBuiltInMenuId] = useState<string | null>(null);
-    const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
-    const loadAll = useCallback(async () => {
-        setLoading(true);
-        try {
-            const [nextSettings, nextTeacherExercises, nextTeacherMenus, nextOverrides] = await Promise.all([
-                fetchAllTeacherMenuSettings(true),
-                fetchTeacherExercises(true),
-                fetchTeacherMenus(true),
-                fetchAllTeacherItemOverrides(true),
-            ]);
-            setSettings(nextSettings);
-            setTeacherExercises(nextTeacherExercises);
-            setTeacherMenus(nextTeacherMenus);
-            setOverrides(nextOverrides);
-            setError(null);
-        } catch (err) {
-            console.warn('[MenuSettings] load failed:', err);
-            setError('データの読み込みに失敗しました。Supabase で deploy.sql を実行してテーブルを作成してください。');
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        void loadAll();
-    }, [loadAll]);
-
-    const getStatus = useCallback((itemId: string, itemType: MenuSettingItemType, classLevel: string): MenuSettingStatus => {
-        const found = settings.find(
-            (setting) =>
-                setting.itemId === itemId
-                && setting.itemType === itemType
-                && setting.classLevel === classLevel
-        );
-        return found?.status ?? 'optional';
+    const getStatusByClass = useCallback((itemId: string, itemType: MenuSettingItemType) => {
+        return getMenuSettingStatusByClass(settings, itemId, itemType);
     }, [settings]);
 
-    const getStatusByClass = useCallback((itemId: string, itemType: MenuSettingItemType) => {
-        const statusByClass: Record<string, MenuSettingStatus> = {};
-        for (const classLevel of CLASS_LEVELS) {
-            statusByClass[classLevel.id] = getStatus(itemId, itemType, classLevel.id);
-        }
-        return statusByClass;
-    }, [getStatus]);
-
-    const getOverride = useCallback((itemId: string, itemType: TeacherItemOverride['itemType']) => {
-        return overrides.find((override) => override.itemId === itemId && override.itemType === itemType);
+    const getOverride = useCallback((itemId: string, itemType: 'exercise' | 'menu_group') => {
+        return getTeacherItemOverride(overrides, itemId, itemType);
     }, [overrides]);
-
-    const closeExerciseForm = useCallback(() => {
-        setShowExerciseForm(false);
-        setEditingExercise(null);
-        setEditingBuiltInExerciseId(null);
-    }, []);
-
-    const closeMenuForm = useCallback(() => {
-        setShowMenuForm(false);
-        setEditingMenu(null);
-        setEditingBuiltInMenuId(null);
-    }, []);
-
-    const resetTransientUi = useCallback(() => {
-        setExpandedItemId(null);
-        closeExerciseForm();
-        closeMenuForm();
-    }, [closeExerciseForm, closeMenuForm]);
-
-    const openNewExerciseForm = useCallback(() => {
-        setEditingExercise(null);
-        setEditingBuiltInExerciseId(null);
-        setShowExerciseForm(true);
-    }, []);
-
-    const openTeacherExerciseEditor = useCallback((exercise: TeacherExercise) => {
-        setEditingExercise(exercise);
-        setEditingBuiltInExerciseId(null);
-        setShowExerciseForm(true);
-    }, []);
-
-    const openBuiltInExerciseEditor = useCallback((exerciseId: string) => {
-        setEditingBuiltInExerciseId(exerciseId);
-        setEditingExercise(null);
-        setShowExerciseForm(true);
-    }, []);
-
-    const openNewMenuForm = useCallback(() => {
-        setEditingMenu(null);
-        setEditingBuiltInMenuId(null);
-        setShowMenuForm(true);
-    }, []);
-
-    const openTeacherMenuEditor = useCallback((menu: TeacherMenu) => {
-        setEditingMenu(menu);
-        setEditingBuiltInMenuId(null);
-        setShowMenuForm(true);
-    }, []);
-
-    const openBuiltInMenuEditor = useCallback((menuId: string) => {
-        setEditingBuiltInMenuId(menuId);
-        setEditingMenu(null);
-        setShowMenuForm(true);
-    }, []);
-
-    const toggleExpandedItem = useCallback((itemId: string) => {
-        setExpandedItemId((prev) => (prev === itemId ? null : itemId));
-    }, []);
-
-    const clearDeleteTarget = useCallback(() => {
-        setDeleteTarget(null);
-    }, []);
-
-    const promptDeleteExercise = useCallback((exercise: Pick<TeacherExercise, 'id' | 'name'>) => {
-        setDeleteTarget({ id: exercise.id, type: 'exercise', name: exercise.name });
-    }, []);
-
-    const promptDeleteMenu = useCallback((menu: Pick<TeacherMenu, 'id' | 'name'>) => {
-        setDeleteTarget({ id: menu.id, type: 'menu', name: menu.name });
-    }, []);
-
-    const handleDeleteExerciseFromEditor = useCallback(() => {
-        if (!editingExercise) return;
-        setDeleteTarget({ id: editingExercise.id, type: 'exercise', name: editingExercise.name });
-    }, [editingExercise]);
-
-    const handleDeleteMenuFromEditor = useCallback(() => {
-        if (!editingMenu) return;
-        setDeleteTarget({ id: editingMenu.id, type: 'menu', name: editingMenu.name });
-    }, [editingMenu]);
 
     const handleStatusChange = useCallback(async (
         itemId: string,
@@ -228,12 +90,11 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
 
         setSettings((prev) => {
             const filtered = prev.filter(
-                (setting) =>
-                    !(
-                        setting.itemId === itemId
-                        && setting.itemType === itemType
-                        && setting.classLevel === classLevel
-                    )
+                (setting) => !(
+                    setting.itemId === itemId
+                    && setting.itemType === itemType
+                    && setting.classLevel === classLevel
+                )
             );
 
             if (newStatus !== 'optional') {
@@ -258,7 +119,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
             setError('保存に失敗しました。deploy.sql を実行してテーブルを作成してください。');
             void loadAll();
         }
-    }, [loadAll, teacherEmail]);
+    }, [loadAll, setError, setSettings, teacherEmail]);
 
     const handleSaveExercise = useCallback(async (data: ExerciseEditorValues) => {
         setSubmitting(true);
@@ -311,7 +172,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
         } finally {
             setSubmitting(false);
         }
-    }, [closeExerciseForm, editingBuiltInExerciseId, editingExercise, loadAll, teacherEmail]);
+    }, [closeExerciseForm, editingBuiltInExerciseId, editingExercise, loadAll, setError, teacherEmail]);
 
     const handleSaveMenu = useCallback(async (data: MenuEditorValues) => {
         setSubmitting(true);
@@ -363,7 +224,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
         } finally {
             setSubmitting(false);
         }
-    }, [closeMenuForm, editingBuiltInMenuId, editingMenu, loadAll, teacherEmail]);
+    }, [closeMenuForm, editingBuiltInMenuId, editingMenu, loadAll, setError, teacherEmail]);
 
     const handleConfirmDelete = useCallback(async () => {
         if (!deleteTarget) return;
@@ -386,46 +247,10 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
             setDeleteLoading(false);
             setDeleteTarget(null);
         }
-    }, [closeExerciseForm, closeMenuForm, deleteTarget, editingExercise, editingMenu, loadAll]);
-
-    const buildBuiltInExerciseInitial = useCallback((exerciseId: string): TeacherExercise | null => {
-        const exercise = EXERCISES.find((item) => item.id === exerciseId);
-        if (!exercise) return null;
-
-        const override = getOverride(exerciseId, 'exercise');
-        return {
-            id: exercise.id,
-            name: override?.nameOverride ?? exercise.name,
-            sec: override?.secOverride ?? exercise.sec,
-            emoji: override?.emojiOverride ?? exercise.emoji,
-            placement: exercise.placement,
-            hasSplit: override?.hasSplitOverride ?? (exercise.hasSplit ?? false),
-            description: override?.descriptionOverride ?? (exercise.description ?? ''),
-            classLevels: exercise.classes as string[],
-            createdBy: '',
-            createdAt: '',
-        };
-    }, [getOverride]);
-
-    const buildBuiltInMenuInitial = useCallback((menuId: string): TeacherMenu | null => {
-        const group = PRESET_GROUPS.find((item) => item.id === menuId);
-        if (!group) return null;
-
-        const override = getOverride(menuId, 'menu_group');
-        return {
-            id: group.id,
-            name: override?.nameOverride ?? group.name,
-            emoji: override?.emojiOverride ?? group.emoji,
-            description: override?.descriptionOverride ?? (group.description ?? ''),
-            exerciseIds: override?.exerciseIdsOverride ?? group.exerciseIds,
-            classLevels: [],
-            createdBy: '',
-            createdAt: '',
-        };
-    }, [getOverride]);
+    }, [closeExerciseForm, closeMenuForm, deleteTarget, editingExercise, editingMenu, loadAll, setDeleteTarget]);
 
     const exerciseEditorInitial = editingExercise
-        ?? (editingBuiltInExerciseId ? buildBuiltInExerciseInitial(editingBuiltInExerciseId) : null);
+        ?? (editingBuiltInExerciseId ? buildBuiltInExerciseInitial(editingBuiltInExerciseId, overrides) : null);
     const exerciseEditorStatuses = editingExercise
         ? getStatusByClass(editingExercise.id, 'exercise')
         : editingBuiltInExerciseId
@@ -434,7 +259,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
     const exerciseEditorItemId = editingExercise?.id ?? editingBuiltInExerciseId;
 
     const menuEditorInitial = editingMenu
-        ?? (editingBuiltInMenuId ? buildBuiltInMenuInitial(editingBuiltInMenuId) : null);
+        ?? (editingBuiltInMenuId ? buildBuiltInMenuInitial(editingBuiltInMenuId, overrides) : null);
     const menuEditorStatuses = editingMenu
         ? getStatusByClass(editingMenu.id, 'menu_group')
         : editingBuiltInMenuId
