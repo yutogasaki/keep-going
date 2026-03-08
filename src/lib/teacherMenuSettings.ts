@@ -47,8 +47,8 @@ export async function fetchAllTeacherMenuSettings(forceRefresh = false): Promise
     return cachedSettings;
 }
 
-export async function fetchTeacherMenuSettingsForClass(classLevel: string): Promise<TeacherMenuSetting[]> {
-    const all = await fetchAllTeacherMenuSettings();
+export async function fetchTeacherMenuSettingsForClass(classLevel: string, forceRefresh = false): Promise<TeacherMenuSetting[]> {
+    const all = await fetchAllTeacherMenuSettings(forceRefresh);
     return all.filter(s => s.classLevel === classLevel);
 }
 

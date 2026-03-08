@@ -35,12 +35,12 @@ export const RecordPage: React.FC = () => {
     const pastFuwafuwas = useMemo(() => currentViewUsers.flatMap((user) => user.pastFuwafuwas || []).filter((fuwafuwa) => fuwafuwa.finalStage === 3), [currentViewUsers]);
     const chibifuwas = useMemo(() => currentViewUsers.flatMap((user) => user.chibifuwas || []), [currentViewUsers]);
 
-    const loadExerciseMap = useCallback(async () => {
+    const loadExerciseMap = useCallback(async (forceRefresh = false) => {
         const map = new Map<string, { name: string; emoji: string }>();
         for (const e of EXERCISES) map.set(e.id, { name: e.name, emoji: e.emoji });
         const customs = await getCustomExercises();
         for (const c of customs) map.set(c.id, { name: c.name, emoji: c.emoji });
-        const teachers = await fetchTeacherExercises();
+        const teachers = await fetchTeacherExercises(forceRefresh);
         for (const t of teachers) map.set(t.id, { name: t.name, emoji: t.emoji });
         setExerciseMap(map);
     }, []);
@@ -96,7 +96,7 @@ export const RecordPage: React.FC = () => {
 
     useEffect(() => {
         return subscribeTeacherContentUpdated(() => {
-            void loadExerciseMap();
+            void loadExerciseMap(true);
         });
     }, [loadExerciseMap]);
 

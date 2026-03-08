@@ -26,13 +26,13 @@ export function useTeacherContent({
     const [teacherHiddenMenuIds, setTeacherHiddenMenuIds] = useState<Set<string>>(new Set());
     const [overrideMap, setOverrideMap] = useState<MenuOverrideMap>(new Map());
 
-    const loadTeacherContent = useCallback(async () => {
+    const loadTeacherContent = useCallback(async (forceRefresh = false) => {
         try {
             const [allExercises, allMenus, settings, overrides] = await Promise.all([
-                fetchTeacherExercises(),
-                fetchTeacherMenus(),
-                fetchTeacherMenuSettingsForClass(classLevel),
-                fetchAllTeacherItemOverrides(),
+                fetchTeacherExercises(forceRefresh),
+                fetchTeacherMenus(forceRefresh),
+                fetchTeacherMenuSettingsForClass(classLevel, forceRefresh),
+                fetchAllTeacherItemOverrides(forceRefresh),
             ]);
 
             setTeacherExercises(
@@ -98,7 +98,7 @@ export function useTeacherContent({
 
     useEffect(() => {
         return subscribeTeacherContentUpdated(() => {
-            void loadTeacherContent();
+            void loadTeacherContent(true);
         });
     }, [loadTeacherContent]);
 
