@@ -59,6 +59,23 @@ describe('getExercisesByClass', () => {
         const beginner = getExercisesByClass('初級');
         expect(other.map(e => e.id).sort()).toEqual(beginner.map(e => e.id).sort());
     });
+
+    it('ゆりかごとどんぐりはストレッチに含まれる', () => {
+        const result = getExercisesByClass('初級');
+        const placementById = new Map(result.map((exercise) => [exercise.id, exercise.placement]));
+
+        expect(placementById.get('S06')).toBe('stretch');
+        expect(placementById.get('S08')).toBe('stretch');
+    });
+
+    it('深呼吸がおわり種目として含まれる', () => {
+        const result = getExercisesByClass('初級');
+        const deepBreathing = result.find((exercise) => exercise.id === 'S09');
+
+        expect(deepBreathing).toBeDefined();
+        expect(deepBreathing?.placement).toBe('ending');
+        expect(deepBreathing?.sec).toBe(30);
+    });
 });
 
 // ─── generateSession: 基本不変条件 ───────────────────
@@ -295,6 +312,16 @@ describe('generateSession', () => {
         seedRandom(77);
         const session = generateSession(classLevel, { targetSeconds: 600 });
         expect(session[session.length - 1].placement).not.toBe('rest');
+    });
+
+    it('おまかせの最後に深呼吸が入る', () => {
+        seedRandom(909);
+        const session = generateSession(classLevel, { targetSeconds: 240 });
+        const lastExercise = session[session.length - 1];
+
+        expect(lastExercise.id).toBe('S09');
+        expect(lastExercise.name).toBe('深呼吸');
+        expect(lastExercise.placement).toBe('ending');
     });
 });
 

@@ -50,18 +50,20 @@ export interface Exercise {
 export const EXERCISES: Exercise[] = [
     // 準備
     { id: 'S07', name: 'ポイント＆フレックス', sec: 60, placement: 'prep', internal: 'P30・F30', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🦶', description: 'つまさきをピンとのばしたり、ぐっとまげたり。あしのゆびまでバレリーナ！' },
-    { id: 'S06', name: 'ゆりかご', sec: 30, placement: 'prep', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🛏️', description: 'せなかをまるくして、ゆらゆらゆれよう。せぼねがほぐれてきもちいいよ！' },
-    { id: 'S08', name: 'どんぐり', sec: 30, placement: 'prep', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🌰', description: 'からだをちいさくまるめて、どんぐりみたいにコロコロ。リラックスしよう！' },
     // ストレッチ
     { id: 'S01', name: '開脚', sec: 30, placement: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🦵', reading: 'かいきゃく', description: 'あしをひろげてゆかにすわろう。まいにちすこしずつ、もっとひらくよ！' },
     { id: 'S02', name: '前屈', sec: 30, placement: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🙇', reading: 'ぜんくつ', description: 'あしをまっすぐのばして、まえにたおれよう。あしのうらがのびるかな？' },
     { id: 'S03', name: '前後開脚', sec: 60, placement: 'stretch', internal: 'R30→L30', classes: ['初級', '中級', '上級'], priority: 'medium', emoji: '🩰', hasSplit: true, reading: 'ぜんごかいきゃく', description: 'まえとうしろにあしをひらくスプリッツ。バレリーナのきほんだよ！' },
     { id: 'S05', name: 'アシカさん', sec: 30, placement: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🦭', description: 'うつぶせからうでをのばして、アシカさんみたいにむねをそらそう！' },
+    { id: 'S06', name: 'ゆりかご', sec: 30, placement: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🛏️', description: 'せなかをまるくして、ゆらゆらゆれよう。せぼねがほぐれてきもちいいよ！' },
+    { id: 'S08', name: 'どんぐり', sec: 30, placement: 'stretch', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🌰', description: 'からだをちいさくまるめて、どんぐりみたいにコロコロ。リラックスしよう！' },
     // 体幹
     { id: 'S04', name: 'ブリッジ', sec: 30, placement: 'core', internal: 'single', classes: ['初級', '中級', '上級'], priority: 'medium', emoji: '🌈', description: 'あおむけからグーンとおなかをもちあげよう。ぜんしんのちからをつかうよ！' },
     { id: 'S10', name: 'Y字バランス', sec: 60, placement: 'core', internal: 'R30→L30', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💃', hasSplit: true, reading: 'わいじばらんす', description: 'かたあしでたって、もうかたほうのあしをたかくあげよう。バランスにちょうせん！' },
     { id: 'C01', name: 'プランク', sec: 30, placement: 'core', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💪', description: 'うでとつまさきでからだをまっすぐキープ。おなかにちからをいれてね！' },
     { id: 'C02', name: 'サイドプランク', sec: 60, placement: 'core', internal: 'R30→L30', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '🏋️', hasSplit: true, description: 'よこむきでからだをささえよう。わきばらがつよくなるよ！' },
+    // おわり
+    { id: 'S09', name: '深呼吸', sec: 30, placement: 'ending', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'high', emoji: '🌬️', reading: 'しんこきゅう', description: '深く深呼吸する。' },
     // 休憩（手動メニュー用。おまかせプールには含めない）
     { id: 'R01', name: '休憩5秒', sec: 5, placement: 'rest', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💤', reading: 'きゅうけい', description: 'すこしやすんで、つぎにそなえよう！' },
     { id: 'R02', name: '休憩10秒', sec: 10, placement: 'rest', internal: 'single', classes: ['プレ', '初級', '中級', '上級'], priority: 'medium', emoji: '💤', reading: 'きゅうけい', description: 'すこしやすんで、つぎにそなえよう！' },
@@ -71,7 +73,7 @@ export const EXERCISES: Exercise[] = [
 const SESSION_ORDER: ExercisePlacement[] = ['prep', 'stretch', 'core', 'barre', 'ending'];
 const FILL_ORDER: ExercisePlacement[] = ['stretch', 'core', 'barre', 'ending', 'prep'];
 const TARGET_COUNTS: Partial<Record<ExercisePlacement, number>> = {
-    prep: 2,
+    prep: 1,
     core: 2,
     barre: 1,
     ending: 1,
@@ -92,6 +94,7 @@ export const EXERCISE_COLORS: Record<string, string> = {
     S06: '#FFD9E8',
     S07: '#D9F5FF',
     S08: '#E8E5D4',
+    S09: '#DFF3FF',
     S10: '#E8F5D9',
     C01: '#D4E8F5',
     C02: '#E5D9FF',
