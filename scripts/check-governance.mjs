@@ -13,6 +13,48 @@ const governanceChecks = [
 ];
 
 const stalePatterns = ['.Codex/tasks', '.claude/tasks', '.Codex/launch.json'];
+const terminologyAllowlist = new Set([
+  'docs/terminology.md',
+  'scripts/check-governance.mjs',
+]);
+const terminologyPatterns = [
+  {
+    label: '単品',
+    matches(line) {
+      return line.includes('単品');
+    },
+  },
+  {
+    label: 'オリジナル種目',
+    matches(line) {
+      return line.includes('オリジナル種目');
+    },
+  },
+  {
+    label: 'オリジナルメニュー',
+    matches(line) {
+      return line.includes('オリジナルメニュー');
+    },
+  },
+  {
+    label: '個別種目',
+    matches(line) {
+      return line.includes('個別種目');
+    },
+  },
+  {
+    label: 'ひとつタブ',
+    matches(line) {
+      return line.includes('ひとつタブ') || line.includes('「ひとつ」タブ');
+    },
+  },
+  {
+    label: "label: 'ひとつ'",
+    matches(line) {
+      return line.includes("label: 'ひとつ'") || line.includes('label: "ひとつ"');
+    },
+  },
+];
 const scanExtensions = new Set([
   '.json',
   '.js',
@@ -115,6 +157,39 @@ async function collectStaleRefs(files) {
   return matches;
 }
 
+async function collectTerminologyIssues(files) {
+  const issues = [];
+
+  for (const fullPath of files) {
+    const relativePath = toRelative(fullPath);
+    if (terminologyAllowlist.has(relativePath)) {
+      continue;
+    }
+
+    if (!scanExtensions.has(path.extname(relativePath))) {
+      continue;
+    }
+
+    let content;
+    try {
+      content = await readUtf8(fullPath);
+    } catch {
+      continue;
+    }
+
+    const lines = content.split(/\r?\n/);
+    lines.forEach((line, index) => {
+      terminologyPatterns.forEach((pattern) => {
+        if (pattern.matches(line)) {
+          issues.push(`${relativePath}:${index + 1} -> ${pattern.label}`);
+        }
+      });
+    });
+  }
+
+  return issues;
+}
+
 async function collectSourceWarnings(files) {
   const warnings = [];
 
@@ -187,6 +262,15 @@ async function main() {
     errors.push(...staleRefs.map((entry) => `stale path reference: ${entry}`));
   }
 
+  const terminologyIssues = await collectTerminologyIssues(files);
+  console.log('\nTerminology drift:');
+  if (terminologyIssues.length === 0) {
+    console.log('- none');
+  } else {
+    terminologyIssues.forEach((entry) => console.log(`- ${entry}`));
+    errors.push(...terminologyIssues.map((entry) => `terminology drift: ${entry}`));
+  }
+
   const legacySkillIssues = await collectLegacySkillIssues();
   console.log('\nLegacy skill redirects:');
   if (legacySkillIssues.length === 0) {
@@ -214,4 +298,3 @@ async function main() {
 }
 
 await main();
-

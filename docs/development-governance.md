@@ -18,7 +18,7 @@
 | Product terminology | 用語定義の正本 | `docs/terminology.md` |
 | 詳細仕様 | UI / ロジック /運用仕様 | `docs/*.md` |
 | Skill | 定型ワークフロー | `.agents/skills/*/SKILL.md` |
-| Governance check | canonical path / stale path / size の監査 | `scripts/check-governance.mjs` |
+| Governance check | canonical path / stale path / size / terminology drift の監査 | `scripts/check-governance.mjs` |
 
 ## File Roles
 
@@ -75,7 +75,7 @@
 | 変更種別 | 必須 skill / workflow | 最低検証 |
 |---------|-----------------------|---------|
 | doc only | 必須 skill なし。governance / task / memory を触るなら `governance-audit` | リンク整合性、参照先の重複確認 |
-| governance / task / memory / guide 更新 | `governance-audit` | `npm run governance:check`, canonical path 確認 |
+| governance / task / memory / guide 更新 | `governance-audit` | `npm run governance:check`, canonical path / terminology drift 確認 |
 | 型・ロジック変更 | `test` | `npx tsc --noEmit`, 対象テスト |
 | Zustand persist 変更 | `persist-migration-check` | `types/createState/migrate/test` 更新、必要なら `APP_STATE_VERSION` 更新、migrate テスト、`npx tsc --noEmit` |
 | UI/UX 変更 | `visual-qa` | `npx tsc --noEmit`, 対象テスト、desktop/mobile の画面確認、token 利用確認 |

@@ -32,6 +32,8 @@
 - 子ども向け・保護者向け UI では `UI 表示ラベル` を使ってよい。
 - UI 表示ラベルを短縮する場合も、この文書にない新しい別名を増やさない。
 - DB / 型 / API の implementation 名は互換性のため残してよいが、説明文では正本用語に言い換える。
+- 
+pm run governance:check は、この文書以外で deprecated 呼称が出たら fail する。
 
 ## Replacement Guide
 
