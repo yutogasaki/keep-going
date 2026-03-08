@@ -25,6 +25,7 @@ import {
     type TeacherMenuSetting,
     upsertTeacherMenuSetting,
 } from '../../../lib/teacherMenuSettings';
+import { dispatchTeacherContentUpdated } from '../../../lib/teacherContentEvents';
 
 interface UseMenuSettingsControllerParams {
     teacherEmail: string;
@@ -251,6 +252,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
 
         try {
             await upsertTeacherMenuSetting(itemId, itemType, classLevel, newStatus, teacherEmail);
+            dispatchTeacherContentUpdated();
         } catch (err) {
             console.warn('[MenuSettings] status change failed:', err);
             setError('保存に失敗しました。deploy.sql を実行してテーブルを作成してください。');
@@ -302,6 +304,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
 
             closeExerciseForm();
             await loadAll();
+            dispatchTeacherContentUpdated();
         } catch (err) {
             console.warn('[MenuSettings] save exercise failed:', err);
             setError('種目の保存に失敗しました。');
@@ -353,6 +356,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
 
             closeMenuForm();
             await loadAll();
+            dispatchTeacherContentUpdated();
         } catch (err) {
             console.warn('[MenuSettings] save menu failed:', err);
             setError('メニューの保存に失敗しました。');
@@ -375,6 +379,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
             }
 
             await loadAll();
+            dispatchTeacherContentUpdated();
         } catch (err) {
             console.warn('[MenuSettings] delete failed:', err);
         } finally {

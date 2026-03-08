@@ -3,6 +3,7 @@ import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
 import { fetchTeacherExercises, fetchTeacherMenus } from '../../../lib/teacherContent';
 import { fetchAllTeacherItemOverrides } from '../../../lib/teacherItemOverrides';
 import { fetchTeacherMenuSettingsForClass } from '../../../lib/teacherMenuSettings';
+import { subscribeTeacherContentUpdated } from '../../../lib/teacherContentEvents';
 import type { ClassLevel } from '../../../data/exercises';
 import type { MenuOverrideMap } from './shared';
 
@@ -93,6 +94,12 @@ export function useTeacherContent({
 
     useEffect(() => {
         void loadTeacherContent();
+    }, [loadTeacherContent]);
+
+    useEffect(() => {
+        return subscribeTeacherContentUpdated(() => {
+            void loadTeacherContent();
+        });
     }, [loadTeacherContent]);
 
     const teacherExerciseIds = useMemo(

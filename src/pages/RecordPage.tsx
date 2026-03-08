@@ -5,6 +5,7 @@ import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { getAllSessions, getCustomExercises, getSessionsByDate, getTodayKey, type SessionRecord } from '../lib/db';
 import { getSessionCompletedExerciseTotal, getSessionExerciseCounts } from '../lib/sessionRecords';
+import { subscribeTeacherContentUpdated } from '../lib/teacherContentEvents';
 import { EXERCISES } from '../data/exercises';
 import { fetchTeacherExercises } from '../lib/teacherContent';
 import { useAppStore } from '../store/useAppStore';
@@ -33,6 +34,16 @@ export const RecordPage: React.FC = () => {
     const currentViewUsers = useMemo(() => users.filter((user) => sessionUserIds.includes(user.id)), [users, sessionUserIds]);
     const pastFuwafuwas = useMemo(() => currentViewUsers.flatMap((user) => user.pastFuwafuwas || []).filter((fuwafuwa) => fuwafuwa.finalStage === 3), [currentViewUsers]);
     const chibifuwas = useMemo(() => currentViewUsers.flatMap((user) => user.chibifuwas || []), [currentViewUsers]);
+
+    const loadExerciseMap = useCallback(async () => {
+        const map = new Map<string, { name: string; emoji: string }>();
+        for (const e of EXERCISES) map.set(e.id, { name: e.name, emoji: e.emoji });
+        const customs = await getCustomExercises();
+        for (const c of customs) map.set(c.id, { name: c.name, emoji: c.emoji });
+        const teachers = await fetchTeacherExercises();
+        for (const t of teachers) map.set(t.id, { name: t.name, emoji: t.emoji });
+        setExerciseMap(map);
+    }, []);
 
     const filterSessionsByContext = useCallback((unfiltered: SessionRecord[]) => {
         const isTogetherMode = sessionUserIds.length > 1;
@@ -80,17 +91,14 @@ export const RecordPage: React.FC = () => {
     }, [filterSessionsByContext, isPageActive]);
 
     useEffect(() => {
-        const loadExMap = async () => {
-            const map = new Map<string, { name: string; emoji: string }>();
-            for (const e of EXERCISES) map.set(e.id, { name: e.name, emoji: e.emoji });
-            const customs = await getCustomExercises();
-            for (const c of customs) map.set(c.id, { name: c.name, emoji: c.emoji });
-            const teachers = await fetchTeacherExercises();
-            for (const t of teachers) map.set(t.id, { name: t.name, emoji: t.emoji });
-            setExerciseMap(map);
-        };
-        loadExMap();
-    }, []);
+        void loadExerciseMap();
+    }, [loadExerciseMap]);
+
+    useEffect(() => {
+        return subscribeTeacherContentUpdated(() => {
+            void loadExerciseMap();
+        });
+    }, [loadExerciseMap]);
 
     const { groupedEntries, totalSessions, totalMinutes, uniqueDays, exerciseCounts } = useMemo(() => {
         const grouped = new Map<string, SessionRecord[]>();
