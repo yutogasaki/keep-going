@@ -187,8 +187,9 @@ export async function pullAndMerge(
 
         const localState = getLocalStateRecord();
         const localUsers = getLocalUsers(localState);
+        const shouldHydrateUsers = snapshot.families.length > 0 || (pushLocalOnly && localUsers.length > 0);
 
-        if (snapshot.families.length > 0) {
+        if (shouldHydrateUsers) {
             const users = mergeUsers(snapshot, localUsers, pushLocalOnly);
             const restoredState = buildRestoredStoreState({
                 localState,
@@ -201,7 +202,7 @@ export async function pullAndMerge(
                 users,
                 sessionUserIds: restoredState.sessionUserIds,
                 joinedChallengeIds: restoredState.joinedChallengeIds,
-                onboardingCompleted: snapshot.settings?.onboarding_completed ?? true,
+                onboardingCompleted: restoredState.onboardingCompleted,
             });
         } else if (snapshot.settings) {
             console.warn('[sync] No family_members but cloud settings found, restoring settings only');

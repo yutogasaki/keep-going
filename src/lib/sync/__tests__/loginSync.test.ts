@@ -62,4 +62,24 @@ describe('decideLoginSyncPlan', () => {
 
         expect(plan.kind).toBe('merge');
     });
+
+    it('merges when local record data meets cloud settings-only data on a new device', () => {
+        const plan = decideLoginSyncPlan({
+            localSummary: createSummary({ users: 1, sessions: 3 }),
+            cloudSummary: createSummary({ hasSettings: true }),
+            alreadySynced: false,
+        });
+
+        expect(plan.kind).toBe('merge');
+    });
+
+    it('restores from cloud when local only has settings and cloud has record data', () => {
+        const plan = decideLoginSyncPlan({
+            localSummary: createSummary({ hasSettings: true }),
+            cloudSummary: createSummary({ users: 2, sessions: 4 }),
+            alreadySynced: false,
+        });
+
+        expect(plan.kind).toBe('restore_from_cloud');
+    });
 });

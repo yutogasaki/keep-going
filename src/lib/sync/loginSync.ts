@@ -32,6 +32,10 @@ function hasRecordData(summary: SyncDataSummary): boolean {
         summary.customGroups > 0;
 }
 
+function hasSettingsOnly(summary: SyncDataSummary): boolean {
+    return !hasRecordData(summary) && summary.hasSettings;
+}
+
 function hasLocalData(summary: SyncDataSummary): boolean {
     return hasRecordData(summary) || summary.hasSettings;
 }
@@ -72,11 +76,26 @@ export function decideLoginSyncPlan({
     cloudSummary: SyncDataSummary;
     alreadySynced: boolean;
 }): LoginSyncPlan {
+    const localHasRecords = hasRecordData(localSummary);
+    const cloudHasRecords = hasRecordData(cloudSummary);
     const localHasData = hasLocalData(localSummary);
     const cloudHasData = hasCloudData(cloudSummary);
+    const cloudHasSettingsOnly = hasSettingsOnly(cloudSummary);
 
     if (alreadySynced && (localHasData || cloudHasData)) {
         return { kind: 'merge', localSummary, cloudSummary };
+    }
+
+    if (cloudHasRecords && !localHasRecords) {
+        return { kind: 'restore_from_cloud', localSummary, cloudSummary };
+    }
+
+    if (localHasRecords && !cloudHasRecords) {
+        return {
+            kind: cloudHasSettingsOnly ? 'merge' : 'push_local',
+            localSummary,
+            cloudSummary,
+        };
     }
 
     if (cloudHasData && !localHasData) {
