@@ -110,6 +110,14 @@ export function sanitizeSoundVolume(value: unknown): number {
     return Math.min(1, Math.max(0, value));
 }
 
+export function sanitizeNullableNumber(value: unknown): number | null {
+    if (value == null) {
+        return null;
+    }
+
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
 export function sanitizePersistedState(state: Record<string, unknown>): void {
     const users = Array.isArray(state.users)
         ? state.users.filter((user): user is { id: string } => Boolean(user) && typeof user === 'object' && typeof (user as { id?: unknown }).id === 'string')
@@ -125,6 +133,10 @@ export function sanitizePersistedState(state: Record<string, unknown>): void {
     state.notificationsEnabled = sanitizeBooleanSetting(state.notificationsEnabled, false);
     state.notificationTime = sanitizeNotificationTime(state.notificationTime);
     state.hasSeenSessionControlsHint = sanitizeBooleanSetting(state.hasSeenSessionControlsHint, false);
+    state.debugFuwafuwaStage = sanitizeNullableNumber(state.debugFuwafuwaStage);
+    state.debugFuwafuwaType = sanitizeNullableNumber(state.debugFuwafuwaType);
+    state.debugActiveDays = sanitizeNullableNumber(state.debugActiveDays);
+    state.debugFuwafuwaScale = sanitizeNullableNumber(state.debugFuwafuwaScale);
     state.joinedChallengeIds = sanitizeJoinedChallengeIds(state.joinedChallengeIds, validUserIdSet);
     state.sessionUserIds = sanitizeSessionUserIds(state.sessionUserIds, validUserIds);
     state.sessionDraft = sanitizeSessionDraft(state.sessionDraft);

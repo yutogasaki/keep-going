@@ -4,6 +4,45 @@ import { sanitizePersistedState, sanitizeSessionDraft } from './migrateHelpers';
 
 export const APP_STATE_VERSION = 16;
 
+export type PersistedAppState = Pick<
+    AppState,
+    | 'users'
+    | 'sessionUserIds'
+    | 'onboardingCompleted'
+    | 'soundVolume'
+    | 'ttsEnabled'
+    | 'bgmEnabled'
+    | 'hapticEnabled'
+    | 'notificationsEnabled'
+    | 'notificationTime'
+    | 'hasSeenSessionControlsHint'
+    | 'sessionDraft'
+    | 'debugFuwafuwaStage'
+    | 'debugFuwafuwaType'
+    | 'debugActiveDays'
+    | 'debugFuwafuwaScale'
+    | 'joinedChallengeIds'
+>;
+
+export const PERSISTED_APP_STATE_KEYS = [
+    'users',
+    'sessionUserIds',
+    'onboardingCompleted',
+    'soundVolume',
+    'ttsEnabled',
+    'bgmEnabled',
+    'hapticEnabled',
+    'notificationsEnabled',
+    'notificationTime',
+    'hasSeenSessionControlsHint',
+    'sessionDraft',
+    'debugFuwafuwaStage',
+    'debugFuwafuwaType',
+    'debugActiveDays',
+    'debugFuwafuwaScale',
+    'joinedChallengeIds',
+] as const satisfies ReadonlyArray<keyof PersistedAppState>;
+
 export function migrateAppState(persistedState: any, version: number): AppState {
     const state = persistedState as any;
 
@@ -162,9 +201,10 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     return state as AppState;
 }
 
-export function partializeAppState(state: AppState): Partial<AppState> {
+export function partializeAppState(state: AppState): PersistedAppState {
     return {
         users: state.users,
+        sessionUserIds: state.sessionUserIds,
         onboardingCompleted: state.onboardingCompleted,
         soundVolume: state.soundVolume,
         ttsEnabled: state.ttsEnabled,

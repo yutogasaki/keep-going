@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { APP_STATE_VERSION, migrateAppState } from '../migrate';
+import {
+    APP_STATE_VERSION,
+    migrateAppState,
+    partializeAppState,
+    PERSISTED_APP_STATE_KEYS,
+} from '../migrate';
 import { makeCurrentState, makeV0State, makeV5State } from './migrationTestHelpers';
 
 vi.mock('../../../lib/db', () => ({
@@ -104,6 +109,10 @@ describe('modern migrations', () => {
             hapticEnabled: null,
             notificationsEnabled: 'sometimes',
             hasSeenSessionControlsHint: 'done',
+            debugFuwafuwaStage: 'adult',
+            debugFuwafuwaType: undefined,
+            debugActiveDays: 'five',
+            debugFuwafuwaScale: Number.NaN,
             sessionDraft: {
                 date: '2026-03-07',
                 exerciseIds: ['S01', 1],
@@ -125,6 +134,10 @@ describe('modern migrations', () => {
         expect(result.hapticEnabled).toBe(true);
         expect(result.notificationsEnabled).toBe(false);
         expect(result.hasSeenSessionControlsHint).toBe(false);
+        expect(result.debugFuwafuwaStage).toBeNull();
+        expect(result.debugFuwafuwaType).toBeNull();
+        expect(result.debugActiveDays).toBeNull();
+        expect(result.debugFuwafuwaScale).toBeNull();
         expect(result.sessionDraft).toBeNull();
     });
 
@@ -140,6 +153,30 @@ describe('modern migrations', () => {
         expect(result.hapticEnabled).toBe(state.hapticEnabled);
         expect(result.hasSeenSessionControlsHint).toBe(state.hasSeenSessionControlsHint);
         expect(result.sessionDraft).toBe(state.sessionDraft);
+    });
+
+    it('partialize persists the selected users alongside the session draft slice', () => {
+        const state = makeCurrentState({
+            sessionUserIds: ['user-1', 'user-2'],
+            sessionDraft: {
+                date: '2026-03-07',
+                exerciseIds: ['S01', 'S02'],
+                userIds: ['user-1', 'user-2'],
+                returnTab: 'home',
+            },
+        });
+
+        const partialized = partializeAppState(state as any);
+
+        expect(partialized.sessionUserIds).toEqual(['user-1', 'user-2']);
+        expect(partialized.sessionDraft).toEqual(state.sessionDraft);
+    });
+
+    it('keeps the persisted slice keys aligned with the declared contract', () => {
+        const state = makeCurrentState();
+        const partialized = partializeAppState(state as any);
+
+        expect(Object.keys(partialized).sort()).toEqual([...PERSISTED_APP_STATE_KEYS].sort());
     });
 
     it('migrates a v0 state all the way to the current structure', () => {
