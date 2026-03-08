@@ -185,9 +185,10 @@ export function useSessionControlHandlers({
 
     const onCountdownComplete = useCallback(() => {
         setIsCounting(false);
+        setIsPlaying(true);
         haptics.pulse();
         if (currentExercise) audio.speak(`最初は、${currentExercise.reading || currentExercise.name}です`);
-    }, [setIsCounting, currentExercise]);
+    }, [setIsCounting, setIsPlaying, currentExercise]);
 
     return {
         handleSwipeUp,

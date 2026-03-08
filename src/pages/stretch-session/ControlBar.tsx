@@ -38,6 +38,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         }}
     >
         <button
+            type="button"
+            aria-label={isMuted ? '音をオンにする' : '音をミュートする'}
             onClick={(e) => {
                 e.stopPropagation();
                 onToggleMute();
@@ -57,6 +59,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         </button>
 
         <button
+            type="button"
+            aria-label={isPlaying ? 'ストレッチを一時停止' : 'ストレッチを再開'}
             onClick={(e) => {
                 e.stopPropagation();
                 onTogglePlayPause();
@@ -83,6 +87,8 @@ export const ControlBar: React.FC<ControlBarProps> = ({
         </button>
 
         <button
+            type="button"
+            aria-label="次の種目へスキップ"
             onClick={(e) => {
                 e.stopPropagation();
                 onSkip();

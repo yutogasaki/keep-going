@@ -27,4 +27,7 @@
 - menu / editor / session / record 周辺の責務分離と UX 改善を進め、循環依存解消、hook 分割、editor shell 共通化、同日再開、記録正規化、アクセシビリティ、TTS 音量整理を反映
 - restore settings sanitize、session visibility helper 化、`MenuIndividualTab` / `GroupCard` 分割を追加し、sync fallback と MenuPage の保守性をさらに改善
 - 2026-03-04 から 2026-03-07 までの詳細履歴は `.agents/tasks/archive/2026-03.md` を参照
+- StretchSession の desktop / mobile smoke QA を追加し、`npm run e2e:smoke` で footer navigation、pause / background resume、big break modal の確認を build 付きで再実行できるようにした
+- session overlay の主要ボタンへ aria-label を追加し、background resume countdown 完了時に再生を戻す修正を入れた
+- 旧仕様書に残っていた `ぴよ` 呼称を主要仕様書から除去し、`ふわふわ` / `お部屋` ベースへ統一した
 

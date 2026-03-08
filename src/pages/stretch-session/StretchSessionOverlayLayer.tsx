@@ -94,6 +94,7 @@ export const StretchSessionOverlayLayer: React.FC<StretchSessionOverlayLayerProp
         <button
             type="button"
             onClick={onOpenExitConfirm}
+            aria-label="ストレッチを終了する"
             style={{
                 position: 'absolute',
                 top: 'calc(env(safe-area-inset-top, 16px) + 12px)',

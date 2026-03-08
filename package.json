@@ -12,6 +12,7 @@
     "build": "tsc -b && vite build",
     "governance:check": "node scripts/check-governance.mjs",
     "preview": "vite preview",
+    "e2e:smoke": "node tools/e2e-smoke.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint src",

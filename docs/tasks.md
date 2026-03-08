@@ -17,18 +17,16 @@
 |------|------|------|--------|
 | P0 | Sync 競合解決 / pull restore 残作業 | core hardening は進んだので、残りの競合 UX と実機 restore 確認を詰める | 正常系だけでなく既存データと競合時 UX まで決める |
 | P0 | persist / migrate 安全性の運用固定 | sanitize と migration test は整ってきたので、状態追加時に崩さない運用へ寄せる | `types/createState/migrate/test` を常にセットで更新 |
-| P0 | StretchSession timing / background resume QA | helper/test は入ったので、overlay session の実機回帰を防ぐ | pause / break / 復帰を desktop/mobile で通す |
 | P1 | 巨大ファイル分割 | 修正精度と開発速度を上げる | 先に責務を切らないと分割だけで終わる |
 | P1 | 記録データ強化の残作業 | 履歴 summary は改善済みなので、保護者と先生への説明導線を詰める | 内部ログを増やしすぎると実装が重くなる |
 | P1 | 先生 / 家族 UX の意味明確化 | 誤操作を減らす | 可愛さより明示性を優先する |
 | P2 | オンボーディング login / restore UX polish | account step と restore flow は実装済みなので、文言と失敗導線を磨く | settings 側の login error 導線と揃える |
-| P2 | アクセシビリティとレスポンシブ | a11y 基礎改善は進んだので、横断 QA と残り崩れ修正を行う | modal / focus / aria を横断で見る必要がある |
 | P2 | 音声 / 通知 / 演出 polish | TTS・音量・通知設定は実装済みなので、必要時だけ残りの体験調整を行う | 過剰演出で圧を出さない |
 
 ### 現在の未完了 backlog / spec gap
 
-- [ ] レスポンシブ横断確認と崩れ修正
-- [ ] 旧仕様書に残る旧呼称 `ぴよ` を `ふわふわ` / `お部屋` ベースへ整理
+- [ ] Sync 競合時の実機 restore と UX 境界の最終確認
+- [ ] 記録データの説明導線 polish
 
 ### 今月確定した仕様判断
 
