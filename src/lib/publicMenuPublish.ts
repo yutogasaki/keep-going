@@ -4,7 +4,7 @@ import { getCustomExercises, type CustomExercise } from './db';
 import { fetchMyPublishedExercises, publishExercise, unpublishExercise } from './publicExercises';
 import type { CustomExerciseData } from './publicMenuTypes';
 import { supabase } from './supabase';
-import { getAccountId } from './sync';
+import { getAccountId } from './sync/authState';
 
 const builtInExerciseIds = new Set(EXERCISES.map((exercise) => exercise.id));
 
@@ -140,3 +140,4 @@ export async function unpublishMenu(id: string): Promise<void> {
         console.warn('[unpublishMenu] auto-unpublish exercises failed:', error);
     }
 }
+

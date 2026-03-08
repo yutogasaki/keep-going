@@ -4,7 +4,7 @@ import { saveCustomGroup } from './customGroups';
 import { getCustomExercises, saveCustomExercise } from './db';
 import type { PublicMenu } from './publicMenuTypes';
 import { supabase } from './supabase';
-import { getAccountId } from './sync';
+import { getAccountId } from './sync/authState';
 
 const builtInExerciseIds = new Set(EXERCISES.map((exercise) => exercise.id));
 
@@ -100,3 +100,4 @@ export async function importMenu(publicMenu: PublicMenu): Promise<void> {
 
     void tryIncrementDownload(publicMenu.id);
 }
+

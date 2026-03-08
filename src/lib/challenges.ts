@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import type { Database } from './supabase-types';
-import { getAccountId } from './sync';
+import { getAccountId } from './sync/authState';
 import { getAllSessions, getTodayKey } from './db';
 import { getSessionExerciseCounts } from './sessionRecords';
 
@@ -223,3 +223,4 @@ export async function countExerciseInPeriod(
 
     return count;
 }
+

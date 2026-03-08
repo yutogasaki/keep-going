@@ -35,6 +35,7 @@ export interface UserProfileStore {
 }
 
 export type TabId = 'home' | 'record' | 'menu' | 'settings';
+export type SessionKind = 'auto' | 'fixed' | 'hybrid' | 'teacher-preview';
 
 export interface SessionDraft {
     date: string;
@@ -64,6 +65,7 @@ export interface AppState {
     sessionHybridMode: boolean;
     sessionReturnTab: TabId;
     sessionDraft: SessionDraft | null;
+    sessionKind: SessionKind | null;
     setSessionDraft: (draft: SessionDraft | null) => void;
     isTeacherPreview: boolean;
     startSession: () => void;

@@ -2,7 +2,8 @@
 // Preset data and types remain in src/data/menuGroups.ts
 import localforage from 'localforage';
 import type { MenuGroup } from '../data/menuGroups';
-import { pushMenuGroup, deleteMenuGroupRemote, getAccountId } from './sync';
+import { getAccountId } from './sync/authState';
+import { deleteMenuGroupRemote, pushMenuGroup } from './sync/push';
 import { useSyncStatus } from '../store/useSyncStatus';
 
 function onSyncError(error: unknown): void {
@@ -43,3 +44,4 @@ export async function saveCustomGroupDirect(group: MenuGroup): Promise<void> {
 export async function clearGroupsDB(): Promise<void> {
     await groupsDB.clear();
 }
+

@@ -113,6 +113,7 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
     sessionHybridMode: false,
     sessionReturnTab: 'home',
     sessionDraft: null,
+    sessionKind: null,
     setSessionDraft: (sessionDraft) => set({ sessionDraft }),
     isTeacherPreview: false,
     startSession: () => set((state) => {
@@ -121,6 +122,7 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
             isInSession: true,
             sessionExerciseIds: resumableDraft?.exerciseIds ?? null,
             sessionReturnTab: resumableDraft?.returnTab ?? state.currentTab,
+            sessionKind: 'auto' as const,
             isTeacherPreview: false,
         };
     }),
@@ -134,6 +136,7 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
             userIds: [...state.sessionUserIds],
             returnTab: 'home',
         },
+        sessionKind: 'fixed' as const,
         isTeacherPreview: false,
     })),
     startHybridSession: (requiredIds) => set((state) => ({
@@ -141,20 +144,30 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
         sessionExerciseIds: requiredIds,
         sessionHybridMode: true,
         sessionReturnTab: state.currentTab,
+        sessionKind: 'hybrid' as const,
         isTeacherPreview: false,
     })),
     startTeacherPreviewSession: (ids) => set((state) => ({
         isInSession: true,
         sessionExerciseIds: ids,
         sessionReturnTab: state.currentTab,
+        sessionKind: 'teacher-preview' as const,
         isTeacherPreview: true,
     })),
-    endSession: () => set({ isInSession: false, sessionExerciseIds: null, sessionHybridMode: false, isTeacherPreview: false }),
+    endSession: () => set({
+        isInSession: false,
+        sessionExerciseIds: null,
+        sessionHybridMode: false,
+        sessionKind: null,
+        isTeacherPreview: false,
+    }),
     completeSession: () => set((state) => ({
         ...resolveSessionReturnTab(state.currentTab, state.sessionReturnTab),
         isInSession: false,
         sessionExerciseIds: null,
         sessionHybridMode: false,
+        sessionDraft: state.sessionKind === 'auto' ? null : state.sessionDraft,
+        sessionKind: null,
         isTeacherPreview: false,
     })),
 

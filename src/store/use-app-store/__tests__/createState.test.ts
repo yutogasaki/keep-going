@@ -40,6 +40,7 @@ describe('session resume state', () => {
         expect(store.getState().isInSession).toBe(true);
         expect(store.getState().sessionExerciseIds).toEqual(['S01', 'S02']);
         expect(store.getState().sessionReturnTab).toBe('home');
+        expect(store.getState().sessionKind).toBe('auto');
     });
 
     it('startSession ignores stale drafts and starts a fresh auto session', () => {
@@ -61,6 +62,7 @@ describe('session resume state', () => {
         expect(store.getState().isInSession).toBe(true);
         expect(store.getState().sessionExerciseIds).toBeNull();
         expect(store.getState().sessionReturnTab).toBe('record');
+        expect(store.getState().sessionKind).toBe('auto');
     });
 
     it('startSession ignores drafts for different user selections', () => {
@@ -81,6 +83,7 @@ describe('session resume state', () => {
 
         expect(store.getState().sessionExerciseIds).toBeNull();
         expect(store.getState().sessionReturnTab).toBe('menu');
+        expect(store.getState().sessionKind).toBe('auto');
     });
 
     it('startSessionWithExercises prepares a home return draft', () => {
@@ -96,6 +99,7 @@ describe('session resume state', () => {
         expect(store.getState().isInSession).toBe(true);
         expect(store.getState().sessionExerciseIds).toEqual(['S03', 'S04']);
         expect(store.getState().sessionReturnTab).toBe('home');
+        expect(store.getState().sessionKind).toBe('fixed');
         expect(store.getState().sessionDraft).toEqual({
             date: '2026-03-07',
             exerciseIds: ['S03', 'S04'],
@@ -104,7 +108,33 @@ describe('session resume state', () => {
         });
     });
 
-    it('completeSession returns to the configured tab without clearing the draft', () => {
+    it('completeSession clears the draft after an auto session finishes', () => {
+        const store = makeStore();
+
+        store.setState({
+            currentTab: 'home',
+            previousTab: 'record',
+            isInSession: true,
+            sessionExerciseIds: ['S01', 'S02'],
+            sessionReturnTab: 'home',
+            sessionKind: 'auto',
+            sessionDraft: {
+                date: '2026-03-07',
+                exerciseIds: ['S01', 'S02'],
+                userIds: ['user-1'],
+                returnTab: 'home',
+            },
+        });
+
+        store.getState().completeSession();
+
+        expect(store.getState().isInSession).toBe(false);
+        expect(store.getState().sessionExerciseIds).toBeNull();
+        expect(store.getState().sessionDraft).toBeNull();
+        expect(store.getState().sessionKind).toBeNull();
+    });
+
+    it('completeSession returns to the configured tab without clearing a fixed-session draft', () => {
         const store = makeStore();
 
         store.setState({
@@ -113,6 +143,7 @@ describe('session resume state', () => {
             isInSession: true,
             sessionExerciseIds: ['S01'],
             sessionReturnTab: 'home',
+            sessionKind: 'fixed',
             sessionDraft: {
                 date: '2026-03-07',
                 exerciseIds: ['S01'],
@@ -128,5 +159,6 @@ describe('session resume state', () => {
         expect(store.getState().currentTab).toBe('home');
         expect(store.getState().previousTab).toBe('menu');
         expect(store.getState().sessionDraft).not.toBeNull();
+        expect(store.getState().sessionKind).toBeNull();
     });
 });

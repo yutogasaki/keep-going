@@ -1,6 +1,6 @@
 import { getAllSessions, getCustomExercises } from '../db';
 import { getCustomGroups } from '../customGroups';
-import { fetchCloudSyncSnapshot } from './pull';
+import { fetchCloudSyncSnapshot } from './pullSnapshot';
 import { getRegisteredStoreState } from './storeAccess';
 
 export interface SyncDataSummary {
@@ -25,23 +25,42 @@ export interface LoginSyncPlan {
     cloudSummary: SyncDataSummary;
 }
 
-function isMeaningfulLocalData(summary: SyncDataSummary): boolean {
+function hasRecordData(summary: SyncDataSummary): boolean {
     return summary.users > 0 ||
         summary.sessions > 0 ||
         summary.customExercises > 0 ||
         summary.customGroups > 0;
 }
 
+function hasLocalData(summary: SyncDataSummary): boolean {
+    return hasRecordData(summary) || summary.hasSettings;
+}
+
 export function hasCloudData(summary: SyncDataSummary): boolean {
-    return isMeaningfulLocalData(summary) || summary.hasSettings;
+    return hasRecordData(summary) || summary.hasSettings;
+}
+
+function getBooleanSetting(value: unknown, fallback: boolean): boolean {
+    return typeof value === 'boolean' ? value : fallback;
+}
+
+function getNumberSetting(value: unknown, fallback: number): number {
+    return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function getStringSetting(value: unknown, fallback: string): string {
+    return typeof value === 'string' && value.length > 0 ? value : fallback;
 }
 
 function hasCustomSettings(localState: Record<string, unknown>): boolean {
-    return Boolean(localState['onboardingCompleted']) ||
-        Number(localState['soundVolume'] ?? 1) !== 1 ||
-        Boolean(localState['notificationsEnabled']) ||
-        String(localState['notificationTime'] ?? '21:00') !== '21:00' ||
-        Boolean(localState['hasSeenSessionControlsHint']);
+    return getBooleanSetting(localState['onboardingCompleted'], false) ||
+        getNumberSetting(localState['soundVolume'], 1) !== 1 ||
+        !getBooleanSetting(localState['ttsEnabled'], true) ||
+        !getBooleanSetting(localState['bgmEnabled'], true) ||
+        !getBooleanSetting(localState['hapticEnabled'], true) ||
+        getBooleanSetting(localState['notificationsEnabled'], false) ||
+        getStringSetting(localState['notificationTime'], '21:00') !== '21:00' ||
+        getBooleanSetting(localState['hasSeenSessionControlsHint'], false);
 }
 
 export function decideLoginSyncPlan({
@@ -53,7 +72,7 @@ export function decideLoginSyncPlan({
     cloudSummary: SyncDataSummary;
     alreadySynced: boolean;
 }): LoginSyncPlan {
-    const localHasData = isMeaningfulLocalData(localSummary);
+    const localHasData = hasLocalData(localSummary);
     const cloudHasData = hasCloudData(cloudSummary);
 
     if (alreadySynced && (localHasData || cloudHasData)) {

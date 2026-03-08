@@ -1,5 +1,6 @@
 import localforage from 'localforage';
-import { pushSession as syncPushSession, pushCustomExercise as syncPushCustomExercise, deleteCustomExerciseRemote, getAccountId } from './sync';
+import { getAccountId } from './sync/authState';
+import { deleteCustomExerciseRemote, pushCustomExercise as syncPushCustomExercise, pushSession as syncPushSession } from './sync/push';
 import { normalizeSessionRecord, type SessionCountMap } from './sessionRecords';
 import { useSyncStatus } from '../store/useSyncStatus';
 import { normalizeExercisePlacement, type ExercisePlacement } from '../data/exercisePlacement';
@@ -214,3 +215,4 @@ export async function clearHistoryDB(): Promise<void> {
 export async function clearCustomExercisesDB(): Promise<void> {
     await customExercisesDB.clear();
 }
+

@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { getAccountId } from './sync';
+import { getAccountId } from './sync/authState';
 import type { PublicMenu } from './publicMenuTypes';
 import { mapPublicMenu, pickRecommendedMenus } from './publicMenuUtils';
 
@@ -72,3 +72,4 @@ export async function fetchMyPublishedMenus(): Promise<PublicMenu[]> {
 
     return (data ?? []).map(mapPublicMenu);
 }
+

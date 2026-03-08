@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import type { Database } from './supabase-types';
-import { getAccountId } from './sync';
+import { getAccountId } from './sync/authState';
 import { saveCustomExercise, type CustomExercise } from './db';
 import { normalizeExercisePlacement, type ExercisePlacement } from '../data/exercisePlacement';
 
@@ -157,3 +157,4 @@ function mapPublicExercise(row: PublicExerciseRow): PublicExercise {
         createdAt: row.created_at,
     };
 }
+
