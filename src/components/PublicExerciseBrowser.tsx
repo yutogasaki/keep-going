@@ -5,6 +5,7 @@ import { getExercisePlacementLabel } from '../data/exercisePlacement';
 import { dedupeExercisesByIdentity } from '../lib/publicExerciseUtils';
 import { fetchPopularExercises, type PublicExercise } from '../lib/publicExercises';
 import { ExerciseDetailSheet } from './ExerciseDetailSheet';
+import { DISPLAY_TERMS } from '../lib/terminology';
 import { useAppStore } from '../store/useAppStore';
 
 interface PublicExerciseBrowserProps {
@@ -90,7 +91,7 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
                                     margin: 0,
                                     flex: 1,
                                 }}>
-                                    みんなの種目
+                                    {DISPLAY_TERMS.publicExercise}
                                 </h2>
                                 <button
                                     onClick={onClose}
@@ -159,7 +160,7 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
                                             fontSize: 14,
                                             margin: 0,
                                         }}>
-                                            まだ公開種目がありません
+                                            まだみんなの種目がありません
                                         </p>
                                     </div>
                                 ) : (
@@ -255,3 +256,4 @@ const BrowserExerciseCard: React.FC<{
         </button>
     );
 };
+

@@ -55,9 +55,10 @@ export const CreateCustomExerciseCard: React.FC<CreateCustomExerciseCardProps> =
                     color: '#8395A7',
                     lineHeight: 1.4,
                 }}>
-                    オリジナル種目を追加
+                    じぶん種目を追加
                 </div>
             </div>
         </motion.button>
     );
 };
+

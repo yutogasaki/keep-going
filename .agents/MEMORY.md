@@ -10,8 +10,9 @@
 - オンボーディングでは、実利用の主要導線を教える。KeepGoing の初回ガイドはスワイプではなくホーム下部中央の開始ボタンを中心にする。
 - おまかせの同日再開は未完了セッションだけを対象にし、完了後は前回内容を使い回さず新しいおまかせを生成する。
 - StretchSession は overlay 表示を正本にし、セッション中の通常タブ移動は前提にしない。離脱挙動は終了 / 完了 / バックグラウンド復帰で定義する。
-- メニューの `ひとつ` タブはカテゴリで絞れて、`えらぶ` モードでは選択した種目を優先しておまかせ開始できる。custom exercise も対象に含める。
-- 種目の分類は `準備 -> ストレッチ -> 体幹 -> バー -> おわり -> 休憩` の placement 軸を正本にし、`ひとつ` タブ・custom editor・おまかせ設定・custom/teacher/public exercise 保存で同じ語彙を使う。
+- product terminology の正本は `docs/terminology.md`。deprecated 呼称を concept 名として再導入しない。
+- メニューの 種目 タブはカテゴリで絞れて、えらぶ モードでは選択した種目を優先しておまかせ開始できる。custom exercise も対象に含める。
+- 種目の分類は `準備 -> ストレッチ -> 体幹 -> バー -> おわり -> 休憩` の placement 軸を正本にし、`種目` タブ・custom editor・おまかせ設定・custom/teacher/public exercise 保存で同じ語彙を使う。
 - built-in では `ポイント＆フレックス` を準備、`ゆりかご / どんぐり` をストレッチ、`深呼吸` を 30 秒の `おわり` とし、おまかせは最後を `おわり` で締める。
 - MainLayout は `home / record / menu / settings` を hidden mount で保持するため、teacher dashboard の保存反映は再マウント任せにせず `teacherContentUpdated` event で `メニュー` と `きろく` を再読込する。
 - developer dashboard の運用基準は `新規14日保護`、`非アクティブ14日+`、`休止候補 = 作成日と最終利用の両方が30日超` を正本にする。同一アカウント内の同名 member は `session.user_ids` 未参照なら整理候補として区別するが、端末上の不在は断定せずヒューリスティックとして扱う。
@@ -30,6 +31,4 @@
 
 - agent 向け task queue と product backlog を同じファイルに混ぜると、精度と検索性が落ちる。
 - `AGENTS.md` と `CLAUDE.md` に長い重複文書を戻すと、shared guide が形骸化してコンテキスト汚染が再発する。
-
-
 

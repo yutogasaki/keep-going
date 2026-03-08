@@ -6,6 +6,7 @@ import { CustomExerciseList } from './individual-tab/CustomExerciseList';
 import { StandardExerciseList } from './individual-tab/StandardExerciseList';
 import { CreateCustomExerciseCard } from './individual-tab/CreateCustomExerciseCard';
 import { SelectionBar } from './individual-tab/SelectionBar';
+import { DISPLAY_TERMS } from '../../lib/terminology';
 import type { MenuIndividualTabProps } from './individual-tab/types';
 import {
     filterCustomExercisesByCategory,
@@ -279,7 +280,7 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                         marginBottom: 10,
                         letterSpacing: 1,
                     }}>
-                        みんなの種目
+                        {DISPLAY_TERMS.publicExercise}
                     </h2>
                     <motion.button
                         whileTap={{ scale: 0.98 }}
@@ -319,7 +320,7 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                                 color: '#2D3436',
                                 marginBottom: 4,
                             }}>
-                                みんなの種目を見る
+                                {DISPLAY_TERMS.publicExercise}を見る
                             </div>
                             <div style={{
                                 fontFamily: "'Noto Sans JP', sans-serif",
@@ -344,3 +345,4 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
         </div>
     );
 };
+

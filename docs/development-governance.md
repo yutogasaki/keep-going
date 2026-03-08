@@ -15,6 +15,7 @@
 | Done log | 完了した仕事の短い履歴 | `.agents/tasks/DONE.md` |
 | Durable memory | 再利用価値が高い決定・罠 | `.agents/MEMORY.md` |
 | Product backlog | 中長期タスク、仕様差分、ロードマップ | `docs/tasks.md` |
+| Product terminology | 用語定義の正本 | `docs/terminology.md` |
 | 詳細仕様 | UI / ロジック /運用仕様 | `docs/*.md` |
 | Skill | 定型ワークフロー | `.agents/skills/*/SKILL.md` |
 | Governance check | canonical path / stale path / size の監査 | `scripts/check-governance.mjs` |
@@ -91,6 +92,7 @@
 ## Suggested Working Rules
 
 - 変更前に、関連する single source を確認する。
+- product concept の名前を触る変更では `docs/terminology.md` を先に確認し、deprecated 用語を増やさない。
 - 変更種別に対応する required skill / verify を最初に宣言してから作業する。
 - 最終回答で主張する内容は、検証結果と一致させる。
 - Help 文言や設定説明が古くなる変更では、関連文言も同時に更新する。
@@ -129,3 +131,4 @@
 - UI 変更を型チェックだけで完了扱いにする
 - state migrate をテストなしで出す
 - 既存の canonical path を直さず、別の path を増やして逃げる
+

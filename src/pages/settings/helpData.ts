@@ -1,3 +1,5 @@
+import { DISPLAY_TERMS } from '../../lib/terminology';
+
 export interface HelpItemData {
     id: string;
     q: string;
@@ -117,7 +119,7 @@ export const HELP_SECTIONS: HelpSectionData[] = [
             {
                 id: 'menu-1',
                 q: 'おまかせメニューとは？',
-                a: 'ホーム画面の下のまんなかの みどりの丸ボタンで始まる自動生成メニューです。メニュー画面の「おまかせの設定」から、1日の目標時間の変更や、★必須（優先的に入る）・🔴除外（絶対に入らない）する種目を設定できます。さらに「ひとつ」タブの「えらぶ」モードでは、好きな種目を選んでおまかせに優先して入れられます。',
+                a: `ホーム画面の下のまんなかの みどりの丸ボタンで始まる自動生成メニューです。メニュー画面の「おまかせの設定」から、1日の目標時間の変更や、★必須（優先的に入る）・🔴除外（絶対に入らない）する種目を設定できます。さらに「${DISPLAY_TERMS.exerciseTab}」タブの「えらぶ」モードでは、好きな種目を選んでおまかせに優先して入れられます。`,
             },
             {
                 id: 'menu-2',
@@ -127,12 +129,12 @@ export const HELP_SECTIONS: HelpSectionData[] = [
             {
                 id: 'menu-3',
                 q: 'じぶんのメニューを作るには？',
-                a: 'メニュー画面の「くみあわせ」タブで「じぶんでつくる」ボタンを押すと、アイコン・名前・説明・種目を選んでオリジナルメニューを作成できます。作ったメニューは「公開する」をオンにすると、他のユーザーにも共有できます。',
+                a: `メニュー画面の「${DISPLAY_TERMS.groupTab}」タブで「じぶんでつくる」ボタンを押すと、アイコン・名前・説明・種目を選んで ${DISPLAY_TERMS.customMenu} を作成できます。作ったメニューは「公開する」をオンにすると、他のユーザーにも共有できます。`,
             },
             {
                 id: 'menu-4',
                 q: 'じぶん種目とは？',
-                a: 'メニュー画面の「ひとつ」タブにある「じぶん種目」から、名前・時間・絵文字・左右分割を設定してオリジナルのストレッチ種目を作成できます。作った種目はおまかせメニューにも追加され、「えらぶ」モードの組み合わせ対象にもなります。',
+                a: `メニュー画面の「${DISPLAY_TERMS.exerciseTab}」タブにある「${DISPLAY_TERMS.customExercise}」から、名前・時間・絵文字・左右分割を設定して ${DISPLAY_TERMS.customExercise} を作成できます。作った種目はおまかせメニューにも追加され、「えらぶ」モードの組み合わせ対象にもなります。`,
             },
             {
                 id: 'menu-5',
@@ -173,7 +175,7 @@ export const HELP_SECTIONS: HelpSectionData[] = [
         ],
     },
     {
-        title: 'みんなのメニュー・種目',
+        title: DISPLAY_TERMS.publicHub,
         emoji: '🌐',
         items: [
             {
@@ -183,8 +185,8 @@ export const HELP_SECTIONS: HelpSectionData[] = [
             },
             {
                 id: 'public-2',
-                q: 'みんなの種目とは？',
-                a: '他のユーザーが公開したオリジナル種目を探してかしてもらえる機能です。メニュー画面の「カスタマイズ」タブ下部から一覧を開けます。気に入った種目は自分のじぶん種目に追加できます。',
+                q: `${DISPLAY_TERMS.publicExercise}とは？`,
+                a: `他のユーザーが公開した ${DISPLAY_TERMS.customExercise} を探してかしてもらえる機能です。メニュー画面の「カスタマイズ」タブ下部から一覧を開けます。気に入った種目は自分の ${DISPLAY_TERMS.customExercise} に追加できます。`,
             },
             {
                 id: 'public-3',
@@ -193,8 +195,8 @@ export const HELP_SECTIONS: HelpSectionData[] = [
             },
             {
                 id: 'public-4',
-                q: '他の人のメニューを使うには？',
-                a: 'みんなのメニュー・種目一覧から気になるものを選び、「かしてもらう」をタップすると、自分のメニュー・種目として保存されます。',
+                q: '他の人のメニューや種目を使うには？',
+                a: `${DISPLAY_TERMS.publicHub} 一覧から気になるものを選び、「かしてもらう」をタップすると、自分のメニュー・種目として保存されます。`,
             },
         ],
     },
@@ -339,5 +341,4 @@ export const HELP_SECTIONS: HelpSectionData[] = [
         ],
     },
 ];
-
 

@@ -5,6 +5,7 @@ import { getExercisePlacementLabel } from '../data/exercisePlacement';
 import { fetchRecommendedExercises, type PublicExercise } from '../lib/publicExercises';
 import { fetchRecommendedMenus, type PublicMenu } from '../lib/publicMenus';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../lib/styles';
+import { CANONICAL_TERMS, DISPLAY_TERMS } from '../lib/terminology';
 
 type PublicHighlight =
     | { kind: 'menu'; item: PublicMenu }
@@ -88,21 +89,21 @@ export const PopularMenusRow: React.FC<PopularMenusRowProps> = ({
                     fontWeight: 700,
                     color: COLOR.text,
                 }}>
-                    みんなのメニュー・種目
+                    {DISPLAY_TERMS.publicHub}
                 </span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: SPACE.sm }}>
                     <button
                         onClick={onOpenMenuBrowser}
                         style={headerLinkStyle}
                     >
-                        メニュー
+                        {CANONICAL_TERMS.menu}
                         <ChevronRight size={14} />
                     </button>
                     <button
                         onClick={onOpenExerciseBrowser}
                         style={headerLinkStyle}
                     >
-                        種目
+                        {CANONICAL_TERMS.exercise}
                         <ChevronRight size={14} />
                     </button>
                 </div>
@@ -193,7 +194,7 @@ const RecommendedMenuCard: React.FC<{
                     <div style={titleStyle}>{menu.name}</div>
                     <div style={subtitleStyle}>{menu.authorName} さんのメニュー</div>
                 </div>
-                <span style={kindBadgeStyle}>セット</span>
+                <span style={kindBadgeStyle}>{CANONICAL_TERMS.menu}</span>
             </div>
 
             <div style={bodyTextStyle}>
@@ -231,11 +232,11 @@ const RecommendedExerciseCard: React.FC<{
                     <div style={titleStyle}>{exercise.name}</div>
                     <div style={subtitleStyle}>{exercise.authorName} さんの種目</div>
                 </div>
-                <span style={kindBadgeStyle}>単品</span>
+                <span style={kindBadgeStyle}>{CANONICAL_TERMS.exercise}</span>
             </div>
 
             <div style={bodyTextStyle}>
-                {exercise.description || `${getExercisePlacementLabel(exercise.placement)} の ${exercise.sec}秒メニュー`}
+                {exercise.description || `${getExercisePlacementLabel(exercise.placement)} の ${exercise.sec}秒の種目`}
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: SPACE.sm }}>
@@ -308,3 +309,4 @@ const kindBadgeStyle: React.CSSProperties = {
     fontWeight: 700,
     flexShrink: 0,
 };
+

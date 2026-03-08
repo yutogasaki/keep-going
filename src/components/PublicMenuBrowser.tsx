@@ -161,7 +161,7 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
                                             fontSize: 14,
                                             margin: 0,
                                         }}>
-                                            まだ公開メニューがありません
+                                            まだみんなのメニューがありません
                                         </p>
                                     </div>
                                 ) : (
