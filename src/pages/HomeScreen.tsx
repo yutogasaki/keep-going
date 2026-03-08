@@ -2,8 +2,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 const lazyConfetti = () => import('canvas-confetti').then((m) => m.default);
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { PageHeader } from '../components/PageHeader';
+import { PublicExerciseBrowser } from '../components/PublicExerciseBrowser';
 import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
+import { ExerciseDetailSheet } from '../components/ExerciseDetailSheet';
 import { MenuDetailSheet } from '../components/MenuDetailSheet';
+import type { PublicExercise } from '../lib/publicExercises';
 import type { PublicMenu } from '../lib/publicMenus';
 import { audio } from '../lib/audio';
 import { useAppStore } from '../store/useAppStore';
@@ -26,7 +29,9 @@ export const HomeScreen: React.FC = () => {
     const startSessionWithExercises = useAppStore((state) => state.startSessionWithExercises);
 
     const [menuBrowserOpen, setMenuBrowserOpen] = useState(false);
+    const [exerciseBrowserOpen, setExerciseBrowserOpen] = useState(false);
     const [selectedPublicMenu, setSelectedPublicMenu] = useState<PublicMenu | null>(null);
+    const [selectedPublicExercise, setSelectedPublicExercise] = useState<PublicExercise | null>(null);
 
     const { allSessions, activeUsers, targetSeconds, perUserMagic, displaySeconds } = useHomeSessions({
         users,
@@ -170,7 +175,9 @@ export const HomeScreen: React.FC = () => {
                     onTogglePastExpanded={() => setPastExpanded((previous) => !previous)}
                     onChallengesUpdated={loadChallenges}
                     onOpenMenuBrowser={() => setMenuBrowserOpen(true)}
+                    onOpenExerciseBrowser={() => setExerciseBrowserOpen(true)}
                     onMenuTap={setSelectedPublicMenu}
+                    onExerciseTap={setSelectedPublicExercise}
                 />
             </div>
 
@@ -179,12 +186,26 @@ export const HomeScreen: React.FC = () => {
                 onClose={() => setMenuBrowserOpen(false)}
             />
 
+            <PublicExerciseBrowser
+                open={exerciseBrowserOpen}
+                onClose={() => setExerciseBrowserOpen(false)}
+            />
+
             <MenuDetailSheet
                 menu={selectedPublicMenu}
                 onClose={() => setSelectedPublicMenu(null)}
                 onTry={(exerciseIds) => {
                     setSelectedPublicMenu(null);
                     startSessionWithExercises(exerciseIds);
+                }}
+            />
+
+            <ExerciseDetailSheet
+                exercise={selectedPublicExercise}
+                onClose={() => setSelectedPublicExercise(null)}
+                onTry={(exerciseId) => {
+                    setSelectedPublicExercise(null);
+                    startSessionWithExercises([exerciseId]);
                 }}
             />
         </div>

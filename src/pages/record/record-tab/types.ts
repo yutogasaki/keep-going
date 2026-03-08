@@ -1,4 +1,5 @@
 import type { SessionRecord } from '../../../lib/db';
+import type { RecordSessionHistoryDay } from '../recordHistorySummary';
 
 export interface TopExercise {
     id: string;
@@ -10,8 +11,9 @@ export interface TopExercise {
 export interface RecordTabContentProps {
     loading: boolean;
     sessions: SessionRecord[];
-    groupedEntries: [string, SessionRecord[]][];
-    todaySessions: SessionRecord[];
+    sessionsCount: number;
+    historyDays: RecordSessionHistoryDay[];
+    todaySessionsCount: number;
     todayExerciseCount: number;
     todayMinutes: number;
     progressPercent: number;

@@ -10,8 +10,9 @@ import type { RecordTabContentProps } from './record-tab/types';
 export const RecordTabContent: React.FC<RecordTabContentProps> = ({
     loading,
     sessions,
-    groupedEntries,
-    todaySessions,
+    sessionsCount,
+    historyDays,
+    todaySessionsCount,
     todayExerciseCount,
     todayMinutes,
     progressPercent,
@@ -37,7 +38,7 @@ export const RecordTabContent: React.FC<RecordTabContentProps> = ({
                 ringRadius={ringRadius}
                 ringCircumference={ringCircumference}
                 ringOffset={ringOffset}
-                sessionCount={todaySessions.length}
+                sessionCount={todaySessionsCount}
                 exerciseCount={todayExerciseCount}
                 minutes={todayMinutes}
             />
@@ -54,8 +55,8 @@ export const RecordTabContent: React.FC<RecordTabContentProps> = ({
 
             <SessionHistorySection
                 loading={loading}
-                sessions={sessions}
-                groupedEntries={groupedEntries}
+                sessionsCount={sessionsCount}
+                historyDays={historyDays}
             />
         </motion.div>
     );

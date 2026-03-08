@@ -1,20 +1,76 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
-import type { SessionRecord } from '../../../lib/db';
-import { getSessionCompletedExerciseTotal } from '../../../lib/sessionRecords';
+import type { RecordSessionHistoryDay } from '../recordHistorySummary';
 import { formatDate } from '../recordUtils';
 
 interface SessionHistorySectionProps {
     loading: boolean;
-    sessions: SessionRecord[];
-    groupedEntries: [string, SessionRecord[]][];
+    sessionsCount: number;
+    historyDays: RecordSessionHistoryDay[];
+}
+
+function formatDuration(totalSeconds: number): string {
+    return `${Math.floor(totalSeconds / 60)}分${totalSeconds % 60}秒`;
+}
+
+function DetailChips({
+    label,
+    items,
+    accentColor,
+    background,
+}: {
+    label: string;
+    items: { id: string; name: string; emoji: string; count: number }[];
+    accentColor: string;
+    background: string;
+}) {
+    if (items.length === 0) {
+        return null;
+    }
+
+    return (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+            <span style={{
+                fontFamily: "'Noto Sans JP', sans-serif",
+                fontSize: 11,
+                fontWeight: 700,
+                color: accentColor,
+                minWidth: 44,
+                paddingTop: 4,
+            }}>
+                {label}
+            </span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, flex: 1 }}>
+                {items.map((item) => (
+                    <span
+                        key={`${label}-${item.id}`}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            padding: '4px 8px',
+                            borderRadius: 999,
+                            background,
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 11,
+                            color: '#2D3436',
+                        }}
+                    >
+                        <span>{item.emoji}</span>
+                        <span>{item.name}</span>
+                        <strong style={{ color: accentColor }}>{item.count}回</strong>
+                    </span>
+                ))}
+            </div>
+        </div>
+    );
 }
 
 export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
     loading,
-    sessions,
-    groupedEntries,
+    sessionsCount,
+    historyDays,
 }) => {
     if (loading) {
         return (
@@ -32,7 +88,7 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
         );
     }
 
-    if (sessions.length === 0) {
+    if (sessionsCount === 0) {
         return (
             <motion.div
                 className="card"
@@ -76,53 +132,120 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {groupedEntries.map(([date, dayRecords], index) => (
+            {historyDays.map((day, index) => (
                 <motion.div
-                    key={date}
+                    key={day.date}
                     className="card card-sm"
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 + index * 0.05 }}
                 >
                     <div style={{
-                        fontFamily: "'Outfit', sans-serif",
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: '#2BBAA0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 12,
                         marginBottom: 8,
                     }}>
-                        {formatDate(date)}
+                        <div style={{
+                            fontFamily: "'Outfit', sans-serif",
+                            fontSize: 13,
+                            fontWeight: 600,
+                            color: '#2BBAA0',
+                        }}>
+                            {formatDate(day.date)}
+                        </div>
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 11,
+                            color: '#8395A7',
+                        }}>
+                            {day.sessionCount}回 · {day.completedTotal}種目 · {formatDuration(day.totalSeconds)}
+                        </div>
                     </div>
-                    {dayRecords.map((record) => (
+                    {day.items.map((record) => (
                         <div
                             key={record.id}
                             style={{
                                 display: 'flex',
-                                alignItems: 'center',
+                                flexDirection: 'column',
                                 gap: 8,
-                                padding: '6px 0',
+                                padding: '10px 0',
                                 borderTop: '1px solid rgba(0,0,0,0.04)',
                             }}
                         >
-                            <Clock size={14} color="#B2BEC3" />
-                            <span style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 13,
-                                color: '#2D3436',
-                                flex: 1,
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
                             }}>
-                                {getSessionCompletedExerciseTotal(record)}種目 · {Math.floor(record.totalSeconds / 60)}分{record.totalSeconds % 60}秒
-                            </span>
-                            <span style={{
-                                fontFamily: "'JetBrains Mono', monospace",
-                                fontSize: 11,
-                                color: '#B2BEC3',
-                            }}>
-                                {new Date(record.startedAt).toLocaleTimeString('ja-JP', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                })}
-                            </span>
+                                <Clock size={14} color="#B2BEC3" />
+                                <span style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 13,
+                                    color: '#2D3436',
+                                    flex: 1,
+                                }}>
+                                    {record.completedTotal}種目 · {formatDuration(record.totalSeconds)}
+                                </span>
+                                <span style={{
+                                    fontFamily: "'JetBrains Mono', monospace",
+                                    fontSize: 11,
+                                    color: '#B2BEC3',
+                                }}>
+                                    {new Date(record.startedAt).toLocaleTimeString('ja-JP', {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                    })}
+                                </span>
+                            </div>
+
+                            {record.userNames.length > 0 && (
+                                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                                    <span style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        color: '#7F8C8D',
+                                        minWidth: 44,
+                                    }}>
+                                        だれ
+                                    </span>
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                        {record.userNames.map((name) => (
+                                            <span
+                                                key={`${record.id}-${name}`}
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    padding: '4px 8px',
+                                                    borderRadius: 999,
+                                                    background: 'rgba(43, 186, 160, 0.10)',
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontSize: 11,
+                                                    color: '#2B7A6E',
+                                                }}
+                                            >
+                                                {name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <DetailChips
+                                label="やった"
+                                items={record.completedExercises}
+                                accentColor="#2BBAA0"
+                                background="rgba(43, 186, 160, 0.10)"
+                            />
+
+                            <DetailChips
+                                label="おやすみ"
+                                items={record.skippedExercises}
+                                accentColor="#E17055"
+                                background="rgba(225, 112, 85, 0.10)"
+                            />
                         </div>
                     ))}
                 </motion.div>
@@ -130,5 +253,3 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
         </div>
     );
 };
-
-

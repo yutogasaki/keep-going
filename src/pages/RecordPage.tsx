@@ -13,6 +13,7 @@ import type { ChibifuwaRecord, PastFuwafuwaRecord } from '../store/useAppStore';
 import { RecordTabContent } from './record/RecordTabContent';
 import { AlbumTabContent } from './record/AlbumTabContent';
 import { RecordModals } from './record/RecordModals';
+import { buildRecordHistoryDays } from './record/recordHistorySummary';
 
 type RecordTab = 'record' | 'album';
 
@@ -34,6 +35,7 @@ export const RecordPage: React.FC = () => {
     const currentViewUsers = useMemo(() => users.filter((user) => sessionUserIds.includes(user.id)), [users, sessionUserIds]);
     const pastFuwafuwas = useMemo(() => currentViewUsers.flatMap((user) => user.pastFuwafuwas || []).filter((fuwafuwa) => fuwafuwa.finalStage === 3), [currentViewUsers]);
     const chibifuwas = useMemo(() => currentViewUsers.flatMap((user) => user.chibifuwas || []), [currentViewUsers]);
+    const userNameMap = useMemo(() => new Map(users.map((user) => [user.id, user.name])), [users]);
 
     const loadExerciseMap = useCallback(async (forceRefresh = false) => {
         const map = new Map<string, { name: string; emoji: string }>();
@@ -100,27 +102,33 @@ export const RecordPage: React.FC = () => {
         });
     }, [loadExerciseMap]);
 
-    const { groupedEntries, totalSessions, totalMinutes, uniqueDays, exerciseCounts } = useMemo(() => {
+    const { historyDays, totalSessions, totalMinutes, uniqueDays, exerciseCounts } = useMemo(() => {
         const grouped = new Map<string, SessionRecord[]>();
         for (const session of sessions) {
             const existing = grouped.get(session.date) || [];
             existing.push(session);
             grouped.set(session.date, existing);
         }
+
         const counts = new Map<string, number>();
         for (const session of sessions) {
             for (const [exerciseId, count] of Object.entries(getSessionExerciseCounts(session))) {
                 counts.set(exerciseId, (counts.get(exerciseId) || 0) + count);
             }
         }
+
         return {
-            groupedEntries: Array.from(grouped.entries()),
+            historyDays: buildRecordHistoryDays({
+                groupedEntries: Array.from(grouped.entries()),
+                exerciseMap,
+                userNameMap,
+            }),
             totalSessions: sessions.length,
             totalMinutes: Math.floor(sessions.reduce((acc, session) => acc + session.totalSeconds, 0) / 60),
             uniqueDays: grouped.size,
             exerciseCounts: counts,
         };
-    }, [sessions]);
+    }, [sessions, exerciseMap, userNameMap]);
 
     const topExercises = useMemo(() =>
         Array.from(exerciseCounts.entries())
@@ -231,8 +239,9 @@ export const RecordPage: React.FC = () => {
                         <RecordTabContent
                             loading={loading}
                             sessions={sessions}
-                            groupedEntries={groupedEntries}
-                            todaySessions={todaySessions}
+                            sessionsCount={sessions.length}
+                            historyDays={historyDays}
+                            todaySessionsCount={todaySessions.length}
                             todayExerciseCount={todayExerciseCount}
                             todayMinutes={todayMinutes}
                             progressPercent={progressPercent}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Clock } from 'lucide-react';
 import { getExercisePlacementLabel } from '../data/exercisePlacement';
+import { dedupeExercisesByIdentity } from '../lib/publicExerciseUtils';
 import { fetchPopularExercises, type PublicExercise } from '../lib/publicExercises';
 import { ExerciseDetailSheet } from './ExerciseDetailSheet';
 import { useAppStore } from '../store/useAppStore';
@@ -24,15 +25,7 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
         setLoading(true);
         setError(false);
         fetchPopularExercises(20).then(data => {
-            // Deduplicate by name + emoji + sec
-            const seen = new Set<string>();
-            const deduped = data.filter(ex => {
-                const key = `${ex.name}|${ex.emoji}|${ex.sec}|${ex.placement}`;
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
-            });
-            setExercises(deduped);
+            setExercises(dedupeExercisesByIdentity(data));
         }).catch(err => {
             console.error('[PublicExerciseBrowser] fetch failed:', err);
             setError(true);
@@ -83,7 +76,6 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
                                 overflow: 'hidden',
                             }}
                         >
-                            {/* Header */}
                             <div style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -119,7 +111,6 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
                                 </button>
                             </div>
 
-                            {/* Content */}
                             <div style={{
                                 flex: 1,
                                 overflowY: 'auto',
@@ -195,8 +186,6 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
         </>
     );
 };
-
-// ─── Tappable exercise card ────────────────────────
 
 const BrowserExerciseCard: React.FC<{
     exercise: PublicExercise;

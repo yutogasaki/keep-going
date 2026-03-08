@@ -4,6 +4,7 @@ import { ChevronDown } from 'lucide-react';
 import { ChallengeCard } from '../../components/ChallengeCard';
 import { PopularMenusRow } from '../../components/PopularMenusRow';
 import type { Challenge, ChallengeCompletion } from '../../lib/challenges';
+import type { PublicExercise } from '../../lib/publicExercises';
 import type { PublicMenu } from '../../lib/publicMenus';
 
 interface HomeChallengesAndMenusProps {
@@ -14,7 +15,9 @@ interface HomeChallengesAndMenusProps {
     onTogglePastExpanded: () => void;
     onChallengesUpdated: () => void;
     onOpenMenuBrowser: () => void;
+    onOpenExerciseBrowser: () => void;
     onMenuTap: (menu: PublicMenu) => void;
+    onExerciseTap: (exercise: PublicExercise) => void;
 }
 
 export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
@@ -25,7 +28,9 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
     onTogglePastExpanded,
     onChallengesUpdated,
     onOpenMenuBrowser,
+    onOpenExerciseBrowser,
     onMenuTap,
+    onExerciseTap,
 }) => {
     return (
         <>
@@ -127,8 +132,10 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                 }}
             >
                 <PopularMenusRow
-                    onOpenBrowser={onOpenMenuBrowser}
+                    onOpenMenuBrowser={onOpenMenuBrowser}
+                    onOpenExerciseBrowser={onOpenExerciseBrowser}
                     onMenuTap={onMenuTap}
+                    onExerciseTap={onExerciseTap}
                 />
             </div>
         </>

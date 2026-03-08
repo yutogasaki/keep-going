@@ -3,8 +3,10 @@ import type { Database } from './supabase-types';
 import { getAccountId } from './sync/authState';
 import { saveCustomExercise, type CustomExercise } from './db';
 import { normalizeExercisePlacement, type ExercisePlacement } from '../data/exercisePlacement';
+import { dedupeExercisesByIdentity, pickRecommendedExercises } from './publicExerciseUtils';
 
 type PublicExerciseRow = Database['public']['Tables']['public_exercises']['Row'];
+type PublicExerciseSort = 'download_count' | 'created_at';
 
 export interface PublicExercise {
     id: string;
@@ -18,6 +20,33 @@ export interface PublicExercise {
     accountId: string;
     downloadCount: number;
     createdAt: string;
+}
+
+async function fetchActiveExercises(
+    sortBy: PublicExerciseSort,
+    limit: number,
+): Promise<PublicExercise[]> {
+    if (!supabase) return [];
+
+    const { data, error } = await supabase
+        .rpc('fetch_active_public_exercises', { sort_by: sortBy, max_count: limit });
+
+    if (!error && data) {
+        return data.map(mapPublicExercise);
+    }
+
+    const { data: fallback, error: fallbackErr } = await supabase
+        .from('public_exercises')
+        .select('*')
+        .order(sortBy, { ascending: false })
+        .limit(limit);
+
+    if (fallbackErr) {
+        console.warn(`[publicExercises] fetchActiveExercises(${sortBy}) failed:`, fallbackErr);
+        return [];
+    }
+
+    return (fallback ?? []).map(mapPublicExercise);
 }
 
 // ─── Publish an exercise ────────────────────────────
@@ -41,32 +70,19 @@ export async function publishExercise(exercise: CustomExercise, authorName: stri
     if (error) throw error;
 }
 
-// ─── Fetch popular exercises ────────────────────────
+// ─── Fetch public exercises ─────────────────────────
 
 export async function fetchPopularExercises(limit = 20): Promise<PublicExercise[]> {
-    if (!supabase) return [];
+    return dedupeExercisesByIdentity(await fetchActiveExercises('download_count', limit));
+}
 
-    // Try RPC first (filters out suspended accounts), fallback to direct query
-    const { data, error } = await supabase
-        .rpc('fetch_active_public_exercises', { sort_by: 'download_count', max_count: limit });
+export async function fetchRecommendedExercises(): Promise<PublicExercise[]> {
+    const [popular, newest] = await Promise.all([
+        fetchActiveExercises('download_count', 10),
+        fetchActiveExercises('created_at', 5),
+    ]);
 
-    if (!error && data) {
-        return data.map(mapPublicExercise);
-    }
-
-    // Fallback: direct query (RPC not yet deployed)
-    const { data: fallback, error: fallbackErr } = await supabase
-        .from('public_exercises')
-        .select('*')
-        .order('download_count', { ascending: false })
-        .limit(limit);
-
-    if (fallbackErr) {
-        console.warn('[publicExercises] fetchPopularExercises failed:', fallbackErr);
-        return [];
-    }
-
-    return (fallback ?? []).map(mapPublicExercise);
+    return pickRecommendedExercises(popular, newest);
 }
 
 // ─── Fetch my published exercises ───────────────────
@@ -105,7 +121,6 @@ export async function importExercise(pub: PublicExercise): Promise<void> {
 
     await saveCustomExercise(localEx);
 
-    // Download count (fire-and-forget)
     tryIncrementDownload(pub.id);
 }
 
@@ -157,4 +172,3 @@ function mapPublicExercise(row: PublicExerciseRow): PublicExercise {
         createdAt: row.created_at,
     };
 }
-
