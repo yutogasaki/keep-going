@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Clock, Download } from 'lucide-react';
-import { fetchPopularMenus, type PublicMenu } from '../lib/publicMenus';
+import { dedupeMenusByIdentity, fetchPopularMenus, type PublicMenu } from '../lib/publicMenus';
 import { EXERCISES } from '../data/exercises';
 import { MenuDetailSheet } from './MenuDetailSheet';
 import { useAppStore } from '../store/useAppStore';
@@ -25,15 +25,7 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
         setLoading(true);
         setError(false);
         fetchPopularMenus(20).then(data => {
-            // Deduplicate by name + exerciseIds
-            const seen = new Set<string>();
-            const deduped = data.filter(menu => {
-                const key = `${menu.name}|${menu.exerciseIds.join(',')}`;
-                if (seen.has(key)) return false;
-                seen.add(key);
-                return true;
-            });
-            setMenus(deduped);
+            setMenus(dedupeMenusByIdentity(data));
         }).catch(err => {
             console.error('[PublicMenuBrowser] fetch failed:', err);
             setError(true);
@@ -343,3 +335,4 @@ const BrowserMenuCard: React.FC<{
         </button>
     );
 };
+

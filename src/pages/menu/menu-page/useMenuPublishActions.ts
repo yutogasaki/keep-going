@@ -3,6 +3,7 @@ import type { MenuGroup } from '../../../data/menuGroups';
 import type { CustomExercise } from '../../../lib/db';
 import { getAccountId } from '../../../lib/sync';
 import {
+    createPublicMenuDedupKey,
     fetchMyPublishedMenus,
     publishMenu,
     type PublicMenu,
@@ -54,9 +55,10 @@ export function useMenuPublishActions({
     }, [refreshPublishedData]);
 
     const findPublishedMenu = useCallback((group: MenuGroup): PublicMenu | undefined => {
+        const groupKey = createPublicMenuDedupKey(group);
+
         return myPublishedMenus.find(
-            (publishedMenu) => publishedMenu.name === group.name
-                && publishedMenu.exerciseIds.join(',') === group.exerciseIds.join(','),
+            (publishedMenu) => createPublicMenuDedupKey(publishedMenu) === groupKey,
         );
     }, [myPublishedMenus]);
 
@@ -144,3 +146,4 @@ export function useMenuPublishActions({
         handleUnpublishExercise,
     };
 }
+
