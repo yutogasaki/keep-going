@@ -18,7 +18,7 @@
 | P0 | Sync 実機 restore の最終確認 | core hardening と競合 UX 改善は進んだので、残りは手動 restore 確認を閉じる | 既存データあり端末とクラウド既存データの両ケースを見る |
 | P1 | 巨大ファイル分割 | 修正精度と開発速度を上げる | 先に責務を切らないと分割だけで終わる |
 | P1 | 先生 / 家族 UX の意味明確化 | 誤操作を減らす | 可愛さより明示性を優先する |
-| P2 | オンボーディング login / restore UX polish | account step と restore flow は実装済みなので、文言と失敗導線を磨く | settings 側の login error 導線と揃える |
+| P2 | オンボーディング login / restore UX polish | account step / restore flow / shared account guide は実装済みなので、残りの edge case と実機導線を磨く | settings 側の login error 導線と揃える |
 | P2 | 音声 / 通知 / 演出 polish | TTS・音量・通知設定は実装済みなので、必要時だけ残りの体験調整を行う | 過剰演出で圧を出さない |
 
 ### 現在の未完了 backlog / spec gap
