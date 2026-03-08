@@ -12,6 +12,7 @@
 - 種目の分類は `準備 -> ストレッチ -> 体幹 -> バー -> おわり -> 休憩` の placement 軸を正本にし、`ひとつ` タブ・custom editor・おまかせ設定・custom/teacher/public exercise 保存で同じ語彙を使う。
 - built-in では `ポイント＆フレックス` を準備、`ゆりかご / どんぐり` をストレッチ、`深呼吸` を 30 秒の `おわり` とし、おまかせは最後を `おわり` で締める。
 - MainLayout は `home / record / menu / settings` を hidden mount で保持するため、teacher dashboard の保存反映は再マウント任せにせず `teacherContentUpdated` event で `メニュー` と `きろく` を再読込する。
+- developer dashboard の運用基準は `新規14日保護`、`非アクティブ14日+`、`休止候補 = 作成日と最終利用の両方が30日超` を正本にする。同一アカウント内の同名 member は `session.user_ids` 未参照なら整理候補として区別するが、端末上の不在は断定せずヒューリスティックとして扱う。
 
 ## Engineering
 

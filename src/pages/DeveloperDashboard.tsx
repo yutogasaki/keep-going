@@ -8,11 +8,17 @@ import {
     computeStats,
     type AdminAccountSummary,
 } from '../lib/developer';
-import { formatDateKey } from '../lib/db';
 import { AccountCard } from './developer-dashboard/AccountCard';
 import { ConfirmActionDialog } from './developer-dashboard/ConfirmActionDialog';
 import { DeveloperHeader } from './developer-dashboard/DeveloperHeader';
 import { DeveloperStatsAndFilters } from './developer-dashboard/DeveloperStatsAndFilters';
+import {
+    analyzeAccount,
+    filterAccountsByType,
+    INACTIVE_DAYS,
+    NEW_ACCOUNT_GRACE_DAYS,
+    SUSPEND_CANDIDATE_DAYS,
+} from './developer-dashboard/accountSegmentation';
 import { DeveloperDebugPanel } from './settings/developer-debug/DeveloperDebugPanel';
 import type { ConfirmAction, FilterType } from './developer-dashboard/types';
 
@@ -47,34 +53,9 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
         load();
     }, [load]);
 
-    const thirtyDaysAgoStr = useMemo(() => {
-        const date = new Date();
-        date.setDate(date.getDate() - 30);
-        return formatDateKey(date);
-    }, []);
-
-    const sevenDaysAgoStr = useMemo(() => {
-        const date = new Date();
-        date.setDate(date.getDate() - 7);
-        return formatDateKey(date);
-    }, []);
-
     const filteredAccounts = useMemo(() => {
-        switch (filter) {
-            case 'inactive':
-                return accounts.filter((account) => !account.lastActiveDate || account.lastActiveDate < thirtyDaysAgoStr);
-            case 'multi':
-                return accounts.filter((account) => account.members.length > 1);
-            case 'suspended':
-                return accounts.filter((account) => account.suspended);
-            case 'temporary':
-                return accounts.filter((account) =>
-                    account.streak === 0 && (!account.lastActiveDate || account.lastActiveDate < sevenDaysAgoStr),
-                );
-            default:
-                return accounts;
-        }
-    }, [accounts, filter, thirtyDaysAgoStr, sevenDaysAgoStr]);
+        return filterAccountsByType(accounts, filter);
+    }, [accounts, filter]);
 
     const stats = useMemo(() => computeStats(accounts), [accounts]);
 
@@ -162,6 +143,9 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                                 filter={filter}
                                 filteredCount={filteredAccounts.length}
                                 onFilterChange={setFilter}
+                                inactivityDays={INACTIVE_DAYS}
+                                graceDays={NEW_ACCOUNT_GRACE_DAYS}
+                                suspendCandidateDays={SUSPEND_CANDIDATE_DAYS}
                             />
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -169,6 +153,7 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                                     <AccountCard
                                         key={account.accountId}
                                         account={account}
+                                        analysis={analyzeAccount(account)}
                                         expanded={expandedAccount === account.accountId}
                                         onToggle={() => {
                                             setExpandedAccount(expandedAccount === account.accountId ? null : account.accountId);
@@ -198,7 +183,6 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                                                 alert('削除に失敗: ' + (error as Error).message);
                                             }
                                         }}
-                                        thirtyDaysAgoStr={thirtyDaysAgoStr}
                                     />
                                 ))}
                             </div>

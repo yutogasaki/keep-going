@@ -17,6 +17,9 @@ interface DeveloperStatsAndFiltersProps {
     filter: FilterType;
     filteredCount: number;
     onFilterChange: (filter: FilterType) => void;
+    inactivityDays: number;
+    graceDays: number;
+    suspendCandidateDays: number;
 }
 
 export const DeveloperStatsAndFilters: React.FC<DeveloperStatsAndFiltersProps> = ({
@@ -25,6 +28,9 @@ export const DeveloperStatsAndFilters: React.FC<DeveloperStatsAndFiltersProps> =
     filter,
     filteredCount,
     onFilterChange,
+    inactivityDays,
+    graceDays,
+    suspendCandidateDays,
 }) => {
     return (
         <>
@@ -47,10 +53,12 @@ export const DeveloperStatsAndFilters: React.FC<DeveloperStatsAndFiltersProps> =
             <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
                 {([
                     ['all', `全て (${accounts.length})`],
-                    ['inactive', '非アクティブ'],
+                    ['new', `新規${graceDays}日`],
+                    ['inactive', `非アクティブ(${inactivityDays}日+)`],
+                    ['suspend', '休止候補'],
+                    ['duplicate', '同名あり'],
                     ['multi', '複数メンバー'],
                     ['suspended', '休止中'],
-                    ['temporary', 'テンポラリー候補'],
                 ] as [FilterType, string][]).map(([key, label]) => (
                     <button
                         key={key}
@@ -69,6 +77,13 @@ export const DeveloperStatsAndFilters: React.FC<DeveloperStatsAndFiltersProps> =
                         {label}
                     </button>
                 ))}
+            </div>
+
+            <div style={{ fontSize: 11, color: '#666', marginBottom: 8, lineHeight: 1.5 }}>
+                新規は作成から{graceDays}日間は様子見。休止候補は作成日と最終利用の両方が{suspendCandidateDays}日超です。
+            </div>
+            <div style={{ fontSize: 11, color: '#666', marginBottom: 12, lineHeight: 1.5 }}>
+                同名ありは同じアカウント内で同名メンバーが複数いる状態です。「未参照」と出たメンバーは整理候補として見分けます。
             </div>
 
             <div style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>

@@ -1,10 +1,11 @@
 import React from 'react';
 import { ChevronDown, Pause, Play, Trash2 } from 'lucide-react';
-import { calculateStreak } from '../../lib/teacher';
 import type { AdminAccountSummary } from '../../lib/developer';
+import type { AccountSegmentation } from './accountSegmentation';
 
 interface AccountCardProps {
     account: AdminAccountSummary;
+    analysis: AccountSegmentation;
     expanded: boolean;
     onToggle: () => void;
     daysAgo: (date: string | null) => string;
@@ -12,11 +13,11 @@ interface AccountCardProps {
     onSuspend: () => void;
     onDelete: () => void;
     onDeleteMember: (memberId: string) => void;
-    thirtyDaysAgoStr: string;
 }
 
 export const AccountCard: React.FC<AccountCardProps> = ({
     account,
+    analysis,
     expanded,
     onToggle,
     daysAgo,
@@ -24,9 +25,8 @@ export const AccountCard: React.FC<AccountCardProps> = ({
     onSuspend,
     onDelete,
     onDeleteMember,
-    thirtyDaysAgoStr,
 }) => {
-    const isInactive = !account.lastActiveDate || account.lastActiveDate < thirtyDaysAgoStr;
+    const memberSignalsById = new Map(analysis.memberSignals.map((signal) => [signal.memberId, signal]));
 
     return (
         <div style={{
@@ -75,11 +75,59 @@ export const AccountCard: React.FC<AccountCardProps> = ({
                                 休止中
                             </span>
                         )}
+                        {!account.suspended && analysis.isSuspendCandidate && (
+                            <span style={{
+                                background: '#ef4444',
+                                color: '#fff',
+                                padding: '1px 6px',
+                                borderRadius: 8,
+                                fontSize: 10,
+                                fontWeight: 700,
+                            }}>
+                                休止候補
+                            </span>
+                        )}
+                        {!account.suspended && !analysis.isSuspendCandidate && analysis.isInactive && (
+                            <span style={{
+                                background: '#e5e7eb',
+                                color: '#374151',
+                                padding: '1px 6px',
+                                borderRadius: 8,
+                                fontSize: 10,
+                                fontWeight: 700,
+                            }}>
+                                非アクティブ
+                            </span>
+                        )}
+                        {analysis.isNewGrace && (
+                            <span style={{
+                                background: '#dbeafe',
+                                color: '#1d4ed8',
+                                padding: '1px 6px',
+                                borderRadius: 8,
+                                fontSize: 10,
+                                fontWeight: 700,
+                            }}>
+                                新規14日
+                            </span>
+                        )}
+                        {analysis.hasDuplicateNames && (
+                            <span style={{
+                                background: '#ede9fe',
+                                color: '#6d28d9',
+                                padding: '1px 6px',
+                                borderRadius: 8,
+                                fontSize: 10,
+                                fontWeight: 700,
+                            }}>
+                                同名あり
+                            </span>
+                        )}
                     </div>
                     <div style={{ fontSize: 11, color: '#888', marginTop: 2, display: 'flex', gap: 8 }}>
                         <span>{account.members.map((member) => member.classLevel).join('/')}</span>
                         <span>{account.totalSessions}回</span>
-                        <span style={{ color: isInactive ? '#ef4444' : '#22c55e' }}>
+                        <span style={{ color: analysis.isInactive || analysis.isSuspendCandidate ? '#ef4444' : '#22c55e' }}>
                             {daysAgo(account.lastActiveDate)}
                         </span>
                     </div>
@@ -112,55 +160,94 @@ export const AccountCard: React.FC<AccountCardProps> = ({
                         <div>
                             <span style={{ color: '#888' }}>メンバー</span>
                             <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                {(() => {
-                                    const memberIds = new Set(account.members.map((member) => member.id));
-                                    const isSingleMember = account.members.length === 1;
-                                    return account.members.map((member) => {
-                                        const memberSessions = account.sessions.filter((session) => {
-                                            if (session.userIds.length === 0) return true;
-                                            if (session.userIds.includes(member.id)) return true;
-                                            if (isSingleMember) return true;
-                                            const hasAnyMatch = session.userIds.some((id) => memberIds.has(id));
-                                            return !hasAnyMatch;
-                                        });
-                                        const memberLastActive = memberSessions.length > 0 ? memberSessions[0].date : null;
-                                        const memberStreak = calculateStreak(memberSessions);
-                                        return (
-                                            <div key={member.id} style={{
-                                                padding: '6px 8px',
-                                                background: '#f8f8f8',
-                                                borderRadius: 8,
-                                            }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <span style={{ flex: 1, fontSize: 12, fontWeight: 600 }}>{member.name} ({member.classLevel})</span>
-                                                    <button
-                                                        onClick={(event) => {
-                                                            event.stopPropagation();
-                                                            onDeleteMember(member.id);
-                                                        }}
-                                                        style={{
-                                                            background: 'none',
-                                                            border: 'none',
-                                                            cursor: 'pointer',
-                                                            color: '#ccc',
-                                                            padding: 2,
-                                                            display: 'flex',
-                                                        }}
-                                                    >
-                                                        <Trash2 size={12} />
-                                                    </button>
-                                                </div>
-                                                <div style={{ display: 'flex', gap: 8, marginTop: 3, fontSize: 10, color: '#888' }}>
-                                                    <span>🔥 {memberStreak}日</span>
-                                                    <span>最終: {memberLastActive ? daysAgo(memberLastActive) : '未使用'}</span>
-                                                    <span>{memberSessions.length}回</span>
-                                                </div>
+                                {account.members.map((member) => {
+                                    const signal = memberSignalsById.get(member.id);
+                                    const shortMemberId = member.id.slice(0, 6);
+
+                                    return (
+                                        <div key={member.id} style={{
+                                            padding: '6px 8px',
+                                            background: '#f8f8f8',
+                                            borderRadius: 8,
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                <span style={{ flex: 1, fontSize: 12, fontWeight: 600 }}>
+                                                    {member.name} ({member.classLevel})
+                                                </span>
+                                                <button
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        onDeleteMember(member.id);
+                                                    }}
+                                                    style={{
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        color: '#ccc',
+                                                        padding: 2,
+                                                        display: 'flex',
+                                                    }}
+                                                >
+                                                    <Trash2 size={12} />
+                                                </button>
                                             </div>
-                                        );
-                                    });
-                                })()}
+                                            <div style={{
+                                                display: 'flex',
+                                                flexWrap: 'wrap',
+                                                gap: 4,
+                                                marginTop: 4,
+                                            }}>
+                                                {signal?.hasDuplicateName && (
+                                                    <span style={pillStyle('#ede9fe', '#6d28d9')}>
+                                                        同名 {signal.duplicateGroupSize}人
+                                                    </span>
+                                                )}
+                                                {!signal?.hasNamedSessions && account.members.length > 1 && (
+                                                    <span style={pillStyle('#fff7ed', '#c2410c')}>
+                                                        未参照
+                                                    </span>
+                                                )}
+                                                {signal?.isCleanupCandidate && (
+                                                    <span style={pillStyle('#fee2e2', '#b91c1c')}>
+                                                        整理候補
+                                                    </span>
+                                                )}
+                                                <span style={pillStyle('#e5e7eb', '#4b5563')}>
+                                                    ID {shortMemberId}
+                                                </span>
+                                                {member.createdAt && (
+                                                    <span style={pillStyle('#e0f2fe', '#0369a1')}>
+                                                        作成 {formatDate(member.createdAt)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div style={{ display: 'flex', gap: 8, marginTop: 6, fontSize: 10, color: '#888', flexWrap: 'wrap' }}>
+                                                <span>🔥 {signal?.streak ?? 0}日</span>
+                                                <span>最終: {signal?.lastActiveDate ? daysAgo(signal.lastActiveDate) : '未使用'}</span>
+                                                <span>{signal?.inferredSessionCount ?? 0}回</span>
+                                                {account.members.length > 1 && (
+                                                    <span>直接参照 {signal?.directSessionCount ?? 0}回</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
+                        {analysis.hasDuplicateNames && (
+                            <div style={{
+                                padding: '8px 10px',
+                                background: '#faf5ff',
+                                borderRadius: 8,
+                                color: '#6d28d9',
+                                fontSize: 11,
+                                lineHeight: 1.5,
+                            }}>
+                                同名グループ: {analysis.duplicateNames.join(', ')}
+                                <br />
+                                「未参照」は session.user_ids に出てこないメンバーです。端末上に残っていない可能性があるため、削除前の確認対象にします。
+                            </div>
+                        )}
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                             <span style={{ color: '#888' }}>ストリーク（アカウント）</span>
                             <span>{account.streak}日</span>
@@ -239,3 +326,14 @@ export const AccountCard: React.FC<AccountCardProps> = ({
         </div>
     );
 };
+
+function pillStyle(background: string, color: string): React.CSSProperties {
+    return {
+        background,
+        color,
+        padding: '1px 6px',
+        borderRadius: 8,
+        fontSize: 10,
+        fontWeight: 700,
+    };
+}

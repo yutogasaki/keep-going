@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ArrowLeft, RefreshCw, Settings, Trophy, Users } from 'lucide-react';
 import { fetchAllStudents, calculateStreak, type StudentSummary } from '../lib/teacher';
 import { getTodayKey, getDateKeyOffset } from '../lib/db';
@@ -25,6 +25,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
     const [loading, setLoading] = useState(true);
     const [expandedClass, setExpandedClass] = useState<string | null>(null);
     const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
+    const hasAutoExpandedClassRef = useRef(false);
 
     const [challenges, setChallenges] = useState<Challenge[]>([]);
     const [challengesLoading, setChallengesLoading] = useState(false);
@@ -137,10 +138,29 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
     }, [individualStudents]);
 
     useEffect(() => {
-        if (!loading && studentsByClass.length > 0 && expandedClass === null) {
+        if (loading) {
+            return;
+        }
+        if (studentsByClass.length === 0) {
+            hasAutoExpandedClassRef.current = false;
+            setExpandedClass(null);
+            setExpandedStudent(null);
+            return;
+        }
+        if (!hasAutoExpandedClassRef.current && expandedClass === null) {
+            hasAutoExpandedClassRef.current = true;
             setExpandedClass(studentsByClass[0][0]);
         }
     }, [loading, studentsByClass, expandedClass]);
+
+    const handleToggleClass = useCallback((classLevel: string) => {
+        setExpandedStudent(null);
+        setExpandedClass((current) => (current === classLevel ? null : classLevel));
+    }, []);
+
+    const handleToggleStudent = useCallback((studentId: string) => {
+        setExpandedStudent((current) => (current === studentId ? null : studentId));
+    }, []);
 
     return (
         <div style={{
@@ -269,9 +289,9 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                     individualStudents={individualStudents}
                     studentsByClass={studentsByClass}
                     expandedClass={expandedClass}
-                    onToggleClass={(classLevel) => setExpandedClass(expandedClass === classLevel ? null : classLevel)}
+                    onToggleClass={handleToggleClass}
                     expandedStudent={expandedStudent}
-                    onToggleStudent={(studentId) => setExpandedStudent(expandedStudent === studentId ? null : studentId)}
+                    onToggleStudent={handleToggleStudent}
                     activeToday={activeToday}
                     weeklyStats={weeklyStats}
                 />

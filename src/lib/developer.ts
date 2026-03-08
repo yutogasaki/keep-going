@@ -5,9 +5,13 @@ import type { StudentMember, StudentSession } from './teacher';
 
 // ─── Types ───────────────────────────────────────────
 
+export interface AdminMemberSummary extends StudentMember {
+    createdAt: string | null;
+}
+
 export interface AdminAccountSummary {
     accountId: string;
-    members: StudentMember[];
+    members: AdminMemberSummary[];
     sessions: StudentSession[];
     streak: number;
     totalSessions: number;
@@ -66,6 +70,7 @@ export async function fetchAllAccountsForAdmin(): Promise<AdminAccountSummary[]>
                 name: m.name,
                 classLevel: m.class_level,
                 avatarUrl: m.avatar_url || undefined,
+                createdAt: m.created_at ?? null,
             })),
             sessions: acctSessions.slice(0, 50).map(s => ({
                 id: s.id,

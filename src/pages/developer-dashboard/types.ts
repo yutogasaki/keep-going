@@ -1,4 +1,4 @@
-export type FilterType = 'all' | 'inactive' | 'multi' | 'suspended' | 'temporary';
+export type FilterType = 'all' | 'new' | 'inactive' | 'suspend' | 'duplicate' | 'multi' | 'suspended';
 
 export interface ConfirmAction {
     accountId: string;
