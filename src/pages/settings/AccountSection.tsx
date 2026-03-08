@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Cloud, LogOut, Loader2, UserPlus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { SyncAccountGuideCard } from '../../components/SyncAccountGuideCard';
 import { LoginPage } from '../LoginPage';
 
 export const AccountSection: React.FC = () => {
@@ -86,6 +87,7 @@ export const AccountSection: React.FC = () => {
                                 ログインするとデータがクラウドにバックアップされます。
                             </p>
                         )}
+                        <SyncAccountGuideCard compact />
                         <button
                             onClick={() => {
                                 setLoginContext('settings');

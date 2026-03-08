@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, Chrome, Mail } from 'lucide-react';
+import { SyncAccountGuideCard } from '../../components/SyncAccountGuideCard';
 
 interface AccountStepProps {
     restoreError: string | null;
@@ -77,6 +78,8 @@ export const AccountStep: React.FC<AccountStepProps> = ({
                 <br />
                 クラウドにほぞんできます
             </p>
+
+            <SyncAccountGuideCard />
 
             {restoreError && (
                 <p

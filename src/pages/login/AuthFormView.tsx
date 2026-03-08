@@ -1,5 +1,6 @@
 import React from 'react';
 import { Chrome, Lock, Mail } from 'lucide-react';
+import { SyncAccountGuideCard } from '../../components/SyncAccountGuideCard';
 import { LoginBackButton } from './LoginBackButton';
 
 interface AuthFormViewProps {
@@ -52,9 +53,11 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
                         {isSignUp ? 'アカウント作成' : 'ログイン'}
                     </h2>
                     <p style={{ color: '#8395A7', fontSize: 13, margin: 0, lineHeight: 1.5 }}>
-                        ログインするとデータがクラウドに<br />バックアップされます
+                        この端末のデータを残したまま<br />ほかの端末でも使えるようにします
                     </p>
                 </div>
+
+                <SyncAccountGuideCard compact />
 
                 <button
                     onClick={onGoogleLogin}
