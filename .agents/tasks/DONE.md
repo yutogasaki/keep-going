@@ -7,6 +7,8 @@
 ## 2026-03-08: agent guide canonical 化と done 圧縮
 - `AGENTS.md` / `CLAUDE.md` を短い入口にし、共通の詳細を `.agents/agent-guide.md` へ集約
 - `docs/development-governance.md` と governance skill / script を shared guide + done archive 方針へ更新
+- local verify を CI / governance と同じ `lint -> tsc --noEmit -> test -> build` 順に揃え、`npm run governance:check` で canonical path / stale path / size 監査を実行できるようにした
+- skill の正本を `.agents/skills/*/SKILL.md` に固定し、`.claude/skills/*` は legacy redirect に寄せた
 - 2026-03 の詳細完了履歴を `.agents/tasks/archive/2026-03.md` へ移し、`DONE.md` を要約ログへ圧縮
 - `docs/tasks.md` を current focus と未完了 backlog 中心に再編し、履歴 snapshot を `docs/archive/tasks-2026-03.md` へ分離
 - `docs/development-governance.md` に required skill / verify matrix を追加し、UI 変更の `visual-qa` 必須化と token 利用確認を明文化

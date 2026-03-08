@@ -29,6 +29,7 @@
 ## Commands
 
 ```bash
+npm run governance:check
 npm run dev
 npm run build
 npx tsc --noEmit
@@ -51,6 +52,7 @@ npm run verify
 
 - Zustand persist 変更時は `types/createState/migrate/test` をセットで更新
 - Zustand persist 変更では `persist-migration-check` を使う
+- skill の正本は `.agents/skills/*/SKILL.md` とし、`.claude/skills/*` は redirect のみを置く
 - `src/lib/styles.ts` の token を優先し、直書きを増やさない
 - UI / UX 変更では `visual-qa` を必須にし、desktop/mobile 確認と token 利用確認を行う
 - CI の正本は `.github/workflows/verify.yml` とし、`lint -> tsc --noEmit -> test -> build` を回す

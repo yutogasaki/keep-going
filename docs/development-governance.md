@@ -17,6 +17,7 @@
 | Product backlog | 中長期タスク、仕様差分、ロードマップ | `docs/tasks.md` |
 | 詳細仕様 | UI / ロジック /運用仕様 | `docs/*.md` |
 | Skill | 定型ワークフロー | `.agents/skills/*/SKILL.md` |
+| Governance check | canonical path / stale path / size の監査 | `scripts/check-governance.mjs` |
 
 ## File Roles
 
@@ -73,7 +74,7 @@
 | 変更種別 | 必須 skill / workflow | 最低検証 |
 |---------|-----------------------|---------|
 | doc only | 必須 skill なし。governance / task / memory を触るなら `governance-audit` | リンク整合性、参照先の重複確認 |
-| governance / task / memory / guide 更新 | `governance-audit` | canonical path 確認、サイズ閾値確認、stale path 確認 |
+| governance / task / memory / guide 更新 | `governance-audit` | `npm run governance:check`, canonical path 確認 |
 | 型・ロジック変更 | `test` | `npx tsc --noEmit`, 対象テスト |
 | Zustand persist 変更 | `persist-migration-check` | `types/createState/migrate/test` 更新、必要なら `APP_STATE_VERSION` 更新、migrate テスト、`npx tsc --noEmit` |
 | UI/UX 変更 | `visual-qa` | `npx tsc --noEmit`, 対象テスト、desktop/mobile の画面確認、token 利用確認 |
@@ -101,6 +102,7 @@
 - Hook / util / service: 250-300 行超で責務分離を検討
 - `AGENTS.md`, `CLAUDE.md`: 30 行前後の入口に保つ
 - `.agents/agent-guide.md`: 120 行前後で収める
+- `.agents/skills/*/SKILL.md` を正本にし、`.claude/skills/*` は redirect 以外を置かない
 - `TASKS.md`: 30 行超なら整理
 - `DONE.md`: 50 行超なら圧縮
 - `MEMORY.md`: 40 行超なら整理

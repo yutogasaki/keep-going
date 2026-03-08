@@ -11,7 +11,7 @@ KeepGoing の開発運用が canonical path からズレていないか、ファ
 
 ## 手順
 
-1. まず `scripts/report_governance.py` を実行する
+1. まず `npm run governance:check` を実行する
 2. canonical path を確認する
    - `CONSTITUTION.md`
    - `docs/development-governance.md`

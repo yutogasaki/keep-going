@@ -1,15 +1,5 @@
-# /fix - TypeScript エラー自動修正
+# Legacy Redirect
 
-tscエラーを検出し、自動で修正する。
+Canonical skill moved to .agents/skills/fix/SKILL.md.
+このファイルは今後更新しない。
 
-## 手順
-
-1. `npx tsc --noEmit` を実行してエラーを取得
-2. エラーがなければ「エラーなし」と報告して終了
-3. エラーがあれば:
-   - エラー内容を分析
-   - 該当ファイルを読み込む
-   - エラーを修正（型の不一致、missing import、未使用変数など）
-   - 再度 `npx tsc --noEmit` で修正を確認
-   - まだエラーがあれば繰り返す（最大3回）
-4. 全エラー修正後、変更したファイル一覧を報告

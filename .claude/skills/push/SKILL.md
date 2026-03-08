@@ -1,22 +1,5 @@
-# /push - ビルド確認 + コミット + プッシュ
+# Legacy Redirect
 
-変更をビルドチェックしてからコミット・プッシュまで一括実行する。
+Canonical skill moved to .agents/skills/push/SKILL.md.
+このファイルは今後更新しない。
 
-## 手順
-
-1. `npx tsc --noEmit` でTypeScriptエラーチェック
-   - エラーがあれば修正してからやり直す
-2. `npm run build` でビルド確認
-   - エラーがあれば修正してからやり直す
-3. `git status` と `git diff` で変更内容を確認
-4. `git log --oneline -5` でコミットメッセージのスタイルを確認
-5. 変更内容に基づいた簡潔なコミットメッセージを作成
-6. 関連ファイルを `git add` でステージング
-7. コミットを作成（Co-Authored-By を付与）
-8. `git push` で現在のブランチにプッシュ
-9. 完了報告
-
-## 注意
-- コミットメッセージは日本語で、既存のスタイルに合わせる
-- .env や credentials 系ファイルは絶対にコミットしない
-- ビルドが通らない場合はプッシュしない

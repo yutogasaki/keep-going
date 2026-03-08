@@ -1,20 +1,5 @@
-# /review - 変更レビュー
+# Legacy Redirect
 
-push前に変更内容をレビューし、問題がないか確認する。
+Canonical skill moved to .agents/skills/review/SKILL.md.
+このファイルは今後更新しない。
 
-## 手順
-
-1. `git diff` でステージ済み + 未ステージの変更を取得
-2. 変更内容を以下の観点でチェック:
-   - **型安全性**: 型の不一致、any の使用、missing null check
-   - **セキュリティ**: XSS、SQLインジェクション、env漏洩
-   - **ロジック**: 条件分岐の抜け、無限ループ、off-by-one
-   - **UI整合性**: スタイル規約（インラインstyle、Noto Sans JP、カラーパレット）の逸脱
-   - **DB整合性**: deploy.sql変更があればRLS・冪等性を確認
-   - **不要なコード**: console.log の消し忘れ、未使用import、コメントアウト
-3. 問題があれば具体的な箇所と修正案を提示
-4. 問題なければ「LGTM」と報告
-
-## 引数
-- 引数なし: 全変更をレビュー
-- ファイルパス指定: そのファイルのみレビュー
