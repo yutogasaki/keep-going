@@ -66,7 +66,7 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
                     color: '#8395A7',
                     lineHeight: 1.6,
                 }}>
-                    下の START ボタンからストレッチを始めると<br />
+                    下の まんなかの みどりの丸ボタンから ストレッチを始めると<br />
                     ここに草（きろく）が生えていきます。<br />
                     まずは1日目、いってみよう！
                 </p>
@@ -130,3 +130,5 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
         </div>
     );
 };
+
+

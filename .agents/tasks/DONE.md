@@ -14,7 +14,7 @@
 - `docs/development-governance.md` に required skill / verify matrix を追加し、UI 変更の `visual-qa` 必須化と token 利用確認を明文化
 - `.github/workflows/verify.yml` を追加し、`lint -> tsc --noEmit -> test -> build` を PR / main push で自動実行する CI 導線を追加
 - `user_roles` テーブルと migration / deploy を追加し、teacher / developer 判定を hardcoded email から Supabase role 判定へ移行
-- オンボーディングを `welcome -> name -> class -> start -> account -> notification` に再設計し、主要導線をスワイプ説明から START 体験へ切り替え
+- オンボーディングを `welcome -> name -> class -> start -> account -> notification` に再設計し、主要導線をスワイプ説明から開始ボタン体験へ切り替え
 - メニューの `ひとつ` タブにカテゴリビューと `えらぶ` モードの優先実行フローを追加し、custom exercise を含む組み合わせ開始を可能にした
 - `みんなのメニュー` のホームおすすめカードと一覧カードを縦構成に組み替え、長いタイトルでも小さく潰れずにはみ出しにくい表示へ調整した
 - 種目分類を `準備 -> ストレッチ -> 体幹 -> バー -> おわり -> 休憩` の placement 軸へ統一し、custom / teacher / public exercise、`ひとつ` タブ、おまかせ設定、セッション生成を同じ語彙で扱うよう整理した
@@ -26,3 +26,4 @@
 - sync / restore / teacher data まわりの信頼性改善をまとめて実施し、競合解決・restore・初回同期並列化・ページネーションを強化
 - menu / editor / session / record 周辺の責務分離と UX 改善を進め、循環依存解消、hook 分割、editor shell 共通化、同日再開、記録正規化、アクセシビリティ、TTS 音量整理を反映
 - 2026-03-04 から 2026-03-07 までの詳細履歴は `.agents/tasks/archive/2026-03.md` を参照
+
