@@ -1,31 +1,22 @@
 import {
     buildSyncConflictPrompt,
     hasCloudData,
-    initialSync,
     inspectLoginSyncPlan,
-    pullAndMerge,
-    restoreFromCloud,
     setAccountId,
-    type LoginSyncPlanKind,
     type SyncConflictPromptData,
     type SyncConflictResolution,
     type SyncDataSummary,
 } from '../../lib/sync';
-import { useAppStore } from '../../store/useAppStore';
 import type { LoginContext } from './types';
 import { SYNCED_ACCOUNT_KEY } from './constants';
-import { getAppSettingsSnapshot } from './settingsSnapshot';
 import { getLoginSyncFailureMessage, getLoginSyncSuccessMessage } from './syncFlowMessages';
-
-export interface LoginSyncOutcome {
-    success: boolean;
-    action: LoginSyncPlanKind;
-    hadCloudData: boolean;
-    localSummary?: SyncDataSummary;
-    cloudSummary?: SyncDataSummary;
-    resolution?: SyncConflictResolution;
-    error?: string;
-}
+import {
+    type LoginSyncOutcome,
+    mergeCloudData,
+    pushLocalData,
+    restoreCloudData,
+    type SyncExecutionContext,
+} from './syncFlowOperations';
 
 export type ResolveSyncConflict = (
     prompt: SyncConflictPromptData,
@@ -39,167 +30,23 @@ interface SettingsLoginSyncParams {
     setLoginContext: (ctx: LoginContext) => void;
 }
 
-async function pushCurrentLocalState(): Promise<void> {
-    const state = useAppStore.getState();
-    await initialSync(state.users, getAppSettingsSnapshot());
-}
-
-function toFailureOutcome({
-    action,
-    error,
+function buildExecutionContext({
+    accountId,
     hadCloudData,
     localSummary,
     cloudSummary,
-    resolution,
 }: {
-    action: LoginSyncPlanKind;
-    error: unknown;
+    accountId: string;
     hadCloudData: boolean;
     localSummary: SyncDataSummary;
     cloudSummary: SyncDataSummary;
-    resolution?: SyncConflictResolution;
-}): LoginSyncOutcome {
+}): SyncExecutionContext {
     return {
-        success: false,
-        action,
+        accountId,
         hadCloudData,
         localSummary,
         cloudSummary,
-        resolution,
-        error: String(error),
     };
-}
-
-async function restoreCloudData({
-    accountId,
-    action,
-    hadCloudData,
-    localSummary,
-    cloudSummary,
-    resolution,
-}: {
-    accountId: string;
-    action: LoginSyncPlanKind;
-    hadCloudData: boolean;
-    localSummary: SyncDataSummary;
-    cloudSummary: SyncDataSummary;
-    resolution?: SyncConflictResolution;
-}): Promise<LoginSyncOutcome> {
-    try {
-        const result = await restoreFromCloud(accountId);
-        if (!result.success) {
-            return toFailureOutcome({
-                action,
-                error: result.error ?? 'Cloud restore failed',
-                hadCloudData,
-                localSummary,
-                cloudSummary,
-                resolution,
-            });
-        }
-
-        localStorage.setItem(SYNCED_ACCOUNT_KEY, accountId);
-        return {
-            success: true,
-            action,
-            hadCloudData: result.hadData,
-            localSummary,
-            cloudSummary,
-            resolution,
-        };
-    } catch (error) {
-        return toFailureOutcome({
-            action,
-            error,
-            hadCloudData,
-            localSummary,
-            cloudSummary,
-            resolution,
-        });
-    }
-}
-
-async function mergeCloudData({
-    accountId,
-    hadCloudData,
-    localSummary,
-    cloudSummary,
-    resolution,
-}: {
-    accountId: string;
-    hadCloudData: boolean;
-    localSummary: SyncDataSummary;
-    cloudSummary: SyncDataSummary;
-    resolution?: SyncConflictResolution;
-}): Promise<LoginSyncOutcome> {
-    try {
-        const result = await pullAndMerge(accountId);
-        if (!result.success) {
-            return toFailureOutcome({
-                action: 'merge',
-                error: result.error ?? 'Merge failed',
-                hadCloudData,
-                localSummary,
-                cloudSummary,
-                resolution,
-            });
-        }
-
-        localStorage.setItem(SYNCED_ACCOUNT_KEY, accountId);
-        return {
-            success: true,
-            action: 'merge',
-            hadCloudData: result.hadData,
-            localSummary,
-            cloudSummary,
-            resolution,
-        };
-    } catch (error) {
-        return toFailureOutcome({
-            action: 'merge',
-            error,
-            hadCloudData,
-            localSummary,
-            cloudSummary,
-            resolution,
-        });
-    }
-}
-
-async function pushLocalData({
-    accountId,
-    hadCloudData,
-    localSummary,
-    cloudSummary,
-    resolution,
-}: {
-    accountId: string;
-    hadCloudData: boolean;
-    localSummary: SyncDataSummary;
-    cloudSummary: SyncDataSummary;
-    resolution?: SyncConflictResolution;
-}): Promise<LoginSyncOutcome> {
-    try {
-        await pushCurrentLocalState();
-        localStorage.setItem(SYNCED_ACCOUNT_KEY, accountId);
-        return {
-            success: true,
-            action: 'push_local',
-            hadCloudData,
-            localSummary,
-            cloudSummary,
-            resolution,
-        };
-    } catch (error) {
-        return toFailureOutcome({
-            action: 'push_local',
-            error,
-            hadCloudData,
-            localSummary,
-            cloudSummary,
-            resolution,
-        });
-    }
 }
 
 export async function runPostLoginSync({
@@ -214,33 +61,30 @@ export async function runPostLoginSync({
         const syncedAccountId = localStorage.getItem(SYNCED_ACCOUNT_KEY);
         const plan = await inspectLoginSyncPlan(accountId, syncedAccountId);
         const hadCloudData = hasCloudData(plan.cloudSummary);
+        const context = buildExecutionContext({
+            accountId,
+            hadCloudData,
+            localSummary: plan.localSummary,
+            cloudSummary: plan.cloudSummary,
+        });
 
         switch (plan.kind) {
         case 'restore_from_cloud': {
             return restoreCloudData({
-                accountId,
+                context,
                 action: plan.kind,
-                hadCloudData,
-                localSummary: plan.localSummary,
-                cloudSummary: plan.cloudSummary,
             });
         }
 
         case 'push_local': {
             return pushLocalData({
-                accountId,
-                hadCloudData,
-                localSummary: plan.localSummary,
-                cloudSummary: plan.cloudSummary,
+                context,
             });
         }
 
         case 'merge': {
             return mergeCloudData({
-                accountId,
-                hadCloudData,
-                localSummary: plan.localSummary,
-                cloudSummary: plan.cloudSummary,
+                context,
             });
         }
 
@@ -252,20 +96,14 @@ export async function runPostLoginSync({
 
             if (resolution === 'cloud') {
                 return restoreCloudData({
-                    accountId,
+                    context,
                     action: 'restore_from_cloud',
-                    hadCloudData,
-                    localSummary: plan.localSummary,
-                    cloudSummary: plan.cloudSummary,
                     resolution,
                 });
             }
 
             const pushed = await pushLocalData({
-                accountId,
-                hadCloudData,
-                localSummary: plan.localSummary,
-                cloudSummary: plan.cloudSummary,
+                context,
                 resolution,
             });
             if (!pushed.success) {
@@ -273,10 +111,7 @@ export async function runPostLoginSync({
             }
 
             return mergeCloudData({
-                accountId,
-                hadCloudData,
-                localSummary: plan.localSummary,
-                cloudSummary: plan.cloudSummary,
+                context,
                 resolution,
             });
         }
