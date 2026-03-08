@@ -26,6 +26,9 @@
 - sync / restore / teacher data まわりの信頼性改善をまとめて実施し、競合解決・restore・初回同期並列化・ページネーションを強化
 - menu / editor / session / record 周辺の責務分離と UX 改善を進め、循環依存解消、hook 分割、editor shell 共通化、同日再開、記録正規化、アクセシビリティ、TTS 音量整理を反映
 - restore settings sanitize、session visibility helper 化、`MenuIndividualTab` / `GroupCard` 分割を追加し、sync fallback と MenuPage の保守性をさらに改善
+- record tab に `いま見ている記録` summary を追加し、保護者・先生向けに `だれの記録か / どれくらい続いているか / 参加した人` を一目で読める形へ整理した
+- sync conflict modal に `おすすめ` と要約理由を追加し、persist / migrate は `users` sanitize と persisted key 正本化で状態追加時の崩れにくさを上げた
+- login / restore 成功・失敗文言を summary-aware にして、`何を復元・同期したか` と `この端末のデータはそのまま` を settings / onboarding で同じ基準に揃えた
 - 2026-03-04 から 2026-03-07 までの詳細履歴は `.agents/tasks/archive/2026-03.md` を参照
 - StretchSession の desktop / mobile smoke QA を追加し、`npm run e2e:smoke` で footer navigation、pause / background resume、big break modal の確認を build 付きで再実行できるようにした
 - session overlay の主要ボタンへ aria-label を追加し、background resume countdown 完了時に再生を戻す修正を入れた

@@ -46,7 +46,7 @@ export const Onboarding: React.FC = () => {
             });
 
             if (!result.success) {
-                setRestoreError(`${getLoginSyncFailureMessage(result)}。もう一度お試しください。`);
+                setRestoreError(`${getLoginSyncFailureMessage(result)} もう一度お試しください。`);
                 setLoginContext(null);
                 setStep('account');
                 return;

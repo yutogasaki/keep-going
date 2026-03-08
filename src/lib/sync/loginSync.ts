@@ -2,6 +2,7 @@ import { getAllSessions, getCustomExercises } from '../db';
 import { getCustomGroups } from '../customGroups';
 import { fetchCloudSyncSnapshot } from './pullSnapshot';
 import { getRegisteredStoreState } from './storeAccess';
+export { buildSyncConflictPrompt } from './loginSyncPrompt';
 
 export interface SyncDataSummary {
     users: number;
@@ -14,6 +15,10 @@ export interface SyncDataSummary {
 export interface SyncConflictPromptData {
     localSummary: SyncDataSummary;
     cloudSummary: SyncDataSummary;
+    localDetail: string;
+    cloudDetail: string;
+    recommendedResolution: SyncConflictResolution | null;
+    recommendationReason: string | null;
 }
 
 export type SyncConflictResolution = 'cloud' | 'local';

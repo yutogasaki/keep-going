@@ -202,23 +202,8 @@ export function migrateAppState(persistedState: any, version: number): AppState 
 }
 
 export function partializeAppState(state: AppState): PersistedAppState {
-    return {
-        users: state.users,
-        sessionUserIds: state.sessionUserIds,
-        onboardingCompleted: state.onboardingCompleted,
-        soundVolume: state.soundVolume,
-        ttsEnabled: state.ttsEnabled,
-        bgmEnabled: state.bgmEnabled,
-        hapticEnabled: state.hapticEnabled,
-        notificationsEnabled: state.notificationsEnabled,
-        notificationTime: state.notificationTime,
-        hasSeenSessionControlsHint: state.hasSeenSessionControlsHint,
-        sessionDraft: state.sessionDraft,
-        debugFuwafuwaStage: state.debugFuwafuwaStage,
-        debugFuwafuwaType: state.debugFuwafuwaType,
-        debugActiveDays: state.debugActiveDays,
-        debugFuwafuwaScale: state.debugFuwafuwaScale,
-        joinedChallengeIds: state.joinedChallengeIds,
-    };
+    return Object.fromEntries(
+        PERSISTED_APP_STATE_KEYS.map((key) => [key, state[key]]),
+    ) as PersistedAppState;
 }
 

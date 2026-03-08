@@ -13,7 +13,11 @@ import type { ChibifuwaRecord, PastFuwafuwaRecord } from '../store/useAppStore';
 import { RecordTabContent } from './record/RecordTabContent';
 import { AlbumTabContent } from './record/AlbumTabContent';
 import { RecordModals } from './record/RecordModals';
-import { buildRecordHistoryDays } from './record/recordHistorySummary';
+import {
+    buildRecordHistoryDays,
+    buildRecordInsightSummary,
+    buildRecordParticipantSummaries,
+} from './record/recordHistorySummary';
 
 type RecordTab = 'record' | 'album';
 
@@ -102,7 +106,7 @@ export const RecordPage: React.FC = () => {
         });
     }, [loadExerciseMap]);
 
-    const { historyDays, totalSessions, totalMinutes, uniqueDays, exerciseCounts } = useMemo(() => {
+    const { historyDays, totalSessions, totalMinutes, uniqueDays, exerciseCounts, skippedTotal, participantSummaries } = useMemo(() => {
         const grouped = new Map<string, SessionRecord[]>();
         for (const session of sessions) {
             const existing = grouped.get(session.date) || [];
@@ -111,10 +115,12 @@ export const RecordPage: React.FC = () => {
         }
 
         const counts = new Map<string, number>();
+        let totalSkipped = 0;
         for (const session of sessions) {
             for (const [exerciseId, count] of Object.entries(getSessionExerciseCounts(session))) {
                 counts.set(exerciseId, (counts.get(exerciseId) || 0) + count);
             }
+            totalSkipped += session.skippedIds.length;
         }
 
         return {
@@ -127,6 +133,11 @@ export const RecordPage: React.FC = () => {
             totalMinutes: Math.floor(sessions.reduce((acc, session) => acc + session.totalSeconds, 0) / 60),
             uniqueDays: grouped.size,
             exerciseCounts: counts,
+            skippedTotal: totalSkipped,
+            participantSummaries: buildRecordParticipantSummaries({
+                sessions,
+                userNameMap,
+            }),
         };
     }, [sessions, exerciseMap, userNameMap]);
 
@@ -139,6 +150,16 @@ export const RecordPage: React.FC = () => {
             .sort((a, b) => b.count - a.count)
             .slice(0, 3),
     [exerciseCounts, exerciseMap]);
+
+    const recordInsightSummary = useMemo(() => buildRecordInsightSummary({
+        viewUserNames: currentViewUsers.map((user) => user.name),
+        totalSessions,
+        totalMinutes,
+        uniqueDays,
+        skippedTotal,
+        topExercise: topExercises[0],
+        participantSummaries,
+    }), [currentViewUsers, participantSummaries, skippedTotal, topExercises, totalMinutes, totalSessions, uniqueDays]);
 
     const { todayMinutes, todayExerciseCount, progressPercent, ringRadius, ringCircumference, ringOffset } = useMemo(() => {
         const activeUsers = users.filter((user) => sessionUserIds.includes(user.id));
@@ -252,6 +273,7 @@ export const RecordPage: React.FC = () => {
                             totalMinutes={totalMinutes}
                             uniqueDays={uniqueDays}
                             topExercises={topExercises}
+                            recordInsightSummary={recordInsightSummary}
                         />
                     ) : (
                         <AlbumTabContent

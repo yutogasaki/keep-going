@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decideLoginSyncPlan, type SyncDataSummary } from '../loginSync';
+import { buildSyncConflictPrompt, decideLoginSyncPlan, type SyncDataSummary } from '../loginSync';
 
 function createSummary(overrides: Partial<SyncDataSummary> = {}): SyncDataSummary {
     return {
@@ -81,5 +81,29 @@ describe('decideLoginSyncPlan', () => {
         });
 
         expect(plan.kind).toBe('restore_from_cloud');
+    });
+});
+
+describe('buildSyncConflictPrompt', () => {
+    it('recommends the side with more records and adds human-readable detail lines', () => {
+        const prompt = buildSyncConflictPrompt({
+            localSummary: createSummary({ users: 1, sessions: 2, customExercises: 1 }),
+            cloudSummary: createSummary({ users: 2, sessions: 8, hasSettings: true }),
+        });
+
+        expect(prompt.recommendedResolution).toBe('cloud');
+        expect(prompt.recommendationReason).toContain('記録が多い');
+        expect(prompt.localDetail).toContain('きろく 2回');
+        expect(prompt.cloudDetail).toContain('せっていあり');
+    });
+
+    it('falls back to a neutral prompt when summaries are effectively tied', () => {
+        const prompt = buildSyncConflictPrompt({
+            localSummary: createSummary({ users: 1, sessions: 2 }),
+            cloudSummary: createSummary({ users: 1, sessions: 2 }),
+        });
+
+        expect(prompt.recommendedResolution).toBeNull();
+        expect(prompt.recommendationReason).toBeNull();
     });
 });

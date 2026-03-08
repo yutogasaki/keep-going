@@ -160,7 +160,7 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
                             fontSize: 11,
                             color: '#8395A7',
                         }}>
-                            {day.sessionCount}回 · {day.completedTotal}種目 · {formatDuration(day.totalSeconds)}
+                            {day.sessionCount}回 · {day.completedTotal}種目 · おやすみ{day.skippedTotal}回 · {formatDuration(day.totalSeconds)}
                         </div>
                     </div>
                     {day.items.map((record) => (
@@ -178,6 +178,7 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 8,
+                                flexWrap: 'wrap',
                             }}>
                                 <Clock size={14} color="#B2BEC3" />
                                 <span style={{
@@ -188,6 +189,34 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
                                 }}>
                                     {record.completedTotal}種目 · {formatDuration(record.totalSeconds)}
                                 </span>
+                                <span style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    padding: '4px 8px',
+                                    borderRadius: 999,
+                                    background: 'rgba(116, 185, 255, 0.14)',
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 11,
+                                    fontWeight: 700,
+                                    color: '#2D6EA3',
+                                }}>
+                                    {record.sessionLabel}
+                                </span>
+                                {record.skippedTotal > 0 ? (
+                                    <span style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        padding: '4px 8px',
+                                        borderRadius: 999,
+                                        background: 'rgba(225, 112, 85, 0.10)',
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        color: '#E17055',
+                                    }}>
+                                        おやすみ {record.skippedTotal}回
+                                    </span>
+                                ) : null}
                                 <span style={{
                                     fontFamily: "'JetBrains Mono', monospace",
                                     fontSize: 11,

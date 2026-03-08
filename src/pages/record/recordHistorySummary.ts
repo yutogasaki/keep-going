@@ -13,6 +13,8 @@ export interface RecordSessionHistoryItem {
     startedAt: string;
     totalSeconds: number;
     completedTotal: number;
+    skippedTotal: number;
+    sessionLabel: string;
     userNames: string[];
     completedExercises: RecordExerciseSummary[];
     skippedExercises: RecordExerciseSummary[];
@@ -23,12 +25,31 @@ export interface RecordSessionHistoryDay {
     sessionCount: number;
     totalSeconds: number;
     completedTotal: number;
+    skippedTotal: number;
     items: RecordSessionHistoryItem[];
+}
+
+export interface RecordParticipantSummary {
+    id: string;
+    name: string;
+    sessionCount: number;
+    totalSeconds: number;
+}
+
+export interface RecordInsightSummary {
+    focusLabel: string;
+    summaryLine: string;
+    detailLine: string;
+    participants: RecordParticipantSummary[];
 }
 
 interface ExerciseDisplayInfo {
     name: string;
     emoji: string;
+}
+
+function getTotalCount(counts: Record<string, number>): number {
+    return Object.values(counts).reduce((sum, count) => sum + count, 0);
 }
 
 function buildExerciseSummaries(
@@ -68,6 +89,34 @@ function resolveUserNames(record: SessionRecord, userNameMap: Map<string, string
         .filter((name): name is string => Boolean(name));
 }
 
+function buildFocusLabel(viewUserNames: string[]): string {
+    if (viewUserNames.length === 0) {
+        return '家族みんなの記録';
+    }
+
+    if (viewUserNames.length === 1) {
+        return `${viewUserNames[0]}の記録`;
+    }
+
+    if (viewUserNames.length === 2) {
+        return `${viewUserNames[0]}・${viewUserNames[1]}の記録`;
+    }
+
+    return `${viewUserNames[0]}たちの記録`;
+}
+
+function buildSessionLabel(userNames: string[]): string {
+    if (userNames.length === 0) {
+        return 'だれでも';
+    }
+
+    if (userNames.length === 1) {
+        return 'ひとり';
+    }
+
+    return 'みんなで';
+}
+
 export function buildRecordHistoryDays({
     groupedEntries,
     exerciseMap,
@@ -82,14 +131,108 @@ export function buildRecordHistoryDays({
         sessionCount: records.length,
         totalSeconds: records.reduce((sum, record) => sum + record.totalSeconds, 0),
         completedTotal: records.reduce((sum, record) => sum + getSessionCompletedExerciseTotal(record), 0),
-        items: records.map((record) => ({
-            id: record.id,
-            startedAt: record.startedAt,
-            totalSeconds: record.totalSeconds,
-            completedTotal: getSessionCompletedExerciseTotal(record),
-            userNames: resolveUserNames(record, userNameMap),
-            completedExercises: buildExerciseSummaries(getSessionExerciseCounts(record), exerciseMap),
-            skippedExercises: buildExerciseSummaries(getSessionSkippedCounts(record), exerciseMap),
-        })),
+        skippedTotal: records.reduce((sum, record) => sum + getTotalCount(getSessionSkippedCounts(record)), 0),
+        items: records.map((record) => {
+            const userNames = resolveUserNames(record, userNameMap);
+            const skippedCounts = getSessionSkippedCounts(record);
+
+            return {
+                id: record.id,
+                startedAt: record.startedAt,
+                totalSeconds: record.totalSeconds,
+                completedTotal: getSessionCompletedExerciseTotal(record),
+                skippedTotal: getTotalCount(skippedCounts),
+                sessionLabel: buildSessionLabel(userNames),
+                userNames,
+                completedExercises: buildExerciseSummaries(getSessionExerciseCounts(record), exerciseMap),
+                skippedExercises: buildExerciseSummaries(skippedCounts, exerciseMap),
+            };
+        }),
     }));
+}
+
+export function buildRecordParticipantSummaries({
+    sessions,
+    userNameMap,
+}: {
+    sessions: SessionRecord[];
+    userNameMap: Map<string, string>;
+}): RecordParticipantSummary[] {
+    const summaryMap = new Map<string, RecordParticipantSummary>();
+
+    for (const session of sessions) {
+        for (const userId of session.userIds ?? []) {
+            const name = userNameMap.get(userId);
+            if (!name) {
+                continue;
+            }
+
+            const existing = summaryMap.get(userId);
+            if (existing) {
+                existing.sessionCount += 1;
+                existing.totalSeconds += session.totalSeconds;
+                continue;
+            }
+
+            summaryMap.set(userId, {
+                id: userId,
+                name,
+                sessionCount: 1,
+                totalSeconds: session.totalSeconds,
+            });
+        }
+    }
+
+    return Array.from(summaryMap.values()).sort((a, b) => {
+        if (b.sessionCount !== a.sessionCount) {
+            return b.sessionCount - a.sessionCount;
+        }
+
+        if (b.totalSeconds !== a.totalSeconds) {
+            return b.totalSeconds - a.totalSeconds;
+        }
+
+        return a.name.localeCompare(b.name, 'ja');
+    });
+}
+
+export function buildRecordInsightSummary({
+    viewUserNames,
+    totalSessions,
+    totalMinutes,
+    uniqueDays,
+    skippedTotal,
+    topExercise,
+    participantSummaries,
+}: {
+    viewUserNames: string[];
+    totalSessions: number;
+    totalMinutes: number;
+    uniqueDays: number;
+    skippedTotal: number;
+    topExercise?: { name?: string; count: number };
+    participantSummaries: RecordParticipantSummary[];
+}): RecordInsightSummary {
+    const focusLabel = buildFocusLabel(viewUserNames);
+    const summaryLine = `${uniqueDays}日で${totalSessions}回、合計${totalMinutes}分の記録です。`;
+    const detailParts: string[] = [];
+
+    if (topExercise?.name) {
+        detailParts.push(`よくやったのは ${topExercise.name} ${topExercise.count}回`);
+    }
+
+    if (skippedTotal > 0) {
+        detailParts.push(`おやすみは ${skippedTotal}回`);
+    }
+
+    if (participantSummaries.length > 1) {
+        detailParts.push(`参加は ${participantSummaries.length}人分`);
+    }
+
+    return {
+        focusLabel,
+        summaryLine,
+        detailLine: detailParts.join(' / '),
+        participants: participantSummaries.slice(0, 3),
+    };
 }

@@ -1,6 +1,15 @@
-import type { AppState, SessionDraft, TabId } from './types';
+import { getTodayKey } from '../../lib/db';
+import type {
+    AppState,
+    ChibifuwaRecord,
+    PastFuwafuwaRecord,
+    SessionDraft,
+    TabId,
+    UserProfileStore,
+} from './types';
 
 const VALID_TABS = new Set<TabId>(['home', 'record', 'menu', 'settings']);
+const VALID_CLASS_LEVELS = new Set(['先生', 'プレ', '初級', '中級', '上級', 'その他']);
 const DEFAULT_NOTIFICATION_TIME = '21:00';
 const NOTIFICATION_TIME_PATTERN = /^(\d{2}):(\d{2})$/;
 
@@ -21,7 +30,144 @@ export function sanitizeStringArray(value: unknown): string[] {
     return result;
 }
 
-export function sanitizeSessionDraft(draft: unknown): SessionDraft | null {
+function sanitizeOptionalString(value: unknown): string | null {
+    return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function sanitizeNonNegativeNumber(value: unknown, fallback: number): number {
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+        return fallback;
+    }
+
+    return Math.max(0, value);
+}
+
+function sanitizePositiveNumber(value: unknown, fallback: number): number {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+        return fallback;
+    }
+
+    return value;
+}
+
+function sanitizeNumberArray(value: unknown): number[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    const seen = new Set<number>();
+    const result: number[] = [];
+    for (const item of value) {
+        if (typeof item !== 'number' || !Number.isFinite(item) || seen.has(item)) {
+            continue;
+        }
+        seen.add(item);
+        result.push(item);
+    }
+    return result;
+}
+
+function sanitizePastFuwafuwas(value: unknown): PastFuwafuwaRecord[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value.flatMap((record) => {
+        if (!record || typeof record !== 'object') {
+            return [];
+        }
+
+        const candidate = record as Record<string, unknown>;
+        if (typeof candidate.id !== 'string' || candidate.id.length === 0) {
+            return [];
+        }
+
+        return [{
+            id: candidate.id,
+            name: sanitizeOptionalString(candidate.name),
+            type: sanitizeNonNegativeNumber(candidate.type, 0),
+            activeDays: sanitizeNonNegativeNumber(candidate.activeDays, 0),
+            finalStage: sanitizeNonNegativeNumber(candidate.finalStage, 0),
+            sayonaraDate: typeof candidate.sayonaraDate === 'string' && candidate.sayonaraDate.length > 0
+                ? candidate.sayonaraDate
+                : getTodayKey(),
+        }];
+    });
+}
+
+function sanitizeChibifuwas(value: unknown): ChibifuwaRecord[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value.flatMap((record) => {
+        if (!record || typeof record !== 'object') {
+            return [];
+        }
+
+        const candidate = record as Record<string, unknown>;
+        if (
+            typeof candidate.id !== 'string' ||
+            candidate.id.length === 0 ||
+            typeof candidate.challengeTitle !== 'string' ||
+            candidate.challengeTitle.length === 0 ||
+            typeof candidate.earnedDate !== 'string' ||
+            candidate.earnedDate.length === 0
+        ) {
+            return [];
+        }
+
+        return [{
+            id: candidate.id,
+            type: sanitizeNonNegativeNumber(candidate.type, 0),
+            challengeTitle: candidate.challengeTitle,
+            earnedDate: candidate.earnedDate,
+        }];
+    });
+}
+
+function sanitizeUsers(value: unknown): UserProfileStore[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value.flatMap((user) => {
+        if (!user || typeof user !== 'object') {
+            return [];
+        }
+
+        const candidate = user as Record<string, unknown>;
+        if (typeof candidate.id !== 'string' || candidate.id.length === 0) {
+            return [];
+        }
+
+        const classLevel = typeof candidate.classLevel === 'string' && VALID_CLASS_LEVELS.has(candidate.classLevel)
+            ? candidate.classLevel as UserProfileStore['classLevel']
+            : '初級';
+
+        return [{
+            id: candidate.id,
+            name: typeof candidate.name === 'string' && candidate.name.length > 0 ? candidate.name : 'ゲスト',
+            classLevel,
+            fuwafuwaBirthDate: typeof candidate.fuwafuwaBirthDate === 'string' && candidate.fuwafuwaBirthDate.length > 0
+                ? candidate.fuwafuwaBirthDate
+                : getTodayKey(),
+            fuwafuwaType: sanitizeNonNegativeNumber(candidate.fuwafuwaType, 0),
+            fuwafuwaCycleCount: sanitizePositiveNumber(candidate.fuwafuwaCycleCount, 1),
+            fuwafuwaName: sanitizeOptionalString(candidate.fuwafuwaName),
+            pastFuwafuwas: sanitizePastFuwafuwas(candidate.pastFuwafuwas),
+            notifiedFuwafuwaStages: sanitizeNumberArray(candidate.notifiedFuwafuwaStages),
+            dailyTargetMinutes: sanitizePositiveNumber(candidate.dailyTargetMinutes, 10),
+            excludedExercises: sanitizeStringArray(candidate.excludedExercises),
+            requiredExercises: sanitizeStringArray(candidate.requiredExercises),
+            consumedMagicSeconds: sanitizeNonNegativeNumber(candidate.consumedMagicSeconds, 0),
+            avatarUrl: typeof candidate.avatarUrl === 'string' && candidate.avatarUrl.length > 0 ? candidate.avatarUrl : undefined,
+            chibifuwas: sanitizeChibifuwas(candidate.chibifuwas),
+        }];
+    });
+}
+
+export function sanitizeSessionDraft(draft: unknown, validUserIdSet?: Set<string>): SessionDraft | null {
     if (!draft || typeof draft !== 'object') {
         return null;
     }
@@ -32,7 +178,7 @@ export function sanitizeSessionDraft(draft: unknown): SessionDraft | null {
     }
 
     const exerciseIds = sanitizeStringArray(candidate.exerciseIds);
-    const userIds = sanitizeStringArray(candidate.userIds);
+    const userIds = sanitizeStringArray(candidate.userIds).filter((id) => !validUserIdSet || validUserIdSet.has(id));
     const returnTab = candidate.returnTab;
     if (!VALID_TABS.has(returnTab as TabId)) {
         return null;
@@ -119,12 +265,11 @@ export function sanitizeNullableNumber(value: unknown): number | null {
 }
 
 export function sanitizePersistedState(state: Record<string, unknown>): void {
-    const users = Array.isArray(state.users)
-        ? state.users.filter((user): user is { id: string } => Boolean(user) && typeof user === 'object' && typeof (user as { id?: unknown }).id === 'string')
-        : [];
+    const users = sanitizeUsers(state.users);
     const validUserIds = users.map((user) => user.id);
     const validUserIdSet = new Set(validUserIds);
 
+    state.users = users;
     state.onboardingCompleted = sanitizeBooleanSetting(state.onboardingCompleted, false);
     state.soundVolume = sanitizeSoundVolume(state.soundVolume);
     state.ttsEnabled = sanitizeBooleanSetting(state.ttsEnabled, true);
@@ -139,7 +284,7 @@ export function sanitizePersistedState(state: Record<string, unknown>): void {
     state.debugFuwafuwaScale = sanitizeNullableNumber(state.debugFuwafuwaScale);
     state.joinedChallengeIds = sanitizeJoinedChallengeIds(state.joinedChallengeIds, validUserIdSet);
     state.sessionUserIds = sanitizeSessionUserIds(state.sessionUserIds, validUserIds);
-    state.sessionDraft = sanitizeSessionDraft(state.sessionDraft);
+    state.sessionDraft = sanitizeSessionDraft(state.sessionDraft, validUserIdSet);
 }
 
 export type PersistedAppStateRecord = Record<string, unknown> & Partial<AppState>;

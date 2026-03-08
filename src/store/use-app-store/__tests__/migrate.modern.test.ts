@@ -141,6 +141,99 @@ describe('modern migrations', () => {
         expect(result.sessionDraft).toBeNull();
     });
 
+    it('sanitizes corrupted persisted users and aligns user-based slices to surviving users', () => {
+        const state = makeCurrentState({
+            users: [
+                null,
+                {
+                    id: 'user-1',
+                    name: '',
+                    classLevel: '宇宙級',
+                    fuwafuwaBirthDate: '',
+                    fuwafuwaType: 'star',
+                    fuwafuwaCycleCount: 0,
+                    fuwafuwaName: '',
+                    pastFuwafuwas: [
+                        { id: 'past-1', name: 'もも', type: 2, activeDays: 7, finalStage: 3, sayonaraDate: '2026-03-01' },
+                        { type: 'bad' },
+                    ],
+                    notifiedFuwafuwaStages: [1, 1, '2'],
+                    dailyTargetMinutes: -30,
+                    excludedExercises: ['S01', 'S01', 7],
+                    requiredExercises: ['S02', null],
+                    consumedMagicSeconds: -5,
+                    avatarUrl: '',
+                    chibifuwas: [
+                        { id: 'badge-1', type: 1, challengeTitle: 'はじめて', earnedDate: '2026-03-02' },
+                        { id: '', type: 'bad', challengeTitle: '', earnedDate: '' },
+                    ],
+                },
+                {
+                    id: 12,
+                    name: 'ghost',
+                },
+            ],
+            sessionUserIds: ['ghost', 'user-1'],
+            joinedChallengeIds: {
+                'user-1': ['challenge-1'],
+                ghost: ['challenge-2'],
+            },
+            sessionDraft: {
+                date: '2026-03-07',
+                exerciseIds: ['S01'],
+                userIds: ['ghost', 'user-1'],
+                returnTab: 'home',
+            },
+        });
+
+        const result = migrateAppState(state, APP_STATE_VERSION);
+
+        expect(result.users).toEqual([
+            expect.objectContaining({
+                id: 'user-1',
+                name: 'ゲスト',
+                classLevel: '初級',
+                fuwafuwaType: 0,
+                fuwafuwaCycleCount: 1,
+                fuwafuwaName: null,
+                notifiedFuwafuwaStages: [1],
+                dailyTargetMinutes: 10,
+                excludedExercises: ['S01'],
+                requiredExercises: ['S02'],
+                consumedMagicSeconds: 0,
+                avatarUrl: undefined,
+                pastFuwafuwas: [
+                    {
+                        id: 'past-1',
+                        name: 'もも',
+                        type: 2,
+                        activeDays: 7,
+                        finalStage: 3,
+                        sayonaraDate: '2026-03-01',
+                    },
+                ],
+                chibifuwas: [
+                    {
+                        id: 'badge-1',
+                        type: 1,
+                        challengeTitle: 'はじめて',
+                        earnedDate: '2026-03-02',
+                    },
+                ],
+            }),
+        ]);
+        expect(result.sessionUserIds).toEqual(['user-1']);
+        expect(result.joinedChallengeIds).toEqual({
+            'user-1': ['challenge-1'],
+        });
+        expect(result.sessionDraft).toEqual({
+            date: '2026-03-07',
+            exerciseIds: ['S01'],
+            userIds: ['user-1'],
+            returnTab: 'home',
+        });
+    });
+
     it('is idempotent when re-run on the current app state version', () => {
         const state = makeCurrentState();
         const stateCopy = JSON.parse(JSON.stringify(state));

@@ -5,6 +5,7 @@ import { ActivitySection } from './record-tab/ActivitySection';
 import { StatsRow } from './record-tab/StatsRow';
 import { TopExercisesSection } from './record-tab/TopExercisesSection';
 import { SessionHistorySection } from './record-tab/SessionHistorySection';
+import { RecordInsightsSection } from './record-tab/RecordInsightsSection';
 import type { RecordTabContentProps } from './record-tab/types';
 
 export const RecordTabContent: React.FC<RecordTabContentProps> = ({
@@ -23,6 +24,7 @@ export const RecordTabContent: React.FC<RecordTabContentProps> = ({
     totalMinutes,
     uniqueDays,
     topExercises,
+    recordInsightSummary,
 }) => {
     return (
         <motion.div
@@ -49,6 +51,12 @@ export const RecordTabContent: React.FC<RecordTabContentProps> = ({
                 totalSessions={totalSessions}
                 totalMinutes={totalMinutes}
                 uniqueDays={uniqueDays}
+            />
+
+            <RecordInsightsSection
+                loading={loading}
+                sessionsCount={sessionsCount}
+                insightSummary={recordInsightSummary}
             />
 
             <TopExercisesSection loading={loading} topExercises={topExercises} />

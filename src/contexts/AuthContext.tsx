@@ -262,6 +262,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 open={syncConflictPrompt != null}
                 localSummary={syncConflictPrompt?.localSummary ?? null}
                 cloudSummary={syncConflictPrompt?.cloudSummary ?? null}
+                localDetail={syncConflictPrompt?.localDetail ?? null}
+                cloudDetail={syncConflictPrompt?.cloudDetail ?? null}
+                recommendedResolution={syncConflictPrompt?.recommendedResolution ?? null}
+                recommendationReason={syncConflictPrompt?.recommendationReason ?? null}
                 onChooseCloud={() => resolveSyncConflict('cloud')}
                 onChooseLocal={() => resolveSyncConflict('local')}
             />

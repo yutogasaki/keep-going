@@ -1,7 +1,9 @@
-import type { LoginSyncPlanKind, SyncConflictResolution } from '../../lib/sync';
+import type { LoginSyncPlanKind, SyncConflictResolution, SyncDataSummary } from '../../lib/sync';
 
 interface LoginSyncMessageContext {
     action: LoginSyncPlanKind;
+    localSummary?: SyncDataSummary;
+    cloudSummary?: SyncDataSummary;
     resolution?: SyncConflictResolution;
 }
 
@@ -13,17 +15,61 @@ function prefersLocalMessage(context: LoginSyncMessageContext): boolean {
     return context.resolution === 'local' || context.action === 'push_local';
 }
 
+function hasRecordData(summary: SyncDataSummary): boolean {
+    return summary.users > 0 ||
+        summary.sessions > 0 ||
+        summary.customExercises > 0 ||
+        summary.customGroups > 0;
+}
+
+function formatSummary(summary?: SyncDataSummary): string | null {
+    if (!summary) {
+        return null;
+    }
+
+    if (!hasRecordData(summary) && summary.hasSettings) {
+        return 'せってい';
+    }
+
+    const parts: string[] = [];
+    if (summary.sessions > 0) {
+        parts.push(`きろく${summary.sessions}回`);
+    }
+    if (summary.users > 0) {
+        parts.push(`おこさま${summary.users}人`);
+    }
+
+    const customTotal = summary.customExercises + summary.customGroups;
+    if (customTotal > 0) {
+        parts.push(`カスタム${customTotal}件`);
+    }
+
+    if (summary.hasSettings) {
+        parts.push('せってい');
+    }
+
+    return parts.length > 0 ? parts.join(' / ') : null;
+}
+
+function wrapSummary(message: string, summary?: SyncDataSummary): string {
+    const detail = formatSummary(summary);
+    return detail ? `${message}（${detail}）` : message;
+}
+
 export function getLoginSyncSuccessMessage(context: LoginSyncMessageContext): string {
     if (prefersCloudMessage(context)) {
-        return 'クラウドのデータを復元しました';
+        return wrapSummary('クラウドのデータを復元しました', context.cloudSummary);
     }
 
     if (prefersLocalMessage(context)) {
-        return 'この端末のデータを同期しました';
+        if (context.action === 'merge') {
+            return wrapSummary('この端末をベースに同期しました', context.localSummary);
+        }
+        return wrapSummary('この端末のデータを同期しました', context.localSummary);
     }
 
     if (context.action === 'merge') {
-        return '同期が完了しました';
+        return wrapSummary('この端末とクラウドを同期しました', context.cloudSummary);
     }
 
     return 'ログインしました';
@@ -31,16 +77,16 @@ export function getLoginSyncSuccessMessage(context: LoginSyncMessageContext): st
 
 export function getLoginSyncFailureMessage(context: LoginSyncMessageContext): string {
     if (prefersCloudMessage(context)) {
-        return 'クラウドのデータ復元に失敗しました';
+        return 'クラウドのデータ復元に失敗しました。この端末のデータはそのままです。';
     }
 
     if (prefersLocalMessage(context)) {
-        return 'この端末のデータ同期に失敗しました';
+        return 'この端末のデータ同期に失敗しました。この端末のデータはそのままです。';
     }
 
     if (context.action === 'merge') {
-        return 'データの同期に失敗しました';
+        return 'データの同期に失敗しました。この端末のデータはそのままです。';
     }
 
-    return 'ログイン後の同期に失敗しました';
+    return 'ログイン後の同期に失敗しました。この端末のデータはそのままです。';
 }

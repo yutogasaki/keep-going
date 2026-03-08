@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { runPostLoginSync, runSettingsLoginSync } from '../syncFlows';
 import { getLoginSyncFailureMessage, getLoginSyncSuccessMessage } from '../syncFlowMessages';
 import {
+    buildSyncConflictPrompt,
     hasCloudData,
     initialSync,
     inspectLoginSyncPlan,
@@ -14,6 +15,7 @@ import {
 import { useAppStore } from '../../../store/useAppStore';
 
 vi.mock('../../../lib/sync', () => ({
+    buildSyncConflictPrompt: vi.fn(),
     hasCloudData: vi.fn(),
     initialSync: vi.fn(),
     inspectLoginSyncPlan: vi.fn(),
@@ -29,6 +31,7 @@ vi.mock('../../../store/useAppStore', () => ({
 }));
 
 const mockedHasCloudData = vi.mocked(hasCloudData);
+const mockedBuildSyncConflictPrompt = vi.mocked(buildSyncConflictPrompt);
 const mockedInitialSync = vi.mocked(initialSync);
 const mockedInspectLoginSyncPlan = vi.mocked(inspectLoginSyncPlan);
 const mockedPullAndMerge = vi.mocked(pullAndMerge);
@@ -83,6 +86,14 @@ beforeEach(() => {
         summary.customGroups > 0 ||
         summary.hasSettings
     ));
+    mockedBuildSyncConflictPrompt.mockImplementation(({ localSummary, cloudSummary }) => ({
+        localSummary,
+        cloudSummary,
+        localDetail: 'local detail',
+        cloudDetail: 'cloud detail',
+        recommendedResolution: 'cloud',
+        recommendationReason: 'cloud has more records',
+    }));
     mockedUseAppStore.getState.mockReturnValue({
         users: [],
     } as never);
@@ -99,9 +110,13 @@ beforeEach(() => {
 });
 
 describe('sync flow messages', () => {
-    it('formats local merge success and cloud restore failure messages', () => {
-        expect(getLoginSyncSuccessMessage({ action: 'merge', resolution: 'local' })).toBe('この端末のデータを同期しました');
-        expect(getLoginSyncFailureMessage({ action: 'restore_from_cloud' })).toBe('クラウドのデータ復元に失敗しました');
+    it('formats summary-aware success and safe failure messages', () => {
+        expect(getLoginSyncSuccessMessage({
+            action: 'merge',
+            resolution: 'local',
+            localSummary: createSummary({ users: 1, sessions: 3 }),
+        })).toBe('この端末をベースに同期しました（きろく3回 / おこさま1人）');
+        expect(getLoginSyncFailureMessage({ action: 'restore_from_cloud' })).toBe('クラウドのデータ復元に失敗しました。この端末のデータはそのままです。');
     });
 });
 
@@ -113,13 +128,23 @@ describe('runPostLoginSync', () => {
             cloudSummary: createSummary({ users: 1 }),
         }));
         mockedInitialSync.mockRejectedValue(new Error('push failed'));
+        const resolveConflict = vi.fn().mockResolvedValue('local');
 
         const result = await runPostLoginSync({
             accountId: 'account-1',
-            resolveConflict: vi.fn().mockResolvedValue('local'),
+            resolveConflict,
         });
 
         expect(mockedSetAccountId).toHaveBeenCalledWith('account-1');
+        expect(mockedBuildSyncConflictPrompt).toHaveBeenCalledWith({
+            localSummary: createSummary({ users: 1 }),
+            cloudSummary: createSummary({ users: 1 }),
+        });
+        expect(resolveConflict).toHaveBeenCalledWith(expect.objectContaining({
+            localDetail: 'local detail',
+            cloudDetail: 'cloud detail',
+            recommendedResolution: 'cloud',
+        }));
         expect(result.success).toBe(false);
         expect(result.action).toBe('push_local');
         expect(result.resolution).toBe('local');
@@ -180,7 +205,7 @@ describe('runSettingsLoginSync', () => {
         });
 
         expect(setIsSyncing).toHaveBeenNthCalledWith(1, true);
-        expect(setToastMessage).toHaveBeenCalledWith('クラウドのデータ復元に失敗しました');
+        expect(setToastMessage).toHaveBeenCalledWith('クラウドのデータ復元に失敗しました。この端末のデータはそのままです。');
         expect(setIsSyncing).toHaveBeenLastCalledWith(false);
         expect(setLoginContext).toHaveBeenCalledWith(null);
     });

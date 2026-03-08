@@ -26,6 +26,7 @@ export {
 } from './sync/pull';
 
 export {
+    buildSyncConflictPrompt,
     inspectLoginSyncPlan,
     decideLoginSyncPlan,
     hasCloudData,

@@ -1,4 +1,5 @@
 import {
+    buildSyncConflictPrompt,
     hasCloudData,
     initialSync,
     inspectLoginSyncPlan,
@@ -8,6 +9,7 @@ import {
     type LoginSyncPlanKind,
     type SyncConflictPromptData,
     type SyncConflictResolution,
+    type SyncDataSummary,
 } from '../../lib/sync';
 import { useAppStore } from '../../store/useAppStore';
 import type { LoginContext } from './types';
@@ -19,6 +21,8 @@ export interface LoginSyncOutcome {
     success: boolean;
     action: LoginSyncPlanKind;
     hadCloudData: boolean;
+    localSummary?: SyncDataSummary;
+    cloudSummary?: SyncDataSummary;
     resolution?: SyncConflictResolution;
     error?: string;
 }
@@ -44,17 +48,23 @@ function toFailureOutcome({
     action,
     error,
     hadCloudData,
+    localSummary,
+    cloudSummary,
     resolution,
 }: {
     action: LoginSyncPlanKind;
     error: unknown;
     hadCloudData: boolean;
+    localSummary: SyncDataSummary;
+    cloudSummary: SyncDataSummary;
     resolution?: SyncConflictResolution;
 }): LoginSyncOutcome {
     return {
         success: false,
         action,
         hadCloudData,
+        localSummary,
+        cloudSummary,
         resolution,
         error: String(error),
     };
@@ -64,11 +74,15 @@ async function restoreCloudData({
     accountId,
     action,
     hadCloudData,
+    localSummary,
+    cloudSummary,
     resolution,
 }: {
     accountId: string;
     action: LoginSyncPlanKind;
     hadCloudData: boolean;
+    localSummary: SyncDataSummary;
+    cloudSummary: SyncDataSummary;
     resolution?: SyncConflictResolution;
 }): Promise<LoginSyncOutcome> {
     try {
@@ -78,6 +92,8 @@ async function restoreCloudData({
                 action,
                 error: result.error ?? 'Cloud restore failed',
                 hadCloudData,
+                localSummary,
+                cloudSummary,
                 resolution,
             });
         }
@@ -87,20 +103,33 @@ async function restoreCloudData({
             success: true,
             action,
             hadCloudData: result.hadData,
+            localSummary,
+            cloudSummary,
             resolution,
         };
     } catch (error) {
-        return toFailureOutcome({ action, error, hadCloudData, resolution });
+        return toFailureOutcome({
+            action,
+            error,
+            hadCloudData,
+            localSummary,
+            cloudSummary,
+            resolution,
+        });
     }
 }
 
 async function mergeCloudData({
     accountId,
     hadCloudData,
+    localSummary,
+    cloudSummary,
     resolution,
 }: {
     accountId: string;
     hadCloudData: boolean;
+    localSummary: SyncDataSummary;
+    cloudSummary: SyncDataSummary;
     resolution?: SyncConflictResolution;
 }): Promise<LoginSyncOutcome> {
     try {
@@ -110,6 +139,8 @@ async function mergeCloudData({
                 action: 'merge',
                 error: result.error ?? 'Merge failed',
                 hadCloudData,
+                localSummary,
+                cloudSummary,
                 resolution,
             });
         }
@@ -119,20 +150,33 @@ async function mergeCloudData({
             success: true,
             action: 'merge',
             hadCloudData: result.hadData,
+            localSummary,
+            cloudSummary,
             resolution,
         };
     } catch (error) {
-        return toFailureOutcome({ action: 'merge', error, hadCloudData, resolution });
+        return toFailureOutcome({
+            action: 'merge',
+            error,
+            hadCloudData,
+            localSummary,
+            cloudSummary,
+            resolution,
+        });
     }
 }
 
 async function pushLocalData({
     accountId,
     hadCloudData,
+    localSummary,
+    cloudSummary,
     resolution,
 }: {
     accountId: string;
     hadCloudData: boolean;
+    localSummary: SyncDataSummary;
+    cloudSummary: SyncDataSummary;
     resolution?: SyncConflictResolution;
 }): Promise<LoginSyncOutcome> {
     try {
@@ -142,10 +186,19 @@ async function pushLocalData({
             success: true,
             action: 'push_local',
             hadCloudData,
+            localSummary,
+            cloudSummary,
             resolution,
         };
     } catch (error) {
-        return toFailureOutcome({ action: 'push_local', error, hadCloudData, resolution });
+        return toFailureOutcome({
+            action: 'push_local',
+            error,
+            hadCloudData,
+            localSummary,
+            cloudSummary,
+            resolution,
+        });
     }
 }
 
@@ -168,6 +221,8 @@ export async function runPostLoginSync({
                 accountId,
                 action: plan.kind,
                 hadCloudData,
+                localSummary: plan.localSummary,
+                cloudSummary: plan.cloudSummary,
             });
         }
 
@@ -175,6 +230,8 @@ export async function runPostLoginSync({
             return pushLocalData({
                 accountId,
                 hadCloudData,
+                localSummary: plan.localSummary,
+                cloudSummary: plan.cloudSummary,
             });
         }
 
@@ -182,20 +239,24 @@ export async function runPostLoginSync({
             return mergeCloudData({
                 accountId,
                 hadCloudData,
+                localSummary: plan.localSummary,
+                cloudSummary: plan.cloudSummary,
             });
         }
 
         case 'conflict': {
-            const resolution = await resolveConflict({
+            const resolution = await resolveConflict(buildSyncConflictPrompt({
                 localSummary: plan.localSummary,
                 cloudSummary: plan.cloudSummary,
-            });
+            }));
 
             if (resolution === 'cloud') {
                 return restoreCloudData({
                     accountId,
                     action: 'restore_from_cloud',
                     hadCloudData,
+                    localSummary: plan.localSummary,
+                    cloudSummary: plan.cloudSummary,
                     resolution,
                 });
             }
@@ -203,6 +264,8 @@ export async function runPostLoginSync({
             const pushed = await pushLocalData({
                 accountId,
                 hadCloudData,
+                localSummary: plan.localSummary,
+                cloudSummary: plan.cloudSummary,
                 resolution,
             });
             if (!pushed.success) {
@@ -212,6 +275,8 @@ export async function runPostLoginSync({
             return mergeCloudData({
                 accountId,
                 hadCloudData,
+                localSummary: plan.localSummary,
+                cloudSummary: plan.cloudSummary,
                 resolution,
             });
         }
@@ -222,6 +287,8 @@ export async function runPostLoginSync({
                 success: true,
                 action: 'none',
                 hadCloudData: false,
+                localSummary: plan.localSummary,
+                cloudSummary: plan.cloudSummary,
             };
         }
     } catch (error) {
@@ -229,6 +296,8 @@ export async function runPostLoginSync({
             success: false,
             action: 'none',
             hadCloudData: false,
+            localSummary: undefined,
+            cloudSummary: undefined,
             error: String(error),
         };
     }

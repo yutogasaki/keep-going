@@ -1,5 +1,5 @@
 import type { SessionRecord } from '../../../lib/db';
-import type { RecordSessionHistoryDay } from '../recordHistorySummary';
+import type { RecordInsightSummary, RecordSessionHistoryDay } from '../recordHistorySummary';
 
 export interface TopExercise {
     id: string;
@@ -24,4 +24,5 @@ export interface RecordTabContentProps {
     totalMinutes: number;
     uniqueDays: number;
     topExercises: TopExercise[];
+    recordInsightSummary: RecordInsightSummary;
 }

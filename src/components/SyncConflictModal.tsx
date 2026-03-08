@@ -17,6 +17,10 @@ interface SyncConflictModalProps {
     open: boolean;
     localSummary: SyncDataSummary | null;
     cloudSummary: SyncDataSummary | null;
+    localDetail: string | null;
+    cloudDetail: string | null;
+    recommendedResolution: 'cloud' | 'local' | null;
+    recommendationReason: string | null;
     onChooseCloud: () => void;
     onChooseLocal: () => void;
 }
@@ -25,12 +29,16 @@ function SummaryCard({
     icon,
     title,
     subtitle,
+    detail,
     summary,
+    isRecommended,
 }: {
     icon: React.ReactNode;
     title: string;
     subtitle: string;
+    detail: string | null;
     summary: SyncDataSummary;
+    isRecommended: boolean;
 }) {
     const rows = [
         ['おこさま', summary.users],
@@ -47,7 +55,8 @@ function SummaryCard({
                 borderRadius: RADIUS.xl,
                 padding: SPACE.lg,
                 background: 'rgba(255,255,255,0.72)',
-                border: '1px solid rgba(0,0,0,0.06)',
+                border: isRecommended ? '1px solid rgba(43, 186, 160, 0.28)' : '1px solid rgba(0,0,0,0.06)',
+                boxShadow: isRecommended ? '0 8px 24px rgba(43, 186, 160, 0.10)' : 'none',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: SPACE.md,
@@ -69,15 +78,34 @@ function SummaryCard({
                     {icon}
                 </div>
                 <div>
-                    <div
-                        style={{
-                            fontFamily: FONT.body,
-                            fontSize: FONT_SIZE.md,
-                            fontWeight: 700,
-                            color: COLOR.dark,
-                        }}
-                    >
-                        {title}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: SPACE.xs, flexWrap: 'wrap' }}>
+                        <div
+                            style={{
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.md,
+                                fontWeight: 700,
+                                color: COLOR.dark,
+                            }}
+                        >
+                            {title}
+                        </div>
+                        {isRecommended && (
+                            <span
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    padding: '2px 8px',
+                                    borderRadius: RADIUS.full,
+                                    background: 'rgba(43, 186, 160, 0.12)',
+                                    color: COLOR.primaryDark,
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.xs,
+                                    fontWeight: 700,
+                                }}
+                            >
+                                おすすめ
+                            </span>
+                        )}
                     </div>
                     <div
                         style={{
@@ -89,6 +117,19 @@ function SummaryCard({
                     >
                         {subtitle}
                     </div>
+                    {detail && (
+                        <div
+                            style={{
+                                marginTop: 6,
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.xs,
+                                color: COLOR.text,
+                                lineHeight: 1.5,
+                            }}
+                        >
+                            {detail}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -130,6 +171,10 @@ export const SyncConflictModal: React.FC<SyncConflictModalProps> = ({
     open,
     localSummary,
     cloudSummary,
+    localDetail,
+    cloudDetail,
+    recommendedResolution,
+    recommendationReason,
     onChooseCloud,
     onChooseLocal,
 }) => {
@@ -171,15 +216,37 @@ export const SyncConflictModal: React.FC<SyncConflictModalProps> = ({
                         icon={<Cloud size={16} />}
                         title="クラウド"
                         subtitle="すでに保存されているデータ"
+                        detail={cloudDetail}
                         summary={cloudSummary}
+                        isRecommended={recommendedResolution === 'cloud'}
                     />
                     <SummaryCard
                         icon={<Smartphone size={16} />}
                         title="この端末"
                         subtitle="いま使っているデータ"
+                        detail={localDetail}
                         summary={localSummary}
+                        isRecommended={recommendedResolution === 'local'}
                     />
                 </div>
+
+                {recommendationReason && (
+                    <div
+                        style={{
+                            padding: SPACE.md,
+                            borderRadius: RADIUS.lg,
+                            background: 'rgba(43, 186, 160, 0.08)',
+                            border: '1px solid rgba(43, 186, 160, 0.16)',
+                            fontFamily: FONT.body,
+                            fontSize: FONT_SIZE.sm,
+                            lineHeight: 1.7,
+                            color: COLOR.text,
+                        }}
+                    >
+                        <strong style={{ color: COLOR.primaryDark }}>おすすめ</strong>
+                        : {recommendationReason}
+                    </div>
+                )}
 
                 <div
                     style={{
