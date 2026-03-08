@@ -104,7 +104,7 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
             const placementLabel = getExercisePlacementLabel(exercise.placement);
             const helperText = userBadge
                 ?? teacherBadge
-                ?? (isRest ? 'きゅうけい種目' : `配置: ${placementLabel}`);
+                ?? (isRest ? 'きゅうけい種目' : null);
 
             const querySource = [
                 exercise.name,
@@ -596,7 +596,7 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                                                                 </span>
                                                             )}
                                                         </>
-                                                    ) : (
+                                                    ) : item.helperText ? (
                                                         <span
                                                             style={{
                                                                 fontFamily: FONT.body,
@@ -606,7 +606,7 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                                                         >
                                                             {item.helperText}
                                                         </span>
-                                                    )}
+                                                    ) : null}
                                                 </div>
                                             </div>
                                         </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { EXERCISES } from '../../data/exercises';
+import { getExercisePlacementLabel } from '../../data/exercisePlacement';
 import { PRESET_GROUPS } from '../../data/menuGroups';
 import { MenuSettingsItemCard } from './menu-settings/MenuSettingsItemCard';
 import { TeacherExerciseEditor } from './menu-settings/TeacherExerciseEditor';
@@ -226,6 +227,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                     key={ex.id}
                                     emoji={ex.emoji}
                                     name={ex.name}
+                                    categoryLabel={getExercisePlacementLabel(ex.placement)}
                                     statusByClass={getStatusByClass(ex.id, 'exercise')}
                                     expanded={expandedItemId === ex.id}
                                     onToggleExpand={() => toggleExpandedItem(ex.id)}
@@ -248,6 +250,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                 key={ex.id}
                                 emoji={displayEmoji}
                                 name={displayName}
+                                categoryLabel={getExercisePlacementLabel(ex.placement)}
                                 statusByClass={getStatusByClass(ex.id, 'exercise')}
                                 expanded={expandedItemId === ex.id}
                                 onToggleExpand={() => toggleExpandedItem(ex.id)}

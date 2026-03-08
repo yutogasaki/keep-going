@@ -7,6 +7,7 @@ import type { MenuSettingStatus } from '../../../lib/teacherMenuSettings';
 interface MenuSettingsItemCardProps {
     emoji: string;
     name: string;
+    categoryLabel?: string;
     statusByClass: Record<string, MenuSettingStatus>;
     expanded: boolean;
     onToggleExpand: () => void;
@@ -31,6 +32,7 @@ const STATUS_DOT_MAP: Record<MenuSettingStatus, string> = Object.fromEntries(
 export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
     emoji,
     name,
+    categoryLabel,
     statusByClass,
     expanded,
     onToggleExpand,
@@ -58,18 +60,30 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
                 }}
             >
                 <span style={{ fontSize: 18, flexShrink: 0 }}>{emoji}</span>
-                <span style={{
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 14,
-                    fontWeight: 700,
-                    color: '#2D3436',
-                    flex: 1,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                }}>
-                    {name}
-                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: '#2D3436',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                    }}>
+                        {name}
+                    </div>
+                    {categoryLabel && (
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            color: '#8395A7',
+                            marginTop: 2,
+                        }}>
+                            {categoryLabel}
+                        </div>
+                    )}
+                </div>
 
                 {/* Status dots */}
                 <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
