@@ -8,6 +8,7 @@ import { CreateCustomExerciseCard } from './individual-tab/CreateCustomExerciseC
 import { SelectionBar } from './individual-tab/SelectionBar';
 import type { MenuIndividualTabProps } from './individual-tab/types';
 import {
+    filterCustomExercisesByCategory,
     filterStandardExercisesByCategory,
     getAvailableIndividualCategories,
     INDIVIDUAL_CATEGORY_OPTIONS,
@@ -49,6 +50,10 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
     const filteredExercises = useMemo(
         () => filterStandardExercisesByCategory(exercises, category),
         [category, exercises],
+    );
+    const filteredCustomExercises = useMemo(
+        () => filterCustomExercisesByCategory(customExercises, category),
+        [category, customExercises],
     );
     const showCustomSection = useMemo(
         () => shouldShowCustomExercises(customExercises, category),
@@ -232,7 +237,7 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
 
                 {showCustomSection ? (
                     <CustomExerciseList
-                        customExercises={customExercises}
+                        customExercises={filteredCustomExercises}
                         isTogetherMode={isTogetherMode}
                         getCreatorName={getCreatorName}
                         onEdit={onEditCustomExercise}
@@ -256,7 +261,7 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                             color: COLOR.light,
                         }}
                     >
-                        このカテゴリでは じぶん種目は表示していません。
+                        このカテゴリの じぶん種目はまだありません。
                     </div>
                 )}
 

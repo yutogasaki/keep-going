@@ -83,6 +83,7 @@ describe('toLocalCustomExercise', () => {
             name: 'テスト種目',
             sec: 30,
             emoji: '🧘',
+            placement: 'core',
             has_split: true,
             description: 'テスト説明',
             creator_id: 'teacher-1',
@@ -95,6 +96,7 @@ describe('toLocalCustomExercise', () => {
             name: 'テスト種目',
             sec: 30,
             emoji: '🧘',
+            placement: 'core',
             hasSplit: true,
             description: 'テスト説明',
             creatorId: 'teacher-1',
@@ -114,6 +116,7 @@ describe('toLocalCustomExercise', () => {
         expect(local.hasSplit).toBe(false);
         expect(local.description).toBeUndefined();
         expect(local.creatorId).toBeUndefined();
+        expect(local.placement).toBe('stretch');
     });
 });
 

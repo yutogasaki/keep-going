@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 const lazyConfetti = () => import('canvas-confetti').then((m) => m.default);
-import type { Exercise } from '../../data/exercises';
+import { isRestExercise, type Exercise } from '../../data/exercises';
 import { audio } from '../../lib/audio';
 import { haptics } from '../../lib/haptics';
 
@@ -134,7 +134,7 @@ export function useSessionProgressEffects({
         if (isCounting || !isPlaying || isTransitioning || isBigBreak || isCompleted || !currentExercise) return;
 
         if (timeLeft <= 0) {
-            const isRest = currentExercise.type === 'rest';
+            const isRest = isRestExercise(currentExercise);
             // Rest exercises don't count toward running time or completed records
             const nextTotalTime = isRest ? totalRunningTime : totalRunningTime + currentExercise.sec;
             if (!isRest) {
@@ -172,7 +172,7 @@ export function useSessionProgressEffects({
         }
 
         // Skip "残り10秒" TTS for rest exercises (too short)
-        if (timeLeft === 10 && currentExercise.type !== 'rest') {
+        if (timeLeft === 10 && !isRestExercise(currentExercise)) {
             audio.speak('残り10秒です');
         }
 

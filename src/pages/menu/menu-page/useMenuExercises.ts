@@ -66,28 +66,37 @@ export function useMenuExercises({
                 name: exercise.name,
                 sec: exercise.sec,
                 emoji: exercise.emoji,
+                placement: exercise.placement,
                 hasSplit: exercise.hasSplit,
                 description: exercise.description,
-                type: 'stretch' as const,
                 internal: exercise.hasSplit ? 'R30→L30' : 'single',
                 classes: ['プレ', '初級', '中級', '上級'],
                 priority: 'medium' as const,
-                phase: 'main' as const,
             }));
 
         const restExercises = EXERCISES
-            .filter((exercise) => exercise.type === 'rest' && !teacherHiddenExerciseIds.has(exercise.id));
+            .filter((exercise) => exercise.placement === 'rest' && !teacherHiddenExerciseIds.has(exercise.id));
 
         return [...builtIn, ...teacherAsExercise, ...restExercises];
     }, [classLevel, overrideMap, teacherExercises, teacherHiddenExerciseIds]);
 
     const exerciseMap = useMemo(() => {
-        const map = new Map<string, { name: string; emoji: string; sec: number }>();
+        const map = new Map<string, { name: string; emoji: string; sec: number; placement: Exercise['placement'] }>();
         for (const exercise of exercises) {
-            map.set(exercise.id, { name: exercise.name, emoji: exercise.emoji, sec: exercise.sec });
+            map.set(exercise.id, {
+                name: exercise.name,
+                emoji: exercise.emoji,
+                sec: exercise.sec,
+                placement: exercise.placement,
+            });
         }
         for (const exercise of customExercises) {
-            map.set(exercise.id, { name: exercise.name, emoji: exercise.emoji, sec: exercise.sec });
+            map.set(exercise.id, {
+                name: exercise.name,
+                emoji: exercise.emoji,
+                sec: exercise.sec,
+                placement: exercise.placement,
+            });
         }
         return map;
     }, [customExercises, exercises]);
@@ -134,7 +143,7 @@ export function useMenuExercises({
             .filter((exercise) => !teacherHiddenExerciseIds.has(exercise.id))
             .map((exercise) => exercise.id);
         const teacherIds = teacherExercises
-            .filter((exercise) => !teacherHiddenExerciseIds.has(exercise.id))
+            .filter((exercise) => !teacherHiddenExerciseIds.has(exercise.id) && exercise.placement !== 'rest')
             .map((exercise) => exercise.id);
         const allVisibleIds = [...builtInIds, ...teacherIds];
 

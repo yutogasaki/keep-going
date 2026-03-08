@@ -64,7 +64,8 @@ export function useMenuPublishActions({
         return myPublishedExercises.find(
             (publishedExercise) => publishedExercise.name === exercise.name
                 && publishedExercise.emoji === exercise.emoji
-                && publishedExercise.sec === exercise.sec,
+                && publishedExercise.sec === exercise.sec
+                && publishedExercise.placement === exercise.placement
         );
     }, [myPublishedExercises]);
 

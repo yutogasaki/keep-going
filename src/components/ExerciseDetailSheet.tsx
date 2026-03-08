@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Play, Loader2, Clock } from 'lucide-react';
+import { getExercisePlacementLabel } from '../data/exercisePlacement';
 import { type PublicExercise, importExercise } from '../lib/publicExercises';
 
 interface ExerciseDetailSheetProps {
@@ -121,6 +122,8 @@ export const ExerciseDetailSheet: React.FC<ExerciseDetailSheetProps> = ({ exerci
                                     <span>·</span>
                                     <Clock size={11} />
                                     <span>{exercise.sec}秒</span>
+                                    <span>·</span>
+                                    <span>{getExercisePlacementLabel(exercise.placement)}</span>
                                 </div>
                             </div>
                             <button
@@ -175,6 +178,16 @@ export const ExerciseDetailSheet: React.FC<ExerciseDetailSheetProps> = ({ exerci
                                     color: '#2D3436',
                                 }}>
                                     ⏱ {exercise.sec}秒
+                                </span>
+                                <span style={{
+                                    padding: '6px 12px',
+                                    borderRadius: 10,
+                                    background: 'rgba(43, 186, 160, 0.08)',
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 13,
+                                    color: '#2BBAA0',
+                                }}>
+                                    {getExercisePlacementLabel(exercise.placement)}
                                 </span>
                                 {exercise.hasSplit && (
                                     <span style={{

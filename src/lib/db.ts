@@ -2,6 +2,7 @@ import localforage from 'localforage';
 import { pushSession as syncPushSession, pushCustomExercise as syncPushCustomExercise, deleteCustomExerciseRemote, getAccountId } from './sync';
 import { normalizeSessionRecord, type SessionCountMap } from './sessionRecords';
 import { useSyncStatus } from '../store/useSyncStatus';
+import { normalizeExercisePlacement, type ExercisePlacement } from '../data/exercisePlacement';
 
 function onSyncError(error: unknown): void {
     console.warn('[sync]', error);
@@ -27,6 +28,7 @@ export interface CustomExercise {
     name: string;
     sec: number;     // e.g. 30, 60
     emoji: string;
+    placement: ExercisePlacement;
     hasSplit?: boolean;
     description?: string;
     creatorId?: string; // If undefined, it's a family shared exercise
@@ -52,6 +54,13 @@ export function parseDateKey(dateKey: string): Date | null {
     const day = Number(match[3]);
 
     return new Date(year, month, day);
+}
+
+function normalizeCustomExercise(exercise: CustomExercise | (Omit<CustomExercise, 'placement'> & { placement?: ExercisePlacement })): CustomExercise {
+    return {
+        ...exercise,
+        placement: normalizeExercisePlacement(exercise.placement),
+    };
 }
 
 export function shiftDateKey(dateKey: string, offsetDays: number): string {
@@ -154,9 +163,10 @@ export async function clearAllData(): Promise<void> {
 
 // Custom Exercise operations
 export async function saveCustomExercise(ex: CustomExercise): Promise<void> {
-    await customExercisesDB.setItem(ex.id, ex);
+    const normalized = normalizeCustomExercise(ex);
+    await customExercisesDB.setItem(normalized.id, normalized);
     if (getAccountId()) {
-        syncPushCustomExercise(ex).catch(onSyncError);
+        syncPushCustomExercise(normalized).catch(onSyncError);
     }
 }
 
@@ -165,7 +175,7 @@ export async function getCustomExercises(): Promise<CustomExercise[]> {
         const exs: CustomExercise[] = [];
         await customExercisesDB.iterate<CustomExercise, void>((value) => {
             if (value && typeof value === 'object') {
-                exs.push(value);
+                exs.push(normalizeCustomExercise(value));
             }
         });
         return exs.sort((a, b) => {
@@ -193,7 +203,8 @@ export async function saveSessionDirect(record: SessionRecord): Promise<void> {
 }
 
 export async function saveCustomExerciseDirect(ex: CustomExercise): Promise<void> {
-    await customExercisesDB.setItem(ex.id, ex);
+    const normalized = normalizeCustomExercise(ex);
+    await customExercisesDB.setItem(normalized.id, normalized);
 }
 
 export async function clearHistoryDB(): Promise<void> {

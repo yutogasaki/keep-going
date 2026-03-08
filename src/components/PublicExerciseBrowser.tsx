@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Clock } from 'lucide-react';
+import { getExercisePlacementLabel } from '../data/exercisePlacement';
 import { fetchPopularExercises, type PublicExercise } from '../lib/publicExercises';
 import { ExerciseDetailSheet } from './ExerciseDetailSheet';
 import { useAppStore } from '../store/useAppStore';
@@ -26,7 +27,7 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
             // Deduplicate by name + emoji + sec
             const seen = new Set<string>();
             const deduped = data.filter(ex => {
-                const key = `${ex.name}|${ex.emoji}|${ex.sec}`;
+                const key = `${ex.name}|${ex.emoji}|${ex.sec}|${ex.placement}`;
                 if (seen.has(key)) return false;
                 seen.add(key);
                 return true;
@@ -233,6 +234,7 @@ const BrowserExerciseCard: React.FC<{
                         display: 'flex',
                         gap: 6,
                         alignItems: 'center',
+                        flexWrap: 'wrap',
                         marginTop: 2,
                     }}>
                         <span>{exercise.authorName}</span>
@@ -241,6 +243,8 @@ const BrowserExerciseCard: React.FC<{
                         <span>·</span>
                         <Clock size={10} />
                         <span>{exercise.sec}秒</span>
+                        <span>·</span>
+                        <span>{getExercisePlacementLabel(exercise.placement)}</span>
                     </div>
                 </div>
             </div>

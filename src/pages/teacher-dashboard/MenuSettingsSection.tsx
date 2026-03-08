@@ -44,6 +44,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
         handleSaveExercise,
         handleSaveMenu,
         handleStatusChange,
+        isBuiltInExerciseEditor,
         loading,
         menuEditorInitial,
         menuEditorItemId,
@@ -169,6 +170,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     onCancel={closeExerciseForm}
                     onPlay={exerciseEditorItemId ? () => { audio.initTTS(); startTeacherPreviewSession([exerciseEditorItemId]); } : undefined}
                     onDelete={canDeleteExercise ? handleDeleteExerciseFromEditor : undefined}
+                    placementLocked={isBuiltInExerciseEditor}
                     submitting={submitting}
                 />
             )}

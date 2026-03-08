@@ -44,8 +44,10 @@ create table custom_exercises (
   name text not null,
   sec int not null,
   emoji text not null default '🏋️',
+  placement text not null default 'stretch' check (placement in ('prep', 'stretch', 'core', 'barre', 'ending', 'rest')),
   has_split boolean default false,
   creator_id text,
+  description text,
   created_at timestamptz default now(),
   primary key (id, account_id)
 );
@@ -352,6 +354,7 @@ create table teacher_exercises (
   name text not null,
   sec int not null default 30,
   emoji text not null default '🌸',
+  placement text not null default 'stretch' check (placement in ('prep', 'stretch', 'core', 'barre', 'ending', 'rest')),
   has_split boolean default false,
   description text,
   class_levels text[] not null default '{}',
@@ -417,6 +420,7 @@ create table public_exercises (
   name text not null,
   sec int not null default 30,
   emoji text not null default '🌸',
+  placement text not null default 'stretch' check (placement in ('prep', 'stretch', 'core', 'barre', 'ending', 'rest')),
   has_split boolean default false,
   description text,
   author_name text not null,

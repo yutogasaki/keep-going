@@ -1,6 +1,7 @@
 import type { CustomExercise, SessionRecord } from '../db';
 import type { MenuGroup } from '../../data/menuGroups';
 import type { ClassLevel } from '../../data/exercises';
+import { normalizeExercisePlacement } from '../../data/exercisePlacement';
 import type { ChibifuwaRecord, PastFuwafuwaRecord, UserProfileStore } from '../../store/useAppStore';
 import type { Database } from '../supabase-types';
 
@@ -60,6 +61,7 @@ export function toCustomExerciseUpsertPayload(exercise: CustomExercise, accountI
         name: exercise.name,
         sec: exercise.sec,
         emoji: exercise.emoji,
+        placement: exercise.placement,
         has_split: exercise.hasSplit ?? false,
         creator_id: exercise.creatorId ?? null,
         description: exercise.description ?? null,
@@ -149,6 +151,7 @@ export function toLocalCustomExercise(cloudExercise: CloudCustomExercise): Custo
         name: cloudExercise.name,
         sec: cloudExercise.sec,
         emoji: cloudExercise.emoji,
+        placement: normalizeExercisePlacement(cloudExercise.placement),
         hasSplit: cloudExercise.has_split ?? false,
         description: cloudExercise.description ?? undefined,
         creatorId: cloudExercise.creator_id ?? undefined,

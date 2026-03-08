@@ -9,6 +9,7 @@
 - 重要な文脈切替は hidden gesture より明示 UI を優先する。
 - オンボーディングでは、実利用の主要導線を教える。KeepGoing の初回ガイドはスワイプではなく START ボタンを中心にする。
 - メニューの `ひとつ` タブはカテゴリで絞れて、`えらぶ` モードでは選択した種目を優先しておまかせ開始できる。custom exercise も対象に含める。
+- 種目の分類は `準備 -> ストレッチ -> 体幹 -> バー -> おわり -> 休憩` の placement 軸を正本にし、`ひとつ` タブ・custom editor・おまかせ設定・custom/teacher/public exercise 保存で同じ語彙を使う。
 
 ## Engineering
 

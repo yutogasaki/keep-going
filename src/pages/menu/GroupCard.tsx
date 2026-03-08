@@ -3,12 +3,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Clock, Download, Edit2, EyeOff, Play, Trash2, Upload } from 'lucide-react';
 import { ExerciseIcon } from '../../components/ExerciseIcon';
 import { getExerciseById } from '../../data/exercises';
+import type { ExercisePlacement } from '../../data/exercisePlacement';
 import type { MenuGroup } from '../../data/menuGroups';
 
 interface GroupCardProps {
     group: MenuGroup;
     index: number;
-    exerciseMap?: Map<string, { name: string; emoji: string; sec: number }>;
+    exerciseMap?: Map<string, { name: string; emoji: string; sec: number; placement: ExercisePlacement }>;
     creatorName?: string | null;
     onTap: () => void;
     onEdit?: () => void;
@@ -28,18 +29,18 @@ export const GroupCard: React.FC<GroupCardProps> = ({ group, index, exerciseMap,
 
     const resolveEx = (id: string) => {
         const builtIn = getExerciseById(id);
-        if (builtIn) return { name: builtIn.name, emoji: builtIn.emoji, sec: builtIn.sec, type: builtIn.type };
+        if (builtIn) return { name: builtIn.name, emoji: builtIn.emoji, sec: builtIn.sec, placement: builtIn.placement };
         const mapped = exerciseMap?.get(id);
-        return mapped ? { ...mapped, type: 'stretch' as const } : null;
+        return mapped ?? null;
     };
 
     // Exclude rest exercises from total time display
     const totalSec = group.exerciseIds.reduce((sum, id) => {
         const ex = resolveEx(id);
-        return sum + (ex && ex.type !== 'rest' ? ex.sec : 0);
+        return sum + (ex && ex.placement !== 'rest' ? ex.sec : 0);
     }, 0);
     const minutes = Math.ceil(totalSec / 60);
-    const exerciseCount = group.exerciseIds.filter(id => resolveEx(id)?.type !== 'rest').length;
+    const exerciseCount = group.exerciseIds.filter(id => resolveEx(id)?.placement !== 'rest').length;
     const openDetailsLabel = expanded ? `${group.name}の詳細を閉じる` : `${group.name}の詳細を開く`;
     const playLabel = `${group.name}をはじめる。約${minutes}分、${exerciseCount}種目`;
 

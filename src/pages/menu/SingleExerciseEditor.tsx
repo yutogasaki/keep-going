@@ -6,6 +6,11 @@ import {
     editorLabelStyle,
     getEditorSubmitButtonStyle,
 } from '../../components/editor/EditorShell';
+import {
+    EXERCISE_PLACEMENTS,
+    getExercisePlacementLabel,
+    type ExercisePlacement,
+} from '../../data/exercisePlacement';
 import { saveCustomExercise, type CustomExercise } from '../../lib/db';
 import { publishExercise } from '../../lib/publicExercises';
 import { getAccountId } from '../../lib/sync';
@@ -24,6 +29,7 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
     const [name, setName] = useState(initial?.name || '');
     const [emoji, setEmoji] = useState(initial?.emoji || '🌸');
     const [sec, setSec] = useState<number>(initial?.sec || 30);
+    const [placement, setPlacement] = useState<ExercisePlacement>(initial?.placement || 'stretch');
     const [hasSplit, setHasSplit] = useState<boolean>(initial?.hasSplit || false);
     const [description, setDescription] = useState(initial?.description || '');
     const [isPublic, setIsPublic] = useState(false);
@@ -49,6 +55,7 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                 name: name.trim(),
                 emoji,
                 sec: sec as number,
+                placement,
                 hasSplit,
                 description: description.trim() || undefined,
                 creatorId: currentUserId,
@@ -159,6 +166,34 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                             {s}秒
                         </motion.button>
                     ))}
+                </div>
+            </EditorSection>
+
+            <EditorSection label="どこに入れる？">
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {EXERCISE_PLACEMENTS.map((option) => {
+                        const isActive = placement === option;
+                        return (
+                            <button
+                                key={option}
+                                type="button"
+                                onClick={() => setPlacement(option)}
+                                style={{
+                                    padding: '10px 14px',
+                                    borderRadius: 12,
+                                    border: isActive ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
+                                    background: isActive ? 'rgba(43,186,160,0.08)' : '#FFF',
+                                    color: isActive ? '#2BBAA0' : COLOR.dark,
+                                    fontFamily: FONT.body,
+                                    fontSize: 13,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                {getExercisePlacementLabel(option)}
+                            </button>
+                        );
+                    })}
                 </div>
             </EditorSection>
 

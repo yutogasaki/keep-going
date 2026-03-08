@@ -1,4 +1,5 @@
 import React from 'react';
+import type { ExercisePlacement } from '../../../data/exercisePlacement';
 import type { MenuGroup } from '../../../data/menuGroups';
 import type { PublicMenu } from '../../../lib/publicMenus';
 import { GroupCard } from '../GroupCard';
@@ -6,7 +7,7 @@ import { CreateGroupCard } from './CreateGroupCard';
 
 interface CustomGroupsSectionProps {
     groups: MenuGroup[];
-    exerciseMap: Map<string, { name: string; emoji: string; sec: number }>;
+    exerciseMap: Map<string, { name: string; emoji: string; sec: number; placement: ExercisePlacement }>;
     sessionUserCount: number;
     canPublish: boolean;
     getCreatorName: (creatorId?: string) => string | null;

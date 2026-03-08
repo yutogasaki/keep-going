@@ -66,7 +66,7 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
 
     // Built-in exercises (including rest exercises for manual menu building)
     const builtInExercises = useMemo(
-        () => [...getExercisesByClass(classLevel as ClassLevel), ...EXERCISES.filter(e => e.type === 'rest')],
+        () => [...getExercisesByClass(classLevel as ClassLevel), ...EXERCISES.filter(e => e.placement === 'rest')],
         [classLevel],
     );
 

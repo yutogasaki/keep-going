@@ -326,6 +326,7 @@ create table if not exists teacher_exercises (
   name text not null,
   sec int not null default 30,
   emoji text not null default '🌸',
+  placement text not null default 'stretch' check (placement in ('prep', 'stretch', 'core', 'barre', 'ending', 'rest')),
   has_split boolean default false,
   description text,
   class_levels text[] not null default '{}',
@@ -429,6 +430,46 @@ do $$ begin
 exception when duplicate_column then null;
 end $$;
 
+do $$ begin
+  alter table custom_exercises add column placement text;
+exception when duplicate_column then null;
+end $$;
+
+update custom_exercises set placement = 'stretch' where placement is null;
+
+do $$ begin
+  alter table custom_exercises alter column placement set default 'stretch';
+  alter table custom_exercises alter column placement set not null;
+exception when undefined_column then null;
+end $$;
+
+do $$ begin
+  alter table custom_exercises drop constraint if exists custom_exercises_placement_check;
+  alter table custom_exercises add constraint custom_exercises_placement_check
+    check (placement in ('prep', 'stretch', 'core', 'barre', 'ending', 'rest'));
+exception when undefined_table then null;
+end $$;
+
+do $$ begin
+  alter table teacher_exercises add column placement text;
+exception when duplicate_column then null;
+end $$;
+
+update teacher_exercises set placement = 'stretch' where placement is null;
+
+do $$ begin
+  alter table teacher_exercises alter column placement set default 'stretch';
+  alter table teacher_exercises alter column placement set not null;
+exception when undefined_column then null;
+end $$;
+
+do $$ begin
+  alter table teacher_exercises drop constraint if exists teacher_exercises_placement_check;
+  alter table teacher_exercises add constraint teacher_exercises_placement_check
+    check (placement in ('prep', 'stretch', 'core', 'barre', 'ending', 'rest'));
+exception when undefined_table then null;
+end $$;
+
 -- ─── 公開種目テーブル ────────────────────────────────
 
 create table if not exists public_exercises (
@@ -436,6 +477,7 @@ create table if not exists public_exercises (
   name text not null,
   sec int not null default 30,
   emoji text not null default '🌸',
+  placement text not null default 'stretch' check (placement in ('prep', 'stretch', 'core', 'barre', 'ending', 'rest')),
   has_split boolean default false,
   description text,
   author_name text not null,
@@ -459,6 +501,26 @@ do $$ begin
   create policy "Users can manage own public_exercises" on public_exercises
     for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
 exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  alter table public_exercises add column placement text;
+exception when duplicate_column then null;
+end $$;
+
+update public_exercises set placement = 'stretch' where placement is null;
+
+do $$ begin
+  alter table public_exercises alter column placement set default 'stretch';
+  alter table public_exercises alter column placement set not null;
+exception when undefined_column then null;
+end $$;
+
+do $$ begin
+  alter table public_exercises drop constraint if exists public_exercises_placement_check;
+  alter table public_exercises add constraint public_exercises_placement_check
+    check (placement in ('prep', 'stretch', 'core', 'barre', 'ending', 'rest'));
+exception when undefined_table then null;
 end $$;
 
 -- ダウンロード重複防止テーブル（種目用）

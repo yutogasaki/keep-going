@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Exercise } from '../../../../data/exercises';
 import type { CustomExercise } from '../../../../lib/db';
 import {
+    filterCustomExercisesByCategory,
     filterStandardExercisesByCategory,
     getAvailableIndividualCategories,
     shouldShowCustomExercises,
@@ -9,46 +10,51 @@ import {
 
 const standardExercises: Exercise[] = [
     {
-        id: 'warmup-1',
+        id: 'prep-1',
         name: 'じゅんび',
         sec: 30,
-        type: 'stretch',
+        placement: 'prep',
         internal: 'single',
         classes: ['初級'],
         priority: 'medium',
         emoji: '🌱',
-        phase: 'warmup',
     },
     {
-        id: 'main-1',
+        id: 'stretch-1',
         name: 'のばす',
         sec: 30,
-        type: 'stretch',
+        placement: 'stretch',
         internal: 'single',
         classes: ['初級'],
         priority: 'medium',
         emoji: '🦵',
-        phase: 'main',
     },
     {
         id: 'core-1',
         name: 'たいかん',
         sec: 30,
-        type: 'core',
+        placement: 'core',
         internal: 'single',
         classes: ['初級'],
         priority: 'medium',
         emoji: '💪',
-        phase: 'core',
     },
 ];
 
 const customExercises: CustomExercise[] = [
     {
         id: 'custom-1',
-        name: 'じぶん',
+        name: 'じぶんバー',
         sec: 45,
         emoji: '✨',
+        placement: 'barre',
+    },
+    {
+        id: 'custom-2',
+        name: 'じぶんおわり',
+        sec: 30,
+        emoji: '🌙',
+        placement: 'ending',
     },
 ];
 
@@ -56,29 +62,35 @@ describe('selectionCategories', () => {
     it('returns only categories that have visible items', () => {
         expect(getAvailableIndividualCategories(standardExercises, customExercises)).toEqual([
             'all',
-            'warmup',
-            'main',
+            'prep',
+            'stretch',
             'core',
-            'custom',
+            'barre',
+            'ending',
         ]);
         expect(getAvailableIndividualCategories([standardExercises[1]], [])).toEqual([
             'all',
-            'main',
+            'stretch',
         ]);
     });
 
     it('filters standard exercises by category', () => {
         expect(filterStandardExercisesByCategory(standardExercises, 'all')).toHaveLength(3);
-        expect(filterStandardExercisesByCategory(standardExercises, 'warmup').map((exercise) => exercise.id)).toEqual(['warmup-1']);
-        expect(filterStandardExercisesByCategory(standardExercises, 'main').map((exercise) => exercise.id)).toEqual(['main-1']);
+        expect(filterStandardExercisesByCategory(standardExercises, 'prep').map((exercise) => exercise.id)).toEqual(['prep-1']);
+        expect(filterStandardExercisesByCategory(standardExercises, 'stretch').map((exercise) => exercise.id)).toEqual(['stretch-1']);
         expect(filterStandardExercisesByCategory(standardExercises, 'core').map((exercise) => exercise.id)).toEqual(['core-1']);
-        expect(filterStandardExercisesByCategory(standardExercises, 'custom')).toEqual([]);
     });
 
-    it('shows custom section only for all/custom categories', () => {
+    it('filters custom exercises by the same placement axis', () => {
+        expect(filterCustomExercisesByCategory(customExercises, 'all')).toHaveLength(2);
+        expect(filterCustomExercisesByCategory(customExercises, 'barre').map((exercise) => exercise.id)).toEqual(['custom-1']);
+        expect(filterCustomExercisesByCategory(customExercises, 'ending').map((exercise) => exercise.id)).toEqual(['custom-2']);
+    });
+
+    it('shows custom section only when the current placement has custom items', () => {
         expect(shouldShowCustomExercises(customExercises, 'all')).toBe(true);
-        expect(shouldShowCustomExercises(customExercises, 'custom')).toBe(true);
-        expect(shouldShowCustomExercises(customExercises, 'main')).toBe(false);
+        expect(shouldShowCustomExercises(customExercises, 'barre')).toBe(true);
+        expect(shouldShowCustomExercises(customExercises, 'stretch')).toBe(false);
         expect(shouldShowCustomExercises([], 'all')).toBe(false);
     });
 });

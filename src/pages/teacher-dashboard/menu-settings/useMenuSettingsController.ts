@@ -40,6 +40,7 @@ interface ExerciseEditorValues {
     name: string;
     sec: number;
     emoji: string;
+    placement: TeacherExercise['placement'];
     hasSplit: boolean;
     description: string;
     classLevels: string[];
@@ -392,6 +393,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
             name: override?.nameOverride ?? exercise.name,
             sec: override?.secOverride ?? exercise.sec,
             emoji: override?.emojiOverride ?? exercise.emoji,
+            placement: exercise.placement,
             hasSplit: override?.hasSplitOverride ?? (exercise.hasSplit ?? false),
             description: override?.descriptionOverride ?? (exercise.description ?? ''),
             classLevels: exercise.classes as string[],
@@ -475,5 +477,6 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
         toggleExpandedItem,
         canDeleteExercise: editingExercise !== null,
         canDeleteMenu: editingMenu !== null,
+        isBuiltInExerciseEditor: editingBuiltInExerciseId !== null,
     };
 }

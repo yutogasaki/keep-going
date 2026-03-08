@@ -3,6 +3,11 @@ import { motion } from 'framer-motion';
 import { Play, Trash2 } from 'lucide-react';
 import { CLASS_LEVELS } from '../../../data/exercises';
 import {
+    EXERCISE_PLACEMENTS,
+    getExercisePlacementLabel,
+    type ExercisePlacement,
+} from '../../../data/exercisePlacement';
+import {
     EditorSection,
     EditorShell,
     editorLabelStyle,
@@ -20,6 +25,7 @@ interface TeacherExerciseEditorProps {
         name: string;
         sec: number;
         emoji: string;
+        placement: ExercisePlacement;
         hasSplit: boolean;
         description: string;
         classLevels: string[];
@@ -28,6 +34,7 @@ interface TeacherExerciseEditorProps {
     onCancel: () => void;
     onPlay?: () => void;
     onDelete?: () => void;
+    placementLocked?: boolean;
     submitting: boolean;
 }
 
@@ -51,11 +58,13 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
     onCancel,
     onPlay,
     onDelete,
+    placementLocked,
     submitting,
 }) => {
     const [name, setName] = useState(initial?.name ?? '');
     const [emoji, setEmoji] = useState(initial?.emoji ?? '🌸');
     const [sec, setSec] = useState(initial?.sec ?? 30);
+    const [placement, setPlacement] = useState<ExercisePlacement>(initial?.placement ?? 'stretch');
     const [hasSplit, setHasSplit] = useState(initial?.hasSplit ?? false);
     const [description, setDescription] = useState(initial?.description ?? '');
 
@@ -77,7 +86,7 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
         const classLevels = Object.entries(statusByClass)
             .filter(([, s]) => s !== 'hidden')
             .map(([cl]) => cl);
-        onSave({ name: name.trim(), sec, emoji, hasSplit, description: description.trim(), classLevels, statusByClass });
+        onSave({ name: name.trim(), sec, emoji, placement, hasSplit, description: description.trim(), classLevels, statusByClass });
     };
 
     return (
@@ -168,6 +177,50 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
                         </motion.button>
                     ))}
                 </div>
+            </EditorSection>
+
+            <EditorSection label="どこに入れる？">
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {EXERCISE_PLACEMENTS.map((option) => {
+                        const isActive = placement === option;
+                        return (
+                            <button
+                                key={option}
+                                type="button"
+                                onClick={() => {
+                                    if (!placementLocked) {
+                                        setPlacement(option);
+                                    }
+                                }}
+                                style={{
+                                    padding: '10px 14px',
+                                    borderRadius: 12,
+                                    border: isActive ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
+                                    background: isActive ? 'rgba(43,186,160,0.08)' : '#FFF',
+                                    color: isActive ? '#2BBAA0' : COLOR.dark,
+                                    fontFamily: FONT.body,
+                                    fontSize: 13,
+                                    fontWeight: 700,
+                                    cursor: placementLocked ? 'default' : 'pointer',
+                                    opacity: placementLocked && !isActive ? 0.55 : 1,
+                                }}
+                            >
+                                {getExercisePlacementLabel(option)}
+                            </button>
+                        );
+                    })}
+                </div>
+                {placementLocked && (
+                    <div style={{
+                        marginTop: 8,
+                        fontFamily: FONT.body,
+                        fontSize: 12,
+                        color: COLOR.muted,
+                        lineHeight: 1.5,
+                    }}>
+                        標準種目の配置は固定です。新しい先生の種目では自由に選べます。
+                    </div>
+                )}
             </EditorSection>
 
             <EditorSection>

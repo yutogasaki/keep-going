@@ -1,6 +1,10 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getExerciseColor, type Exercise } from '../../data/exercises';
+import { type Exercise } from '../../data/exercises';
+import {
+    getExercisePlacementAccentColor,
+    isRestPlacement,
+} from '../../data/exercisePlacement';
 import { ExerciseIcon } from '../../components/ExerciseIcon';
 import { ExerciseName } from '../../components/ExerciseName';
 import { TimerRing } from './TimerRing';
@@ -114,7 +118,7 @@ export const ExercisePanel: React.FC<ExercisePanelProps> = ({
             </AnimatePresence>
 
             <div style={{ zIndex: 20, textAlign: 'center' }}>
-                {activeExercise.type === 'rest' ? (
+                {isRestPlacement(activeExercise.placement) ? (
                     <>
                         <motion.div
                             animate={{ scale: [1, 1.1, 1] }}
@@ -161,7 +165,7 @@ export const ExercisePanel: React.FC<ExercisePanelProps> = ({
                                 id={activeExercise.id}
                                 emoji={activeExercise.emoji}
                                 size={64}
-                                color={getExerciseColor(activeExercise.type)}
+                                color={getExercisePlacementAccentColor(activeExercise.placement)}
                             />
                         </div>
                         <h2 style={{

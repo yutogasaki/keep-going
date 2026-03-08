@@ -1,10 +1,11 @@
 import React from 'react';
+import type { ExercisePlacement } from '../../../data/exercisePlacement';
 import type { MenuGroup } from '../../../data/menuGroups';
 import { GroupCard } from '../GroupCard';
 
 interface PresetGroupsSectionProps {
     groups: MenuGroup[];
-    exerciseMap: Map<string, { name: string; emoji: string; sec: number }>;
+    exerciseMap: Map<string, { name: string; emoji: string; sec: number; placement: ExercisePlacement }>;
     onTap: (group: MenuGroup) => void;
     teacherMenuIds?: Set<string>;
     isNewTeacherContent?: (id: string) => boolean;

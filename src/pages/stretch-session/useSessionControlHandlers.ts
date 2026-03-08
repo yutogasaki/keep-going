@@ -1,5 +1,9 @@
 import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import { getExercisesByClass, type ClassLevel, type Exercise } from '../../data/exercises';
+import {
+    getExercisePlacementOrder,
+    isRestPlacement,
+} from '../../data/exercisePlacement';
 import { audio } from '../../lib/audio';
 import { haptics } from '../../lib/haptics';
 
@@ -98,17 +102,33 @@ export function useSessionControlHandlers({
                     !builtInPool.some(b => b.id === e.id)
                 );
                 const allPool = [...builtInPool, ...sessionPool];
-                const available = allPool.filter(e =>
-                    !usedIds.has(e.id) && e.type === 'stretch'
+                const samePlacement = allPool.filter((exercise) =>
+                    !usedIds.has(exercise.id)
+                    && !isRestPlacement(exercise.placement)
+                    && exercise.placement === currentExercise.placement
                 );
+                const fallbackPool = allPool.filter((exercise) =>
+                    !usedIds.has(exercise.id)
+                    && !isRestPlacement(exercise.placement)
+                );
+                const available = samePlacement.length > 0 ? samePlacement : fallbackPool;
                 const replacement = available.find(e => e.sec === currentExercise.sec)
                     || available[0]
                     || null;
                 if (replacement) {
                     setSessionExercises((prev) => {
-                        const cores = prev.filter((exercise) => exercise.type === 'core');
-                        const stretches = prev.filter((exercise) => exercise.type === 'stretch');
-                        return [...stretches, replacement, ...cores];
+                        const insertionIndex = prev.findIndex((exercise, index) =>
+                            index > currentIndex
+                            && getExercisePlacementOrder(exercise.placement) > getExercisePlacementOrder(replacement.placement)
+                        );
+                        if (insertionIndex === -1) {
+                            return [...prev, replacement];
+                        }
+                        return [
+                            ...prev.slice(0, insertionIndex),
+                            replacement,
+                            ...prev.slice(insertionIndex),
+                        ];
                     });
                 }
             }
@@ -124,6 +144,7 @@ export function useSessionControlHandlers({
         setSkippedIds,
         sessionExerciseIds,
         sessionExercises,
+        currentIndex,
         classLevel,
         skippedIds,
         setSessionExercises,

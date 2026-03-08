@@ -3,6 +3,10 @@ import { createPortal } from 'react-dom';
 import { Search, X } from 'lucide-react';
 import { ExerciseIcon } from '../../components/ExerciseIcon';
 import { EXERCISES } from '../../data/exercises';
+import {
+    getExercisePlacementLabel,
+    getExercisePlacementOrder,
+} from '../../data/exercisePlacement';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import type { CustomExercise } from '../../lib/db';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE, Z } from '../../lib/styles';
@@ -73,12 +77,14 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
     const exerciseItems = [...EXERCISES, ...(teacherExercises ?? []), ...customExercises]
         .filter((exercise) => !teacherHiddenExerciseIds?.has(exercise.id))
         .sort((a, b) => {
-            const aRest = 'type' in a && a.type === 'rest' ? 1 : 0;
-            const bRest = 'type' in b && b.type === 'rest' ? 1 : 0;
-            return aRest - bRest;
+            const placementDiff = getExercisePlacementOrder(a.placement) - getExercisePlacementOrder(b.placement);
+            if (placementDiff !== 0) {
+                return placementDiff;
+            }
+            return a.name.localeCompare(b.name, 'ja');
         })
         .map((exercise) => {
-            const isRest = 'type' in exercise && exercise.type === 'rest';
+            const isRest = exercise.placement === 'rest';
             const isTeacherRequired = teacherRequiredExerciseIds?.has(exercise.id) ?? false;
             const isTeacherExcluded = teacherExcludedExerciseIds?.has(exercise.id) ?? false;
             const isUserRequired = requiredExercises.includes(exercise.id);
@@ -95,9 +101,10 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                     : 'builtIn';
             const sourceLabel = source === 'teacher' ? '先生' : source === 'custom' ? 'じぶん種目' : null;
             const hasAdjustment = isTeacherRequired || isTeacherExcluded || isUserRequired || isUserExcluded;
+            const placementLabel = getExercisePlacementLabel(exercise.placement);
             const helperText = userBadge
                 ?? teacherBadge
-                ?? (isRest ? 'きゅうけい種目' : 'いまは おまかせ');
+                ?? (isRest ? 'きゅうけい種目' : `配置: ${placementLabel}`);
 
             const querySource = [
                 exercise.name,
@@ -127,6 +134,7 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                 teacherBadge,
                 userBadge,
                 helperText,
+                placementLabel,
                 sourceLabel,
                 source,
                 matchesQuery,
@@ -549,7 +557,7 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
                                                         marginBottom: 8,
                                                     }}
                                                 >
-                                                    {exercise.sec}s • {'phase' in exercise ? exercise.phase : 'main'}
+                                                    {exercise.sec}s • {item.placementLabel}
                                                 </div>
 
                                                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>

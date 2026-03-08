@@ -6,7 +6,6 @@ import {
     EXERCISES,
     type Exercise,
     type ClassLevel,
-    type GenerateSessionOptions,
 } from '../exercises';
 
 // Seed Math.random for deterministic tests where needed
@@ -73,17 +72,18 @@ describe('generateSession', () => {
         expect(session.length).toBeGreaterThan(0);
     });
 
-    it('フェーズ順序: Warmup → Main → Core', () => {
+    it('配置順序: 準備 → ストレッチ → 体幹 → バー → おわり', () => {
         seedRandom(123);
         const session = generateSession(classLevel);
 
-        let lastPhaseOrder = -1;
-        const phaseOrder: Record<string, number> = { warmup: 0, main: 1, core: 2 };
+        let lastPlacementOrder = -1;
+        const placementOrder: Record<string, number> = { prep: 0, stretch: 1, core: 2, barre: 3, ending: 4, rest: 5 };
 
         for (const ex of session) {
-            const order = phaseOrder[ex.phase] ?? 1;
-            expect(order).toBeGreaterThanOrEqual(lastPhaseOrder);
-            if (order > lastPhaseOrder) lastPhaseOrder = order;
+            if (ex.placement === 'rest') continue;
+            const order = placementOrder[ex.placement] ?? 1;
+            expect(order).toBeGreaterThanOrEqual(lastPlacementOrder);
+            if (order > lastPlacementOrder) lastPlacementOrder = order;
         }
     });
 
@@ -108,18 +108,18 @@ describe('generateSession', () => {
 
     it('requiredIdsの種目が必ず含まれる', () => {
         seedRandom(111);
-        const mainExercise = EXERCISES.find(e => e.classes.includes('初級') && e.phase === 'main')!;
+        const stretchExercise = EXERCISES.find(e => e.classes.includes('初級') && e.placement === 'stretch')!;
         const session = generateSession(classLevel, {
-            requiredIds: [mainExercise.id],
+            requiredIds: [stretchExercise.id],
         });
 
         const ids = session.map(e => e.id);
-        expect(ids).toContain(mainExercise.id);
+        expect(ids).toContain(stretchExercise.id);
     });
 
     it('excludedIdsの種目が含まれない', () => {
         seedRandom(222);
-        const exerciseToExclude = EXERCISES.find(e => e.classes.includes('初級') && e.phase === 'main')!;
+        const exerciseToExclude = EXERCISES.find(e => e.classes.includes('初級') && e.placement === 'stretch')!;
         const session = generateSession(classLevel, {
             excludedIds: [exerciseToExclude.id],
         });
@@ -160,7 +160,7 @@ describe('generateSession', () => {
         expect(ids).toContain('custom-1');
     });
 
-    it('customPoolの種目にデフォルトphase/typeが付与される', () => {
+    it('customPoolの種目にデフォルトplacementが付与される', () => {
         seedRandom(555);
         const customEx = makeCustomExercise({
             id: 'custom-2',
@@ -176,8 +176,7 @@ describe('generateSession', () => {
 
         const found = session.find(e => e.id === 'custom-2')!;
         expect(found).toBeDefined();
-        expect(found.phase).toBe('main');
-        expect(found.type).toBe('stretch');
+        expect(found.placement).toBe('stretch');
     });
 
     // ─── builtInOverrides ───────────────────────────
@@ -204,25 +203,25 @@ describe('generateSession', () => {
 
     // ─── スマートオーダリング ────────────────────────
 
-    it('メインフェーズで連続同一emojiを可能な限り回避', () => {
+    it('ストレッチ配置で連続同一emojiを可能な限り回避', () => {
         seedRandom(777);
         const session = generateSession(classLevel, { targetSeconds: 600 });
-        const mainExercises = session.filter(e => e.phase === 'main');
+        const stretchExercises = session.filter(e => e.placement === 'stretch');
 
-        if (mainExercises.length < 3) return; // 少なすぎる場合はスキップ
+        if (stretchExercises.length < 3) return; // 少なすぎる場合はスキップ
 
         let consecutiveCount = 0;
-        for (let i = 1; i < mainExercises.length; i++) {
-            if (mainExercises[i].emoji === mainExercises[i - 1].emoji) {
+        for (let i = 1; i < stretchExercises.length; i++) {
+            if (stretchExercises[i].emoji === stretchExercises[i - 1].emoji) {
                 consecutiveCount++;
             }
         }
 
         // 全種目のユニークemoji数
-        const uniqueEmojis = new Set(mainExercises.map(e => e.emoji)).size;
+        const uniqueEmojis = new Set(stretchExercises.map(e => e.emoji)).size;
         // emoji種類が2以上あれば、連続は半分未満であるべき
         if (uniqueEmojis >= 2) {
-            expect(consecutiveCount).toBeLessThan(mainExercises.length / 2);
+            expect(consecutiveCount).toBeLessThan(stretchExercises.length / 2);
         }
     });
 
@@ -230,11 +229,11 @@ describe('generateSession', () => {
 
     it('historicalCountsが高い種目は選ばれにくい（統計的テスト）', () => {
         // 10回生成して、使用回数が多い種目の出現率を確認
-        const mainExercises = EXERCISES.filter(e => e.classes.includes('初級') && e.phase === 'main');
-        if (mainExercises.length < 2) return;
+        const stretchExercises = EXERCISES.filter(e => e.classes.includes('初級') && e.placement === 'stretch');
+        if (stretchExercises.length < 2) return;
 
-        const heavilyUsed = mainExercises[0].id;
-        const lightlyUsed = mainExercises[1].id;
+        const heavilyUsed = stretchExercises[0].id;
+        const lightlyUsed = stretchExercises[1].id;
 
         let heavyCount = 0;
         let lightCount = 0;
@@ -264,7 +263,7 @@ describe('generateSession', () => {
 
         const countMap = new Map<string, number>();
         for (const e of session) {
-            if (e.type === 'rest') continue; // rest is auto-inserted, not counted
+            if (e.placement === 'rest') continue; // rest is auto-inserted, not counted
             countMap.set(e.id, (countMap.get(e.id) || 0) + 1);
         }
 
@@ -277,14 +276,14 @@ describe('generateSession', () => {
         seedRandom(100);
         const session = generateSession(classLevel, { targetSeconds: 200 });
         // 5分未満のセッションでは自動休憩なし → rest種目が入らない
-        const restExercises = session.filter(e => e.type === 'rest');
+        const restExercises = session.filter(e => e.placement === 'rest');
         expect(restExercises.length).toBe(0);
     });
 
     it('5分超のセッションで休憩が自動挿入される', () => {
         seedRandom(42);
         const session = generateSession(classLevel, { targetSeconds: 600 });
-        const restExercises = session.filter(e => e.type === 'rest');
+        const restExercises = session.filter(e => e.placement === 'rest');
         expect(restExercises.length).toBeGreaterThanOrEqual(1);
         // All auto-inserted rests should be R03 (15秒)
         for (const r of restExercises) {
@@ -295,7 +294,7 @@ describe('generateSession', () => {
     it('セッション末尾が休憩にならない', () => {
         seedRandom(77);
         const session = generateSession(classLevel, { targetSeconds: 600 });
-        expect(session[session.length - 1].type).not.toBe('rest');
+        expect(session[session.length - 1].placement).not.toBe('rest');
     });
 });
 

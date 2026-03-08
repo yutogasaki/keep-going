@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown, Play, Star } from 'lucide-react';
 import type { Exercise } from '../../../data/exercises';
+import { getExercisePlacementLabel } from '../../../data/exercisePlacement';
 import { ExerciseIcon } from '../../../components/ExerciseIcon';
 
 interface StandardExerciseListProps {
@@ -143,9 +144,10 @@ export const StandardExerciseList: React.FC<StandardExerciseListProps> = ({
                                     color: '#8395A7',
                                     display: 'flex',
                                     gap: 8,
+                                    flexWrap: 'wrap',
                                 }}>
                                     <span>{exercise.sec}秒</span>
-                                    <span>{exercise.type === 'stretch' ? 'ストレッチ' : exercise.type === 'rest' ? '休憩' : '体幹'}</span>
+                                    <span>{getExercisePlacementLabel(exercise.placement)}</span>
                                     {exercise.internal !== 'single' && (
                                         <span style={{ color: '#2BBAA0' }}>
                                             {exercise.internal === 'P10・F10×3' ? '切替あり' : '左右あり'}

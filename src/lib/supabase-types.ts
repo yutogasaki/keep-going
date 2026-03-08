@@ -77,6 +77,7 @@ export interface Database {
                     name: string;
                     sec: number;
                     emoji: string;
+                    placement: string;
                     has_split: boolean;
                     creator_id: string | null;
                     description: string | null;
@@ -88,6 +89,7 @@ export interface Database {
                     name: string;
                     sec: number;
                     emoji?: string;
+                    placement?: string;
                     has_split?: boolean;
                     creator_id?: string | null;
                     description?: string | null;
@@ -261,6 +263,7 @@ export interface Database {
                     name: string;
                     sec: number;
                     emoji: string;
+                    placement: string;
                     has_split: boolean;
                     description: string | null;
                     class_levels: string[];
@@ -272,6 +275,7 @@ export interface Database {
                     name: string;
                     sec?: number;
                     emoji?: string;
+                    placement?: string;
                     has_split?: boolean;
                     description?: string | null;
                     class_levels?: string[];
@@ -309,6 +313,7 @@ export interface Database {
                     name: string;
                     sec: number;
                     emoji: string;
+                    placement: string;
                     has_split: boolean;
                     description: string | null;
                     author_name: string;
@@ -321,6 +326,7 @@ export interface Database {
                     name: string;
                     sec: number;
                     emoji?: string;
+                    placement?: string;
                     has_split?: boolean;
                     description?: string | null;
                     author_name: string;

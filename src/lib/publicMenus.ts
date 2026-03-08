@@ -14,6 +14,7 @@ export interface CustomExerciseData {
     name: string;
     sec: number;
     emoji: string;
+    placement: CustomExercise['placement'];
     hasSplit?: boolean;
 }
 
@@ -46,7 +47,14 @@ export async function publishMenu(menu: MenuGroup, authorName: string): Promise<
         customExerciseData = uniqueIds
             .map(id => allCustom.find(ex => ex.id === id))
             .filter((ex): ex is CustomExercise => !!ex)
-            .map(ex => ({ id: ex.id, name: ex.name, sec: ex.sec, emoji: ex.emoji, hasSplit: ex.hasSplit }));
+            .map(ex => ({
+                id: ex.id,
+                name: ex.name,
+                sec: ex.sec,
+                emoji: ex.emoji,
+                placement: ex.placement,
+                hasSplit: ex.hasSplit,
+            }));
     }
 
     // Auto-publish custom exercises (must succeed before menu publish)
@@ -54,11 +62,18 @@ export async function publishMenu(menu: MenuGroup, authorName: string): Promise<
         const myPublished = await fetchMyPublishedExercises();
         for (const ex of customExerciseData) {
             const alreadyPublished = myPublished.find(
-                p => p.name === ex.name && p.emoji === ex.emoji && p.sec === ex.sec,
+                p => p.name === ex.name && p.emoji === ex.emoji && p.sec === ex.sec && p.placement === ex.placement,
             );
             if (!alreadyPublished) {
                 await publishExercise(
-                    { id: ex.id, name: ex.name, sec: ex.sec, emoji: ex.emoji, hasSplit: ex.hasSplit },
+                    {
+                        id: ex.id,
+                        name: ex.name,
+                        sec: ex.sec,
+                        emoji: ex.emoji,
+                        placement: ex.placement,
+                        hasSplit: ex.hasSplit,
+                    },
                     authorName,
                 );
             }
@@ -218,6 +233,7 @@ export async function importMenu(publicMenu: PublicMenu): Promise<void> {
                         name: ex.name,
                         sec: ex.sec,
                         emoji: ex.emoji,
+                        placement: ex.placement ?? 'stretch',
                         hasSplit: ex.hasSplit,
                     });
                 }
@@ -303,7 +319,7 @@ export async function unpublishMenu(id: string): Promise<void> {
             const myPublished = await fetchMyPublishedExercises();
             for (const ex of customData) {
                 const pub = myPublished.find(
-                    p => p.name === ex.name && p.emoji === ex.emoji && p.sec === ex.sec,
+                    p => p.name === ex.name && p.emoji === ex.emoji && p.sec === ex.sec && p.placement === ex.placement,
                 );
                 if (pub) {
                     await unpublishExercise(pub.id);

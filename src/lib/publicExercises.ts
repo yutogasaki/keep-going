@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import type { Database } from './supabase-types';
 import { getAccountId } from './sync';
 import { saveCustomExercise, type CustomExercise } from './db';
+import { normalizeExercisePlacement, type ExercisePlacement } from '../data/exercisePlacement';
 
 type PublicExerciseRow = Database['public']['Tables']['public_exercises']['Row'];
 
@@ -10,6 +11,7 @@ export interface PublicExercise {
     name: string;
     sec: number;
     emoji: string;
+    placement: ExercisePlacement;
     hasSplit: boolean;
     description: string | null;
     authorName: string;
@@ -29,6 +31,7 @@ export async function publishExercise(exercise: CustomExercise, authorName: stri
         name: exercise.name,
         sec: exercise.sec,
         emoji: exercise.emoji,
+        placement: exercise.placement,
         has_split: exercise.hasSplit ?? false,
         description: exercise.description ?? null,
         author_name: authorName,
@@ -95,6 +98,7 @@ export async function importExercise(pub: PublicExercise): Promise<void> {
         name: pub.name,
         sec: pub.sec,
         emoji: pub.emoji,
+        placement: pub.placement,
         hasSplit: pub.hasSplit,
         description: pub.description ?? undefined,
     };
@@ -144,6 +148,7 @@ function mapPublicExercise(row: PublicExerciseRow): PublicExercise {
         name: row.name,
         sec: row.sec,
         emoji: row.emoji,
+        placement: normalizeExercisePlacement(row.placement),
         hasSplit: row.has_split ?? false,
         description: row.description ?? null,
         authorName: row.author_name,

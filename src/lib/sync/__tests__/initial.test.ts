@@ -87,6 +87,7 @@ function createExercise(id: string): CustomExercise {
         name: `exercise-${id}`,
         sec: 30,
         emoji: '🩰',
+        placement: 'stretch',
     };
 }
 

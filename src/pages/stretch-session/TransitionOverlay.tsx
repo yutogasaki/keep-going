@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getExerciseColor, type Exercise } from '../../data/exercises';
+import { type Exercise } from '../../data/exercises';
+import { getExercisePlacementAccentColor } from '../../data/exercisePlacement';
 import { ExerciseIcon } from '../../components/ExerciseIcon';
 import { ExerciseName } from '../../components/ExerciseName';
 
@@ -57,7 +58,7 @@ export const TransitionOverlay: React.FC<TransitionOverlayProps> = ({
                         id={nextExercise.id}
                         emoji={nextExercise.emoji}
                         size={48}
-                        color={getExerciseColor(nextExercise.type)}
+                        color={getExercisePlacementAccentColor(nextExercise.placement)}
                     />
                 </div>
                 <h2 style={{

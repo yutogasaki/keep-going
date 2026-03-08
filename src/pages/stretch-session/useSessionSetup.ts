@@ -120,6 +120,7 @@ export function useSessionSetup({
                     name: te.name,
                     sec: te.sec,
                     emoji: te.emoji,
+                    placement: te.placement,
                     hasSplit: te.hasSplit,
                     description: te.description,
                 }));
@@ -187,11 +188,10 @@ export function useSessionSetup({
                         // Ensure custom/teacher exercises have all required Exercise fields
                         return {
                             internal: found.hasSplit ? 'R30→L30' : 'single',
-                            phase: 'main' as const,
-                            type: 'stretch' as const,
                             classes: [] as ClassLevel[],
                             priority: 'medium' as const,
                             ...found,
+                            placement: found.placement ?? 'stretch',
                         } satisfies Exercise;
                     })
                     .filter((exercise): exercise is Exercise => exercise !== undefined);

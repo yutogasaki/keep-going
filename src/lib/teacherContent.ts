@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import type { Database } from './supabase-types';
+import { normalizeExercisePlacement, type ExercisePlacement } from '../data/exercisePlacement';
 
 type TeacherExerciseRow = Database['public']['Tables']['teacher_exercises']['Row'];
 type TeacherMenuRow = Database['public']['Tables']['teacher_menus']['Row'];
@@ -11,6 +12,7 @@ export interface TeacherExercise {
     name: string;
     sec: number;
     emoji: string;
+    placement: ExercisePlacement;
     hasSplit: boolean;
     description: string;
     classLevels: string[];
@@ -69,6 +71,7 @@ export async function createTeacherExercise(data: {
     name: string;
     sec: number;
     emoji: string;
+    placement: ExercisePlacement;
     hasSplit: boolean;
     description: string;
     classLevels: string[];
@@ -80,6 +83,7 @@ export async function createTeacherExercise(data: {
         name: data.name,
         sec: data.sec,
         emoji: data.emoji,
+        placement: data.placement,
         has_split: data.hasSplit,
         description: data.description,
         class_levels: data.classLevels,
@@ -95,6 +99,7 @@ export async function updateTeacherExercise(id: string, data: {
     name: string;
     sec: number;
     emoji: string;
+    placement: ExercisePlacement;
     hasSplit: boolean;
     description: string;
     classLevels: string[];
@@ -105,6 +110,7 @@ export async function updateTeacherExercise(id: string, data: {
         name: data.name,
         sec: data.sec,
         emoji: data.emoji,
+        placement: data.placement,
         has_split: data.hasSplit,
         description: data.description,
         class_levels: data.classLevels,
@@ -206,6 +212,7 @@ function mapTeacherExercise(row: TeacherExerciseRow): TeacherExercise {
         name: row.name,
         sec: row.sec,
         emoji: row.emoji,
+        placement: normalizeExercisePlacement(row.placement),
         hasSplit: row.has_split ?? false,
         description: row.description ?? '',
         classLevels: row.class_levels ?? [],

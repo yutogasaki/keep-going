@@ -1,7 +1,13 @@
 import type { Exercise } from '../../../data/exercises';
+import {
+    EXERCISE_PLACEMENTS,
+    getExercisePlacementLabel,
+    isRestPlacement,
+    type ExercisePlacement,
+} from '../../../data/exercisePlacement';
 import type { CustomExercise } from '../../../lib/db';
 
-export type IndividualCategoryId = 'all' | 'warmup' | 'main' | 'core' | 'custom';
+export type IndividualCategoryId = 'all' | ExercisePlacement;
 
 export interface IndividualCategoryOption {
     id: IndividualCategoryId;
@@ -10,10 +16,10 @@ export interface IndividualCategoryOption {
 
 export const INDIVIDUAL_CATEGORY_OPTIONS: IndividualCategoryOption[] = [
     { id: 'all', label: 'ぜんぶ' },
-    { id: 'warmup', label: 'じゅんび' },
-    { id: 'main', label: 'のばす' },
-    { id: 'core', label: 'たいかん' },
-    { id: 'custom', label: 'じぶん' },
+    ...EXERCISE_PLACEMENTS.map((placement) => ({
+        id: placement,
+        label: getExercisePlacementLabel(placement),
+    })),
 ];
 
 export function getAvailableIndividualCategories(
@@ -22,17 +28,12 @@ export function getAvailableIndividualCategories(
 ): IndividualCategoryId[] {
     const available = new Set<IndividualCategoryId>(['all']);
 
-    if (exercises.some((exercise) => exercise.phase === 'warmup')) {
-        available.add('warmup');
-    }
-    if (exercises.some((exercise) => exercise.phase === 'main')) {
-        available.add('main');
-    }
-    if (exercises.some((exercise) => exercise.phase === 'core')) {
-        available.add('core');
-    }
-    if (customExercises.length > 0) {
-        available.add('custom');
+    for (const placement of EXERCISE_PLACEMENTS) {
+        const hasStandard = exercises.some((exercise) => exercise.placement === placement);
+        const hasCustom = customExercises.some((exercise) => exercise.placement === placement);
+        if (hasStandard || hasCustom) {
+            available.add(placement);
+        }
     }
 
     return INDIVIDUAL_CATEGORY_OPTIONS
@@ -44,17 +45,31 @@ export function filterStandardExercisesByCategory(
     exercises: Exercise[],
     category: IndividualCategoryId,
 ): Exercise[] {
-    if (category === 'all' || category === 'custom') {
-        return category === 'custom' ? [] : exercises;
+    if (category === 'all') {
+        return exercises;
     }
 
-    return exercises.filter((exercise) => exercise.phase === category);
+    return exercises.filter((exercise) => exercise.placement === category);
+}
+
+export function filterCustomExercisesByCategory(
+    customExercises: CustomExercise[],
+    category: IndividualCategoryId,
+): CustomExercise[] {
+    if (category === 'all') {
+        return customExercises;
+    }
+
+    return customExercises.filter((exercise) => exercise.placement === category);
 }
 
 export function shouldShowCustomExercises(
     customExercises: CustomExercise[],
     category: IndividualCategoryId,
 ): boolean {
-    if (customExercises.length === 0) return false;
-    return category === 'all' || category === 'custom';
+    return filterCustomExercisesByCategory(customExercises, category).length > 0;
+}
+
+export function isLockedPlacement(category: IndividualCategoryId): boolean {
+    return category !== 'all' && isRestPlacement(category);
 }

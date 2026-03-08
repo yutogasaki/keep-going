@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronDown, Download, Edit2, EyeOff, Play, Trash2, Upload } from 'lucide-react';
+import { getExercisePlacementLabel } from '../../../data/exercisePlacement';
 import type { CustomExercise } from '../../../lib/db';
 import type { PublicExercise } from '../../../lib/publicExercises';
 import { ExerciseIcon } from '../../../components/ExerciseIcon';
@@ -126,8 +127,10 @@ export const CustomExerciseList: React.FC<CustomExerciseListProps> = ({
                                     color: '#8395A7',
                                     display: 'flex',
                                     gap: 8,
+                                    flexWrap: 'wrap',
                                 }}>
                                     <span>{exercise.sec}秒</span>
+                                    <span>{getExercisePlacementLabel(exercise.placement)}</span>
                                     {exercise.hasSplit && (
                                         <span style={{ color: '#2BBAA0' }}>切替あり</span>
                                     )}
