@@ -25,5 +25,6 @@
 ## 2026-03: 月次サマリ
 - sync / restore / teacher data まわりの信頼性改善をまとめて実施し、競合解決・restore・初回同期並列化・ページネーションを強化
 - menu / editor / session / record 周辺の責務分離と UX 改善を進め、循環依存解消、hook 分割、editor shell 共通化、同日再開、記録正規化、アクセシビリティ、TTS 音量整理を反映
+- restore settings sanitize、session visibility helper 化、`MenuIndividualTab` / `GroupCard` 分割を追加し、sync fallback と MenuPage の保守性をさらに改善
 - 2026-03-04 から 2026-03-07 までの詳細履歴は `.agents/tasks/archive/2026-03.md` を参照
 
