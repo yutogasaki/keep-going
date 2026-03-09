@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
 import { ExerciseIcon } from '../../../components/ExerciseIcon';
 import { editorLabelStyle } from '../../../components/editor/EditorShell';
+import { EXERCISE_PLACEMENTS, getExercisePlacementLabel } from '../../../data/exercisePlacement';
+import { COLOR, FONT, FONT_SIZE, inputField } from '../../../lib/styles';
 import type { MenuEditorExerciseOption } from './teacherEditorHelpers';
 
 interface TeacherMenuExercisePickerProps {
@@ -18,9 +20,22 @@ export const TeacherMenuExercisePicker: React.FC<TeacherMenuExercisePickerProps>
     onAddExercise,
     onRemoveAtIndex,
 }) => {
+    const [query, setQuery] = useState('');
+    const [placementFilter, setPlacementFilter] = useState<'all' | MenuEditorExerciseOption['placement']>('all');
     const lookupExercise = (id: string) => exercises.find((exercise) => exercise.id === id);
-    const standardExercises = exercises.filter((exercise) => !exercise.isTeacher);
-    const teacherExercises = exercises.filter((exercise) => exercise.isTeacher);
+    const filteredExercises = useMemo(() => {
+        const normalizedQuery = query.trim().toLowerCase();
+
+        return exercises.filter((exercise) => {
+            const matchesQuery = normalizedQuery.length === 0
+                || exercise.name.toLowerCase().includes(normalizedQuery)
+                || getExercisePlacementLabel(exercise.placement).toLowerCase().includes(normalizedQuery);
+            const matchesPlacement = placementFilter === 'all' || exercise.placement === placementFilter;
+            return matchesQuery && matchesPlacement;
+        });
+    }, [exercises, placementFilter, query]);
+    const standardExercises = filteredExercises.filter((exercise) => !exercise.isTeacher);
+    const teacherExercises = filteredExercises.filter((exercise) => exercise.isTeacher);
 
     const renderExerciseButton = (exercise: MenuEditorExerciseOption) => {
         const count = exerciseIds.filter((id) => id === exercise.id).length;
@@ -86,7 +101,7 @@ export const TeacherMenuExercisePicker: React.FC<TeacherMenuExercisePickerProps>
                             color: '#8395A7',
                         }}
                     >
-                        {exercise.sec}秒
+                        {exercise.sec}秒 ・ {getExercisePlacementLabel(exercise.placement)}
                     </span>
                 </div>
                 {count > 0 ? (
@@ -250,9 +265,74 @@ export const TeacherMenuExercisePicker: React.FC<TeacherMenuExercisePickerProps>
                 >
                     種目をタップして追加（くりかえしOK）
                 </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
+                    <input
+                        type="text"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="名前や位置でさがす"
+                        style={{
+                            ...inputField,
+                            fontSize: FONT_SIZE.sm,
+                            color: COLOR.dark,
+                        }}
+                    />
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        <button
+                            type="button"
+                            onClick={() => setPlacementFilter('all')}
+                            style={{
+                                padding: '7px 10px',
+                                borderRadius: 999,
+                                border: placementFilter === 'all' ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
+                                background: placementFilter === 'all' ? '#E8F8F0' : '#FFF',
+                                color: placementFilter === 'all' ? '#2BBAA0' : COLOR.text,
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.xs,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                            }}
+                        >
+                            すべて
+                        </button>
+                        {EXERCISE_PLACEMENTS.map((placement) => (
+                            <button
+                                key={placement}
+                                type="button"
+                                onClick={() => setPlacementFilter(placement)}
+                                style={{
+                                    padding: '7px 10px',
+                                    borderRadius: 999,
+                                    border: placementFilter === placement ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
+                                    background: placementFilter === placement ? '#E8F8F0' : '#FFF',
+                                    color: placementFilter === placement ? '#2BBAA0' : COLOR.text,
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.xs,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                {getExercisePlacementLabel(placement)}
+                            </button>
+                        ))}
+                    </div>
+                </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {renderExerciseSection('標準種目', standardExercises)}
                     {renderExerciseSection('先生の種目', teacherExercises)}
+                    {filteredExercises.length === 0 ? (
+                        <div
+                            className="card"
+                            style={{
+                                padding: '14px 16px',
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.sm,
+                                color: '#8395A7',
+                            }}
+                        >
+                            条件に合う種目がありません
+                        </div>
+                    ) : null}
                 </div>
             </div>
         </>

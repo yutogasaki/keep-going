@@ -4,12 +4,13 @@ import { getTodayKey } from '../../../lib/db';
 import { CLASS_EMOJI, EXERCISES } from '../../../data/exercises';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
 import { getChallengeRewardLabel, type Challenge } from '../../../lib/challenges';
-import type { TeacherMenu } from '../../../lib/teacherContent';
+import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
 
 interface ChallengeListProps {
     loading: boolean;
     challenges: Challenge[];
     teacherMenus: TeacherMenu[];
+    teacherExercises: TeacherExercise[];
     onEdit: (challenge: Challenge) => void;
     onDelete: (challengeId: string) => void;
 }
@@ -18,11 +19,13 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
     loading,
     challenges,
     teacherMenus,
+    teacherExercises,
     onEdit,
     onDelete,
 }) => {
     const today = getTodayKey();
     const teacherMenuMap = new Map(teacherMenus.map((menu) => [menu.id, menu]));
+    const teacherExerciseMap = new Map(teacherExercises.map((exercise) => [exercise.id, exercise]));
 
     if (loading) {
         return (
@@ -50,6 +53,7 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
             {challenges.map((challenge) => {
                 const exercise = challenge.exerciseId
                     ? EXERCISES.find((item) => item.id === challenge.exerciseId)
+                        ?? teacherExerciseMap.get(challenge.exerciseId)
                     : null;
                 const presetMenu = challenge.targetMenuId
                     ? PRESET_GROUPS.find((menu) => menu.id === challenge.targetMenuId)

@@ -6,6 +6,7 @@ import { EXERCISES } from '../data/exercises';
 import { MenuDetailSheet } from './MenuDetailSheet';
 import { useAppStore } from '../store/useAppStore';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../lib/styles';
+import { DISPLAY_TERMS } from '../lib/terminology';
 
 interface PublicMenuBrowserProps {
     open: boolean;
@@ -98,7 +99,7 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
                                     margin: 0,
                                     flex: 1,
                                 }}>
-                                    みんなのメニュー
+                                    {DISPLAY_TERMS.publicMenu}
                                 </h2>
                                 <button
                                     onClick={onClose}
@@ -168,7 +169,7 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
                                             fontSize: 14,
                                             margin: 0,
                                         }}>
-                                            まだみんなのメニューがありません
+                                            まだ{DISPLAY_TERMS.publicMenu}がありません
                                         </p>
                                     </div>
                                 ) : (

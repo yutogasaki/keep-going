@@ -65,6 +65,7 @@ export const HomeScreen: React.FC = () => {
         filteredChallenges,
         pastChallenges,
         completions,
+        teacherExercises,
         pastExpanded,
         setPastExpanded,
         loadChallenges,
@@ -171,6 +172,7 @@ export const HomeScreen: React.FC = () => {
                     filteredChallenges={filteredChallenges}
                     pastChallenges={pastChallenges}
                     completions={completions}
+                    teacherExercises={teacherExercises}
                     pastExpanded={pastExpanded}
                     onTogglePastExpanded={() => setPastExpanded((previous) => !previous)}
                     onChallengesUpdated={loadChallenges}

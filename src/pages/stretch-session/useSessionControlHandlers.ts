@@ -96,7 +96,7 @@ export function useSessionControlHandlers({
                     ...skippedIds,
                     currentExercise.id,
                 ]);
-                // ビルトイン + セッション中のカスタム/先生種目から代替を探す
+                // 標準種目 + セッション中のカスタム/先生種目から代替を探す
                 const builtInPool = getExercisesByClass(classLevel);
                 const sessionPool = sessionExercises.filter(e =>
                     !builtInPool.some(b => b.id === e.id)

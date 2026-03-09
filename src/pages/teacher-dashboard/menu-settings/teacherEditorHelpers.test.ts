@@ -29,12 +29,21 @@ describe('teacherEditorHelpers', () => {
                 hasSplit: false,
                 description: '',
                 classLevels: ['初級'],
+                visibility: 'public',
+                focusTags: [],
+                recommended: false,
+                recommendedOrder: null,
                 createdBy: 'teacher@example.com',
                 createdAt: '2026-03-08T00:00:00.000Z',
             },
         ]);
 
         expect(exercises.some((exercise) => exercise.id === 'S01')).toBe(true);
-        expect(exercises.find((exercise) => exercise.id === 'teacher-1')).toMatchObject({ isTeacher: true, sec: 45 });
+        expect(exercises.find((exercise) => exercise.id === 'teacher-1')).toMatchObject({
+            isTeacher: true,
+            sec: 45,
+            placement: 'prep',
+            sourceLabel: '先生の種目',
+        });
     });
 });

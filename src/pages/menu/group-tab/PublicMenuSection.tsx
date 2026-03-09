@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { DISPLAY_TERMS } from '../../../lib/terminology';
 
 interface PublicMenuSectionProps {
     onOpen: () => void;
@@ -16,7 +17,7 @@ export const PublicMenuSection: React.FC<PublicMenuSectionProps> = ({ onOpen }) 
                 marginBottom: 10,
                 letterSpacing: 1,
             }}>
-                みんなのメニュー
+                {DISPLAY_TERMS.publicMenu}
             </h2>
             <motion.button
                 whileTap={{ scale: 0.98 }}
@@ -56,7 +57,7 @@ export const PublicMenuSection: React.FC<PublicMenuSectionProps> = ({ onOpen }) 
                         color: '#2D3436',
                         marginBottom: 4,
                     }}>
-                        みんなのメニューを見る
+                        {DISPLAY_TERMS.publicMenu}を見る
                     </div>
                     <div style={{
                         fontFamily: "'Noto Sans JP', sans-serif",

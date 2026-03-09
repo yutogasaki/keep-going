@@ -6,11 +6,13 @@ import { PopularMenusRow } from '../../components/PopularMenusRow';
 import type { Challenge, ChallengeCompletion } from '../../lib/challenges';
 import type { PublicExercise } from '../../lib/publicExercises';
 import type { PublicMenu } from '../../lib/publicMenus';
+import type { TeacherExercise } from '../../lib/teacherContent';
 
 interface HomeChallengesAndMenusProps {
     filteredChallenges: Challenge[];
     pastChallenges: Challenge[];
     completions: ChallengeCompletion[];
+    teacherExercises: TeacherExercise[];
     pastExpanded: boolean;
     onTogglePastExpanded: () => void;
     onChallengesUpdated: () => void;
@@ -24,6 +26,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
     filteredChallenges,
     pastChallenges,
     completions,
+    teacherExercises,
     pastExpanded,
     onTogglePastExpanded,
     onChallengesUpdated,
@@ -61,6 +64,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                             key={challenge.id}
                             challenge={challenge}
                             completions={completions}
+                            teacherExercises={teacherExercises}
                             onCompleted={onChallengesUpdated}
                         />
                     ))}
@@ -114,6 +118,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                                         key={challenge.id}
                                         challenge={challenge}
                                         completions={completions}
+                                        teacherExercises={teacherExercises}
                                         onCompleted={onChallengesUpdated}
                                         expired
                                     />

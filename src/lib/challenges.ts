@@ -5,6 +5,8 @@ import { supabase } from './supabase';
 import type { Database } from './supabase-types';
 import { getAccountId } from './sync/authState';
 import { getSessionExerciseCounts, hasCompletedPlannedExercises } from './sessionRecords';
+import type { TeacherExercise } from './teacherContent';
+import { CANONICAL_TERMS } from './terminology';
 
 export type ChallengeType = 'exercise' | 'menu';
 export type ChallengeMenuSource = 'teacher' | 'preset';
@@ -157,26 +159,28 @@ function toChallengeUpdateRow(input: ChallengeWriteInput): Database['public']['T
     return toChallengeRowBase(input);
 }
 
-export function getChallengeExercise(challenge: Challenge) {
+export function getChallengeExercise(challenge: Challenge, teacherExercises: TeacherExercise[] = []) {
     return challenge.exerciseId
-        ? EXERCISES.find((item) => item.id === challenge.exerciseId) ?? null
+        ? EXERCISES.find((item) => item.id === challenge.exerciseId)
+            ?? teacherExercises.find((item) => item.id === challenge.exerciseId)
+            ?? null
         : null;
 }
 
-export function getChallengeEmoji(challenge: Challenge): string {
-    return challenge.iconEmoji ?? getChallengeExercise(challenge)?.emoji ?? '🎯';
+export function getChallengeEmoji(challenge: Challenge, teacherExercises: TeacherExercise[] = []): string {
+    return challenge.iconEmoji ?? getChallengeExercise(challenge, teacherExercises)?.emoji ?? '🎯';
 }
 
-export function getChallengeTargetLabel(challenge: Challenge): string {
+export function getChallengeTargetLabel(challenge: Challenge, teacherExercises: TeacherExercise[] = []): string {
     if (challenge.challengeType === 'menu') {
         if (challenge.menuSource === 'preset' && challenge.targetMenuId) {
-            return PRESET_GROUPS.find((group) => group.id === challenge.targetMenuId)?.name ?? 'メニュー';
+            return PRESET_GROUPS.find((group) => group.id === challenge.targetMenuId)?.name ?? CANONICAL_TERMS.menu;
         }
 
-        return challenge.menuSource === 'teacher' ? '先生メニュー' : 'メニュー';
+        return challenge.menuSource === 'teacher' ? CANONICAL_TERMS.teacherMenu : CANONICAL_TERMS.menu;
     }
 
-    return getChallengeExercise(challenge)?.name ?? challenge.exerciseId ?? '種目';
+    return getChallengeExercise(challenge, teacherExercises)?.name ?? challenge.exerciseId ?? CANONICAL_TERMS.exercise;
 }
 
 export function getChallengeRewardLabel(challenge: Challenge): string {

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { CLASS_LEVELS, EXERCISES } from '../../../data/exercises';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
-import type { TeacherMenu } from '../../../lib/teacherContent';
+import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
 import { getTeacherVisibilityLabel, sortTeacherContentByRecommendation } from '../../../lib/teacherExerciseMetadata';
 import { CANONICAL_TERMS } from '../../../lib/terminology';
 import type { ChallengeFormValues } from './types';
@@ -10,6 +10,7 @@ import { COLOR, FONT, FONT_SIZE, RADIUS } from '../../../lib/styles';
 interface ChallengeFormCardProps {
     values: ChallengeFormValues;
     teacherMenus: TeacherMenu[];
+    teacherExercises: TeacherExercise[];
     submitting: boolean;
     isEditing: boolean;
     onChange: (patch: Partial<ChallengeFormValues>) => void;
@@ -42,6 +43,7 @@ const labelStyle: React.CSSProperties = {
 export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
     values,
     teacherMenus,
+    teacherExercises,
     submitting,
     isEditing,
     onChange,
@@ -50,21 +52,103 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
     onCancel,
     onSubmit,
 }) => {
+    const [teacherMenuFocusFilter, setTeacherMenuFocusFilter] = useState<string | null>(null);
+    const [exerciseSource, setExerciseSource] = useState<'standard' | 'teacher'>('standard');
+    const [teacherExerciseFocusFilter, setTeacherExerciseFocusFilter] = useState<string | null>(null);
     const sortedTeacherMenus = sortTeacherContentByRecommendation(teacherMenus);
+    const sortedTeacherExercises = sortTeacherContentByRecommendation(teacherExercises);
+    const availableTeacherExerciseTags = useMemo(
+        () => [...new Set(sortedTeacherExercises.flatMap((exercise) => exercise.focusTags))],
+        [sortedTeacherExercises],
+    );
+    const filteredTeacherExercises = useMemo(() => {
+        if (!teacherExerciseFocusFilter) {
+            return sortedTeacherExercises;
+        }
+
+        return sortedTeacherExercises.filter((exercise) => exercise.focusTags.includes(teacherExerciseFocusFilter));
+    }, [sortedTeacherExercises, teacherExerciseFocusFilter]);
+    const selectedTeacherExercise = sortedTeacherExercises.find((exercise) => exercise.id === values.exerciseId) ?? null;
+    const availableTeacherMenuTags = useMemo(
+        () => [...new Set(sortedTeacherMenus.flatMap((menu) => menu.focusTags))],
+        [sortedTeacherMenus],
+    );
+    const filteredTeacherMenus = useMemo(() => {
+        if (!teacherMenuFocusFilter) {
+            return sortedTeacherMenus;
+        }
+
+        return sortedTeacherMenus.filter((menu) => menu.focusTags.includes(teacherMenuFocusFilter));
+    }, [sortedTeacherMenus, teacherMenuFocusFilter]);
     const dateError = values.startDate && values.endDate && values.endDate < values.startDate
         ? '終了日は開始日より後にしてください'
         : '';
     const hasMenuTarget = values.menuSource === 'preset'
         ? PRESET_GROUPS.some((group) => group.id === values.targetMenuId)
-        : sortedTeacherMenus.some((menu) => menu.id === values.targetMenuId);
+        : filteredTeacherMenus.some((menu) => menu.id === values.targetMenuId);
     const selectedTeacherMenu = values.menuSource === 'teacher'
-        ? sortedTeacherMenus.find((menu) => menu.id === values.targetMenuId) ?? null
+        ? filteredTeacherMenus.find((menu) => menu.id === values.targetMenuId)
+            ?? sortedTeacherMenus.find((menu) => menu.id === values.targetMenuId)
+            ?? null
         : null;
     const hasError = !values.title.trim()
         || values.targetCount < 1
         || values.dailyCap < 1
         || !!dateError
         || (values.challengeType === 'menu' && !hasMenuTarget);
+
+    useEffect(() => {
+        if (teacherMenuFocusFilter && !availableTeacherMenuTags.includes(teacherMenuFocusFilter)) {
+            setTeacherMenuFocusFilter(null);
+        }
+    }, [availableTeacherMenuTags, teacherMenuFocusFilter]);
+
+    useEffect(() => {
+        if (teacherExerciseFocusFilter && !availableTeacherExerciseTags.includes(teacherExerciseFocusFilter)) {
+            setTeacherExerciseFocusFilter(null);
+        }
+    }, [availableTeacherExerciseTags, teacherExerciseFocusFilter]);
+
+    useEffect(() => {
+        if (selectedTeacherExercise) {
+            setExerciseSource('teacher');
+            return;
+        }
+
+        if (EXERCISES.some((exercise) => exercise.id === values.exerciseId)) {
+            setExerciseSource('standard');
+        }
+    }, [selectedTeacherExercise, values.exerciseId]);
+
+    useEffect(() => {
+        if (values.menuSource !== 'teacher') {
+            return;
+        }
+
+        if (filteredTeacherMenus.length === 0) {
+            return;
+        }
+
+        const hasSelectedTarget = filteredTeacherMenus.some((menu) => menu.id === values.targetMenuId);
+        if (!hasSelectedTarget) {
+            onChange({ targetMenuId: filteredTeacherMenus[0].id });
+        }
+    }, [filteredTeacherMenus, onChange, values.menuSource, values.targetMenuId]);
+
+    useEffect(() => {
+        if (values.challengeType !== 'exercise' || exerciseSource !== 'teacher') {
+            return;
+        }
+
+        if (filteredTeacherExercises.length === 0) {
+            return;
+        }
+
+        const hasSelectedTarget = filteredTeacherExercises.some((exercise) => exercise.id === values.exerciseId);
+        if (!hasSelectedTarget) {
+            onChange({ exerciseId: filteredTeacherExercises[0].id });
+        }
+    }, [exerciseSource, filteredTeacherExercises, onChange, values.challengeType, values.exerciseId]);
 
     return (
         <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -139,16 +223,174 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                 <div style={{ flex: 1 }}>
                     {values.challengeType === 'exercise' ? (
                         <>
-                            <div style={labelStyle}>エクササイズ</div>
+                            <div style={labelStyle}>{CANONICAL_TERMS.exercise}</div>
+                            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                                {([
+                                    { id: 'standard', label: CANONICAL_TERMS.standardExercise },
+                                    { id: 'teacher', label: CANONICAL_TERMS.teacherExercise },
+                                ] as const).map((option) => {
+                                    const selected = exerciseSource === option.id;
+                                    return (
+                                        <button
+                                            key={option.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setExerciseSource(option.id);
+                                                if (option.id === 'standard' && !EXERCISES.some((exercise) => exercise.id === values.exerciseId)) {
+                                                    onChange({ exerciseId: EXERCISES[0]?.id ?? 'S01' });
+                                                }
+                                                if (option.id === 'teacher' && filteredTeacherExercises.length > 0) {
+                                                    onChange({ exerciseId: filteredTeacherExercises[0].id });
+                                                }
+                                            }}
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px 10px',
+                                                borderRadius: 12,
+                                                border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
+                                                background: selected ? '#E8F8F0' : COLOR.bgLight,
+                                                cursor: 'pointer',
+                                                fontFamily: FONT.body,
+                                                fontSize: FONT_SIZE.sm,
+                                                fontWeight: 700,
+                                                color: COLOR.text,
+                                            }}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            {exerciseSource === 'teacher' && availableTeacherExerciseTags.length > 0 ? (
+                                <div style={{ marginBottom: 8 }}>
+                                    <div style={{ ...labelStyle, fontSize: FONT_SIZE.xs }}>ねらいで絞る</div>
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setTeacherExerciseFocusFilter(null)}
+                                            style={{
+                                                padding: '6px 10px',
+                                                borderRadius: 999,
+                                                border: teacherExerciseFocusFilter === null ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
+                                                background: teacherExerciseFocusFilter === null ? '#E8F8F0' : COLOR.bgLight,
+                                                color: teacherExerciseFocusFilter === null ? '#2BBAA0' : COLOR.text,
+                                                fontFamily: FONT.body,
+                                                fontSize: FONT_SIZE.xs,
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            すべて
+                                        </button>
+                                        {availableTeacherExerciseTags.map((tag) => {
+                                            const selected = teacherExerciseFocusFilter === tag;
+                                            return (
+                                                <button
+                                                    key={tag}
+                                                    type="button"
+                                                    onClick={() => setTeacherExerciseFocusFilter(tag)}
+                                                    style={{
+                                                        padding: '6px 10px',
+                                                        borderRadius: 999,
+                                                        border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
+                                                        background: selected ? '#E8F8F0' : COLOR.bgLight,
+                                                        color: selected ? '#2BBAA0' : COLOR.text,
+                                                        fontFamily: FONT.body,
+                                                        fontSize: FONT_SIZE.xs,
+                                                        fontWeight: 700,
+                                                        cursor: 'pointer',
+                                                    }}
+                                                >
+                                                    {tag}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ) : null}
                             <select
                                 value={values.exerciseId}
                                 onChange={(event) => onChange({ exerciseId: event.target.value })}
                                 style={{ ...inputStyle, appearance: 'auto' }}
                             >
-                                {EXERCISES.map((exercise) => (
-                                    <option key={exercise.id} value={exercise.id}>{exercise.emoji} {exercise.name}</option>
+                                {(exerciseSource === 'standard' ? EXERCISES : filteredTeacherExercises).map((exercise) => (
+                                    <option key={exercise.id} value={exercise.id}>
+                                        {exercise.emoji} {exercise.name}
+                                    </option>
                                 ))}
                             </select>
+                            {exerciseSource === 'teacher' && sortedTeacherExercises.length === 0 ? (
+                                <div style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.xs,
+                                    color: COLOR.muted,
+                                    marginTop: 6,
+                                }}>
+                                    {CANONICAL_TERMS.teacherExercise}がまだありません。先にメニュー設定で作成してください。
+                                </div>
+                            ) : null}
+                            {exerciseSource === 'teacher' && sortedTeacherExercises.length > 0 && filteredTeacherExercises.length === 0 ? (
+                                <div style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.xs,
+                                    color: COLOR.muted,
+                                    marginTop: 6,
+                                }}>
+                                    この絞り込みに合う{CANONICAL_TERMS.teacherExercise}がありません。
+                                </div>
+                            ) : null}
+                            {selectedTeacherExercise ? (
+                                <div style={{
+                                    marginTop: 8,
+                                    display: 'flex',
+                                    gap: 6,
+                                    flexWrap: 'wrap',
+                                    alignItems: 'center',
+                                }}>
+                                    {selectedTeacherExercise.recommended ? (
+                                        <span style={{
+                                            fontFamily: FONT.body,
+                                            fontSize: FONT_SIZE.xs,
+                                            fontWeight: 700,
+                                            color: '#FFF',
+                                            background: '#2BBAA0',
+                                            padding: '2px 8px',
+                                            borderRadius: 999,
+                                        }}>
+                                            {selectedTeacherExercise.recommendedOrder != null ? `おすすめ ${selectedTeacherExercise.recommendedOrder}` : 'おすすめ'}
+                                        </span>
+                                    ) : null}
+                                    {selectedTeacherExercise.visibility !== 'public' ? (
+                                        <span style={{
+                                            fontFamily: FONT.body,
+                                            fontSize: FONT_SIZE.xs,
+                                            fontWeight: 700,
+                                            color: '#0984E3',
+                                            background: 'rgba(9, 132, 227, 0.1)',
+                                            padding: '2px 8px',
+                                            borderRadius: 999,
+                                        }}>
+                                            {getTeacherVisibilityLabel(selectedTeacherExercise.visibility)}
+                                        </span>
+                                    ) : null}
+                                    {selectedTeacherExercise.focusTags.map((tag) => (
+                                        <span
+                                            key={tag}
+                                            style={{
+                                                fontFamily: FONT.body,
+                                                fontSize: FONT_SIZE.xs,
+                                                fontWeight: 700,
+                                                color: '#2BBAA0',
+                                                background: 'rgba(43,186,160,0.08)',
+                                                padding: '2px 8px',
+                                                borderRadius: 999,
+                                            }}
+                                        >
+                                            {tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : null}
                         </>
                     ) : (
                         <>
@@ -187,12 +429,59 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                     );
                                 })}
                             </div>
+                            {values.menuSource === 'teacher' && availableTeacherMenuTags.length > 0 ? (
+                                <div style={{ marginBottom: 8 }}>
+                                    <div style={{ ...labelStyle, fontSize: FONT_SIZE.xs }}>ねらいで絞る</div>
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setTeacherMenuFocusFilter(null)}
+                                            style={{
+                                                padding: '6px 10px',
+                                                borderRadius: 999,
+                                                border: teacherMenuFocusFilter === null ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
+                                                background: teacherMenuFocusFilter === null ? '#E8F8F0' : COLOR.bgLight,
+                                                color: teacherMenuFocusFilter === null ? '#2BBAA0' : COLOR.text,
+                                                fontFamily: FONT.body,
+                                                fontSize: FONT_SIZE.xs,
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                            }}
+                                        >
+                                            すべて
+                                        </button>
+                                        {availableTeacherMenuTags.map((tag) => {
+                                            const selected = teacherMenuFocusFilter === tag;
+                                            return (
+                                                <button
+                                                    key={tag}
+                                                    type="button"
+                                                    onClick={() => setTeacherMenuFocusFilter(tag)}
+                                                    style={{
+                                                        padding: '6px 10px',
+                                                        borderRadius: 999,
+                                                        border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
+                                                        background: selected ? '#E8F8F0' : COLOR.bgLight,
+                                                        color: selected ? '#2BBAA0' : COLOR.text,
+                                                        fontFamily: FONT.body,
+                                                        fontSize: FONT_SIZE.xs,
+                                                        fontWeight: 700,
+                                                        cursor: 'pointer',
+                                                    }}
+                                                >
+                                                    {tag}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ) : null}
                             <select
                                 value={values.targetMenuId}
                                 onChange={(event) => onChange({ targetMenuId: event.target.value })}
                                 style={{ ...inputStyle, appearance: 'auto' }}
                             >
-                                {(values.menuSource === 'preset' ? PRESET_GROUPS : sortedTeacherMenus).map((menu) => (
+                                {(values.menuSource === 'preset' ? PRESET_GROUPS : filteredTeacherMenus).map((menu) => (
                                     <option key={menu.id} value={menu.id}>
                                         {menu.emoji} {menu.name}
                                         {'recommended' in menu && menu.recommended ? ` / おすすめ${menu.recommendedOrder ? ` ${menu.recommendedOrder}` : ''}` : ''}
@@ -209,6 +498,16 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                     先生メニューがまだありません。先にメニュー設定で作成してください。
                                 </div>
                             )}
+                            {values.menuSource === 'teacher' && sortedTeacherMenus.length > 0 && filteredTeacherMenus.length === 0 ? (
+                                <div style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.xs,
+                                    color: COLOR.muted,
+                                    marginTop: 6,
+                                }}>
+                                    この絞り込みに合う{CANONICAL_TERMS.teacherMenu}がありません。
+                                </div>
+                            ) : null}
                             {selectedTeacherMenu ? (
                                 <div style={{
                                     marginTop: 8,

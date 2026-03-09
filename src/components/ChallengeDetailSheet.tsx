@@ -8,11 +8,13 @@ import {
     getChallengeTargetLabel,
     type Challenge,
 } from '../lib/challenges';
+import type { TeacherExercise } from '../lib/teacherContent';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../lib/styles';
 
 interface ChallengeDetailSheetProps {
     open: boolean;
     challenge: Challenge | null;
+    teacherExercises?: TeacherExercise[];
     progress: number;
     joined: boolean;
     completed: boolean;
@@ -23,6 +25,7 @@ interface ChallengeDetailSheetProps {
 export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
     open,
     challenge,
+    teacherExercises = [],
     progress,
     joined,
     completed,
@@ -62,7 +65,7 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                             flexShrink: 0,
                         }}
                     >
-                        {getChallengeEmoji(challenge)}
+                        {getChallengeEmoji(challenge, teacherExercises)}
                     </div>
                     <div style={{ minWidth: 0, flex: 1 }}>
                         <div
@@ -109,7 +112,7 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                 )}
 
                 <div style={{ display: 'grid', gap: SPACE.sm }}>
-                    <DetailRow icon={<Target size={15} />} label="対象" value={`${getChallengeTargetLabel(challenge)}を${challenge.targetCount}回`} />
+                    <DetailRow icon={<Target size={15} />} label="対象" value={`${getChallengeTargetLabel(challenge, teacherExercises)}を${challenge.targetCount}回`} />
                     <DetailRow icon={<Sparkles size={15} />} label="1日上限" value={getChallengeDailyCapLabel(challenge)} />
                     <DetailRow icon={<Trophy size={15} />} label="報酬" value={getChallengeRewardLabel(challenge)} />
                     <DetailRow icon={<Calendar size={15} />} label="期間" value={`${challenge.startDate} 〜 ${challenge.endDate}`} />

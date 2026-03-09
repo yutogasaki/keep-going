@@ -12,6 +12,7 @@ import { getChallengeDailyCapLabel, getChallengeEmoji, getChallengeTargetLabel }
 export const ChallengeCard: React.FC<ChallengeCardProps> = ({
     challenge,
     completions,
+    teacherExercises = [],
     onCompleted,
     expired,
 }) => {
@@ -54,8 +55,8 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
         onCompleted,
     });
 
-    const emoji = getChallengeEmoji(challenge);
-    const targetLabel = getChallengeTargetLabel(challenge);
+    const emoji = getChallengeEmoji(challenge, teacherExercises);
+    const targetLabel = getChallengeTargetLabel(challenge, teacherExercises);
     const ratio = Math.min(progress / challenge.targetCount, 1);
 
     const dateLabel = getChallengeDateLabel(challenge.startDate, challenge.endDate);
@@ -82,6 +83,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
                 <ChallengeDetailSheet
                     open={detailOpen}
                     challenge={challenge}
+                    teacherExercises={teacherExercises}
                     progress={progress}
                     joined={isJoined}
                     completed={wasCompleted}
@@ -107,6 +109,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
                 <ChallengeDetailSheet
                     open={detailOpen}
                     challenge={challenge}
+                    teacherExercises={teacherExercises}
                     progress={progress}
                     joined={false}
                     completed={false}
@@ -133,6 +136,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
             <ChallengeDetailSheet
                 open={detailOpen}
                 challenge={challenge}
+                teacherExercises={teacherExercises}
                 progress={progress}
                 joined
                 completed={allCompleted}

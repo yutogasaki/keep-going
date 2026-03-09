@@ -1,5 +1,6 @@
 import React from 'react';
 import type { ConfirmAction } from './types';
+import { DISPLAY_TERMS } from '../../lib/terminology';
 
 interface ConfirmActionDialogProps {
     confirmAction: ConfirmAction | null;
@@ -45,8 +46,8 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
                     {confirmAction.type === 'delete'
                         ? 'このアカウントの全データ（メンバー・セッション・メニュー等）を完全に削除します。この操作は取り消せません。'
                         : confirmAction.type === 'suspend'
-                            ? '休止するとみんなのメニューや先生ダッシュボードに表示されなくなります。'
-                            : '休止を解除すると、再びみんなのメニューや先生ダッシュボードに表示されます。'}
+                            ? `休止すると${DISPLAY_TERMS.publicMenu}や先生ダッシュボードに表示されなくなります。`
+                            : `休止を解除すると、再び${DISPLAY_TERMS.publicMenu}や先生ダッシュボードに表示されます。`}
                 </p>
                 <p style={{ fontSize: 11, color: '#999', margin: '0 0 16px', wordBreak: 'break-all' }}>
                     ID: {confirmAction.accountId.slice(0, 8)}...

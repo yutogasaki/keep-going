@@ -1,4 +1,5 @@
 import { CLASS_LEVELS, EXERCISES } from '../../../data/exercises';
+import type { ExercisePlacement } from '../../../data/exercisePlacement';
 import type { TeacherExercise } from '../../../lib/teacherContent';
 import type { MenuSettingStatus } from '../../../lib/teacherMenuSettings';
 
@@ -14,6 +15,7 @@ export interface MenuEditorExerciseOption {
     name: string;
     emoji: string;
     sec: number;
+    placement: ExercisePlacement;
     isTeacher: boolean;
     sourceLabel: string;
 }
@@ -45,6 +47,7 @@ export function buildMenuEditorExercises(teacherExercises: TeacherExercise[]): M
             name: exercise.name,
             emoji: exercise.emoji,
             sec: exercise.sec,
+            placement: exercise.placement,
             isTeacher: false,
             sourceLabel: '標準種目',
         })),
@@ -53,6 +56,7 @@ export function buildMenuEditorExercises(teacherExercises: TeacherExercise[]): M
             name: exercise.name,
             emoji: exercise.emoji,
             sec: exercise.sec,
+            placement: exercise.placement,
             isTeacher: true,
             sourceLabel: '先生の種目',
         })),

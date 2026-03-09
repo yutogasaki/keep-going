@@ -9,7 +9,7 @@ import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import { ChallengeFormCard } from './challenge-management/ChallengeFormCard';
 import { ChallengeList } from './challenge-management/ChallengeList';
 import { CreateChallengeButton } from './challenge-management/CreateChallengeButton';
-import { fetchTeacherMenus, type TeacherMenu } from '../../lib/teacherContent';
+import { fetchTeacherExercises, fetchTeacherMenus, type TeacherExercise, type TeacherMenu } from '../../lib/teacherContent';
 import {
     createChallengeFormValuesFromChallenge,
     createDefaultChallengeFormValues,
@@ -41,13 +41,18 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
     const [teacherMenus, setTeacherMenus] = useState<TeacherMenu[]>([]);
+    const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
 
     useEffect(() => {
-        fetchTeacherMenus()
-            .then(setTeacherMenus)
+        Promise.all([fetchTeacherMenus(), fetchTeacherExercises()])
+            .then(([menus, exercises]) => {
+                setTeacherMenus(menus);
+                setTeacherExercises(exercises);
+            })
             .catch((error) => {
-                console.warn('[teacher] Failed to load teacher menus for challenge form:', error);
+                console.warn('[teacher] Failed to load teacher content for challenge form:', error);
                 setTeacherMenus([]);
+                setTeacherExercises([]);
             });
     }, []);
 
@@ -166,6 +171,7 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                 <ChallengeFormCard
                     values={formValues}
                     teacherMenus={teacherMenus}
+                    teacherExercises={teacherExercises}
                     submitting={submitting}
                     isEditing={!!editingId}
                     onChange={(patch) => {
@@ -189,6 +195,7 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                 loading={loading}
                 challenges={challenges}
                 teacherMenus={teacherMenus}
+                teacherExercises={teacherExercises}
                 onEdit={startEdit}
                 onDelete={(id) => setDeleteTargetId(id)}
             />

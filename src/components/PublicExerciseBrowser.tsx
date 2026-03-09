@@ -160,7 +160,7 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
                                             fontSize: 14,
                                             margin: 0,
                                         }}>
-                                            まだみんなの種目がありません
+                                            まだ{DISPLAY_TERMS.publicExercise}がありません
                                         </p>
                                     </div>
                                 ) : (
@@ -256,4 +256,3 @@ const BrowserExerciseCard: React.FC<{
         </button>
     );
 };
-

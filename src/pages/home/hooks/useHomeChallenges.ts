@@ -6,6 +6,7 @@ import {
     type Challenge,
     type ChallengeCompletion,
 } from '../../../lib/challenges';
+import { fetchTeacherExercises, type TeacherExercise } from '../../../lib/teacherContent';
 import type { UserProfileStore } from '../../../store/useAppStore';
 
 interface UseHomeChallengesParams {
@@ -17,12 +18,14 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
     const [challenges, setChallenges] = useState<Challenge[]>([]);
     const [pastChallenges, setPastChallenges] = useState<Challenge[]>([]);
     const [completions, setCompletions] = useState<ChallengeCompletion[]>([]);
+    const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
     const [pastExpanded, setPastExpanded] = useState(false);
 
     const loadChallenges = useCallback(() => {
         fetchActiveChallenges().then(setChallenges).catch(console.warn);
         fetchPastChallenges().then(setPastChallenges).catch(console.warn);
         fetchMyCompletions().then(setCompletions).catch(console.warn);
+        fetchTeacherExercises().then(setTeacherExercises).catch(console.warn);
     }, []);
 
     useEffect(() => {
@@ -49,6 +52,7 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
         filteredChallenges,
         pastChallenges,
         completions,
+        teacherExercises,
         pastExpanded,
         setPastExpanded,
         loadChallenges,
