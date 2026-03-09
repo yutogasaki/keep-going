@@ -6,26 +6,31 @@ import type { Challenge } from '../../lib/challenges';
 interface ProgressChallengeCardProps {
     challenge: Challenge;
     emoji: string;
-    exerciseName: string;
+    targetLabel: string;
     daysLeft: number;
     ratio: number;
     progress: number;
     allCompleted: boolean;
+    dailyCapLabel: string;
+    onOpenDetail: () => void;
 }
 
 export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
     challenge,
     emoji,
-    exerciseName,
+    targetLabel,
     daysLeft,
     ratio,
     progress,
     allCompleted,
+    dailyCapLabel,
+    onOpenDetail,
 }) => {
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            onClick={onOpenDetail}
             style={{
                 background: allCompleted
                     ? 'linear-gradient(135deg, #FFF9E6, #FFF3CC)'
@@ -36,6 +41,7 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
                 border: allCompleted
                     ? '1px solid #FFD700'
                     : '1px solid rgba(0,0,0,0.05)',
+                cursor: 'pointer',
             }}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
@@ -56,8 +62,11 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         gap: 4,
+                        flexWrap: 'wrap',
                     }}>
-                        {exerciseName}を{challenge.targetCount}回
+                        {targetLabel}を{challenge.targetCount}回
+                        <span style={{ color: '#B2BEC3' }}>|</span>
+                        <span>{dailyCapLabel}</span>
                         <span style={{ color: '#B2BEC3' }}>|</span>
                         <span style={{
                             color: daysLeft <= 3 ? '#E17055' : '#8395A7',

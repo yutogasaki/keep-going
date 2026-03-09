@@ -2,6 +2,7 @@ export type SessionCountMap = Record<string, number>;
 
 export interface SessionRecordLike {
     exerciseIds: string[];
+    plannedExerciseIds?: string[];
     skippedIds: string[];
     exerciseCounts?: SessionCountMap;
     skippedCounts?: SessionCountMap;
@@ -38,4 +39,14 @@ export function getSessionCompletedExerciseTotal(record: SessionRecordLike): num
 
 export function hasCompletedExercises(record: SessionRecordLike): boolean {
     return getSessionCompletedExerciseTotal(record) > 0;
+}
+
+export function hasCompletedPlannedExercises(record: SessionRecordLike): boolean {
+    if (!Array.isArray(record.plannedExerciseIds) || record.plannedExerciseIds.length === 0) {
+        return false;
+    }
+
+    const plannedCounts = countSessionIds(record.plannedExerciseIds);
+    const completedCounts = getSessionExerciseCounts(record);
+    return Object.entries(plannedCounts).every(([id, count]) => (completedCounts[id] ?? 0) >= count);
 }

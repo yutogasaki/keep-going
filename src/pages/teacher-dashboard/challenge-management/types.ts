@@ -1,9 +1,18 @@
 export interface ChallengeFormValues {
     title: string;
+    summary: string;
+    description: string;
+    challengeType: 'exercise' | 'menu';
     exerciseId: string;
+    targetMenuId: string;
+    menuSource: 'preset' | 'teacher';
     targetCount: number;
+    dailyCap: number;
     startDate: string;
     endDate: string;
-    rewardType: number;
+    tier: 'small' | 'big';
+    rewardKind: 'star' | 'medal';
+    rewardValue: number;
+    iconEmoji: string;
     classLevels: string[];
 }

@@ -11,6 +11,7 @@ export type {
     UserProfileStore,
     PastFuwafuwaRecord,
     ChibifuwaRecord,
+    SessionMenuSource,
 } from './use-app-store/types';
 
 export const useAppStore = create<AppState>()(

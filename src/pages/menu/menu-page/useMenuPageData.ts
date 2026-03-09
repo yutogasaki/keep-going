@@ -15,7 +15,14 @@ import type { MenuTab } from './types';
 interface UseMenuPageDataParams {
     users: UserProfileStore[];
     sessionUserIds: string[];
-    startSessionWithExercises: (ids: string[]) => void;
+    startSessionWithExercises: (
+        ids: string[],
+        options?: {
+            sourceMenuId?: string | null;
+            sourceMenuSource?: 'preset' | 'teacher' | 'custom' | 'public' | null;
+            sourceMenuName?: string | null;
+        },
+    ) => void;
     startHybridSession: (requiredIds: string[]) => void;
     updateUserSettings: (
         id: string,
@@ -122,8 +129,16 @@ export function useMenuPageData({
 
     const handleGroupTap = useCallback((group: MenuGroup) => {
         audio.initTTS();
-        startSessionWithExercises(group.exerciseIds);
-    }, [startSessionWithExercises]);
+        startSessionWithExercises(group.exerciseIds, {
+            sourceMenuId: group.id,
+            sourceMenuSource: teacherContent.teacherMenuIds.has(group.id)
+                ? 'teacher'
+                : group.isPreset
+                    ? 'preset'
+                    : 'custom',
+            sourceMenuName: group.name,
+        });
+    }, [startSessionWithExercises, teacherContent.teacherMenuIds]);
 
     const handleDeleteGroup = useCallback(async (groupId: string) => {
         await deleteCustomGroup(groupId);

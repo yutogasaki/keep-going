@@ -7,6 +7,7 @@ import { formatDate } from './recordUtils';
 interface AlbumTabContentProps {
     chibifuwas: ChibifuwaRecord[];
     pastFuwafuwas: PastFuwafuwaRecord[];
+    challengeStarsTotal: number;
     onSelectBadge: (badge: ChibifuwaRecord) => void;
     onSelectFuwafuwa: (fuwafuwa: PastFuwafuwaRecord) => void;
 }
@@ -14,6 +15,7 @@ interface AlbumTabContentProps {
 export const AlbumTabContent: React.FC<AlbumTabContentProps> = ({
     chibifuwas,
     pastFuwafuwas,
+    challengeStarsTotal,
     onSelectBadge,
     onSelectFuwafuwa,
 }) => {
@@ -31,6 +33,44 @@ export const AlbumTabContent: React.FC<AlbumTabContentProps> = ({
                 paddingTop: 8,
             }}
         >
+            {challengeStarsTotal > 0 && (
+                <section>
+                    <div style={{
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: '#8395A7',
+                        marginBottom: 10,
+                        letterSpacing: 1,
+                    }}>
+                        チャレンジのほし
+                    </div>
+                    <div
+                        className="card"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '14px 16px',
+                            background: 'linear-gradient(135deg, #FFF8E1, #FFF3C4)',
+                            border: '1px solid rgba(255, 184, 0, 0.18)',
+                        }}
+                    >
+                        <div>
+                            <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, fontWeight: 700, color: '#8A5A00' }}>
+                                たまった ほし
+                            </div>
+                            <div style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 11, color: '#A87300', marginTop: 2 }}>
+                                ちょいチャレンジでもらえます
+                            </div>
+                        </div>
+                        <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: 28, fontWeight: 800, color: '#C58B00' }}>
+                            ⭐ {challengeStarsTotal}
+                        </div>
+                    </div>
+                </section>
+            )}
+
             {chibifuwas.length > 0 && (
                 <section>
                     <div style={{
@@ -102,7 +142,7 @@ export const AlbumTabContent: React.FC<AlbumTabContentProps> = ({
                 </section>
             )}
 
-            {pastFuwafuwas.length === 0 && chibifuwas.length === 0 ? (
+            {pastFuwafuwas.length === 0 && chibifuwas.length === 0 && challengeStarsTotal === 0 ? (
                 <div style={{
                     textAlign: 'center',
                     padding: '48px 20px',

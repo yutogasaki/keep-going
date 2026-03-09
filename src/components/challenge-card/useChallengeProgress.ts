@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { countExerciseInPeriod, markChallengeComplete, type Challenge } from '../../lib/challenges';
+import { countChallengeProgress, markChallengeComplete, type Challenge } from '../../lib/challenges';
 import type { ChibifuwaRecord } from '../../store/useAppStore';
 
 interface UseChallengeProgressParams {
@@ -9,6 +9,7 @@ interface UseChallengeProgressParams {
     activeUserIds: string[];
     completedUserIds: Set<string>;
     addChibifuwa: (userId: string, record: Omit<ChibifuwaRecord, 'id'>) => void;
+    addChallengeStars: (userId: string, amount: number) => void;
     onCompleted: () => void;
 }
 
@@ -19,6 +20,7 @@ export function useChallengeProgress({
     activeUserIds,
     completedUserIds,
     addChibifuwa,
+    addChallengeStars,
     onCompleted,
 }: UseChallengeProgressParams) {
     const [progress, setProgress] = useState(0);
@@ -28,12 +30,7 @@ export function useChallengeProgress({
         if (!isJoined) return;
 
         let cancelled = false;
-        countExerciseInPeriod(
-            challenge.exerciseId,
-            challenge.startDate,
-            challenge.endDate,
-            activeUserIds,
-        ).then((count) => {
+        countChallengeProgress(challenge, activeUserIds).then((count) => {
             if (!cancelled) {
                 setProgress(count);
             }
@@ -42,7 +39,7 @@ export function useChallengeProgress({
         return () => {
             cancelled = true;
         };
-    }, [challenge.exerciseId, challenge.startDate, challenge.endDate, activeUserIds, isJoined]);
+    }, [challenge, activeUserIds, isJoined]);
 
     useEffect(() => {
         if (!isJoined) return;
@@ -53,11 +50,15 @@ export function useChallengeProgress({
             for (const userId of activeUserIds) {
                 if (!completedUserIds.has(userId)) {
                     await markChallengeComplete(challenge.id, userId).catch(console.warn);
-                    addChibifuwa(userId, {
-                        type: challenge.rewardFuwafuwaType,
-                        challengeTitle: challenge.title,
-                        earnedDate: new Date().toISOString().split('T')[0],
-                    });
+                    if (challenge.rewardKind === 'star') {
+                        addChallengeStars(userId, challenge.rewardValue);
+                    } else if (challenge.rewardFuwafuwaType != null) {
+                        addChibifuwa(userId, {
+                            type: challenge.rewardFuwafuwaType,
+                            challengeTitle: challenge.title,
+                            earnedDate: new Date().toISOString().split('T')[0],
+                        });
+                    }
                 }
             }
             onCompleted();
@@ -70,6 +71,7 @@ export function useChallengeProgress({
         activeUserIds,
         completedUserIds,
         addChibifuwa,
+        addChallengeStars,
         onCompleted,
         isJoined,
     ]);

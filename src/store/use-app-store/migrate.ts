@@ -2,7 +2,7 @@ import { getTodayKey } from '../../lib/db';
 import type { AppState } from './types';
 import { sanitizePersistedState, sanitizeSessionDraft } from './migrateHelpers';
 
-export const APP_STATE_VERSION = 16;
+export const APP_STATE_VERSION = 17;
 
 export type PersistedAppState = Pick<
     AppState,
@@ -197,6 +197,17 @@ export function migrateAppState(persistedState: any, version: number): AppState 
         delete state.ttsPitch;
     }
 
+    if (version < 17) {
+        if (state.users && Array.isArray(state.users)) {
+            state.users = state.users.map((user: any) => ({
+                ...user,
+                challengeStars: typeof user.challengeStars === 'number' && Number.isFinite(user.challengeStars)
+                    ? Math.max(0, user.challengeStars)
+                    : 0,
+            }));
+        }
+    }
+
     sanitizePersistedState(state as Record<string, unknown>);
     return state as AppState;
 }
@@ -206,4 +217,3 @@ export function partializeAppState(state: AppState): PersistedAppState {
         PERSISTED_APP_STATE_KEYS.map((key) => [key, state[key]]),
     ) as PersistedAppState;
 }
-

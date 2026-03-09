@@ -39,6 +39,10 @@ export const RecordPage: React.FC = () => {
     const currentViewUsers = useMemo(() => users.filter((user) => sessionUserIds.includes(user.id)), [users, sessionUserIds]);
     const pastFuwafuwas = useMemo(() => currentViewUsers.flatMap((user) => user.pastFuwafuwas || []).filter((fuwafuwa) => fuwafuwa.finalStage === 3), [currentViewUsers]);
     const chibifuwas = useMemo(() => currentViewUsers.flatMap((user) => user.chibifuwas || []), [currentViewUsers]);
+    const challengeStarsTotal = useMemo(
+        () => currentViewUsers.reduce((sum, user) => sum + (user.challengeStars ?? 0), 0),
+        [currentViewUsers],
+    );
     const userNameMap = useMemo(() => new Map(users.map((user) => [user.id, user.name])), [users]);
 
     const loadExerciseMap = useCallback(async (forceRefresh = false) => {
@@ -279,6 +283,7 @@ export const RecordPage: React.FC = () => {
                         <AlbumTabContent
                             chibifuwas={chibifuwas}
                             pastFuwafuwas={pastFuwafuwas}
+                            challengeStarsTotal={challengeStarsTotal}
                             onSelectBadge={setSelectedBadge}
                             onSelectFuwafuwa={setSelectedFuwafuwa}
                         />

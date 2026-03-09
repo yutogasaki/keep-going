@@ -43,6 +43,7 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
                 dailyTargetMinutes: 10,
                 excludedExercises: [],
                 requiredExercises: [],
+                challengeStars: 0,
                 chibifuwas: [],
             },
         ],
@@ -70,6 +71,13 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
         users: state.users.map((user) => (
             user.id === userId
                 ? { ...user, chibifuwas: [...(user.chibifuwas || []), { ...record, id: crypto.randomUUID() }] }
+                : user
+        )),
+    })),
+    addChallengeStars: (userId, amount) => set((state) => ({
+        users: state.users.map((user) => (
+            user.id === userId
+                ? { ...user, challengeStars: Math.max(0, (user.challengeStars ?? 0) + amount) }
                 : user
         )),
     })),
@@ -110,6 +118,9 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
 
     isInSession: false,
     sessionExerciseIds: null,
+    sessionSourceMenuId: null,
+    sessionSourceMenuSource: null,
+    sessionSourceMenuName: null,
     sessionHybridMode: false,
     sessionReturnTab: 'home',
     sessionDraft: null,
@@ -121,20 +132,29 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
         return {
             isInSession: true,
             sessionExerciseIds: resumableDraft?.exerciseIds ?? null,
+            sessionSourceMenuId: resumableDraft?.sourceMenuId ?? null,
+            sessionSourceMenuSource: resumableDraft?.sourceMenuSource ?? null,
+            sessionSourceMenuName: resumableDraft?.sourceMenuName ?? null,
             sessionReturnTab: resumableDraft?.returnTab ?? state.currentTab,
             sessionKind: 'auto' as const,
             isTeacherPreview: false,
         };
     }),
-    startSessionWithExercises: (ids) => set((state) => ({
+    startSessionWithExercises: (ids, options) => set((state) => ({
         isInSession: true,
         sessionExerciseIds: ids,
-        sessionReturnTab: 'home',
+        sessionSourceMenuId: options?.sourceMenuId ?? null,
+        sessionSourceMenuSource: options?.sourceMenuSource ?? null,
+        sessionSourceMenuName: options?.sourceMenuName ?? null,
+        sessionReturnTab: options?.returnTab ?? 'home',
         sessionDraft: {
             date: getTodayKey(),
             exerciseIds: ids,
             userIds: [...state.sessionUserIds],
-            returnTab: 'home',
+            returnTab: options?.returnTab ?? 'home',
+            sourceMenuId: options?.sourceMenuId ?? null,
+            sourceMenuSource: options?.sourceMenuSource ?? null,
+            sourceMenuName: options?.sourceMenuName ?? null,
         },
         sessionKind: 'fixed' as const,
         isTeacherPreview: false,
@@ -142,6 +162,9 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
     startHybridSession: (requiredIds) => set((state) => ({
         isInSession: true,
         sessionExerciseIds: requiredIds,
+        sessionSourceMenuId: null,
+        sessionSourceMenuSource: null,
+        sessionSourceMenuName: null,
         sessionHybridMode: true,
         sessionReturnTab: state.currentTab,
         sessionKind: 'hybrid' as const,
@@ -150,6 +173,9 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
     startTeacherPreviewSession: (ids) => set((state) => ({
         isInSession: true,
         sessionExerciseIds: ids,
+        sessionSourceMenuId: null,
+        sessionSourceMenuSource: null,
+        sessionSourceMenuName: null,
         sessionReturnTab: state.currentTab,
         sessionKind: 'teacher-preview' as const,
         isTeacherPreview: true,
@@ -157,6 +183,9 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
     endSession: () => set({
         isInSession: false,
         sessionExerciseIds: null,
+        sessionSourceMenuId: null,
+        sessionSourceMenuSource: null,
+        sessionSourceMenuName: null,
         sessionHybridMode: false,
         sessionKind: null,
         isTeacherPreview: false,
@@ -165,6 +194,9 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
         ...resolveSessionReturnTab(state.currentTab, state.sessionReturnTab),
         isInSession: false,
         sessionExerciseIds: null,
+        sessionSourceMenuId: null,
+        sessionSourceMenuSource: null,
+        sessionSourceMenuName: null,
         sessionHybridMode: false,
         sessionDraft: state.sessionKind === 'auto' ? null : state.sessionDraft,
         sessionKind: null,

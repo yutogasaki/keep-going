@@ -194,9 +194,13 @@ export const HomeScreen: React.FC = () => {
             <MenuDetailSheet
                 menu={selectedPublicMenu}
                 onClose={() => setSelectedPublicMenu(null)}
-                onTry={(exerciseIds) => {
+                onTry={(exerciseIds, metadata) => {
                     setSelectedPublicMenu(null);
-                    startSessionWithExercises(exerciseIds);
+                    startSessionWithExercises(exerciseIds, {
+                        sourceMenuId: metadata.menuId,
+                        sourceMenuSource: metadata.menuSource,
+                        sourceMenuName: metadata.menuName,
+                    });
                 }}
             />
 

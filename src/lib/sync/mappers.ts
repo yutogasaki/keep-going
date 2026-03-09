@@ -2,13 +2,19 @@ import type { CustomExercise, SessionRecord } from '../db';
 import type { MenuGroup } from '../../data/menuGroups';
 import type { ClassLevel } from '../../data/exercises';
 import { normalizeExercisePlacement } from '../../data/exercisePlacement';
-import type { ChibifuwaRecord, PastFuwafuwaRecord, UserProfileStore } from '../../store/useAppStore';
+import type { ChibifuwaRecord, PastFuwafuwaRecord, SessionMenuSource, UserProfileStore } from '../../store/useAppStore';
 import type { Database } from '../supabase-types';
 
 type CloudFamilyMember = Database['public']['Tables']['family_members']['Row'];
 type CloudSession = Database['public']['Tables']['sessions']['Row'];
 type CloudCustomExercise = Database['public']['Tables']['custom_exercises']['Row'];
 type CloudMenuGroup = Database['public']['Tables']['menu_groups']['Row'];
+
+function normalizeSessionMenuSource(value: string | null | undefined): SessionMenuSource | null {
+    return value === 'preset' || value === 'teacher' || value === 'custom' || value === 'public'
+        ? value
+        : null;
+}
 
 export interface AppSettingsInput {
     onboardingCompleted: boolean;
@@ -28,8 +34,12 @@ export function toSessionUpsertPayload(record: SessionRecord, accountId: string)
         started_at: record.startedAt,
         total_seconds: record.totalSeconds,
         exercise_ids: record.exerciseIds,
+        planned_exercise_ids: record.plannedExerciseIds ?? [],
         skipped_ids: record.skippedIds,
         user_ids: record.userIds ?? [],
+        source_menu_id: record.sourceMenuId ?? null,
+        source_menu_source: record.sourceMenuSource ?? null,
+        source_menu_name: record.sourceMenuName ?? null,
     };
 }
 
@@ -140,8 +150,12 @@ export function toLocalSessionRecord(cloudSession: CloudSession): SessionRecord 
         startedAt: cloudSession.started_at,
         totalSeconds: cloudSession.total_seconds,
         exerciseIds: cloudSession.exercise_ids,
+        plannedExerciseIds: cloudSession.planned_exercise_ids ?? [],
         skippedIds: cloudSession.skipped_ids,
         userIds: cloudSession.user_ids,
+        sourceMenuId: cloudSession.source_menu_id ?? null,
+        sourceMenuSource: normalizeSessionMenuSource(cloudSession.source_menu_source),
+        sourceMenuName: cloudSession.source_menu_name ?? null,
     };
 }
 

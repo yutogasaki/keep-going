@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     createChallenge,
     deleteChallenge,
@@ -9,6 +9,7 @@ import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import { ChallengeFormCard } from './challenge-management/ChallengeFormCard';
 import { ChallengeList } from './challenge-management/ChallengeList';
 import { CreateChallengeButton } from './challenge-management/CreateChallengeButton';
+import { fetchTeacherMenus, type TeacherMenu } from '../../lib/teacherContent';
 import {
     createChallengeFormValuesFromChallenge,
     createDefaultChallengeFormValues,
@@ -39,6 +40,16 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
     const [editingId, setEditingId] = useState<string | null>(null);
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const [teacherMenus, setTeacherMenus] = useState<TeacherMenu[]>([]);
+
+    useEffect(() => {
+        fetchTeacherMenus()
+            .then(setTeacherMenus)
+            .catch((error) => {
+                console.warn('[teacher] Failed to load teacher menus for challenge form:', error);
+                setTeacherMenus([]);
+            });
+    }, []);
 
     const resetForm = () => {
         setFormValues(createDefaultChallengeFormValues());
@@ -71,22 +82,42 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
             if (editingId) {
                 await updateChallenge(editingId, {
                     title: formValues.title.trim(),
-                    exerciseId: formValues.exerciseId,
+                    summary: formValues.summary.trim() || formValues.title.trim(),
+                    description: formValues.description.trim() || null,
+                    challengeType: formValues.challengeType,
+                    exerciseId: formValues.challengeType === 'exercise' ? formValues.exerciseId : null,
+                    targetMenuId: formValues.challengeType === 'menu' ? formValues.targetMenuId : null,
+                    menuSource: formValues.challengeType === 'menu' ? formValues.menuSource : null,
                     targetCount: formValues.targetCount,
+                    dailyCap: formValues.dailyCap,
+                    countUnit: formValues.challengeType === 'menu' ? 'menu_completion' : 'exercise_completion',
                     startDate: formValues.startDate,
                     endDate: formValues.endDate,
-                    rewardFuwafuwaType: formValues.rewardType,
+                    rewardKind: formValues.rewardKind,
+                    rewardValue: formValues.rewardValue,
+                    tier: formValues.tier,
+                    iconEmoji: formValues.iconEmoji.trim() || null,
                     classLevels: formValues.classLevels,
                 });
             } else {
                 await createChallenge({
                     title: formValues.title.trim(),
-                    exerciseId: formValues.exerciseId,
+                    summary: formValues.summary.trim() || formValues.title.trim(),
+                    description: formValues.description.trim() || null,
+                    challengeType: formValues.challengeType,
+                    exerciseId: formValues.challengeType === 'exercise' ? formValues.exerciseId : null,
+                    targetMenuId: formValues.challengeType === 'menu' ? formValues.targetMenuId : null,
+                    menuSource: formValues.challengeType === 'menu' ? formValues.menuSource : null,
                     targetCount: formValues.targetCount,
+                    dailyCap: formValues.dailyCap,
+                    countUnit: formValues.challengeType === 'menu' ? 'menu_completion' : 'exercise_completion',
                     startDate: formValues.startDate,
                     endDate: formValues.endDate,
                     createdBy: teacherEmail,
-                    rewardFuwafuwaType: formValues.rewardType,
+                    rewardKind: formValues.rewardKind,
+                    rewardValue: formValues.rewardValue,
+                    tier: formValues.tier,
+                    iconEmoji: formValues.iconEmoji.trim() || null,
                     classLevels: formValues.classLevels,
                 });
             }
@@ -134,6 +165,7 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
             {showCreateForm && (
                 <ChallengeFormCard
                     values={formValues}
+                    teacherMenus={teacherMenus}
                     submitting={submitting}
                     isEditing={!!editingId}
                     onChange={(patch) => {
@@ -143,7 +175,9 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                     onRandomReward={() => {
                         setFormValues((previous) => ({
                             ...previous,
-                            rewardType: Math.floor(Math.random() * 10),
+                            rewardValue: previous.rewardKind === 'medal'
+                                ? Math.floor(Math.random() * 10)
+                                : Math.max(1, Math.floor(Math.random() * 5) + 1),
                         }));
                     }}
                     onCancel={handleCancel}
@@ -154,6 +188,7 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
             <ChallengeList
                 loading={loading}
                 challenges={challenges}
+                teacherMenus={teacherMenus}
                 onEdit={startEdit}
                 onDelete={(id) => setDeleteTargetId(id)}
             />

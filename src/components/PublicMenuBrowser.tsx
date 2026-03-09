@@ -34,10 +34,17 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
         });
     }, [open]);
 
-    const handleTry = (exerciseIds: string[]) => {
+    const handleTry = (
+        exerciseIds: string[],
+        metadata: { menuId: string; menuName: string; menuSource: 'public' },
+    ) => {
         setSelectedMenu(null);
         onClose();
-        startSessionWithExercises(exerciseIds);
+        startSessionWithExercises(exerciseIds, {
+            sourceMenuId: metadata.menuId,
+            sourceMenuSource: metadata.menuSource,
+            sourceMenuName: metadata.menuName,
+        });
     };
 
     return (
@@ -335,4 +342,3 @@ const BrowserMenuCard: React.FC<{
         </button>
     );
 };
-

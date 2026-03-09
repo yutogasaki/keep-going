@@ -21,6 +21,9 @@ export const StretchSession: React.FC = () => {
     const users = useAppStore((state) => state.users);
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const sessionExerciseIds = useAppStore((state) => state.sessionExerciseIds);
+    const sessionSourceMenuId = useAppStore((state) => state.sessionSourceMenuId);
+    const sessionSourceMenuSource = useAppStore((state) => state.sessionSourceMenuSource);
+    const sessionSourceMenuName = useAppStore((state) => state.sessionSourceMenuName);
     const sessionHybridMode = useAppStore((state) => state.sessionHybridMode);
     const isTeacherPreview = useAppStore((state) => state.isTeacherPreview);
     const hasSeenSessionControlsHint = useAppStore((state) => state.hasSeenSessionControlsHint);
@@ -97,6 +100,9 @@ export const StretchSession: React.FC = () => {
         sessionDraftSetter: setSessionDraft,
         sessionExerciseIds,
         sessionExercises,
+        sessionSourceMenuId,
+        sessionSourceMenuSource,
+        sessionSourceMenuName,
         sessionReturnTab,
         sessionUserIds,
         skippedIds,

@@ -153,9 +153,27 @@ describe('modern migrations', () => {
         expect((result as any).ttsPitch).toBeUndefined();
     });
 
-    it('v16 is a no-op for already migrated state', () => {
-        const state = { users: [] } as any;
+    it('v17 initializes missing challengeStars on users', () => {
+        const state = makeCurrentState();
+        delete state.users[0].challengeStars;
+
         const result = migrateAppState(state, 16);
+
+        expect(result.users[0].challengeStars).toBe(0);
+    });
+
+    it('v17 preserves existing challengeStars', () => {
+        const state = makeCurrentState();
+        state.users[0].challengeStars = 7;
+
+        const result = migrateAppState(state, 16);
+
+        expect(result.users[0].challengeStars).toBe(7);
+    });
+
+    it('v17 is a no-op for already migrated state', () => {
+        const state = { users: [] } as any;
+        const result = migrateAppState(state, 17);
 
         expect((result as any).ttsRate).toBeUndefined();
         expect((result as any).ttsPitch).toBeUndefined();

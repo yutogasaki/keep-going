@@ -6,22 +6,27 @@ import type { Challenge } from '../../lib/challenges';
 interface ExpiredChallengeCardProps {
     challenge: Challenge;
     emoji: string;
-    exerciseName: string;
+    targetLabel: string;
     dateLabel: string;
     wasCompleted: boolean;
+    dailyCapLabel: string;
+    onOpenDetail: () => void;
 }
 
 export const ExpiredChallengeCard: React.FC<ExpiredChallengeCardProps> = ({
     challenge,
     emoji,
-    exerciseName,
+    targetLabel,
     dateLabel,
     wasCompleted,
+    dailyCapLabel,
+    onOpenDetail,
 }) => {
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            onClick={onOpenDetail}
             style={{
                 background: wasCompleted
                     ? 'linear-gradient(135deg, #FFF9E6, #FFF3CC)'
@@ -33,6 +38,7 @@ export const ExpiredChallengeCard: React.FC<ExpiredChallengeCardProps> = ({
                     ? '1px solid rgba(255, 215, 0, 0.3)'
                     : '1px solid rgba(0,0,0,0.05)',
                 opacity: wasCompleted ? 1 : 0.6,
+                cursor: 'pointer',
             }}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -53,10 +59,13 @@ export const ExpiredChallengeCard: React.FC<ExpiredChallengeCardProps> = ({
                         display: 'flex',
                         alignItems: 'center',
                         gap: 4,
+                        flexWrap: 'wrap',
                     }}>
-                        {exerciseName}を{challenge.targetCount}回
+                        {targetLabel}を{challenge.targetCount}回
                         <span style={{ color: '#ccc' }}>|</span>
-                        {dateLabel}
+                        {dailyCapLabel}
+                        <span style={{ color: '#ccc' }}>|</span>
+                        <span>{dateLabel}</span>
                     </div>
                 </div>
                 {wasCompleted ? (

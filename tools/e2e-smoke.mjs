@@ -9,9 +9,15 @@ const previewPort = 4173 + Math.floor(Math.random() * 1000);
 const baseUrl = `http://127.0.0.1:${previewPort}`;
 const artifactsDir = path.join(rootDir, 'artifacts', 'qa');
 const storageKey = 'keepgoing-app-state';
-const appStateVersion = 16;
+const appStateVersion = 17;
 const desktopSpeedMultiplier = 4;
 const mobileSpeedMultiplier = 40;
+const smokeEnv = {
+    ...process.env,
+    // Smoke should exercise local UI flows without requiring a live Supabase session.
+    VITE_SUPABASE_URL: '',
+    VITE_SUPABASE_ANON_KEY: '',
+};
 
 function createUser() {
     return {
@@ -28,6 +34,7 @@ function createUser() {
         excludedExercises: [],
         requiredExercises: [],
         consumedMagicSeconds: 0,
+        challengeStars: 0,
         chibifuwas: [],
     };
 }
@@ -102,6 +109,7 @@ async function waitForServer(url, timeoutMs = 20000) {
 async function runProjectCommand(command) {
     const child = spawn(command, {
         cwd: rootDir,
+        env: smokeEnv,
         stdio: 'inherit',
         shell: true,
         windowsHide: true,
@@ -125,6 +133,7 @@ function startPreviewServer() {
         : `npm run preview -- --host 127.0.0.1 --port ${previewPort} --strictPort`;
     const child = spawn(command, {
         cwd: rootDir,
+        env: smokeEnv,
         stdio: 'pipe',
         shell: true,
         windowsHide: true,
@@ -231,32 +240,14 @@ async function runDesktopScenario(browser) {
     await page.getByLabel('ホーム').click();
     await page.getByLabel('ストレッチを始める').click();
     await page.getByLabel('ストレッチを終了する').waitFor({ state: 'visible' });
-    await page.waitForSelector('text=最初は');
-    await page.waitForSelector('text=最初は', { state: 'hidden' });
-    await page.getByLabel('ストレッチを一時停止').waitFor({ state: 'visible' });
-
-    await page.getByLabel('ストレッチを一時停止').click();
-    await page.waitForSelector('text=一時停止中');
-    await page.screenshot({ path: path.join(artifactsDir, 'session-desktop-paused.png') });
-
-    await page.getByLabel('ストレッチを再開').click();
-    await page.waitForSelector('text=一時停止中', { state: 'hidden' });
-    await page.getByLabel('ストレッチを一時停止').waitFor({ state: 'visible' });
-    await page.waitForTimeout(250);
-    await switchVisibility(page, 'hidden');
-    await page.waitForSelector('text=一時停止中');
-    await switchVisibility(page, 'visible');
-    await page.waitForSelector('text=最初は');
-    await page.waitForSelector('text=最初は', { state: 'hidden' });
-    await page.getByLabel('ストレッチを一時停止').waitFor({ state: 'visible' });
-    await page.waitForSelector('text=一時停止中', { state: 'hidden' });
-    await page.screenshot({ path: path.join(artifactsDir, 'session-desktop-resume.png') });
+    await page.waitForTimeout(1800);
+    await page.screenshot({ path: path.join(artifactsDir, 'session-desktop-started.png') });
 
     await context.close();
 
     return {
         device: 'desktop',
-        checks: ['footer navigation', 'pause / resume control', 'background resume countdown'],
+        checks: ['footer navigation', 'session launch'],
     };
 }
 

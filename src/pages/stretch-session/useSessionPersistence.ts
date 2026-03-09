@@ -14,6 +14,9 @@ interface UseSessionPersistenceParams {
     sessionDraftSetter: (draft: SessionDraft | null) => void;
     sessionExerciseIds: string[] | null;
     sessionExercises: Exercise[];
+    sessionSourceMenuId: string | null;
+    sessionSourceMenuSource: SessionDraft['sourceMenuSource'];
+    sessionSourceMenuName: string | null;
     sessionReturnTab: TabId;
     sessionUserIds: string[];
     skippedIds: string[];
@@ -32,6 +35,9 @@ export function useSessionPersistence({
     sessionDraftSetter,
     sessionExerciseIds,
     sessionExercises,
+    sessionSourceMenuId,
+    sessionSourceMenuSource,
+    sessionSourceMenuName,
     sessionReturnTab,
     sessionUserIds,
     skippedIds,
@@ -50,12 +56,18 @@ export function useSessionPersistence({
             exerciseIds: sessionExercises.map((exercise) => exercise.id),
             userIds: [...sessionUserIds],
             returnTab: sessionReturnTab,
+            sourceMenuId: sessionSourceMenuId,
+            sourceMenuSource: sessionSourceMenuSource,
+            sourceMenuName: sessionSourceMenuName,
         });
     }, [
         isLoading,
         isTeacherPreview,
         sessionDraftSetter,
         sessionExercises,
+        sessionSourceMenuId,
+        sessionSourceMenuName,
+        sessionSourceMenuSource,
         sessionReturnTab,
         sessionUserIds,
     ]);
@@ -78,8 +90,12 @@ export function useSessionPersistence({
                 startedAt,
                 totalSeconds: finalRunningTime,
                 exerciseIds: completedIds,
+                plannedExerciseIds: sessionExercises.map((exercise) => exercise.id),
                 skippedIds,
                 userIds: sessionUserIds,
+                sourceMenuId: sessionSourceMenuId,
+                sourceMenuSource: sessionSourceMenuSource,
+                sourceMenuName: sessionSourceMenuName,
             };
             await saveSession(record);
         }
@@ -89,6 +105,10 @@ export function useSessionPersistence({
         isCompleted,
         isTeacherPreview,
         sessionExerciseIds,
+        sessionExercises,
+        sessionSourceMenuId,
+        sessionSourceMenuName,
+        sessionSourceMenuSource,
         sessionUserIds,
         skippedIds,
         startedAt,

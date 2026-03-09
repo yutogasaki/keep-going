@@ -1,10 +1,13 @@
 import React from 'react';
 import { CLASS_LEVELS, EXERCISES } from '../../../data/exercises';
+import { PRESET_GROUPS } from '../../../data/menuGroups';
+import type { TeacherMenu } from '../../../lib/teacherContent';
 import type { ChallengeFormValues } from './types';
 import { COLOR, FONT, FONT_SIZE, RADIUS } from '../../../lib/styles';
 
 interface ChallengeFormCardProps {
     values: ChallengeFormValues;
+    teacherMenus: TeacherMenu[];
     submitting: boolean;
     isEditing: boolean;
     onChange: (patch: Partial<ChallengeFormValues>) => void;
@@ -36,6 +39,7 @@ const labelStyle: React.CSSProperties = {
 
 export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
     values,
+    teacherMenus,
     submitting,
     isEditing,
     onChange,
@@ -47,7 +51,14 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
     const dateError = values.startDate && values.endDate && values.endDate < values.startDate
         ? '終了日は開始日より後にしてください'
         : '';
-    const hasError = !values.title.trim() || !!dateError;
+    const hasMenuTarget = values.menuSource === 'preset'
+        ? PRESET_GROUPS.some((group) => group.id === values.targetMenuId)
+        : teacherMenus.some((menu) => menu.id === values.targetMenuId);
+    const hasError = !values.title.trim()
+        || values.targetCount < 1
+        || values.dailyCap < 1
+        || !!dateError
+        || (values.challengeType === 'menu' && !hasMenuTarget);
 
     return (
         <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -59,18 +70,140 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                 style={inputStyle}
             />
 
+            <div style={{ ...labelStyle }}>カード用ひとこと</div>
+            <input
+                value={values.summary}
+                onChange={(event) => onChange({ summary: event.target.value })}
+                placeholder="例: 1日1回、ゆっくり開脚しよう"
+                style={inputStyle}
+            />
+
+            <div style={{ ...labelStyle }}>詳細説明</div>
+            <textarea
+                value={values.description}
+                onChange={(event) => onChange({ description: event.target.value })}
+                placeholder="ホームの詳細で表示する説明文"
+                style={{ ...inputStyle, minHeight: 92, resize: 'vertical' }}
+            />
+
+            <div>
+                <div style={labelStyle}>チャレンジの種類</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                    {([
+                        { id: 'exercise', label: '種目チャレンジ', description: '1つの種目を回数で達成する' },
+                        { id: 'menu', label: 'メニューチャレンジ', description: '1つのメニュー完走を回数で数える' },
+                    ] as const).map((option) => {
+                        const selected = values.challengeType === option.id;
+                        return (
+                            <button
+                                key={option.id}
+                                type="button"
+                                onClick={() => onChange(
+                                    option.id === 'menu'
+                                        ? {
+                                            challengeType: option.id,
+                                            menuSource: values.menuSource,
+                                            targetMenuId: values.menuSource === 'preset'
+                                                ? (values.targetMenuId || PRESET_GROUPS[0]?.id || '')
+                                                : (values.targetMenuId || teacherMenus[0]?.id || ''),
+                                        }
+                                        : { challengeType: option.id }
+                                )}
+                                style={{
+                                    flex: 1,
+                                    padding: '10px 12px',
+                                    borderRadius: RADIUS.lg,
+                                    border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
+                                    background: selected ? '#E8F8F0' : COLOR.bgLight,
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <div style={{ ...labelStyle, marginBottom: 2 }}>{option.label}</div>
+                                <div style={{ fontFamily: FONT.body, fontSize: FONT_SIZE.xs, color: COLOR.muted }}>
+                                    {option.description}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
             <div style={{ display: 'flex', gap: 12 }}>
                 <div style={{ flex: 1 }}>
-                    <div style={labelStyle}>エクササイズ</div>
-                    <select
-                        value={values.exerciseId}
-                        onChange={(event) => onChange({ exerciseId: event.target.value })}
-                        style={{ ...inputStyle, appearance: 'auto' }}
-                    >
-                        {EXERCISES.map((exercise) => (
-                            <option key={exercise.id} value={exercise.id}>{exercise.emoji} {exercise.name}</option>
-                        ))}
-                    </select>
+                    {values.challengeType === 'exercise' ? (
+                        <>
+                            <div style={labelStyle}>エクササイズ</div>
+                            <select
+                                value={values.exerciseId}
+                                onChange={(event) => onChange({ exerciseId: event.target.value })}
+                                style={{ ...inputStyle, appearance: 'auto' }}
+                            >
+                                {EXERCISES.map((exercise) => (
+                                    <option key={exercise.id} value={exercise.id}>{exercise.emoji} {exercise.name}</option>
+                                ))}
+                            </select>
+                        </>
+                    ) : (
+                        <>
+                            <div style={labelStyle}>メニュー</div>
+                            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                                {([
+                                    { id: 'preset', label: '既存メニュー' },
+                                    { id: 'teacher', label: '先生メニュー' },
+                                ] as const).map((option) => {
+                                    const selected = values.menuSource === option.id;
+                                    return (
+                                        <button
+                                            key={option.id}
+                                            type="button"
+                                            onClick={() => onChange({
+                                                menuSource: option.id,
+                                                targetMenuId: option.id === 'preset'
+                                                    ? PRESET_GROUPS[0]?.id ?? ''
+                                                    : teacherMenus[0]?.id ?? '',
+                                            })}
+                                            style={{
+                                                flex: 1,
+                                                padding: '8px 10px',
+                                                borderRadius: 12,
+                                                border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
+                                                background: selected ? '#E8F8F0' : COLOR.bgLight,
+                                                cursor: 'pointer',
+                                                fontFamily: FONT.body,
+                                                fontSize: FONT_SIZE.sm,
+                                                fontWeight: 700,
+                                                color: COLOR.text,
+                                            }}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            <select
+                                value={values.targetMenuId}
+                                onChange={(event) => onChange({ targetMenuId: event.target.value })}
+                                style={{ ...inputStyle, appearance: 'auto' }}
+                            >
+                                {(values.menuSource === 'preset' ? PRESET_GROUPS : teacherMenus).map((menu) => (
+                                    <option key={menu.id} value={menu.id}>
+                                        {menu.emoji} {menu.name}
+                                    </option>
+                                ))}
+                            </select>
+                            {values.menuSource === 'teacher' && teacherMenus.length === 0 && (
+                                <div style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.xs,
+                                    color: COLOR.muted,
+                                    marginTop: 6,
+                                }}>
+                                    先生メニューがまだありません。先にメニュー設定で作成してください。
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
                 <div style={{ width: 80 }}>
                     <div style={labelStyle}>目標回数</div>
@@ -80,6 +213,65 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                         onChange={(event) => onChange({ targetCount: Number(event.target.value) })}
                         min={1}
                         style={inputStyle}
+                    />
+                </div>
+                <div style={{ width: 92 }}>
+                    <div style={labelStyle}>1日上限</div>
+                    <input
+                        type="number"
+                        value={values.dailyCap}
+                        onChange={(event) => onChange({ dailyCap: Number(event.target.value) })}
+                        min={1}
+                        style={inputStyle}
+                    />
+                </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                    <div style={labelStyle}>チャレンジの大きさ</div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        {([
+                            { id: 'small', label: 'ちょい', description: '星をためる軽いチャレンジ' },
+                            { id: 'big', label: '大きい', description: 'メダル向けの本格チャレンジ' },
+                        ] as const).map((option) => {
+                            const selected = values.tier === option.id;
+                            return (
+                                <button
+                                    key={option.id}
+                                    type="button"
+                                    onClick={() => onChange({
+                                        tier: option.id,
+                                        rewardKind: option.id === 'small' ? 'star' : 'medal',
+                                        rewardValue: option.id === 'small' ? Math.max(values.rewardValue, 1) : values.rewardValue,
+                                    })}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 12px',
+                                        borderRadius: RADIUS.lg,
+                                        border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
+                                        background: selected ? '#E8F8F0' : COLOR.bgLight,
+                                        textAlign: 'left',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    <div style={{ ...labelStyle, marginBottom: 2 }}>{option.label}</div>
+                                    <div style={{ fontFamily: FONT.body, fontSize: FONT_SIZE.xs, color: COLOR.muted }}>
+                                        {option.description}
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+                <div style={{ width: 112 }}>
+                    <div style={labelStyle}>アイコン絵文字</div>
+                    <input
+                        value={values.iconEmoji}
+                        onChange={(event) => onChange({ iconEmoji: event.target.value })}
+                        placeholder="🎯"
+                        maxLength={2}
+                        style={{ ...inputStyle, textAlign: 'center', fontSize: FONT_SIZE.xl }}
                     />
                 </div>
             </div>
@@ -152,7 +344,7 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
 
             <div>
                 <div style={{ ...labelStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span>バッジメダル（報酬）</span>
+                    <span>{values.rewardKind === 'star' ? 'ほし（報酬）' : 'バッジメダル（報酬）'}</span>
                     <button
                         onClick={onRandomReward}
                         style={{
@@ -166,34 +358,49 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                             padding: '2px 6px',
                         }}
                     >
-                        🔀 ランダム
+                        🔀 おまかせ
                     </button>
                 </div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {Array.from({ length: 12 }, (_, index) => (
-                        <button
-                            key={index}
-                            onClick={() => onChange({ rewardType: index })}
-                            style={{
-                                width: 48,
-                                height: 48,
-                                borderRadius: 12,
-                                border: values.rewardType === index ? '2px solid #FFB800' : '1px solid #E0E0E0',
-                                background: values.rewardType === index ? '#FFF9E6' : '#FFF',
-                                padding: 2,
-                                cursor: 'pointer',
-                                boxShadow: values.rewardType === index ? '0 0 0 2px rgba(255,184,0,0.2)' : 'none',
-                            }}
-                        >
-                            <img
-                                src={`/medal/${index}.webp`}
-                                alt={`medal ${index}`}
-                                loading="lazy"
-                                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-                            />
-                        </button>
-                    ))}
-                </div>
+                {values.rewardKind === 'star' ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <input
+                            type="number"
+                            min={1}
+                            value={values.rewardValue}
+                            onChange={(event) => onChange({ rewardValue: Number(event.target.value) })}
+                            style={{ ...inputStyle, width: 120 }}
+                        />
+                        <div style={{ fontFamily: FONT.body, fontSize: FONT_SIZE.sm, color: COLOR.text }}>
+                            クリアで ほし {values.rewardValue}こ
+                        </div>
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {Array.from({ length: 12 }, (_, index) => (
+                            <button
+                                key={index}
+                                onClick={() => onChange({ rewardValue: index })}
+                                style={{
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: 12,
+                                    border: values.rewardValue === index ? '2px solid #FFB800' : '1px solid #E0E0E0',
+                                    background: values.rewardValue === index ? '#FFF9E6' : '#FFF',
+                                    padding: 2,
+                                    cursor: 'pointer',
+                                    boxShadow: values.rewardValue === index ? '0 0 0 2px rgba(255,184,0,0.2)' : 'none',
+                                }}
+                            >
+                                <img
+                                    src={`/medal/${index}.webp`}
+                                    alt={`medal ${index}`}
+                                    loading="lazy"
+                                    style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                                />
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>

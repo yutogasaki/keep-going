@@ -32,8 +32,12 @@ create table sessions (
   started_at text not null,
   total_seconds int not null,
   exercise_ids jsonb not null default '[]',
+  planned_exercise_ids jsonb not null default '[]',
   skipped_ids jsonb not null default '[]',
   user_ids jsonb not null default '[]',
+  source_menu_id text,
+  source_menu_source text check (source_menu_source in ('preset', 'teacher', 'custom', 'public')),
+  source_menu_name text,
   created_at timestamptz default now()
 );
 
@@ -93,14 +97,33 @@ create table user_roles (
 create table challenges (
   id uuid primary key default gen_random_uuid(),
   title text not null,
+  summary text,
+  description text,
+  challenge_type text not null default 'exercise',
   exercise_id text not null,
+  target_exercise_id text,
+  target_menu_id text,
+  menu_source text,
   target_count int not null,
+  daily_cap int not null default 1,
+  count_unit text not null default 'exercise_completion',
   start_date text not null,
   end_date text not null,
   created_by text not null,
   reward_fuwafuwa_type int not null,
+  reward_kind text not null default 'medal',
+  reward_value int not null default 0,
+  tier text not null default 'big',
+  icon_emoji text,
   class_levels text[] not null default '{}',
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  constraint challenges_type_check check (challenge_type in ('exercise', 'menu')),
+  constraint challenges_menu_source_check check (menu_source is null or menu_source in ('teacher', 'preset')),
+  constraint challenges_count_unit_check check (count_unit in ('exercise_completion', 'menu_completion')),
+  constraint challenges_daily_cap_check check (daily_cap >= 1),
+  constraint challenges_reward_kind_check check (reward_kind in ('star', 'medal')),
+  constraint challenges_reward_value_check check (reward_value >= 0),
+  constraint challenges_tier_check check (tier in ('small', 'big'))
 );
 
 -- チャレンジ達成記録

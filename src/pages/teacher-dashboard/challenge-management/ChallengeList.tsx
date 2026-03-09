@@ -2,11 +2,14 @@ import React from 'react';
 import { Loader2, Pencil, Trash2 } from 'lucide-react';
 import { getTodayKey } from '../../../lib/db';
 import { CLASS_EMOJI, EXERCISES } from '../../../data/exercises';
-import type { Challenge } from '../../../lib/challenges';
+import { PRESET_GROUPS } from '../../../data/menuGroups';
+import { getChallengeRewardLabel, type Challenge } from '../../../lib/challenges';
+import type { TeacherMenu } from '../../../lib/teacherContent';
 
 interface ChallengeListProps {
     loading: boolean;
     challenges: Challenge[];
+    teacherMenus: TeacherMenu[];
     onEdit: (challenge: Challenge) => void;
     onDelete: (challengeId: string) => void;
 }
@@ -14,10 +17,12 @@ interface ChallengeListProps {
 export const ChallengeList: React.FC<ChallengeListProps> = ({
     loading,
     challenges,
+    teacherMenus,
     onEdit,
     onDelete,
 }) => {
     const today = getTodayKey();
+    const teacherMenuMap = new Map(teacherMenus.map((menu) => [menu.id, menu]));
 
     if (loading) {
         return (
@@ -43,7 +48,18 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
     return (
         <>
             {challenges.map((challenge) => {
-                const exercise = EXERCISES.find((item) => item.id === challenge.exerciseId);
+                const exercise = challenge.exerciseId
+                    ? EXERCISES.find((item) => item.id === challenge.exerciseId)
+                    : null;
+                const presetMenu = challenge.targetMenuId
+                    ? PRESET_GROUPS.find((menu) => menu.id === challenge.targetMenuId)
+                    : null;
+                const teacherMenu = challenge.targetMenuId
+                    ? teacherMenuMap.get(challenge.targetMenuId)
+                    : null;
+                const targetLabel = challenge.challengeType === 'menu'
+                    ? (challenge.menuSource === 'preset' ? presetMenu?.name : teacherMenu?.name) ?? challenge.targetMenuId ?? 'メニュー'
+                    : (exercise?.name ?? challenge.exerciseId ?? '種目');
                 const isActive = challenge.startDate <= today && challenge.endDate >= today;
                 const isPast = challenge.endDate < today;
 
@@ -53,7 +69,9 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                         opacity: isPast ? 0.5 : 1,
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{ fontSize: 22 }}>{exercise?.emoji ?? '🎯'}</span>
+                            <span style={{ fontSize: 22 }}>
+                                {challenge.iconEmoji ?? exercise?.emoji ?? presetMenu?.emoji ?? teacherMenu?.emoji ?? '🎯'}
+                            </span>
                             <div style={{ flex: 1 }}>
                                 <div style={{
                                     fontFamily: "'Noto Sans JP', sans-serif",
@@ -85,15 +103,38 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                     color: '#8395A7',
                                     marginTop: 2,
                                 }}>
-                                    {exercise?.name ?? challenge.exerciseId}を{challenge.targetCount}回 ・
+                                    {targetLabel}を{challenge.targetCount}回 ・
+                                    {challenge.dailyCap}回/日 ・
+                                    {getChallengeRewardLabel(challenge)} ・
                                     {challenge.startDate.slice(5).replace('-', '/')} 〜 {challenge.endDate.slice(5).replace('-', '/')}
                                 </div>
+                                {challenge.summary && (
+                                    <div style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 11,
+                                        color: '#52606D',
+                                        marginTop: 4,
+                                    }}>
+                                        {challenge.summary}
+                                    </div>
+                                )}
                                 <div style={{
                                     display: 'flex',
                                     gap: 4,
                                     flexWrap: 'wrap',
                                     marginTop: 4,
                                 }}>
+                                    <span style={{
+                                        fontSize: 10,
+                                        padding: '1px 6px',
+                                        borderRadius: 6,
+                                        background: challenge.tier === 'small' ? '#FFF8E1' : '#FFF3CC',
+                                        color: challenge.tier === 'small' ? '#C58B00' : '#B8860B',
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontWeight: 700,
+                                    }}>
+                                        {challenge.tier === 'small' ? 'ちょい' : '大きい'}
+                                    </span>
                                     {challenge.classLevels.length === 0 ? (
                                         <span style={{
                                             fontSize: 10,

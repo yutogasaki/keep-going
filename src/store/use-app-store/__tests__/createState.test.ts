@@ -39,6 +39,7 @@ describe('session resume state', () => {
 
         expect(store.getState().isInSession).toBe(true);
         expect(store.getState().sessionExerciseIds).toEqual(['S01', 'S02']);
+        expect(store.getState().sessionSourceMenuId).toBeNull();
         expect(store.getState().sessionReturnTab).toBe('home');
         expect(store.getState().sessionKind).toBe('auto');
     });
@@ -61,6 +62,7 @@ describe('session resume state', () => {
 
         expect(store.getState().isInSession).toBe(true);
         expect(store.getState().sessionExerciseIds).toBeNull();
+        expect(store.getState().sessionSourceMenuId).toBeNull();
         expect(store.getState().sessionReturnTab).toBe('record');
         expect(store.getState().sessionKind).toBe('auto');
     });
@@ -82,6 +84,7 @@ describe('session resume state', () => {
         store.getState().startSession();
 
         expect(store.getState().sessionExerciseIds).toBeNull();
+        expect(store.getState().sessionSourceMenuId).toBeNull();
         expect(store.getState().sessionReturnTab).toBe('menu');
         expect(store.getState().sessionKind).toBe('auto');
     });
@@ -105,6 +108,36 @@ describe('session resume state', () => {
             exerciseIds: ['S03', 'S04'],
             userIds: ['user-1', 'user-2'],
             returnTab: 'home',
+            sourceMenuId: null,
+            sourceMenuSource: null,
+            sourceMenuName: null,
+        });
+    });
+
+    it('startSessionWithExercises stores menu metadata for menu challenges', () => {
+        const store = makeStore();
+
+        store.setState({
+            sessionUserIds: ['user-1'],
+        });
+
+        store.getState().startSessionWithExercises(['S01', 'S02'], {
+            sourceMenuId: 'preset-basic',
+            sourceMenuSource: 'preset',
+            sourceMenuName: '基本ストレッチ',
+        });
+
+        expect(store.getState().sessionSourceMenuId).toBe('preset-basic');
+        expect(store.getState().sessionSourceMenuSource).toBe('preset');
+        expect(store.getState().sessionSourceMenuName).toBe('基本ストレッチ');
+        expect(store.getState().sessionDraft).toEqual({
+            date: '2026-03-07',
+            exerciseIds: ['S01', 'S02'],
+            userIds: ['user-1'],
+            returnTab: 'home',
+            sourceMenuId: 'preset-basic',
+            sourceMenuSource: 'preset',
+            sourceMenuName: '基本ストレッチ',
         });
     });
 
@@ -130,6 +163,7 @@ describe('session resume state', () => {
 
         expect(store.getState().isInSession).toBe(false);
         expect(store.getState().sessionExerciseIds).toBeNull();
+        expect(store.getState().sessionSourceMenuId).toBeNull();
         expect(store.getState().sessionDraft).toBeNull();
         expect(store.getState().sessionKind).toBeNull();
     });
@@ -156,9 +190,38 @@ describe('session resume state', () => {
 
         expect(store.getState().isInSession).toBe(false);
         expect(store.getState().sessionExerciseIds).toBeNull();
+        expect(store.getState().sessionSourceMenuId).toBeNull();
         expect(store.getState().currentTab).toBe('home');
         expect(store.getState().previousTab).toBe('menu');
         expect(store.getState().sessionDraft).not.toBeNull();
         expect(store.getState().sessionKind).toBeNull();
+    });
+
+    it('addChallengeStars accumulates per-user stars', () => {
+        const store = makeStore();
+
+        store.setState({
+            users: [{
+                id: 'user-1',
+                name: 'テスト',
+                classLevel: '初級',
+                fuwafuwaBirthDate: '2026-03-01',
+                fuwafuwaType: 1,
+                fuwafuwaCycleCount: 1,
+                fuwafuwaName: null,
+                pastFuwafuwas: [],
+                notifiedFuwafuwaStages: [],
+                dailyTargetMinutes: 10,
+                excludedExercises: [],
+                requiredExercises: [],
+                consumedMagicSeconds: 0,
+                challengeStars: 2,
+                chibifuwas: [],
+            }],
+        });
+
+        store.getState().addChallengeStars('user-1', 3);
+
+        expect(store.getState().users[0].challengeStars).toBe(5);
     });
 });

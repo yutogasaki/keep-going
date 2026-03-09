@@ -100,9 +100,97 @@ do $$ begin
 exception when duplicate_column then null;
 end $$;
 
+-- sessions に menu challenge 用メタデータ追加
+do $$ begin
+  alter table sessions add column planned_exercise_ids jsonb not null default '[]';
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table sessions add column source_menu_id text;
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table sessions add column source_menu_source text;
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table sessions add column source_menu_name text;
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table sessions add constraint sessions_source_menu_source_check
+    check (source_menu_source is null or source_menu_source in ('preset', 'teacher', 'custom', 'public'));
+exception when duplicate_object then null;
+end $$;
+
 -- public_menus に custom_exercise_data カラム追加
 do $$ begin
   alter table public_menus add column custom_exercise_data jsonb default '[]';
+exception when duplicate_column then null;
+end $$;
+
+-- challenges に v2a カラム追加
+do $$ begin
+  alter table challenges add column summary text;
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table challenges add column description text;
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table challenges add column challenge_type text not null default 'exercise';
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table challenges add column target_exercise_id text;
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table challenges add column target_menu_id text;
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table challenges add column menu_source text;
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table challenges add column daily_cap int not null default 1;
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table challenges add column count_unit text not null default 'exercise_completion';
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table challenges add column reward_kind text not null default 'medal';
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table challenges add column reward_value int not null default 0;
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table challenges add column tier text not null default 'big';
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table challenges add column icon_emoji text;
 exception when duplicate_column then null;
 end $$;
 

@@ -7,28 +7,34 @@ import { CLASS_EMOJI } from '../../data/exercises';
 interface InviteChallengeCardProps {
     challenge: Challenge;
     emoji: string;
-    exerciseName: string;
+    targetLabel: string;
     dateLabel: string;
+    dailyCapLabel: string;
     onJoin: () => void;
+    onOpenDetail: () => void;
 }
 
 export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
     challenge,
     emoji,
-    exerciseName,
+    targetLabel,
     dateLabel,
+    dailyCapLabel,
     onJoin,
+    onOpenDetail,
 }) => {
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
+            onClick={onOpenDetail}
             style={{
                 background: 'linear-gradient(135deg, #F0FDFA 0%, #E0F7FA 100%)',
                 borderRadius: 16,
                 padding: '16px 18px',
                 boxShadow: '0 2px 12px rgba(43, 186, 160, 0.1)',
                 border: '1px solid rgba(43, 186, 160, 0.15)',
+                cursor: 'pointer',
             }}
         >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
@@ -52,14 +58,18 @@ export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
                         gap: 6,
                         flexWrap: 'wrap',
                     }}>
+                        {challenge.summary && (
+                            <span style={{ color: '#52606D' }}>{challenge.summary}</span>
+                        )}
                         <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                             <Target size={12} color="#2BBAA0" />
-                            {exerciseName}を{challenge.targetCount}回
+                            {targetLabel}を{challenge.targetCount}回
                         </span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                             <Calendar size={12} color="#8395A7" />
                             {dateLabel}
                         </span>
+                        <span style={{ color: '#6B7280' }}>{dailyCapLabel}</span>
                     </div>
                     {challenge.classLevels.length > 0 && (
                         <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 4 }}>
@@ -85,7 +95,10 @@ export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
             </div>
             <motion.button
                 whileTap={{ scale: 0.95 }}
-                onClick={onJoin}
+                onClick={(event) => {
+                    event.stopPropagation();
+                    onJoin();
+                }}
                 style={{
                     marginTop: 12,
                     width: '100%',

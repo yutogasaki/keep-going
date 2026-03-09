@@ -16,6 +16,8 @@ export interface ChibifuwaRecord {
     earnedDate: string;
 }
 
+export type SessionMenuSource = 'preset' | 'teacher' | 'custom' | 'public';
+
 export interface UserProfileStore {
     id: string;
     name: string;
@@ -30,6 +32,7 @@ export interface UserProfileStore {
     excludedExercises: string[];
     requiredExercises: string[];
     consumedMagicSeconds?: number;
+    challengeStars?: number;
     avatarUrl?: string;
     chibifuwas: ChibifuwaRecord[];
 }
@@ -42,6 +45,9 @@ export interface SessionDraft {
     exerciseIds: string[];
     userIds: string[];
     returnTab: TabId;
+    sourceMenuId?: string | null;
+    sourceMenuSource?: SessionMenuSource | null;
+    sourceMenuName?: string | null;
 }
 
 export interface AppState {
@@ -53,6 +59,7 @@ export interface AppState {
     consumeUserMagicEnergy: (id: string, seconds: number) => void;
     resetUserFuwafuwa: (id: string, newType: number, activeDays: number, finalStage: number) => void;
     addChibifuwa: (userId: string, record: Omit<ChibifuwaRecord, 'id'>) => void;
+    addChallengeStars: (userId: string, amount: number) => void;
 
     currentTab: TabId;
     previousTab: TabId;
@@ -62,6 +69,9 @@ export interface AppState {
     setSessionUserIds: (ids: string[]) => void;
     isInSession: boolean;
     sessionExerciseIds: string[] | null;
+    sessionSourceMenuId: string | null;
+    sessionSourceMenuSource: SessionMenuSource | null;
+    sessionSourceMenuName: string | null;
     sessionHybridMode: boolean;
     sessionReturnTab: TabId;
     sessionDraft: SessionDraft | null;
@@ -69,7 +79,15 @@ export interface AppState {
     setSessionDraft: (draft: SessionDraft | null) => void;
     isTeacherPreview: boolean;
     startSession: () => void;
-    startSessionWithExercises: (ids: string[]) => void;
+    startSessionWithExercises: (
+        ids: string[],
+        options?: {
+            sourceMenuId?: string | null;
+            sourceMenuSource?: SessionMenuSource | null;
+            sourceMenuName?: string | null;
+            returnTab?: TabId;
+        },
+    ) => void;
     startHybridSession: (requiredIds: string[]) => void;
     startTeacherPreviewSession: (ids: string[]) => void;
     endSession: () => void;

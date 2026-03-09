@@ -7,7 +7,7 @@ import { EXERCISES } from '../data/exercises';
 interface MenuDetailSheetProps {
     menu: PublicMenu | null;
     onClose: () => void;
-    onTry: (exerciseIds: string[]) => void;
+    onTry: (exerciseIds: string[], metadata: { menuId: string; menuName: string; menuSource: 'public' }) => void;
     onImported?: () => void;
 }
 
@@ -40,7 +40,11 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
     const handleTry = () => {
         if (!menu) return;
         onClose();
-        onTry(menu.exerciseIds);
+        onTry(menu.exerciseIds, {
+            menuId: menu.id,
+            menuName: menu.name,
+            menuSource: 'public',
+        });
     };
 
     // Reset state when menu changes

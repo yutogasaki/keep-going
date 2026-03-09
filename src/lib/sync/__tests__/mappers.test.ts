@@ -30,8 +30,12 @@ describe('toSessionUpsertPayload', () => {
             started_at: '2026-03-05T10:00:00',
             total_seconds: 600,
             exercise_ids: ['ex1', 'ex2'],
+            planned_exercise_ids: [],
             skipped_ids: ['ex3'],
             user_ids: ['user1'],
+            source_menu_id: null,
+            source_menu_source: null,
+            source_menu_name: null,
         });
     });
 
@@ -58,8 +62,12 @@ describe('toLocalSessionRecord', () => {
             started_at: '2026-03-05T10:00:00',
             total_seconds: 600,
             exercise_ids: ['ex1'],
+            planned_exercise_ids: [],
             skipped_ids: [],
             user_ids: ['user1'],
+            source_menu_id: null,
+            source_menu_source: null,
+            source_menu_name: null,
         };
 
         const local = toLocalSessionRecord(cloud);
@@ -70,8 +78,12 @@ describe('toLocalSessionRecord', () => {
             startedAt: '2026-03-05T10:00:00',
             totalSeconds: 600,
             exerciseIds: ['ex1'],
+            plannedExerciseIds: [],
             skippedIds: [],
             userIds: ['user1'],
+            sourceMenuId: null,
+            sourceMenuSource: null,
+            sourceMenuName: null,
         });
     });
 });

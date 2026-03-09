@@ -4,6 +4,7 @@ import { deleteCustomExerciseRemote, pushCustomExercise as syncPushCustomExercis
 import { normalizeSessionRecord, type SessionCountMap } from './sessionRecords';
 import { useSyncStatus } from '../store/useSyncStatus';
 import { normalizeExercisePlacement, type ExercisePlacement } from '../data/exercisePlacement';
+import type { SessionMenuSource } from '../store/use-app-store/types';
 
 function onSyncError(error: unknown): void {
     console.warn('[sync]', error);
@@ -17,10 +18,14 @@ export interface SessionRecord {
     startedAt: string;   // ISO timestamp
     totalSeconds: number;
     exerciseIds: string[];
+    plannedExerciseIds?: string[];
     skippedIds: string[]; // internal only
     exerciseCounts?: SessionCountMap;
     skippedCounts?: SessionCountMap;
     userIds?: string[];   // For multi-user support
+    sourceMenuId?: string | null;
+    sourceMenuSource?: SessionMenuSource | null;
+    sourceMenuName?: string | null;
 }
 
 // Custom Exercises
@@ -215,4 +220,3 @@ export async function clearHistoryDB(): Promise<void> {
 export async function clearCustomExercisesDB(): Promise<void> {
     await customExercisesDB.clear();
 }
-

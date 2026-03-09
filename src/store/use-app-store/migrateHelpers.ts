@@ -4,11 +4,13 @@ import type {
     ChibifuwaRecord,
     PastFuwafuwaRecord,
     SessionDraft,
+    SessionMenuSource,
     TabId,
     UserProfileStore,
 } from './types';
 
 const VALID_TABS = new Set<TabId>(['home', 'record', 'menu', 'settings']);
+const VALID_SESSION_MENU_SOURCES = new Set<SessionMenuSource>(['preset', 'teacher', 'custom', 'public']);
 const VALID_CLASS_LEVELS = new Set(['先生', 'プレ', '初級', '中級', '上級', 'その他']);
 const DEFAULT_NOTIFICATION_TIME = '21:00';
 const NOTIFICATION_TIME_PATTERN = /^(\d{2}):(\d{2})$/;
@@ -161,6 +163,7 @@ function sanitizeUsers(value: unknown): UserProfileStore[] {
             excludedExercises: sanitizeStringArray(candidate.excludedExercises),
             requiredExercises: sanitizeStringArray(candidate.requiredExercises),
             consumedMagicSeconds: sanitizeNonNegativeNumber(candidate.consumedMagicSeconds, 0),
+            challengeStars: sanitizeNonNegativeNumber(candidate.challengeStars, 0),
             avatarUrl: typeof candidate.avatarUrl === 'string' && candidate.avatarUrl.length > 0 ? candidate.avatarUrl : undefined,
             chibifuwas: sanitizeChibifuwas(candidate.chibifuwas),
         }];
@@ -184,11 +187,20 @@ export function sanitizeSessionDraft(draft: unknown, validUserIdSet?: Set<string
         return null;
     }
 
+    const sourceMenuId = sanitizeOptionalString(candidate.sourceMenuId);
+    const sourceMenuSource = VALID_SESSION_MENU_SOURCES.has(candidate.sourceMenuSource as SessionMenuSource)
+        ? candidate.sourceMenuSource as SessionMenuSource
+        : null;
+    const sourceMenuName = sanitizeOptionalString(candidate.sourceMenuName);
+
     return {
         date: candidate.date,
         exerciseIds,
         userIds,
         returnTab: returnTab as TabId,
+        ...(sourceMenuId ? { sourceMenuId } : {}),
+        ...(sourceMenuSource ? { sourceMenuSource } : {}),
+        ...(sourceMenuName ? { sourceMenuName } : {}),
     };
 }
 
