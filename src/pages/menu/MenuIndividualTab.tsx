@@ -13,10 +13,18 @@ import { CustomExerciseSection } from './individual-tab/CustomExerciseSection';
 import { IndividualCategoryToolbar } from './individual-tab/IndividualCategoryToolbar';
 import { PublicExerciseSection } from './individual-tab/PublicExerciseSection';
 import type { Exercise } from '../../data/exercises';
+import { isRestExercise } from '../../data/exercises';
 import { sortTeacherContentByRecommendation } from '../../lib/teacherExerciseMetadata';
 
 function sortTeacherExercises(exercises: Exercise[]): Exercise[] {
     return sortTeacherContentByRecommendation(exercises);
+}
+
+function moveRestExercisesToEnd(exercises: Exercise[]): Exercise[] {
+    return [
+        ...exercises.filter((exercise) => !isRestExercise(exercise)),
+        ...exercises.filter((exercise) => isRestExercise(exercise)),
+    ];
 }
 
 export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
@@ -61,12 +69,12 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
         [filteredExercises],
     );
     const mainExercises = useMemo(
-        () => [
+        () => moveRestExercisesToEnd([
             ...sortTeacherExercises(
                 filteredExercises.filter((exercise) => exercise.origin === 'teacher' && !exercise.recommended)
             ),
             ...filteredExercises.filter((exercise) => exercise.origin !== 'teacher'),
-        ],
+        ]),
         [filteredExercises],
     );
     const filteredCustomExercises = useMemo(

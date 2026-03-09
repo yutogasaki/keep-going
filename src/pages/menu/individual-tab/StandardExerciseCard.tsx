@@ -1,7 +1,7 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Play, Star } from 'lucide-react';
-import type { Exercise } from '../../../data/exercises';
+import { isRestExercise, type Exercise } from '../../../data/exercises';
 import { getExercisePlacementLabel } from '../../../data/exercisePlacement';
 import { ExerciseIcon } from '../../../components/ExerciseIcon';
 import { getTeacherExerciseVisibilityLabel } from '../../../lib/teacherExerciseMetadata';
@@ -43,6 +43,7 @@ export const StandardExerciseCard: React.FC<StandardExerciseCardProps> = ({
     onStartExercise,
 }) => {
     const internalLabel = getInternalLabel(exercise.internal);
+    const isRest = isRestExercise(exercise);
 
     return (
         <motion.div
@@ -175,6 +176,7 @@ export const StandardExerciseCard: React.FC<StandardExerciseCardProps> = ({
                         <span>{exercise.sec}秒</span>
                         <span>{getExercisePlacementLabel(exercise.placement)}</span>
                         {internalLabel ? <span style={{ color: '#2BBAA0' }}>{internalLabel}</span> : null}
+                        {isRest ? <span style={{ color: '#8FA4B2' }}>組み合わせ用</span> : null}
                         {teacherBadge && exercise.visibility && exercise.visibility !== 'public' ? (
                             <span style={{ color: '#0984E3' }}>{getTeacherExerciseVisibilityLabel(exercise.visibility)}</span>
                         ) : null}
@@ -211,23 +213,25 @@ export const StandardExerciseCard: React.FC<StandardExerciseCardProps> = ({
                                 />
                             </button>
                         ) : null}
-                        <motion.button
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => onStartExercise(exercise.id)}
-                            style={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: '50%',
-                                background: 'rgba(43, 186, 160, 0.1)',
-                                border: 'none',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <Play size={14} color="#2BBAA0" fill="#2BBAA0" />
-                        </motion.button>
+                        {!isRest ? (
+                            <motion.button
+                                whileTap={{ scale: 0.9 }}
+                                onClick={() => onStartExercise(exercise.id)}
+                                style={{
+                                    width: 32,
+                                    height: 32,
+                                    borderRadius: '50%',
+                                    background: 'rgba(43, 186, 160, 0.1)',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                <Play size={14} color="#2BBAA0" fill="#2BBAA0" />
+                            </motion.button>
+                        ) : null}
                     </div>
                 ) : null}
             </div>
