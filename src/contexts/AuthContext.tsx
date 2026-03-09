@@ -78,8 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
     }, [requestSyncConflictResolution, setLoginContext]);
 
-    const { signUp, signIn, startEmailAuth, verifyEmailAuthCode, signInWithGoogle, signOut } = useMemo(
-        () => createAuthActions({ user, setIsAnonymous, setToastMessage }),
+    const { startEmailAuth, verifyEmailAuthCode, signInWithGoogle, signOut } = useMemo(
+        () => createAuthActions({ user, setToastMessage }),
         [user],
     );
 
@@ -260,8 +260,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 toastMessage,
                 clearToast,
                 requestSyncConflictResolution,
-                signUp,
-                signIn,
                 startEmailAuth,
                 verifyEmailAuthCode,
                 signInWithGoogle,
@@ -273,12 +271,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 open={syncConflictPrompt != null}
                 localSummary={syncConflictPrompt?.localSummary ?? null}
                 cloudSummary={syncConflictPrompt?.cloudSummary ?? null}
-                localDetail={syncConflictPrompt?.localDetail ?? null}
-                cloudDetail={syncConflictPrompt?.cloudDetail ?? null}
                 recommendedResolution={syncConflictPrompt?.recommendedResolution ?? null}
                 recommendationReason={syncConflictPrompt?.recommendationReason ?? null}
                 onChooseCloud={() => resolveSyncConflict('cloud')}
-                onChooseLocal={() => resolveSyncConflict('local')}
+                onChooseMerge={() => resolveSyncConflict('merge')}
             />
         </AuthContext.Provider>
     );

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { getAuthErrorMessage } from '../contexts/auth/authErrorMessages';
 import type { EmailAuthMode } from '../contexts/auth/types';
 import { AuthFormView } from './login/AuthFormView';
 
@@ -49,7 +50,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         try {
             const { error: authError } = await startEmailAuth(email.trim(), mode);
             if (authError) {
-                setError(authError.message);
+                setError(getAuthErrorMessage(authError, { phase: 'send_email', mode }));
                 return;
             }
             setHasSentEmail(true);
@@ -65,9 +66,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         setLoading(true);
 
         try {
-            const { error: authError } = await verifyEmailAuthCode(email.trim(), code.trim(), mode);
+            const { error: authError } = await verifyEmailAuthCode(email.trim(), code.trim());
             if (authError) {
-                setError(authError.message);
+                setError(getAuthErrorMessage(authError, { phase: 'verify_code', mode }));
             }
         } finally {
             setLoading(false);
@@ -81,7 +82,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         try {
             const { error: authError } = await startEmailAuth(email.trim(), mode);
             if (authError) {
-                setError(authError.message);
+                setError(getAuthErrorMessage(authError, { phase: 'send_email', mode }));
             }
         } finally {
             setLoading(false);
@@ -95,7 +96,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         try {
             const { error: googleError } = await signInWithGoogle();
             if (googleError) {
-                setError(googleError.message);
+                setError(getAuthErrorMessage(googleError, { phase: 'google' }));
             }
         } finally {
             setLoading(false);

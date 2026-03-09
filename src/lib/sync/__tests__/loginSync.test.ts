@@ -97,6 +97,16 @@ describe('buildSyncConflictPrompt', () => {
         expect(prompt.cloudDetail).toContain('せっていあり');
     });
 
+    it('recommends merging with this device as the base when local has more data', () => {
+        const prompt = buildSyncConflictPrompt({
+            localSummary: createSummary({ users: 2, sessions: 6, customExercises: 2 }),
+            cloudSummary: createSummary({ users: 1, sessions: 2 }),
+        });
+
+        expect(prompt.recommendedResolution).toBe('merge');
+        expect(prompt.recommendationReason).toContain('この端末をベースにまとめる');
+    });
+
     it('falls back to a neutral prompt when summaries are effectively tied', () => {
         const prompt = buildSyncConflictPrompt({
             localSummary: createSummary({ users: 1, sessions: 2 }),

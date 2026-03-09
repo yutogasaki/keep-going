@@ -20,10 +20,8 @@ export interface AuthContextValue {
     requestSyncConflictResolution: (
         prompt: SyncConflictPromptData,
     ) => Promise<SyncConflictResolution>;
-    signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-    signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
     startEmailAuth: (email: string, mode: EmailAuthMode) => Promise<{ error: AuthError | null }>;
-    verifyEmailAuthCode: (email: string, code: string, mode: EmailAuthMode) => Promise<{ error: AuthError | null }>;
+    verifyEmailAuthCode: (email: string, code: string) => Promise<{ error: AuthError | null }>;
     signInWithGoogle: () => Promise<{ error: AuthError | null }>;
     signOut: () => Promise<void>;
 }

@@ -11,8 +11,8 @@ function prefersCloudMessage(context: LoginSyncMessageContext): boolean {
     return context.resolution === 'cloud' || context.action === 'restore_from_cloud';
 }
 
-function prefersLocalMessage(context: LoginSyncMessageContext): boolean {
-    return context.resolution === 'local' || context.action === 'push_local';
+function prefersMergeMessage(context: LoginSyncMessageContext): boolean {
+    return context.resolution === 'merge';
 }
 
 function hasRecordData(summary: SyncDataSummary): boolean {
@@ -61,15 +61,16 @@ export function getLoginSyncSuccessMessage(context: LoginSyncMessageContext): st
         return wrapSummary('クラウドのデータを復元しました', context.cloudSummary);
     }
 
-    if (prefersLocalMessage(context)) {
-        if (context.action === 'merge') {
-            return wrapSummary('この端末をベースに同期しました', context.localSummary);
-        }
+    if (prefersMergeMessage(context)) {
+        return wrapSummary('この端末をベースにまとめました', context.localSummary);
+    }
+
+    if (context.action === 'push_local') {
         return wrapSummary('この端末のデータを同期しました', context.localSummary);
     }
 
     if (context.action === 'merge') {
-        return wrapSummary('この端末とクラウドを同期しました', context.cloudSummary);
+        return wrapSummary('この端末とクラウドをまとめました', context.cloudSummary);
     }
 
     return 'ログインしました';
@@ -80,12 +81,16 @@ export function getLoginSyncFailureMessage(context: LoginSyncMessageContext): st
         return 'クラウドのデータ復元に失敗しました。この端末のデータはそのままです。';
     }
 
-    if (prefersLocalMessage(context)) {
+    if (prefersMergeMessage(context)) {
+        return 'この端末とクラウドのまとめに失敗しました。この端末のデータはそのままです。';
+    }
+
+    if (context.action === 'push_local') {
         return 'この端末のデータ同期に失敗しました。この端末のデータはそのままです。';
     }
 
     if (context.action === 'merge') {
-        return 'データの同期に失敗しました。この端末のデータはそのままです。';
+        return 'この端末とクラウドのまとめに失敗しました。この端末のデータはそのままです。';
     }
 
     return 'ログイン後の同期に失敗しました。この端末のデータはそのままです。';

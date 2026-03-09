@@ -21,7 +21,7 @@ export interface SyncConflictPromptData {
     recommendationReason: string | null;
 }
 
-export type SyncConflictResolution = 'cloud' | 'local';
+export type SyncConflictResolution = 'cloud' | 'merge';
 export type LoginSyncPlanKind = 'none' | 'restore_from_cloud' | 'push_local' | 'merge' | 'conflict';
 
 export interface LoginSyncPlan {

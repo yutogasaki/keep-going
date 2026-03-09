@@ -17,14 +17,26 @@ export const AccountSection: React.FC = () => {
     }, [showLogin, user]);
 
     if (showLogin) {
-        return <LoginPage
-            onBack={() => {
-                setLoginContext(null);
-                setShowLogin(false);
-            }}
-            onLoginSuccess={() => setShowLogin(false)}
-            initialMode={authMode}
-        />;
+        return (
+            <div
+                style={{
+                    position: 'fixed',
+                    inset: 0,
+                    zIndex: 100,
+                    background: 'linear-gradient(165deg, #FFF5F0 0%, #E8F8F0 100%)',
+                    overflow: 'auto',
+                }}
+            >
+                <LoginPage
+                    onBack={() => {
+                        setLoginContext(null);
+                        setShowLogin(false);
+                    }}
+                    onLoginSuccess={() => setShowLogin(false)}
+                    initialMode={authMode}
+                />
+            </div>
+        );
     }
 
     const isRealAccount = user && !isAnonymous;

@@ -113,9 +113,9 @@ describe('sync flow messages', () => {
     it('formats summary-aware success and safe failure messages', () => {
         expect(getLoginSyncSuccessMessage({
             action: 'merge',
-            resolution: 'local',
+            resolution: 'merge',
             localSummary: createSummary({ users: 1, sessions: 3 }),
-        })).toBe('この端末をベースに同期しました（きろく3回 / おこさま1人）');
+        })).toBe('この端末をベースにまとめました（きろく3回 / おこさま1人）');
         expect(getLoginSyncFailureMessage({ action: 'restore_from_cloud' })).toBe('クラウドのデータ復元に失敗しました。この端末のデータはそのままです。');
     });
 });
@@ -128,7 +128,7 @@ describe('runPostLoginSync', () => {
             cloudSummary: createSummary({ users: 1 }),
         }));
         mockedInitialSync.mockRejectedValue(new Error('push failed'));
-        const resolveConflict = vi.fn().mockResolvedValue('local');
+        const resolveConflict = vi.fn().mockResolvedValue('merge');
 
         const result = await runPostLoginSync({
             accountId: 'account-1',
@@ -147,7 +147,7 @@ describe('runPostLoginSync', () => {
         }));
         expect(result.success).toBe(false);
         expect(result.action).toBe('push_local');
-        expect(result.resolution).toBe('local');
+        expect(result.resolution).toBe('merge');
         expect(result.hadCloudData).toBe(true);
         expect(result.error).toContain('push failed');
         expect(mockedPullAndMerge).not.toHaveBeenCalled();
@@ -167,13 +167,13 @@ describe('runPostLoginSync', () => {
 
         const result = await runPostLoginSync({
             accountId: 'account-1',
-            resolveConflict: vi.fn().mockResolvedValue('local'),
+            resolveConflict: vi.fn().mockResolvedValue('merge'),
         });
 
         expect(result).toMatchObject({
             success: false,
             action: 'merge',
-            resolution: 'local',
+            resolution: 'merge',
             hadCloudData: true,
         });
         expect(result.error).toContain('merge failed');

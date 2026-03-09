@@ -6,38 +6,11 @@ import type { EmailAuthMode } from './types';
 
 interface CreateAuthActionsParams {
     user: User | null;
-    setIsAnonymous: (value: boolean) => void;
     setToastMessage: (message: string | null) => void;
 }
 
-export function createAuthActions({ user, setIsAnonymous, setToastMessage }: CreateAuthActionsParams) {
+export function createAuthActions({ user, setToastMessage }: CreateAuthActionsParams) {
     const emailRedirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
-
-    const signUp = async (email: string, password: string): Promise<{ error: AuthError | null }> => {
-        if (!supabase) {
-            return { error: { message: 'Supabase not configured' } as AuthError };
-        }
-
-        if (user?.is_anonymous) {
-            const { error } = await supabase.auth.updateUser({ email, password });
-            if (!error) {
-                setIsAnonymous(false);
-            }
-            return { error };
-        }
-
-        const { error } = await supabase.auth.signUp({ email, password });
-        return { error };
-    };
-
-    const signIn = async (email: string, password: string): Promise<{ error: AuthError | null }> => {
-        if (!supabase) {
-            return { error: { message: 'Supabase not configured' } as AuthError };
-        }
-
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        return { error };
-    };
 
     const startEmailAuth = async (
         email: string,
@@ -61,7 +34,6 @@ export function createAuthActions({ user, setIsAnonymous, setToastMessage }: Cre
     const verifyEmailAuthCode = async (
         email: string,
         code: string,
-        mode: EmailAuthMode,
     ): Promise<{ error: AuthError | null }> => {
         if (!supabase) {
             return { error: { message: 'Supabase not configured' } as AuthError };
@@ -70,7 +42,7 @@ export function createAuthActions({ user, setIsAnonymous, setToastMessage }: Cre
         const { error } = await supabase.auth.verifyOtp({
             email,
             token: code,
-            type: mode === 'signUp' ? 'signup' : 'email',
+            type: 'email',
         });
 
         return { error };
@@ -122,8 +94,6 @@ export function createAuthActions({ user, setIsAnonymous, setToastMessage }: Cre
     };
 
     return {
-        signUp,
-        signIn,
         startEmailAuth,
         verifyEmailAuthCode,
         signInWithGoogle,

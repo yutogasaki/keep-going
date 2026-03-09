@@ -1,6 +1,5 @@
 import React from 'react';
 import { Chrome, KeyRound, Mail } from 'lucide-react';
-import { SyncAccountGuideCard } from '../../components/SyncAccountGuideCard';
 import { LoginBackButton } from './LoginBackButton';
 import type { EmailAuthMode } from '../../contexts/auth/types';
 
@@ -24,19 +23,23 @@ interface AuthFormViewProps {
 
 const containerStyle: React.CSSProperties = {
     width: '100%',
-    height: '100%',
+    minHeight: '100dvh',
     display: 'flex',
     flexDirection: 'column',
     padding: '0 20px',
+    boxSizing: 'border-box',
+    overflowY: 'auto',
 };
 
 const sectionStyle: React.CSSProperties = {
-    flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    gap: 20,
+    gap: 18,
     paddingTop: 20,
-    paddingBottom: 100,
+    paddingBottom: 40,
+    width: '100%',
+    maxWidth: 420,
+    margin: '0 auto',
 };
 
 const fieldStyle: React.CSSProperties = {
@@ -75,6 +78,16 @@ const secondaryButtonStyle: React.CSSProperties = {
     color: '#333',
 };
 
+const panelStyle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
+    padding: '16px 18px',
+    borderRadius: 18,
+    background: 'rgba(255,255,255,0.88)',
+    border: '1px solid rgba(0,0,0,0.06)',
+};
+
 export const AuthFormView: React.FC<AuthFormViewProps> = ({
     mode,
     email,
@@ -95,8 +108,8 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
     const isSignUp = mode === 'signUp';
     const title = isSignUp ? 'アカウント作成' : 'ログイン';
     const subtitle = isSignUp
-        ? '先にアカウントを作っておくと、あとで名前やクラスを入れても消えません'
-        : '登録ずみのデータをひきついぐか、この端末のデータを同期できます';
+        ? '先に作っておくと、あとで名前やクラスを入れても消えません'
+        : '前のデータをひきつぐときはこちら';
 
     return (
         <div style={containerStyle}>
@@ -110,63 +123,8 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
                     </p>
                 </div>
 
-                <SyncAccountGuideCard compact />
-
                 {!hasSentEmail ? (
                     <>
-                        <form onSubmit={onStartEmailAuth} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            <div style={fieldStyle}>
-                                <Mail size={16} color="#8395A7" />
-                                <input
-                                    type="email"
-                                    placeholder="メールアドレス"
-                                    aria-label="メールアドレス"
-                                    value={email}
-                                    onChange={(event) => onEmailChange(event.target.value)}
-                                    required
-                                    autoComplete="email"
-                                    style={{
-                                        flex: 1,
-                                        border: 'none',
-                                        outline: 'none',
-                                        fontSize: 15,
-                                        background: 'transparent',
-                                    }}
-                                />
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={loading || email.trim().length === 0}
-                                style={primaryButtonStyle(loading || email.trim().length === 0)}
-                            >
-                                {loading ? '送信中...' : isSignUp ? 'メールを送る' : 'ログイン用メールを送る'}
-                            </button>
-                        </form>
-
-                        <p style={{ color: '#8395A7', fontSize: 12, margin: 0, lineHeight: 1.6 }}>
-                            メールにコードが書いてあれば、この画面で入力できます。
-                            <br />
-                            リンクだけのメールでも、そのまま続けられます。
-                        </p>
-                        {!isSignUp && (
-                            <p style={{ color: '#2B7A6A', fontSize: 12, margin: '-4px 0 0', lineHeight: 1.6 }}>
-                                パスワードを忘れていても、メールのコードで入れます。
-                            </p>
-                        )}
-
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 12,
-                            color: '#CCC',
-                            fontSize: 12,
-                        }}>
-                            <div style={{ flex: 1, height: 1, background: '#EEE' }} />
-                            <span>または</span>
-                            <div style={{ flex: 1, height: 1, background: '#EEE' }} />
-                        </div>
-
                         <button
                             onClick={onGoogleLogin}
                             disabled={loading}
@@ -180,9 +138,66 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
                             Google で続ける
                         </button>
 
-                        <p style={{ color: '#B2BEC3', fontSize: 11, margin: '-8px 0 0', lineHeight: 1.5 }}>
+                        <p style={{ color: '#B2BEC3', fontSize: 11, margin: '-6px 0 0', lineHeight: 1.5 }}>
                             Google はブラウザが開きます。iPhone のホーム画面追加では、メールのコード方式のほうが安定します。
                         </p>
+
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            color: '#CCC',
+                            fontSize: 12,
+                        }}>
+                            <div style={{ flex: 1, height: 1, background: '#EEE' }} />
+                            <span>または</span>
+                            <div style={{ flex: 1, height: 1, background: '#EEE' }} />
+                        </div>
+
+                        <div style={panelStyle}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#2D3436' }}>
+                                メールで続ける
+                            </div>
+
+                            <form onSubmit={onStartEmailAuth} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                <div style={fieldStyle}>
+                                    <Mail size={16} color="#8395A7" />
+                                    <input
+                                        type="email"
+                                        placeholder="メールアドレス"
+                                        aria-label="メールアドレス"
+                                        value={email}
+                                        onChange={(event) => onEmailChange(event.target.value)}
+                                        required
+                                        autoComplete="email"
+                                        style={{
+                                            flex: 1,
+                                            border: 'none',
+                                            outline: 'none',
+                                            fontSize: 15,
+                                            background: 'transparent',
+                                        }}
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={loading || email.trim().length === 0}
+                                    style={primaryButtonStyle(loading || email.trim().length === 0)}
+                                >
+                                    {loading ? '送信中...' : isSignUp ? 'メールを送る' : 'ログイン用メールを送る'}
+                                </button>
+                            </form>
+
+                            <p style={{ color: '#8395A7', fontSize: 12, margin: 0, lineHeight: 1.6 }}>
+                                メールに届く 6けたの確認コードを、この画面で入力して続けます。
+                            </p>
+                            {!isSignUp && (
+                                <p style={{ color: '#2B7A6A', fontSize: 12, margin: 0, lineHeight: 1.6 }}>
+                                    パスワードを忘れていても、メールのコードで入れます。
+                                </p>
+                            )}
+                        </div>
                     </>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -198,7 +213,7 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
                             <div style={{ fontSize: 13, color: '#52606D', lineHeight: 1.6, marginTop: 6 }}>
                                 {email}
                                 <br />
-                                コードが見えるメールなら下に入力してください。リンクだけのメールなら、メールのボタンを押してからこの画面に戻ります。
+                                メールに届いた 6けたの確認コードを、この画面の下に入力してください。
                             </div>
                         </div>
 
