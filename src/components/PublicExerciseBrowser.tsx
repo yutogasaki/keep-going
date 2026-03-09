@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Clock, Download, ChevronRight } from 'lucide-react';
+import { X, Loader2, Download, ChevronRight } from 'lucide-react';
 import { getExercisePlacementLabel } from '../data/exercisePlacement';
 import { dedupeExercisesByIdentity } from '../lib/publicExerciseUtils';
 import { fetchPopularExercises, type PublicExercise } from '../lib/publicExercises';
 import { ExerciseDetailSheet } from './ExerciseDetailSheet';
 import { DISPLAY_TERMS } from '../lib/terminology';
 import { useAppStore } from '../store/useAppStore';
-import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE, Z } from '../lib/styles';
+import { COLOR, FONT, FONT_SIZE, RADIUS, Z } from '../lib/styles';
 
 interface PublicExerciseBrowserProps {
     open: boolean;
@@ -201,7 +201,6 @@ const BrowserExerciseCard: React.FC<{
     exercise: PublicExercise;
     onTap: () => void;
 }> = ({ exercise, onTap }) => {
-    const subtitle = `${exercise.authorName} さんの種目`;
     const description = exercise.description || `${getExercisePlacementLabel(exercise.placement)}の ${exercise.sec}秒の種目`;
 
     return (
