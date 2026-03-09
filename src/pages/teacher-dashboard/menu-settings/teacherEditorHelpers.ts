@@ -15,6 +15,7 @@ export interface MenuEditorExerciseOption {
     emoji: string;
     sec: number;
     isTeacher: boolean;
+    sourceLabel: string;
 }
 
 export function buildDefaultStatusByClass(
@@ -45,6 +46,7 @@ export function buildMenuEditorExercises(teacherExercises: TeacherExercise[]): M
             emoji: exercise.emoji,
             sec: exercise.sec,
             isTeacher: false,
+            sourceLabel: '標準種目',
         })),
         ...teacherExercises.map((exercise) => ({
             id: exercise.id,
@@ -52,6 +54,7 @@ export function buildMenuEditorExercises(teacherExercises: TeacherExercise[]): M
             emoji: exercise.emoji,
             sec: exercise.sec,
             isTeacher: true,
+            sourceLabel: '先生の種目',
         })),
     ];
 }

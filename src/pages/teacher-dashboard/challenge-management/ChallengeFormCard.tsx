@@ -3,6 +3,7 @@ import { CLASS_LEVELS, EXERCISES } from '../../../data/exercises';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
 import type { TeacherMenu } from '../../../lib/teacherContent';
 import { getTeacherVisibilityLabel, sortTeacherContentByRecommendation } from '../../../lib/teacherExerciseMetadata';
+import { CANONICAL_TERMS } from '../../../lib/terminology';
 import type { ChallengeFormValues } from './types';
 import { COLOR, FONT, FONT_SIZE, RADIUS } from '../../../lib/styles';
 
@@ -110,7 +111,7 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                             menuSource: values.menuSource,
                                             targetMenuId: values.menuSource === 'preset'
                                                 ? (values.targetMenuId || PRESET_GROUPS[0]?.id || '')
-                                                : (values.targetMenuId || teacherMenus[0]?.id || ''),
+                                                : (values.targetMenuId || sortedTeacherMenus[0]?.id || ''),
                                         }
                                         : { challengeType: option.id }
                                 )}
@@ -154,8 +155,8 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                             <div style={labelStyle}>メニュー</div>
                             <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                                 {([
-                                    { id: 'preset', label: '既存メニュー' },
-                                    { id: 'teacher', label: '先生メニュー' },
+                                    { id: 'preset', label: CANONICAL_TERMS.presetMenu },
+                                    { id: 'teacher', label: CANONICAL_TERMS.teacherMenu },
                                 ] as const).map((option) => {
                                     const selected = values.menuSource === option.id;
                                     return (

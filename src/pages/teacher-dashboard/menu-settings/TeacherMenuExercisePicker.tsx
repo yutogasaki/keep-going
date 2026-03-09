@@ -19,6 +19,129 @@ export const TeacherMenuExercisePicker: React.FC<TeacherMenuExercisePickerProps>
     onRemoveAtIndex,
 }) => {
     const lookupExercise = (id: string) => exercises.find((exercise) => exercise.id === id);
+    const standardExercises = exercises.filter((exercise) => !exercise.isTeacher);
+    const teacherExercises = exercises.filter((exercise) => exercise.isTeacher);
+
+    const renderExerciseButton = (exercise: MenuEditorExerciseOption) => {
+        const count = exerciseIds.filter((id) => id === exercise.id).length;
+        return (
+            <motion.button
+                key={exercise.id}
+                whileTap={{ scale: 0.98 }}
+                type="button"
+                onClick={() => onAddExercise(exercise.id)}
+                className="card"
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 16,
+                    padding: '16px 20px',
+                    cursor: 'pointer',
+                    border: count > 0 ? '2px solid #2BBAA0' : '2px solid transparent',
+                    background: count > 0 ? 'rgba(43,186,160,0.04)' : 'white',
+                    textAlign: 'left',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                    transition: 'all 0.2s',
+                }}
+            >
+                <ExerciseIcon id={exercise.id} emoji={exercise.emoji} size={24} color="#2D3436" />
+                <div style={{ flex: 1 }}>
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            marginBottom: 4,
+                        }}
+                    >
+                        <span
+                            style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 15,
+                                fontWeight: 700,
+                                color: '#2D3436',
+                            }}
+                        >
+                            {exercise.name}
+                        </span>
+                        {exercise.isTeacher ? (
+                            <span
+                                style={{
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    color: '#0984E3',
+                                    background: 'rgba(9,132,227,0.1)',
+                                    padding: '1px 6px',
+                                    borderRadius: 6,
+                                }}
+                            >
+                                先生
+                            </span>
+                        ) : null}
+                    </div>
+                    <span
+                        style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 12,
+                            color: '#8395A7',
+                        }}
+                    >
+                        {exercise.sec}秒
+                    </span>
+                </div>
+                {count > 0 ? (
+                    <span
+                        style={{
+                            padding: '4px 10px',
+                            borderRadius: 10,
+                            background: '#2BBAA0',
+                            color: 'white',
+                            fontSize: 12,
+                            fontWeight: 700,
+                            fontFamily: "'Outfit', sans-serif",
+                            boxShadow: '0 2px 8px rgba(43, 186, 160, 0.4)',
+                        }}
+                    >
+                        ×{count}
+                    </span>
+                ) : (
+                    <div
+                        style={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: '50%',
+                            background: '#F8F9FA',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <Plus size={18} color="#B2BEC3" />
+                    </div>
+                )}
+            </motion.button>
+        );
+    };
+
+    const renderExerciseSection = (title: string, sectionExercises: MenuEditorExerciseOption[]) => {
+        if (sectionExercises.length === 0) return null;
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div
+                    style={{
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: '#8395A7',
+                        padding: '4px 4px 0',
+                    }}
+                >
+                    {title}
+                </div>
+                {sectionExercises.map(renderExerciseButton)}
+            </div>
+        );
+    };
 
     return (
         <>
@@ -128,106 +251,8 @@ export const TeacherMenuExercisePicker: React.FC<TeacherMenuExercisePickerProps>
                     種目をタップして追加（くりかえしOK）
                 </label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {exercises.map((exercise) => {
-                        const count = exerciseIds.filter((id) => id === exercise.id).length;
-                        return (
-                            <motion.button
-                                key={exercise.id}
-                                whileTap={{ scale: 0.98 }}
-                                type="button"
-                                onClick={() => onAddExercise(exercise.id)}
-                                className="card"
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 16,
-                                    padding: '16px 20px',
-                                    cursor: 'pointer',
-                                    border: count > 0 ? '2px solid #2BBAA0' : '2px solid transparent',
-                                    background: count > 0 ? 'rgba(43,186,160,0.04)' : 'white',
-                                    textAlign: 'left',
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-                                    transition: 'all 0.2s',
-                                }}
-                            >
-                                <ExerciseIcon id={exercise.id} emoji={exercise.emoji} size={24} color="#2D3436" />
-                                <div style={{ flex: 1 }}>
-                                    <div
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 6,
-                                            marginBottom: 4,
-                                        }}
-                                    >
-                                        <span
-                                            style={{
-                                                fontFamily: "'Noto Sans JP', sans-serif",
-                                                fontSize: 15,
-                                                fontWeight: 700,
-                                                color: '#2D3436',
-                                            }}
-                                        >
-                                            {exercise.name}
-                                        </span>
-                                        {exercise.isTeacher ? (
-                                            <span
-                                                style={{
-                                                    fontSize: 9,
-                                                    fontWeight: 700,
-                                                    color: '#0984E3',
-                                                    background: 'rgba(9,132,227,0.1)',
-                                                    padding: '1px 6px',
-                                                    borderRadius: 6,
-                                                }}
-                                            >
-                                                先生
-                                            </span>
-                                        ) : null}
-                                    </div>
-                                    <span
-                                        style={{
-                                            fontFamily: "'Noto Sans JP', sans-serif",
-                                            fontSize: 12,
-                                            color: '#8395A7',
-                                        }}
-                                    >
-                                        {exercise.sec}秒
-                                    </span>
-                                </div>
-                                {count > 0 ? (
-                                    <span
-                                        style={{
-                                            padding: '4px 10px',
-                                            borderRadius: 10,
-                                            background: '#2BBAA0',
-                                            color: 'white',
-                                            fontSize: 12,
-                                            fontWeight: 700,
-                                            fontFamily: "'Outfit', sans-serif",
-                                            boxShadow: '0 2px 8px rgba(43, 186, 160, 0.4)',
-                                        }}
-                                    >
-                                        ×{count}
-                                    </span>
-                                ) : (
-                                    <div
-                                        style={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: '50%',
-                                            background: '#F8F9FA',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                        }}
-                                    >
-                                        <Plus size={18} color="#B2BEC3" />
-                                    </div>
-                                )}
-                            </motion.button>
-                        );
-                    })}
+                    {renderExerciseSection('標準種目', standardExercises)}
+                    {renderExerciseSection('先生の種目', teacherExercises)}
                 </div>
             </div>
         </>

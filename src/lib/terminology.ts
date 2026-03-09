@@ -1,6 +1,9 @@
 export const CANONICAL_TERMS = {
+    standardExercise: '標準種目',
+    teacherExercise: '先生の種目',
     exercise: '種目',
     exerciseTab: '種目タブ',
+    teacherMenu: '先生のメニュー',
     menu: 'メニュー',
     autoMenu: 'おまかせメニュー',
     customExercise: 'カスタム種目',
@@ -22,4 +25,3 @@ export const DISPLAY_TERMS = {
     publicMenu: 'みんなのメニュー',
     publicHub: 'みんなのメニュー・種目',
 } as const;
-

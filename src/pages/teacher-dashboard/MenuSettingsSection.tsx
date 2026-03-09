@@ -12,6 +12,7 @@ import { useAppStore } from '../../store/useAppStore';
 import { audio } from '../../lib/audio';
 import type { TeacherExercise, TeacherMenu } from '../../lib/teacherContent';
 import { sortTeacherContentByRecommendation } from '../../lib/teacherExerciseMetadata';
+import { CANONICAL_TERMS, DISPLAY_TERMS } from '../../lib/terminology';
 
 function sortTeacherExercises(exercises: TeacherExercise[]): TeacherExercise[] {
     return sortTeacherContentByRecommendation(exercises);
@@ -98,8 +99,8 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
             {/* Sub-tabs */}
             <div style={{ display: 'flex', gap: 8 }}>
                 {([
-                    { id: 'groups' as SubTab, label: '組み合わせ' },
-                    { id: 'exercises' as SubTab, label: '種目' },
+                    { id: 'groups' as SubTab, label: DISPLAY_TERMS.groupTab },
+                    { id: 'exercises' as SubTab, label: DISPLAY_TERMS.exerciseTab },
                 ]).map(tab => (
                     <button
                         key={tab.id}
@@ -168,7 +169,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                 }}
             >
                 <Plus size={16} />
-                {subTab === 'exercises' ? '新しい種目を作成' : '新しいメニューを作成'}
+                {subTab === 'exercises' ? `新しい${CANONICAL_TERMS.exercise}を作成` : `新しい${CANONICAL_TERMS.menu}を作成`}
             </button>
 
             {/* Exercise editor (full-screen portal) */}
@@ -233,7 +234,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                 <>
                     {teacherExercises.length > 0 && (
                         <>
-                            <SectionLabel text="先生がつくった種目" color="#0984E3" />
+                            <SectionLabel text={CANONICAL_TERMS.teacherExercise} color="#0984E3" />
                             {sortTeacherExercises(teacherExercises).map(ex => (
                                 <MenuSettingsItemCard
                                     key={ex.id}
@@ -256,7 +257,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                         </>
                     )}
 
-                    <SectionLabel text="ビルトイン種目" color="#8395A7" />
+                    <SectionLabel text={CANONICAL_TERMS.standardExercise} color="#8395A7" />
                     {EXERCISES.map(ex => {
                         const ov = getOverride(ex.id, 'exercise');
                         const displayName = ov?.nameOverride ?? ex.name;
@@ -284,7 +285,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                 <>
                     {teacherMenus.length > 0 && (
                         <>
-                            <SectionLabel text="先生がつくったメニュー" color="#0984E3" />
+                            <SectionLabel text={CANONICAL_TERMS.teacherMenu} color="#0984E3" />
                             {sortTeacherMenus(teacherMenus).map(menu => (
                                 <MenuSettingsItemCard
                                     key={menu.id}
@@ -307,7 +308,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                         </>
                     )}
 
-                    <SectionLabel text="プリセットメニュー" color="#8395A7" />
+                    <SectionLabel text={CANONICAL_TERMS.presetMenu} color="#8395A7" />
                     {PRESET_GROUPS.map(group => {
                         const ov = getOverride(group.id, 'menu_group');
                         const displayName = ov?.nameOverride ?? group.name;
