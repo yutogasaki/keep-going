@@ -53,47 +53,23 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
     onSubmit,
 }) => {
     const [teacherMenuQuery, setTeacherMenuQuery] = useState('');
-    const [teacherMenuFocusFilter, setTeacherMenuFocusFilter] = useState<string | null>(null);
     const [exerciseSource, setExerciseSource] = useState<'standard' | 'teacher'>('standard');
     const [teacherExerciseQuery, setTeacherExerciseQuery] = useState('');
-    const [teacherExerciseFocusFilter, setTeacherExerciseFocusFilter] = useState<string | null>(null);
     const sortedTeacherMenus = sortTeacherContentByRecommendation(teacherMenus);
     const sortedTeacherExercises = sortTeacherContentByRecommendation(teacherExercises);
-    const availableTeacherExerciseTags = useMemo(
-        () => [...new Set(sortedTeacherExercises.flatMap((exercise) => exercise.focusTags))],
-        [sortedTeacherExercises],
-    );
     const filteredTeacherExercises = useMemo(() => {
         const normalizedQuery = teacherExerciseQuery.trim().toLowerCase();
-        if (!teacherExerciseFocusFilter) {
-            return sortedTeacherExercises.filter((exercise) => (
-                normalizedQuery.length === 0 || exercise.name.toLowerCase().includes(normalizedQuery)
-            ));
-        }
-
         return sortedTeacherExercises.filter((exercise) => (
-            exercise.focusTags.includes(teacherExerciseFocusFilter)
-            && (normalizedQuery.length === 0 || exercise.name.toLowerCase().includes(normalizedQuery))
+            normalizedQuery.length === 0 || exercise.name.toLowerCase().includes(normalizedQuery)
         ));
-    }, [sortedTeacherExercises, teacherExerciseFocusFilter, teacherExerciseQuery]);
+    }, [sortedTeacherExercises, teacherExerciseQuery]);
     const selectedTeacherExercise = sortedTeacherExercises.find((exercise) => exercise.id === values.exerciseId) ?? null;
-    const availableTeacherMenuTags = useMemo(
-        () => [...new Set(sortedTeacherMenus.flatMap((menu) => menu.focusTags))],
-        [sortedTeacherMenus],
-    );
     const filteredTeacherMenus = useMemo(() => {
         const normalizedQuery = teacherMenuQuery.trim().toLowerCase();
-        if (!teacherMenuFocusFilter) {
-            return sortedTeacherMenus.filter((menu) => (
-                normalizedQuery.length === 0 || menu.name.toLowerCase().includes(normalizedQuery)
-            ));
-        }
-
         return sortedTeacherMenus.filter((menu) => (
-            menu.focusTags.includes(teacherMenuFocusFilter)
-            && (normalizedQuery.length === 0 || menu.name.toLowerCase().includes(normalizedQuery))
+            normalizedQuery.length === 0 || menu.name.toLowerCase().includes(normalizedQuery)
         ));
-    }, [sortedTeacherMenus, teacherMenuFocusFilter, teacherMenuQuery]);
+    }, [sortedTeacherMenus, teacherMenuQuery]);
     const dateError = values.startDate && values.endDate && values.endDate < values.startDate
         ? '終了日は開始日より後にしてください'
         : '';
@@ -112,28 +88,14 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
         || (values.challengeType === 'menu' && !hasMenuTarget);
 
     useEffect(() => {
-        if (teacherMenuFocusFilter && !availableTeacherMenuTags.includes(teacherMenuFocusFilter)) {
-            setTeacherMenuFocusFilter(null);
-        }
-    }, [availableTeacherMenuTags, teacherMenuFocusFilter]);
-
-    useEffect(() => {
         if (values.menuSource !== 'teacher') {
             setTeacherMenuQuery('');
-            setTeacherMenuFocusFilter(null);
         }
     }, [values.menuSource]);
 
     useEffect(() => {
-        if (teacherExerciseFocusFilter && !availableTeacherExerciseTags.includes(teacherExerciseFocusFilter)) {
-            setTeacherExerciseFocusFilter(null);
-        }
-    }, [availableTeacherExerciseTags, teacherExerciseFocusFilter]);
-
-    useEffect(() => {
         if (exerciseSource !== 'teacher') {
             setTeacherExerciseQuery('');
-            setTeacherExerciseFocusFilter(null);
         }
     }, [exerciseSource]);
 
@@ -289,60 +251,7 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                     );
                                 })}
                             </div>
-                            {exerciseSource === 'teacher' && availableTeacherExerciseTags.length > 0 ? (
-                                <div style={{ marginBottom: 8 }}>
-                                    <input
-                                        type="text"
-                                        value={teacherExerciseQuery}
-                                        onChange={(event) => setTeacherExerciseQuery(event.target.value)}
-                                        placeholder={`${CANONICAL_TERMS.teacherExercise}をさがす`}
-                                        style={{ ...inputStyle, marginBottom: 8 }}
-                                    />
-                                    <div style={{ ...labelStyle, fontSize: FONT_SIZE.xs }}>ねらいで絞る</div>
-                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                        <button
-                                            type="button"
-                                            onClick={() => setTeacherExerciseFocusFilter(null)}
-                                            style={{
-                                                padding: '6px 10px',
-                                                borderRadius: 999,
-                                                border: teacherExerciseFocusFilter === null ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
-                                                background: teacherExerciseFocusFilter === null ? '#E8F8F0' : COLOR.bgLight,
-                                                color: teacherExerciseFocusFilter === null ? '#2BBAA0' : COLOR.text,
-                                                fontFamily: FONT.body,
-                                                fontSize: FONT_SIZE.xs,
-                                                fontWeight: 700,
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            すべて
-                                        </button>
-                                        {availableTeacherExerciseTags.map((tag) => {
-                                            const selected = teacherExerciseFocusFilter === tag;
-                                            return (
-                                                <button
-                                                    key={tag}
-                                                    type="button"
-                                                    onClick={() => setTeacherExerciseFocusFilter(tag)}
-                                                    style={{
-                                                        padding: '6px 10px',
-                                                        borderRadius: 999,
-                                                        border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
-                                                        background: selected ? '#E8F8F0' : COLOR.bgLight,
-                                                        color: selected ? '#2BBAA0' : COLOR.text,
-                                                        fontFamily: FONT.body,
-                                                        fontSize: FONT_SIZE.xs,
-                                                        fontWeight: 700,
-                                                        cursor: 'pointer',
-                                                    }}
-                                                >
-                                                    {tag}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            ) : exerciseSource === 'teacher' ? (
+                            {exerciseSource === 'teacher' ? (
                                 <input
                                     type="text"
                                     value={teacherExerciseQuery}
@@ -416,22 +325,6 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                             {getTeacherVisibilityLabel(selectedTeacherExercise.visibility)}
                                         </span>
                                     ) : null}
-                                    {selectedTeacherExercise.focusTags.map((tag) => (
-                                        <span
-                                            key={tag}
-                                            style={{
-                                                fontFamily: FONT.body,
-                                                fontSize: FONT_SIZE.xs,
-                                                fontWeight: 700,
-                                                color: '#2BBAA0',
-                                                background: 'rgba(43,186,160,0.08)',
-                                                padding: '2px 8px',
-                                                borderRadius: 999,
-                                            }}
-                                        >
-                                            {tag}
-                                        </span>
-                                    ))}
                                 </div>
                             ) : null}
                         </>
@@ -472,60 +365,7 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                     );
                                 })}
                             </div>
-                            {values.menuSource === 'teacher' && availableTeacherMenuTags.length > 0 ? (
-                                <div style={{ marginBottom: 8 }}>
-                                    <input
-                                        type="text"
-                                        value={teacherMenuQuery}
-                                        onChange={(event) => setTeacherMenuQuery(event.target.value)}
-                                        placeholder={`${CANONICAL_TERMS.teacherMenu}をさがす`}
-                                        style={{ ...inputStyle, marginBottom: 8 }}
-                                    />
-                                    <div style={{ ...labelStyle, fontSize: FONT_SIZE.xs }}>ねらいで絞る</div>
-                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                                        <button
-                                            type="button"
-                                            onClick={() => setTeacherMenuFocusFilter(null)}
-                                            style={{
-                                                padding: '6px 10px',
-                                                borderRadius: 999,
-                                                border: teacherMenuFocusFilter === null ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
-                                                background: teacherMenuFocusFilter === null ? '#E8F8F0' : COLOR.bgLight,
-                                                color: teacherMenuFocusFilter === null ? '#2BBAA0' : COLOR.text,
-                                                fontFamily: FONT.body,
-                                                fontSize: FONT_SIZE.xs,
-                                                fontWeight: 700,
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            すべて
-                                        </button>
-                                        {availableTeacherMenuTags.map((tag) => {
-                                            const selected = teacherMenuFocusFilter === tag;
-                                            return (
-                                                <button
-                                                    key={tag}
-                                                    type="button"
-                                                    onClick={() => setTeacherMenuFocusFilter(tag)}
-                                                    style={{
-                                                        padding: '6px 10px',
-                                                        borderRadius: 999,
-                                                        border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
-                                                        background: selected ? '#E8F8F0' : COLOR.bgLight,
-                                                        color: selected ? '#2BBAA0' : COLOR.text,
-                                                        fontFamily: FONT.body,
-                                                        fontSize: FONT_SIZE.xs,
-                                                        fontWeight: 700,
-                                                        cursor: 'pointer',
-                                                    }}
-                                                >
-                                                    {tag}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            ) : values.menuSource === 'teacher' ? (
+                            {values.menuSource === 'teacher' ? (
                                 <input
                                     type="text"
                                     value={teacherMenuQuery}
@@ -600,22 +440,6 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                             {getTeacherVisibilityLabel(selectedTeacherMenu.visibility)}
                                         </span>
                                     ) : null}
-                                    {selectedTeacherMenu.focusTags.map((tag) => (
-                                        <span
-                                            key={tag}
-                                            style={{
-                                                fontFamily: FONT.body,
-                                                fontSize: FONT_SIZE.xs,
-                                                fontWeight: 700,
-                                                color: '#2BBAA0',
-                                                background: 'rgba(43,186,160,0.08)',
-                                                padding: '2px 8px',
-                                                borderRadius: 999,
-                                            }}
-                                        >
-                                            {tag}
-                                        </span>
-                                    ))}
                                 </div>
                             ) : null}
                         </>

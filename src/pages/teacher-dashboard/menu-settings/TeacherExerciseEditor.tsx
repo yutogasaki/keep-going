@@ -9,7 +9,6 @@ import {
 import type { TeacherExercise } from '../../../lib/teacherContent';
 import {
     TEACHER_EXERCISE_VISIBILITY_OPTIONS,
-    TEACHER_FOCUS_TAG_OPTIONS,
     type TeacherExerciseVisibility,
 } from '../../../lib/teacherExerciseMetadata';
 import type { MenuSettingStatus } from '../../../lib/teacherMenuSettings';
@@ -79,7 +78,6 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
     const [hasSplit, setHasSplit] = useState(initial?.hasSplit ?? false);
     const [description, setDescription] = useState(initial?.description ?? '');
     const [visibility, setVisibility] = useState<TeacherExerciseVisibility>(initial?.visibility ?? 'public');
-    const [focusTags, setFocusTags] = useState<string[]>(initial?.focusTags ?? []);
     const [recommended, setRecommended] = useState(initial?.recommended ?? false);
     const [recommendedOrderInput, setRecommendedOrderInput] = useState(
         initial?.recommendedOrder != null ? String(initial.recommendedOrder) : '1'
@@ -99,7 +97,7 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
             description: description.trim(),
             classLevels: deriveVisibleClassLevels(statusByClass),
             visibility,
-            focusTags,
+            focusTags: [],
             recommended,
             recommendedOrder: recommended ? Math.max(1, Number.parseInt(recommendedOrderInput, 10) || 1) : null,
             statusByClass,
@@ -301,38 +299,6 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
                         </div>
                         <div style={{ marginTop: 8, fontFamily: FONT.body, fontSize: 12, color: COLOR.muted }}>
                             {TEACHER_EXERCISE_VISIBILITY_OPTIONS.find((option) => option.id === visibility)?.description}
-                        </div>
-                    </EditorSection>
-
-                    <EditorSection label="どこに効く？">
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                            {TEACHER_FOCUS_TAG_OPTIONS.map((tag) => {
-                                const selected = focusTags.includes(tag);
-                                return (
-                                    <button
-                                        key={tag}
-                                        type="button"
-                                        onClick={() => setFocusTags((current) => (
-                                            current.includes(tag)
-                                                ? current.filter((item) => item !== tag)
-                                                : [...current, tag]
-                                        ))}
-                                        style={{
-                                            padding: '8px 12px',
-                                            borderRadius: 999,
-                                            border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
-                                            background: selected ? 'rgba(43,186,160,0.08)' : '#FFF',
-                                            color: selected ? '#2BBAA0' : COLOR.text,
-                                            fontFamily: FONT.body,
-                                            fontSize: 12,
-                                            fontWeight: 700,
-                                            cursor: 'pointer',
-                                        }}
-                                    >
-                                        {tag}
-                                    </button>
-                                );
-                            })}
                         </div>
                     </EditorSection>
 

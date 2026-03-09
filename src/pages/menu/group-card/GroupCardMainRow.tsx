@@ -153,7 +153,7 @@ export const GroupCardMainRow: React.FC<GroupCardMainRowProps> = ({
                         <span aria-hidden="true">·</span>
                         <span>{exerciseCount}種目</span>
                     </div>
-                    {(group.recommended || (group.visibility && group.visibility !== 'public') || (group.focusTags && group.focusTags.length > 0)) ? (
+                    {(group.recommended || (group.visibility && group.visibility !== 'public')) ? (
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
                             {group.recommended ? (
                                 <span
@@ -185,22 +185,6 @@ export const GroupCardMainRow: React.FC<GroupCardMainRowProps> = ({
                                     {getTeacherVisibilityLabel(group.visibility)}
                                 </span>
                             ) : null}
-                            {group.focusTags?.slice(0, 3).map((tag) => (
-                                <span
-                                    key={tag}
-                                    style={{
-                                        fontFamily: "'Noto Sans JP', sans-serif",
-                                        fontSize: 9,
-                                        fontWeight: 700,
-                                        color: '#2BBAA0',
-                                        background: 'rgba(43, 186, 160, 0.08)',
-                                        padding: '1px 5px',
-                                        borderRadius: 999,
-                                    }}
-                                >
-                                    {tag}
-                                </span>
-                            ))}
                         </div>
                     ) : null}
                 </div>

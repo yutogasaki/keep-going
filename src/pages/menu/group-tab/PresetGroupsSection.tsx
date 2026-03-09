@@ -9,9 +9,19 @@ interface PresetGroupsSectionProps {
     onTap: (group: MenuGroup) => void;
     teacherMenuIds?: Set<string>;
     isNewTeacherContent?: (id: string) => boolean;
+    title?: string;
+    emptyMessage?: string | null;
 }
 
-export const PresetGroupsSection: React.FC<PresetGroupsSectionProps> = ({ groups, exerciseMap, onTap, teacherMenuIds, isNewTeacherContent }) => {
+export const PresetGroupsSection: React.FC<PresetGroupsSectionProps> = ({
+    groups,
+    exerciseMap,
+    onTap,
+    teacherMenuIds,
+    isNewTeacherContent,
+    title = '標準メニュー',
+    emptyMessage = null,
+}) => {
     return (
         <section>
             <h2 style={{
@@ -22,9 +32,22 @@ export const PresetGroupsSection: React.FC<PresetGroupsSectionProps> = ({ groups
                 marginBottom: 10,
                 letterSpacing: 1,
             }}>
-                セットメニュー
+                {title}
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {groups.length === 0 && emptyMessage ? (
+                    <div
+                        className="card card-sm"
+                        style={{
+                            padding: '14px 16px',
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 12,
+                            color: '#8395A7',
+                        }}
+                    >
+                        {emptyMessage}
+                    </div>
+                ) : null}
                 {groups.map((group, index) => (
                     <GroupCard
                         key={group.id}

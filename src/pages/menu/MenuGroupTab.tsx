@@ -29,6 +29,9 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
     teacherMenuIds,
     isNewTeacherContent,
 }) => {
+    const recommendedTeacherGroups = presets.filter((group) => teacherMenuIds?.has(group.id) && group.recommended);
+    const mainGroups = presets.filter((group) => !(teacherMenuIds?.has(group.id) && group.recommended));
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '0 20px' }}>
             <AutoMenuSettingsCard
@@ -40,12 +43,25 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
                 onOpenCustomMenu={onOpenCustomMenu}
             />
 
+            {recommendedTeacherGroups.length > 0 ? (
+                <PresetGroupsSection
+                    title="先生のおすすめ"
+                    groups={recommendedTeacherGroups}
+                    exerciseMap={exerciseMap}
+                    onTap={onGroupTap}
+                    teacherMenuIds={teacherMenuIds}
+                    isNewTeacherContent={isNewTeacherContent}
+                />
+            ) : null}
+
             <PresetGroupsSection
-                groups={presets}
+                title="メニュー"
+                groups={mainGroups}
                 exerciseMap={exerciseMap}
                 onTap={onGroupTap}
                 teacherMenuIds={teacherMenuIds}
                 isNewTeacherContent={isNewTeacherContent}
+                emptyMessage="いま使えるメニューはまだありません。"
             />
 
             <CustomGroupsSection

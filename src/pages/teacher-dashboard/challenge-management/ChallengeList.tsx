@@ -194,19 +194,6 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                             {getTeacherVisibilityLabel(targetMetadata.visibility)}
                                         </span>
                                     ) : null}
-                                    {targetMetadata?.focusTags?.slice(0, 3).map((tag) => (
-                                        <span key={tag} style={{
-                                            fontSize: 10,
-                                            padding: '1px 6px',
-                                            borderRadius: 6,
-                                            background: 'rgba(43,186,160,0.08)',
-                                            color: '#2BBAA0',
-                                            fontFamily: "'Noto Sans JP', sans-serif",
-                                            fontWeight: 700,
-                                        }}>
-                                            {tag}
-                                        </span>
-                                    ))}
                                 </div>
                             </div>
                             <button

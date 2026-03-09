@@ -9,7 +9,6 @@ interface MenuSettingsItemCardProps {
     emoji: string;
     name: string;
     categoryLabel?: string;
-    metadataChips?: string[];
     recommended?: boolean;
     recommendedOrder?: number | null;
     visibility?: TeacherExerciseVisibility;
@@ -38,7 +37,6 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
     emoji,
     name,
     categoryLabel,
-    metadataChips,
     recommended,
     recommendedOrder,
     visibility,
@@ -92,7 +90,7 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
                             {categoryLabel}
                         </div>
                     )}
-                    {(recommended || visibility || (metadataChips && metadataChips.length > 0)) ? (
+                    {(recommended || visibility) ? (
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
                             {recommended ? (
                                 <span style={{
@@ -120,22 +118,6 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
                                     {getTeacherExerciseVisibilityLabel(visibility)}
                                 </span>
                             ) : null}
-                            {metadataChips?.slice(0, 3).map((chip) => (
-                                <span
-                                    key={chip}
-                                    style={{
-                                        fontFamily: "'Noto Sans JP', sans-serif",
-                                        fontSize: 9,
-                                        fontWeight: 700,
-                                        color: '#2BBAA0',
-                                        background: 'rgba(43,186,160,0.08)',
-                                        padding: '1px 6px',
-                                        borderRadius: 999,
-                                    }}
-                                >
-                                    {chip}
-                                </span>
-                            ))}
                         </div>
                     ) : null}
                 </div>

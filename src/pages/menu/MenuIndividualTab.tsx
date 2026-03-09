@@ -60,14 +60,13 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
         ),
         [filteredExercises],
     );
-    const teacherExercises = useMemo(
-        () => sortTeacherExercises(
-            filteredExercises.filter((exercise) => exercise.origin === 'teacher' && !exercise.recommended)
-        ),
-        [filteredExercises],
-    );
-    const standardExercises = useMemo(
-        () => filteredExercises.filter((exercise) => exercise.origin !== 'teacher'),
+    const mainExercises = useMemo(
+        () => [
+            ...sortTeacherExercises(
+                filteredExercises.filter((exercise) => exercise.origin === 'teacher' && !exercise.recommended)
+            ),
+            ...filteredExercises.filter((exercise) => exercise.origin !== 'teacher'),
+        ],
         [filteredExercises],
     );
     const filteredCustomExercises = useMemo(
@@ -129,40 +128,28 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                 onToggleMode={handleToggleMode}
             />
 
-            <StandardExerciseList
-                title="先生のおすすめ"
-                exercises={recommendedTeacherExercises}
-                requiredExerciseIds={requiredExercises}
-                onStartExercise={onStartExercise}
-                teacherExerciseIds={teacherExerciseIds}
-                isNewTeacherContent={isNewTeacherContent}
-                emptyMessage={recommendedTeacherExercises.length === 0 ? 'おすすめの先生種目はまだありません。' : null}
-                selectionMode={selectionMode}
-                selectedIds={selectedIds}
-                onToggleSelect={handleToggleSelect}
-            />
+            {recommendedTeacherExercises.length > 0 ? (
+                <StandardExerciseList
+                    title="先生のおすすめ"
+                    exercises={recommendedTeacherExercises}
+                    requiredExerciseIds={requiredExercises}
+                    onStartExercise={onStartExercise}
+                    teacherExerciseIds={teacherExerciseIds}
+                    isNewTeacherContent={isNewTeacherContent}
+                    selectionMode={selectionMode}
+                    selectedIds={selectedIds}
+                    onToggleSelect={handleToggleSelect}
+                />
+            ) : null}
 
             <StandardExerciseList
-                title="先生の種目"
-                exercises={teacherExercises}
+                title="種目"
+                exercises={mainExercises}
                 requiredExerciseIds={requiredExercises}
                 onStartExercise={onStartExercise}
                 teacherExerciseIds={teacherExerciseIds}
                 isNewTeacherContent={isNewTeacherContent}
-                emptyMessage={teacherExercises.length === 0 ? 'このカテゴリの先生種目はまだありません。' : null}
-                selectionMode={selectionMode}
-                selectedIds={selectedIds}
-                onToggleSelect={handleToggleSelect}
-            />
-
-            <StandardExerciseList
-                title="みんなの種目"
-                exercises={standardExercises}
-                requiredExerciseIds={requiredExercises}
-                onStartExercise={onStartExercise}
-                teacherExerciseIds={teacherExerciseIds}
-                isNewTeacherContent={isNewTeacherContent}
-                emptyMessage={standardExercises.length === 0 ? 'このカテゴリの種目はまだありません。' : null}
+                emptyMessage={mainExercises.length === 0 ? 'このカテゴリの種目はまだありません。' : null}
                 selectionMode={selectionMode}
                 selectedIds={selectedIds}
                 onToggleSelect={handleToggleSelect}

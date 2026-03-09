@@ -179,26 +179,6 @@ export const StandardExerciseCard: React.FC<StandardExerciseCardProps> = ({
                             <span style={{ color: '#0984E3' }}>{getTeacherExerciseVisibilityLabel(exercise.visibility)}</span>
                         ) : null}
                     </div>
-                    {teacherBadge && exercise.focusTags && exercise.focusTags.length > 0 ? (
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
-                            {exercise.focusTags.slice(0, 3).map((tag) => (
-                                <span
-                                    key={tag}
-                                    style={{
-                                        fontFamily: "'Noto Sans JP', sans-serif",
-                                        fontSize: 10,
-                                        fontWeight: 700,
-                                        color: '#2BBAA0',
-                                        background: 'rgba(43, 186, 160, 0.08)',
-                                        padding: '2px 6px',
-                                        borderRadius: 999,
-                                    }}
-                                >
-                                    {tag}
-                                </span>
-                            ))}
-                        </div>
-                    ) : null}
                 </div>
 
                 {!selectionMode ? (
