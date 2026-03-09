@@ -25,7 +25,6 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
             await importMenu(menu);
             setImported(true);
             onImported?.();
-            // 2秒後にリセット → 再度「もらう」を押せるように
             setTimeout(() => setImported(false), 2000);
         } catch (err) {
             console.error('[MenuDetailSheet] import failed:', err);
@@ -47,7 +46,6 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
         });
     };
 
-    // Reset state when menu changes
     React.useEffect(() => {
         setImported(false);
         setError(false);
@@ -55,15 +53,15 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
     }, [menu?.id]);
 
     const totalSec = menu ? menu.exerciseIds.reduce((total, id) => {
-        const ex = EXERCISES.find(e => e.id === id)
-            ?? menu.customExerciseData?.find(e => e.id === id);
-        return total + (ex?.sec || 0);
+        const exercise = EXERCISES.find((item) => item.id === id)
+            ?? menu.customExerciseData?.find((item) => item.id === id);
+        return total + (exercise?.sec || 0);
     }, 0) : 0;
     const minutes = Math.ceil(totalSec / 60);
 
     return (
         <AnimatePresence>
-            {menu && (
+            {menu ? (
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -84,127 +82,160 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
                         animate={{ y: 0 }}
                         exit={{ y: '100%' }}
                         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                        onClick={e => e.stopPropagation()}
+                        onClick={(event) => event.stopPropagation()}
                         style={{
                             width: '100%',
                             maxWidth: 480,
                             maxHeight: '75vh',
                             background: '#FFF',
-                            borderRadius: '20px 20px 0 0',
+                            borderRadius: '24px 24px 0 0',
                             display: 'flex',
                             flexDirection: 'column',
                             overflow: 'hidden',
                         }}
                     >
-                        {/* Header */}
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: '20px 20px 0',
-                            gap: 12,
-                        }}>
-                            <span style={{ fontSize: 32 }}>{menu.emoji}</span>
-                            <div style={{ flex: 1 }}>
-                                <div style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 18,
-                                    fontWeight: 800,
-                                    color: '#2D3436',
-                                }}>
-                                    {menu.name}
+                        <div style={{ padding: '20px 20px 0' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                                <div
+                                    style={{
+                                        width: 56,
+                                        height: 56,
+                                        borderRadius: 18,
+                                        background: 'linear-gradient(135deg, #FFF6D6, #E8F8F0)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <span style={{ fontSize: 32, lineHeight: 1 }}>{menu.emoji}</span>
                                 </div>
-                                <div style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 12,
-                                    color: '#8395A7',
-                                    display: 'flex',
-                                    gap: 8,
-                                    alignItems: 'center',
-                                    marginTop: 2,
-                                }}>
-                                    <span>👤 {menu.authorName}</span>
-                                    <span>·</span>
-                                    <span>📥 {menu.downloadCount}回</span>
-                                    <span>·</span>
-                                    <Clock size={11} />
-                                    <span>約{minutes}分</span>
-                                </div>
-                            </div>
-                            <button
-                                onClick={onClose}
-                                style={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: '50%',
-                                    border: 'none',
-                                    background: '#F0F3F5',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    color: '#8395A7',
-                                    flexShrink: 0,
-                                }}
-                            >
-                                <X size={16} />
-                            </button>
-                        </div>
-
-                        {/* Scrollable content: Description + Exercise List */}
-                        <div style={{
-                            flex: 1,
-                            overflowY: 'auto',
-                            padding: '16px 20px',
-                        }}>
-                            {menu.description && (
-                                <p style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 13,
-                                    color: '#636E72',
-                                    lineHeight: 1.6,
-                                    margin: '0 0 12px',
-                                }}>
-                                    {menu.description}
-                                </p>
-                            )}
-                            <div style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 11,
-                                fontWeight: 700,
-                                color: '#8395A7',
-                                marginBottom: 8,
-                            }}>
-                                しゅもく（{menu.exerciseIds.length}）
-                            </div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                {menu.exerciseIds.map((id, i) => {
-                                    const ex = EXERCISES.find(e => e.id === id)
-                                        ?? menu.customExerciseData?.find(e => e.id === id);
-                                    if (!ex) return null;
-                                    return (
-                                        <span key={`${id}-${i}`} style={{
-                                            padding: '6px 12px',
-                                            borderRadius: 10,
-                                            background: '#F0F3F5',
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div
+                                        style={{
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 22,
+                                            fontWeight: 800,
+                                            color: '#2D3436',
+                                            lineHeight: 1.25,
+                                            paddingRight: 8,
+                                        }}
+                                    >
+                                        {menu.name}
+                                    </div>
+                                    <div
+                                        style={{
                                             fontFamily: "'Noto Sans JP', sans-serif",
                                             fontSize: 13,
-                                            color: '#2D3436',
-                                        }}>
-                                            {ex.emoji} {ex.name}
+                                            color: '#8395A7',
+                                            marginTop: 6,
+                                            lineHeight: 1.5,
+                                        }}
+                                    >
+                                        👤 {menu.authorName}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={onClose}
+                                    style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        background: '#F4F6F8',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        color: '#8395A7',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div
+                            style={{
+                                flex: 1,
+                                overflowY: 'auto',
+                                padding: '16px 20px 20px',
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                                    gap: 10,
+                                    marginBottom: 16,
+                                }}
+                            >
+                                <MetaCard label="人気" value={`${menu.downloadCount}回`} icon="📥" />
+                                <MetaCard label="時間" value={`約${minutes}分`} icon={<Clock size={14} />} />
+                                <MetaCard label="種目" value={`${menu.exerciseIds.length}こ`} icon="🧩" />
+                            </div>
+
+                            {menu.description ? (
+                                <p
+                                    style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 14,
+                                        color: '#52606D',
+                                        lineHeight: 1.7,
+                                        margin: '0 0 16px',
+                                    }}
+                                >
+                                    {menu.description}
+                                </p>
+                            ) : null}
+
+                            <div
+                                style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    color: '#8395A7',
+                                    marginBottom: 8,
+                                }}
+                            >
+                                しゅもく（{menu.exerciseIds.length}）
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                {menu.exerciseIds.map((id, index) => {
+                                    const exercise = EXERCISES.find((item) => item.id === id)
+                                        ?? menu.customExerciseData?.find((item) => item.id === id);
+                                    if (!exercise) return null;
+
+                                    return (
+                                        <span
+                                            key={`${id}-${index}`}
+                                            style={{
+                                                padding: '8px 12px',
+                                                borderRadius: 999,
+                                                background: '#F7F8FA',
+                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                fontSize: 12,
+                                                fontWeight: 700,
+                                                color: '#2D3436',
+                                            }}
+                                        >
+                                            {exercise.emoji} {exercise.name}
                                         </span>
                                     );
                                 })}
                             </div>
                         </div>
 
-                        {/* Action Buttons */}
-                        <div style={{
-                            padding: '12px 20px calc(24px + env(safe-area-inset-bottom, 20px))',
-                            display: 'flex',
-                            gap: 10,
-                            borderTop: '1px solid rgba(0,0,0,0.05)',
-                            paddingBottom: 80,
-                        }}>
+                        <div
+                            style={{
+                                padding: '14px 20px calc(18px + env(safe-area-inset-bottom, 16px))',
+                                display: 'flex',
+                                gap: 10,
+                                borderTop: '1px solid rgba(0,0,0,0.05)',
+                                background: '#FFF',
+                            }}
+                        >
                             <button
                                 onClick={handleImport}
                                 disabled={importing}
@@ -263,7 +294,56 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
                         </div>
                     </motion.div>
                 </motion.div>
-            )}
+            ) : null}
         </AnimatePresence>
     );
 };
+
+const metaCardBaseStyle: React.CSSProperties = {
+    borderRadius: 16,
+    padding: '12px 12px 10px',
+    background: '#F7F8FA',
+    minWidth: 0,
+};
+
+function MetaCard({
+    label,
+    value,
+    icon,
+}: {
+    label: string;
+    value: string;
+    icon: React.ReactNode;
+}) {
+    return (
+        <div style={metaCardBaseStyle}>
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: '#8395A7',
+                    marginBottom: 6,
+                }}
+            >
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
+                <span>{label}</span>
+            </div>
+            <div
+                style={{
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 15,
+                    fontWeight: 800,
+                    color: '#2D3436',
+                    lineHeight: 1.35,
+                    wordBreak: 'keep-all',
+                }}
+            >
+                {value}
+            </div>
+        </div>
+    );
+}

@@ -38,12 +38,11 @@ export const ExerciseDetailSheet: React.FC<ExerciseDetailSheetProps> = ({ exerci
 
     const handleTry = async () => {
         if (!exercise) return;
-        // 自動インポートしてからセッション開始
         try {
             await importExercise(exercise);
             onImported?.();
         } catch {
-            // 既にインポート済みの場合のエラーは無視
+            // ignore duplicate import failures
         }
         onClose();
         onTry(`imported-ex-${exercise.id}`);
@@ -57,7 +56,7 @@ export const ExerciseDetailSheet: React.FC<ExerciseDetailSheetProps> = ({ exerci
 
     return (
         <AnimatePresence>
-            {exercise && (
+            {exercise ? (
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -78,140 +77,155 @@ export const ExerciseDetailSheet: React.FC<ExerciseDetailSheetProps> = ({ exerci
                         animate={{ y: 0 }}
                         exit={{ y: '100%' }}
                         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                        onClick={e => e.stopPropagation()}
+                        onClick={(event) => event.stopPropagation()}
                         style={{
                             width: '100%',
                             maxWidth: 480,
                             maxHeight: '75vh',
                             background: '#FFF',
-                            borderRadius: '20px 20px 0 0',
+                            borderRadius: '24px 24px 0 0',
                             display: 'flex',
                             flexDirection: 'column',
                             overflow: 'hidden',
                         }}
                     >
-                        {/* Header */}
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: '20px 20px 0',
-                            gap: 12,
-                        }}>
-                            <span style={{ fontSize: 32 }}>{exercise.emoji}</span>
-                            <div style={{ flex: 1 }}>
-                                <div style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 18,
-                                    fontWeight: 800,
-                                    color: '#2D3436',
-                                }}>
-                                    {exercise.name}
+                        <div style={{ padding: '20px 20px 0' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                                <div
+                                    style={{
+                                        width: 56,
+                                        height: 56,
+                                        borderRadius: 18,
+                                        background: 'linear-gradient(135deg, #FFF6D6, #E8F8F0)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <span style={{ fontSize: 32, lineHeight: 1 }}>{exercise.emoji}</span>
                                 </div>
-                                <div style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 12,
-                                    color: '#8395A7',
-                                    display: 'flex',
-                                    gap: 8,
-                                    alignItems: 'center',
-                                    marginTop: 2,
-                                }}>
-                                    <span>👤 {exercise.authorName}</span>
-                                    <span>·</span>
-                                    <span>📥 {exercise.downloadCount}回</span>
-                                    <span>·</span>
-                                    <Clock size={11} />
-                                    <span>{exercise.sec}秒</span>
-                                    <span>·</span>
-                                    <span>{getExercisePlacementLabel(exercise.placement)}</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div
+                                        style={{
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 22,
+                                            fontWeight: 800,
+                                            color: '#2D3436',
+                                            lineHeight: 1.25,
+                                            paddingRight: 8,
+                                        }}
+                                    >
+                                        {exercise.name}
+                                    </div>
+                                    <div
+                                        style={{
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 13,
+                                            color: '#8395A7',
+                                            marginTop: 6,
+                                            lineHeight: 1.5,
+                                        }}
+                                    >
+                                        👤 {exercise.authorName}
+                                    </div>
                                 </div>
+                                <button
+                                    onClick={onClose}
+                                    style={{
+                                        width: 40,
+                                        height: 40,
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        background: '#F4F6F8',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        color: '#8395A7',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <X size={18} />
+                                </button>
                             </div>
-                            <button
-                                onClick={onClose}
+                        </div>
+
+                        <div
+                            style={{
+                                flex: 1,
+                                overflowY: 'auto',
+                                padding: '16px 20px 20px',
+                            }}
+                        >
+                            <div
                                 style={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: '50%',
-                                    border: 'none',
-                                    background: '#F0F3F5',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    color: '#8395A7',
-                                    flexShrink: 0,
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                                    gap: 10,
+                                    marginBottom: 16,
                                 }}
                             >
-                                <X size={16} />
-                            </button>
-                        </div>
+                                <MetaCard label="人気" value={`${exercise.downloadCount}回`} icon="📥" />
+                                <MetaCard label="時間" value={`${exercise.sec}秒`} icon={<Clock size={14} />} />
+                                <MetaCard label="タイプ" value={getExercisePlacementLabel(exercise.placement)} icon="🧩" />
+                            </div>
 
-                        {/* Scrollable content: Description + Details */}
-                        <div style={{
-                            flex: 1,
-                            overflowY: 'auto',
-                            padding: '16px 20px',
-                        }}>
-                            {exercise.description && (
-                                <p style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 13,
-                                    color: '#636E72',
-                                    lineHeight: 1.6,
-                                    margin: '0 0 12px',
-                                }}>
+                            {exercise.description ? (
+                                <p
+                                    style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 14,
+                                        color: '#52606D',
+                                        lineHeight: 1.7,
+                                        margin: '0 0 16px',
+                                    }}
+                                >
                                     {exercise.description}
                                 </p>
-                            )}
+                            ) : null}
 
-                            <div style={{
-                                display: 'flex',
-                                gap: 12,
-                                flexWrap: 'wrap',
-                            }}>
-                                <span style={{
-                                    padding: '6px 12px',
-                                    borderRadius: 10,
-                                    background: '#F0F3F5',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 13,
-                                    color: '#2D3436',
-                                }}>
-                                    ⏱ {exercise.sec}秒
-                                </span>
-                                <span style={{
-                                    padding: '6px 12px',
-                                    borderRadius: 10,
-                                    background: 'rgba(43, 186, 160, 0.08)',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 13,
-                                    color: '#2BBAA0',
-                                }}>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                <span
+                                    style={{
+                                        padding: '8px 12px',
+                                        borderRadius: 999,
+                                        background: '#EEF7F4',
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 12,
+                                        fontWeight: 700,
+                                        color: '#2BBAA0',
+                                    }}
+                                >
                                     {getExercisePlacementLabel(exercise.placement)}
                                 </span>
-                                {exercise.hasSplit && (
-                                    <span style={{
-                                        padding: '6px 12px',
-                                        borderRadius: 10,
-                                        background: 'rgba(43, 186, 160, 0.1)',
-                                        fontFamily: "'Noto Sans JP', sans-serif",
-                                        fontSize: 13,
-                                        color: '#2BBAA0',
-                                    }}>
+                                {exercise.hasSplit ? (
+                                    <span
+                                        style={{
+                                            padding: '8px 12px',
+                                            borderRadius: 999,
+                                            background: '#FFF3E0',
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                            color: '#C58B00',
+                                        }}
+                                    >
                                         切替あり
                                     </span>
-                                )}
+                                ) : null}
                             </div>
                         </div>
 
-                        {/* Action Buttons */}
-                        <div style={{
-                            padding: '12px 20px calc(24px + env(safe-area-inset-bottom, 20px))',
-                            display: 'flex',
-                            gap: 10,
-                            borderTop: '1px solid rgba(0,0,0,0.05)',
-                            paddingBottom: 80,
-                        }}>
+                        <div
+                            style={{
+                                padding: '14px 20px calc(18px + env(safe-area-inset-bottom, 16px))',
+                                display: 'flex',
+                                gap: 10,
+                                borderTop: '1px solid rgba(0,0,0,0.05)',
+                                background: '#FFF',
+                            }}
+                        >
                             <button
                                 onClick={handleImport}
                                 disabled={importing}
@@ -270,7 +284,56 @@ export const ExerciseDetailSheet: React.FC<ExerciseDetailSheetProps> = ({ exerci
                         </div>
                     </motion.div>
                 </motion.div>
-            )}
+            ) : null}
         </AnimatePresence>
     );
 };
+
+const metaCardBaseStyle: React.CSSProperties = {
+    borderRadius: 16,
+    padding: '12px 12px 10px',
+    background: '#F7F8FA',
+    minWidth: 0,
+};
+
+function MetaCard({
+    label,
+    value,
+    icon,
+}: {
+    label: string;
+    value: string;
+    icon: React.ReactNode;
+}) {
+    return (
+        <div style={metaCardBaseStyle}>
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: '#8395A7',
+                    marginBottom: 6,
+                }}
+            >
+                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
+                <span>{label}</span>
+            </div>
+            <div
+                style={{
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 15,
+                    fontWeight: 800,
+                    color: '#2D3436',
+                    lineHeight: 1.35,
+                    wordBreak: 'keep-all',
+                }}
+            >
+                {value}
+            </div>
+        </div>
+    );
+}
