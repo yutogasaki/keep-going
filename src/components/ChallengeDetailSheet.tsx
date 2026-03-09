@@ -3,7 +3,9 @@ import { Calendar, Sparkles, Target, Trophy } from 'lucide-react';
 import { Modal } from './Modal';
 import {
     getChallengeDailyCapLabel,
+    getChallengeDescriptionText,
     getChallengeEmoji,
+    getChallengeHeaderText,
     getChallengeRewardLabel,
     getChallengeTargetLabel,
     type Challenge,
@@ -35,6 +37,9 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
     if (!challenge) {
         return null;
     }
+
+    const headerText = getChallengeHeaderText(challenge);
+    const descriptionText = getChallengeDescriptionText(challenge);
 
     return (
         <Modal
@@ -78,7 +83,7 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                         >
                             {challenge.title}
                         </div>
-                        {challenge.summary && (
+                        {headerText && (
                             <div
                                 style={{
                                     marginTop: 6,
@@ -88,13 +93,13 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                                     lineHeight: 1.7,
                                 }}
                             >
-                                {challenge.summary}
+                                {headerText}
                             </div>
                         )}
                     </div>
                 </div>
 
-                {challenge.description && (
+                {descriptionText && (
                     <div
                         style={{
                             padding: SPACE.md,
@@ -107,7 +112,7 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                             lineHeight: 1.8,
                         }}
                     >
-                        {challenge.description}
+                        {descriptionText}
                     </div>
                 )}
 

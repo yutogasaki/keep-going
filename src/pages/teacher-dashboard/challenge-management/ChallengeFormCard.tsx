@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CLASS_LEVELS, EXERCISES } from '../../../data/exercises';
+import { getExercisePlacementLabel } from '../../../data/exercisePlacement';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
-import { getTeacherVisibilityLabel, sortTeacherContentByRecommendation } from '../../../lib/teacherExerciseMetadata';
+import { sortTeacherContentByRecommendation } from '../../../lib/teacherExerciseMetadata';
 import { CANONICAL_TERMS } from '../../../lib/terminology';
+import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../../lib/styles';
 import type { ChallengeFormValues } from './types';
-import { COLOR, FONT, FONT_SIZE, RADIUS } from '../../../lib/styles';
 
 interface ChallengeFormCardProps {
     values: ChallengeFormValues;
@@ -15,30 +16,180 @@ interface ChallengeFormCardProps {
     isEditing: boolean;
     onChange: (patch: Partial<ChallengeFormValues>) => void;
     onToggleClassLevel: (level: string) => void;
-    onRandomReward: () => void;
     onCancel: () => void;
     onSubmit: () => void;
 }
 
 const inputStyle: React.CSSProperties = {
     width: '100%',
-    padding: '14px 18px',
+    padding: '14px 16px',
     borderRadius: RADIUS.lg,
     border: '1px solid rgba(0,0,0,0.08)',
-    background: COLOR.bgLight,
+    background: COLOR.white,
     fontFamily: FONT.body,
     fontSize: FONT_SIZE.md,
     outline: 'none',
     boxSizing: 'border-box',
 };
 
-const labelStyle: React.CSSProperties = {
+const fieldLabelStyle: React.CSSProperties = {
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.sm,
+    fontWeight: 700,
+    color: COLOR.dark,
+    marginBottom: 6,
+};
+
+const fieldHintStyle: React.CSSProperties = {
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.xs + 1,
+    color: COLOR.muted,
+    lineHeight: 1.5,
+    marginTop: 6,
+};
+
+const sectionStyle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: SPACE.md,
+    padding: '16px',
+    borderRadius: RADIUS.xl,
+    background: 'rgba(255,255,255,0.74)',
+    border: '1px solid rgba(255,255,255,0.55)',
+};
+
+const sectionTitleStyle: React.CSSProperties = {
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.md,
+    fontWeight: 800,
+    color: COLOR.dark,
+};
+
+const sectionDescriptionStyle: React.CSSProperties = {
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.xs + 1,
+    color: COLOR.muted,
+    lineHeight: 1.6,
+    marginTop: 2,
+};
+
+const optionGridStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+    gap: SPACE.sm,
+};
+
+const optionButtonBaseStyle: React.CSSProperties = {
+    padding: '12px 14px',
+    borderRadius: RADIUS.lg,
+    border: '1px solid rgba(0,0,0,0.08)',
+    background: COLOR.white,
+    cursor: 'pointer',
+    textAlign: 'left',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 4,
+};
+
+const segmentedRowStyle: React.CSSProperties = {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: SPACE.sm,
+};
+
+const segmentedButtonBaseStyle: React.CSSProperties = {
+    padding: '9px 12px',
+    borderRadius: RADIUS.full,
+    border: '1px solid rgba(0,0,0,0.08)',
+    background: COLOR.white,
+    cursor: 'pointer',
     fontFamily: FONT.body,
     fontSize: FONT_SIZE.sm,
     fontWeight: 700,
     color: COLOR.text,
-    marginBottom: 4,
 };
+
+const metricGridStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+    gap: SPACE.md,
+};
+
+const selectionPreviewStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: SPACE.md,
+    padding: '12px 14px',
+    borderRadius: RADIUS.lg,
+    background: '#F8FBFA',
+    border: '1px solid rgba(43, 186, 160, 0.12)',
+};
+
+const previewIconStyle: React.CSSProperties = {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.lg,
+    background: 'rgba(43, 186, 160, 0.12)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 22,
+    flexShrink: 0,
+};
+
+const classLevelWrapStyle: React.CSSProperties = {
+    display: 'flex',
+    gap: 8,
+    flexWrap: 'wrap',
+};
+
+const rewardNoteStyle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6,
+    padding: '14px 16px',
+    borderRadius: RADIUS.xl,
+    background: 'linear-gradient(135deg, rgba(255, 248, 225, 0.9), rgba(232, 248, 240, 0.9))',
+    border: '1px solid rgba(255, 215, 0, 0.18)',
+};
+
+function Field({
+    label,
+    hint,
+    children,
+}: {
+    label: string;
+    hint?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div>
+            <div style={fieldLabelStyle}>{label}</div>
+            {children}
+            {hint ? <div style={fieldHintStyle}>{hint}</div> : null}
+        </div>
+    );
+}
+
+function Section({
+    title,
+    description,
+    children,
+}: {
+    title: string;
+    description?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <section style={sectionStyle}>
+            <div>
+                <div style={sectionTitleStyle}>{title}</div>
+                {description ? <div style={sectionDescriptionStyle}>{description}</div> : null}
+            </div>
+            {children}
+        </section>
+    );
+}
 
 export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
     values,
@@ -48,56 +199,70 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
     isEditing,
     onChange,
     onToggleClassLevel,
-    onRandomReward,
     onCancel,
     onSubmit,
 }) => {
     const [teacherMenuQuery, setTeacherMenuQuery] = useState('');
     const [exerciseSource, setExerciseSource] = useState<'standard' | 'teacher'>('standard');
     const [teacherExerciseQuery, setTeacherExerciseQuery] = useState('');
-    const sortedTeacherMenus = sortTeacherContentByRecommendation(teacherMenus);
-    const sortedTeacherExercises = sortTeacherContentByRecommendation(teacherExercises);
+
+    const sortedTeacherMenus = useMemo(
+        () => sortTeacherContentByRecommendation(teacherMenus),
+        [teacherMenus],
+    );
+    const sortedTeacherExercises = useMemo(
+        () => sortTeacherContentByRecommendation(teacherExercises),
+        [teacherExercises],
+    );
+
     const filteredTeacherExercises = useMemo(() => {
         const normalizedQuery = teacherExerciseQuery.trim().toLowerCase();
         return sortedTeacherExercises.filter((exercise) => (
             normalizedQuery.length === 0 || exercise.name.toLowerCase().includes(normalizedQuery)
         ));
     }, [sortedTeacherExercises, teacherExerciseQuery]);
-    const selectedTeacherExercise = sortedTeacherExercises.find((exercise) => exercise.id === values.exerciseId) ?? null;
+
     const filteredTeacherMenus = useMemo(() => {
         const normalizedQuery = teacherMenuQuery.trim().toLowerCase();
         return sortedTeacherMenus.filter((menu) => (
             normalizedQuery.length === 0 || menu.name.toLowerCase().includes(normalizedQuery)
         ));
     }, [sortedTeacherMenus, teacherMenuQuery]);
+
+    const selectedTeacherExercise = sortedTeacherExercises.find((exercise) => exercise.id === values.exerciseId) ?? null;
+    const selectedTeacherMenu = sortedTeacherMenus.find((menu) => menu.id === values.targetMenuId) ?? null;
+    const selectedStandardExercise = EXERCISES.find((exercise) => exercise.id === values.exerciseId) ?? EXERCISES[0] ?? null;
+    const selectedPresetMenu = PRESET_GROUPS.find((menu) => menu.id === values.targetMenuId) ?? PRESET_GROUPS[0] ?? null;
+
+    const hasExerciseTarget = exerciseSource === 'standard'
+        ? EXERCISES.some((exercise) => exercise.id === values.exerciseId)
+        : sortedTeacherExercises.some((exercise) => exercise.id === values.exerciseId);
+    const hasMenuTarget = values.menuSource === 'preset'
+        ? PRESET_GROUPS.some((group) => group.id === values.targetMenuId)
+        : sortedTeacherMenus.some((menu) => menu.id === values.targetMenuId);
+
     const dateError = values.startDate && values.endDate && values.endDate < values.startDate
         ? '終了日は開始日より後にしてください'
         : '';
-    const hasMenuTarget = values.menuSource === 'preset'
-        ? PRESET_GROUPS.some((group) => group.id === values.targetMenuId)
-        : filteredTeacherMenus.some((menu) => menu.id === values.targetMenuId);
-    const selectedTeacherMenu = values.menuSource === 'teacher'
-        ? filteredTeacherMenus.find((menu) => menu.id === values.targetMenuId)
-            ?? sortedTeacherMenus.find((menu) => menu.id === values.targetMenuId)
-            ?? null
-        : null;
+
     const hasError = !values.title.trim()
         || values.targetCount < 1
         || values.dailyCap < 1
         || !!dateError
+        || (values.challengeType === 'exercise' && !hasExerciseTarget)
         || (values.challengeType === 'menu' && !hasMenuTarget);
-
-    useEffect(() => {
-        if (values.menuSource !== 'teacher') {
-            setTeacherMenuQuery('');
-        }
-    }, [values.menuSource]);
 
     useEffect(() => {
         if (exerciseSource !== 'teacher') {
             setTeacherExerciseQuery('');
         }
     }, [exerciseSource]);
+
+    useEffect(() => {
+        if (values.menuSource !== 'teacher') {
+            setTeacherMenuQuery('');
+        }
+    }, [values.menuSource]);
 
     useEffect(() => {
         if (selectedTeacherExercise) {
@@ -111,21 +276,6 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
     }, [selectedTeacherExercise, values.exerciseId]);
 
     useEffect(() => {
-        if (values.menuSource !== 'teacher') {
-            return;
-        }
-
-        if (filteredTeacherMenus.length === 0) {
-            return;
-        }
-
-        const hasSelectedTarget = filteredTeacherMenus.some((menu) => menu.id === values.targetMenuId);
-        if (!hasSelectedTarget) {
-            onChange({ targetMenuId: filteredTeacherMenus[0].id });
-        }
-    }, [filteredTeacherMenus, onChange, values.menuSource, values.targetMenuId]);
-
-    useEffect(() => {
         if (values.challengeType !== 'exercise' || exerciseSource !== 'teacher') {
             return;
         }
@@ -134,517 +284,432 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
             return;
         }
 
-        const hasSelectedTarget = filteredTeacherExercises.some((exercise) => exercise.id === values.exerciseId);
-        if (!hasSelectedTarget) {
+        if (!filteredTeacherExercises.some((exercise) => exercise.id === values.exerciseId)) {
             onChange({ exerciseId: filteredTeacherExercises[0].id });
         }
     }, [exerciseSource, filteredTeacherExercises, onChange, values.challengeType, values.exerciseId]);
 
+    useEffect(() => {
+        if (values.challengeType !== 'menu' || values.menuSource !== 'teacher') {
+            return;
+        }
+
+        if (filteredTeacherMenus.length === 0) {
+            return;
+        }
+
+        if (!filteredTeacherMenus.some((menu) => menu.id === values.targetMenuId)) {
+            onChange({ targetMenuId: filteredTeacherMenus[0].id });
+        }
+    }, [filteredTeacherMenus, onChange, values.challengeType, values.menuSource, values.targetMenuId]);
+
+    const selectedExercisePreview = exerciseSource === 'teacher' ? selectedTeacherExercise : selectedStandardExercise;
+    const selectedMenuPreview = values.menuSource === 'teacher' ? selectedTeacherMenu : selectedPresetMenu;
+    const rewardMessage = values.rewardKind === 'star'
+        ? `クリアで ほし ${values.rewardValue}こ`
+        : 'この既存チャレンジはメダル報酬のまま保存します';
+
     return (
-        <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ ...labelStyle }}>タイトル</div>
-            <input
-                value={values.title}
-                onChange={(event) => onChange({ title: event.target.value })}
-                placeholder="例: 前後開脚チャレンジ月間"
-                style={inputStyle}
-            />
-
-            <div style={{ ...labelStyle }}>カード用ひとこと</div>
-            <input
-                value={values.summary}
-                onChange={(event) => onChange({ summary: event.target.value })}
-                placeholder="例: 1日1回、ゆっくり開脚しよう"
-                style={inputStyle}
-            />
-
-            <div style={{ ...labelStyle }}>詳細説明</div>
-            <textarea
-                value={values.description}
-                onChange={(event) => onChange({ description: event.target.value })}
-                placeholder="ホームの詳細で表示する説明文"
-                style={{ ...inputStyle, minHeight: 92, resize: 'vertical' }}
-            />
-
-            <div>
-                <div style={labelStyle}>チャレンジの種類</div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                    {([
-                        { id: 'exercise', label: '種目チャレンジ', description: '1つの種目を回数で達成する' },
-                        { id: 'menu', label: 'メニューチャレンジ', description: '1つのメニュー完走を回数で数える' },
-                    ] as const).map((option) => {
-                        const selected = values.challengeType === option.id;
-                        return (
-                            <button
-                                key={option.id}
-                                type="button"
-                                onClick={() => onChange(
-                                    option.id === 'menu'
-                                        ? {
-                                            challengeType: option.id,
-                                            menuSource: values.menuSource,
-                                            targetMenuId: values.menuSource === 'preset'
-                                                ? (values.targetMenuId || PRESET_GROUPS[0]?.id || '')
-                                                : (values.targetMenuId || sortedTeacherMenus[0]?.id || ''),
-                                        }
-                                        : { challengeType: option.id }
-                                )}
-                                style={{
-                                    flex: 1,
-                                    padding: '10px 12px',
-                                    borderRadius: RADIUS.lg,
-                                    border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
-                                    background: selected ? '#E8F8F0' : COLOR.bgLight,
-                                    textAlign: 'left',
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                <div style={{ ...labelStyle, marginBottom: 2 }}>{option.label}</div>
-                                <div style={{ fontFamily: FONT.body, fontSize: FONT_SIZE.xs, color: COLOR.muted }}>
-                                    {option.description}
-                                </div>
-                            </button>
-                        );
-                    })}
+        <div className="card" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.lg,
+                    fontWeight: 800,
+                    color: COLOR.dark,
+                }}>
+                    {isEditing ? 'チャレンジを編集' : 'チャレンジを作成'}
+                </div>
+                <div style={{
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.sm,
+                    color: COLOR.muted,
+                    lineHeight: 1.6,
+                }}>
+                    項目をしぼって、スマホでも作りやすい形にしています。説明は1つだけ入力します。
                 </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                    {values.challengeType === 'exercise' ? (
-                        <>
-                            <div style={labelStyle}>{CANONICAL_TERMS.exercise}</div>
-                            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                                {([
-                                    { id: 'standard', label: CANONICAL_TERMS.standardExercise },
-                                    { id: 'teacher', label: CANONICAL_TERMS.teacherExercise },
-                                ] as const).map((option) => {
-                                    const selected = exerciseSource === option.id;
-                                    return (
-                                        <button
-                                            key={option.id}
-                                            type="button"
-                                            onClick={() => {
-                                                setExerciseSource(option.id);
-                                                if (option.id === 'standard' && !EXERCISES.some((exercise) => exercise.id === values.exerciseId)) {
-                                                    onChange({ exerciseId: EXERCISES[0]?.id ?? 'S01' });
-                                                }
-                                                if (option.id === 'teacher' && filteredTeacherExercises.length > 0) {
-                                                    onChange({ exerciseId: filteredTeacherExercises[0].id });
-                                                }
-                                            }}
-                                            style={{
-                                                flex: 1,
-                                                padding: '8px 10px',
-                                                borderRadius: 12,
-                                                border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
-                                                background: selected ? '#E8F8F0' : COLOR.bgLight,
-                                                cursor: 'pointer',
-                                                fontFamily: FONT.body,
-                                                fontSize: FONT_SIZE.sm,
-                                                fontWeight: 700,
-                                                color: COLOR.text,
-                                            }}
-                                        >
-                                            {option.label}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                            {exerciseSource === 'teacher' ? (
-                                <input
-                                    type="text"
-                                    value={teacherExerciseQuery}
-                                    onChange={(event) => setTeacherExerciseQuery(event.target.value)}
-                                    placeholder={`${CANONICAL_TERMS.teacherExercise}をさがす`}
-                                    style={{ ...inputStyle, marginBottom: 8 }}
-                                />
-                            ) : null}
-                            <select
-                                value={values.exerciseId}
-                                onChange={(event) => onChange({ exerciseId: event.target.value })}
-                                style={{ ...inputStyle, appearance: 'auto' }}
-                            >
-                                {(exerciseSource === 'standard' ? EXERCISES : filteredTeacherExercises).map((exercise) => (
-                                    <option key={exercise.id} value={exercise.id}>
-                                        {exercise.emoji} {exercise.name}
-                                    </option>
-                                ))}
-                            </select>
-                            {exerciseSource === 'teacher' && sortedTeacherExercises.length === 0 ? (
-                                <div style={{
-                                    fontFamily: FONT.body,
-                                    fontSize: FONT_SIZE.xs,
-                                    color: COLOR.muted,
-                                    marginTop: 6,
-                                }}>
-                                    {CANONICAL_TERMS.teacherExercise}がまだありません。先にメニュー設定で作成してください。
-                                </div>
-                            ) : null}
-                            {exerciseSource === 'teacher' && sortedTeacherExercises.length > 0 && filteredTeacherExercises.length === 0 ? (
-                                <div style={{
-                                    fontFamily: FONT.body,
-                                    fontSize: FONT_SIZE.xs,
-                                    color: COLOR.muted,
-                                    marginTop: 6,
-                                }}>
-                                    この絞り込みに合う{CANONICAL_TERMS.teacherExercise}がありません。
-                                </div>
-                            ) : null}
-                            {selectedTeacherExercise ? (
-                                <div style={{
-                                    marginTop: 8,
-                                    display: 'flex',
-                                    gap: 6,
-                                    flexWrap: 'wrap',
-                                    alignItems: 'center',
-                                }}>
-                                    {selectedTeacherExercise.recommended ? (
-                                        <span style={{
-                                            fontFamily: FONT.body,
-                                            fontSize: FONT_SIZE.xs,
-                                            fontWeight: 700,
-                                            color: '#FFF',
-                                            background: '#2BBAA0',
-                                            padding: '2px 8px',
-                                            borderRadius: 999,
-                                        }}>
-                                            {selectedTeacherExercise.recommendedOrder != null ? `おすすめ ${selectedTeacherExercise.recommendedOrder}` : 'おすすめ'}
-                                        </span>
-                                    ) : null}
-                                    {selectedTeacherExercise.visibility !== 'public' ? (
-                                        <span style={{
-                                            fontFamily: FONT.body,
-                                            fontSize: FONT_SIZE.xs,
-                                            fontWeight: 700,
-                                            color: '#0984E3',
-                                            background: 'rgba(9, 132, 227, 0.1)',
-                                            padding: '2px 8px',
-                                            borderRadius: 999,
-                                        }}>
-                                            {getTeacherVisibilityLabel(selectedTeacherExercise.visibility)}
-                                        </span>
-                                    ) : null}
-                                </div>
-                            ) : null}
-                        </>
-                    ) : (
-                        <>
-                            <div style={labelStyle}>メニュー</div>
-                            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                                {([
-                                    { id: 'preset', label: CANONICAL_TERMS.presetMenu },
-                                    { id: 'teacher', label: CANONICAL_TERMS.teacherMenu },
-                                ] as const).map((option) => {
-                                    const selected = values.menuSource === option.id;
-                                    return (
-                                        <button
-                                            key={option.id}
-                                            type="button"
-                                            onClick={() => onChange({
-                                                menuSource: option.id,
-                                                targetMenuId: option.id === 'preset'
-                                                    ? PRESET_GROUPS[0]?.id ?? ''
-                                                    : sortedTeacherMenus[0]?.id ?? '',
-                                            })}
-                                            style={{
-                                                flex: 1,
-                                                padding: '8px 10px',
-                                                borderRadius: 12,
-                                                border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
-                                                background: selected ? '#E8F8F0' : COLOR.bgLight,
-                                                cursor: 'pointer',
-                                                fontFamily: FONT.body,
-                                                fontSize: FONT_SIZE.sm,
-                                                fontWeight: 700,
-                                                color: COLOR.text,
-                                            }}
-                                        >
-                                            {option.label}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                            {values.menuSource === 'teacher' ? (
-                                <input
-                                    type="text"
-                                    value={teacherMenuQuery}
-                                    onChange={(event) => setTeacherMenuQuery(event.target.value)}
-                                    placeholder={`${CANONICAL_TERMS.teacherMenu}をさがす`}
-                                    style={{ ...inputStyle, marginBottom: 8 }}
-                                />
-                            ) : null}
-                            <select
-                                value={values.targetMenuId}
-                                onChange={(event) => onChange({ targetMenuId: event.target.value })}
-                                style={{ ...inputStyle, appearance: 'auto' }}
-                            >
-                                {(values.menuSource === 'preset' ? PRESET_GROUPS : filteredTeacherMenus).map((menu) => (
-                                    <option key={menu.id} value={menu.id}>
-                                        {menu.emoji} {menu.name}
-                                        {'recommended' in menu && menu.recommended ? ` / おすすめ${menu.recommendedOrder ? ` ${menu.recommendedOrder}` : ''}` : ''}
-                                    </option>
-                                ))}
-                            </select>
-                            {values.menuSource === 'teacher' && sortedTeacherMenus.length === 0 && (
-                                <div style={{
-                                    fontFamily: FONT.body,
-                                    fontSize: FONT_SIZE.xs,
-                                    color: COLOR.muted,
-                                    marginTop: 6,
-                                }}>
-                                    先生メニューがまだありません。先にメニュー設定で作成してください。
-                                </div>
-                            )}
-                            {values.menuSource === 'teacher' && sortedTeacherMenus.length > 0 && filteredTeacherMenus.length === 0 ? (
-                                <div style={{
-                                    fontFamily: FONT.body,
-                                    fontSize: FONT_SIZE.xs,
-                                    color: COLOR.muted,
-                                    marginTop: 6,
-                                }}>
-                                    この絞り込みに合う{CANONICAL_TERMS.teacherMenu}がありません。
-                                </div>
-                            ) : null}
-                            {selectedTeacherMenu ? (
-                                <div style={{
-                                    marginTop: 8,
-                                    display: 'flex',
-                                    gap: 6,
-                                    flexWrap: 'wrap',
-                                    alignItems: 'center',
-                                }}>
-                                    {selectedTeacherMenu.recommended ? (
-                                        <span style={{
-                                            fontFamily: FONT.body,
-                                            fontSize: FONT_SIZE.xs,
-                                            fontWeight: 700,
-                                            color: '#FFF',
-                                            background: '#2BBAA0',
-                                            padding: '2px 8px',
-                                            borderRadius: 999,
-                                        }}>
-                                            {selectedTeacherMenu.recommendedOrder != null ? `おすすめ ${selectedTeacherMenu.recommendedOrder}` : 'おすすめ'}
-                                        </span>
-                                    ) : null}
-                                    {selectedTeacherMenu.visibility !== 'public' ? (
-                                        <span style={{
-                                            fontFamily: FONT.body,
-                                            fontSize: FONT_SIZE.xs,
-                                            fontWeight: 700,
-                                            color: '#0984E3',
-                                            background: 'rgba(9, 132, 227, 0.1)',
-                                            padding: '2px 8px',
-                                            borderRadius: 999,
-                                        }}>
-                                            {getTeacherVisibilityLabel(selectedTeacherMenu.visibility)}
-                                        </span>
-                                    ) : null}
-                                </div>
-                            ) : null}
-                        </>
-                    )}
-                </div>
-                <div style={{ width: 80 }}>
-                    <div style={labelStyle}>目標回数</div>
+            <Section title="基本情報" description="まず名前と説明だけ決めます。">
+                <Field label="チャレンジ名" hint="ホームで最初に見える名前です。">
                     <input
-                        type="number"
-                        value={values.targetCount}
-                        onChange={(event) => onChange({ targetCount: Number(event.target.value) })}
-                        min={1}
+                        value={values.title}
+                        onChange={(event) => onChange({ title: event.target.value })}
+                        placeholder="例: 前後開脚チャレンジ"
                         style={inputStyle}
                     />
-                </div>
-                <div style={{ width: 92 }}>
-                    <div style={labelStyle}>1日上限</div>
-                    <input
-                        type="number"
-                        value={values.dailyCap}
-                        onChange={(event) => onChange({ dailyCap: Number(event.target.value) })}
-                        min={1}
-                        style={inputStyle}
-                    />
-                </div>
-            </div>
+                </Field>
 
-            <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                    <div style={labelStyle}>チャレンジの大きさ</div>
-                    <div style={{ display: 'flex', gap: 8 }}>
+                <Field label="説明" hint="ひとこと欄は使わず、この文章をカードや詳細の説明に回します。">
+                    <textarea
+                        value={values.description}
+                        onChange={(event) => onChange({ description: event.target.value })}
+                        placeholder="例: 1日1回ゆっくり前後開脚に取り組もう"
+                        style={{ ...inputStyle, minHeight: 96, resize: 'vertical' }}
+                    />
+                </Field>
+            </Section>
+
+            <Section title="対象" description="何をカウントするチャレンジかを決めます。">
+                <Field label="チャレンジの種類">
+                    <div style={optionGridStyle}>
                         {([
-                            { id: 'small', label: 'ちょい', description: '星をためる軽いチャレンジ' },
-                            { id: 'big', label: '大きい', description: 'メダル向けの本格チャレンジ' },
+                            { id: 'exercise', label: '種目チャレンジ', description: '1つの種目を回数で数える' },
+                            { id: 'menu', label: 'メニューチャレンジ', description: '1つのメニュー完走を数える' },
                         ] as const).map((option) => {
-                            const selected = values.tier === option.id;
+                            const selected = values.challengeType === option.id;
                             return (
                                 <button
                                     key={option.id}
                                     type="button"
-                                    onClick={() => onChange({
-                                        tier: option.id,
-                                        rewardKind: option.id === 'small' ? 'star' : 'medal',
-                                        rewardValue: option.id === 'small' ? Math.max(values.rewardValue, 1) : values.rewardValue,
-                                    })}
+                                    onClick={() => {
+                                        if (option.id === 'exercise') {
+                                            onChange({ challengeType: 'exercise' });
+                                            return;
+                                        }
+
+                                        onChange({
+                                            challengeType: 'menu',
+                                            targetMenuId: values.menuSource === 'teacher'
+                                                ? (values.targetMenuId || sortedTeacherMenus[0]?.id || '')
+                                                : (values.targetMenuId || PRESET_GROUPS[0]?.id || ''),
+                                        });
+                                    }}
                                     style={{
-                                        flex: 1,
-                                        padding: '10px 12px',
-                                        borderRadius: RADIUS.lg,
-                                        border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
-                                        background: selected ? '#E8F8F0' : COLOR.bgLight,
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
+                                        ...optionButtonBaseStyle,
+                                        ...(selected ? {
+                                            border: '2px solid #2BBAA0',
+                                            background: '#E8F8F0',
+                                        } : null),
                                     }}
                                 >
-                                    <div style={{ ...labelStyle, marginBottom: 2 }}>{option.label}</div>
-                                    <div style={{ fontFamily: FONT.body, fontSize: FONT_SIZE.xs, color: COLOR.muted }}>
+                                    <span style={{
+                                        fontFamily: FONT.body,
+                                        fontSize: FONT_SIZE.sm,
+                                        fontWeight: 800,
+                                        color: COLOR.dark,
+                                    }}>
+                                        {option.label}
+                                    </span>
+                                    <span style={{
+                                        fontFamily: FONT.body,
+                                        fontSize: FONT_SIZE.xs + 1,
+                                        color: COLOR.muted,
+                                        lineHeight: 1.5,
+                                    }}>
                                         {option.description}
-                                    </div>
+                                    </span>
                                 </button>
                             );
                         })}
                     </div>
-                </div>
-                <div style={{ width: 112 }}>
-                    <div style={labelStyle}>アイコン絵文字</div>
-                    <input
-                        value={values.iconEmoji}
-                        onChange={(event) => onChange({ iconEmoji: event.target.value })}
-                        placeholder="🎯"
-                        maxLength={2}
-                        style={{ ...inputStyle, textAlign: 'center', fontSize: FONT_SIZE.xl }}
-                    />
-                </div>
-            </div>
+                </Field>
 
-            <div style={{ display: 'flex', gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                    <div style={labelStyle}>開始日</div>
-                    <input
-                        type="date"
-                        value={values.startDate}
-                        onChange={(event) => onChange({ startDate: event.target.value })}
-                        style={inputStyle}
-                    />
-                </div>
-                <div style={{ flex: 1 }}>
-                    <div style={labelStyle}>終了日</div>
-                    <input
-                        type="date"
-                        value={values.endDate}
-                        onChange={(event) => onChange({ endDate: event.target.value })}
-                        style={{
-                            ...inputStyle,
-                            ...(dateError ? { border: '1px solid #E17055' } : {}),
-                        }}
-                    />
-                </div>
-            </div>
-            {dateError && (
-                <div style={{
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 11,
-                    color: '#E17055',
-                    fontWeight: 600,
-                    marginTop: -4,
-                }}>
-                    {dateError}
-                </div>
-            )}
+                {values.challengeType === 'exercise' ? (
+                    <Field label={CANONICAL_TERMS.exercise} hint="標準種目か先生の種目を選べます。">
+                        <div style={segmentedRowStyle}>
+                            {([
+                                { id: 'standard', label: CANONICAL_TERMS.standardExercise },
+                                { id: 'teacher', label: CANONICAL_TERMS.teacherExercise },
+                            ] as const).map((option) => {
+                                const selected = exerciseSource === option.id;
+                                return (
+                                    <button
+                                        key={option.id}
+                                        type="button"
+                                        onClick={() => {
+                                            setExerciseSource(option.id);
+                                            if (option.id === 'standard' && !EXERCISES.some((exercise) => exercise.id === values.exerciseId)) {
+                                                onChange({ exerciseId: EXERCISES[0]?.id ?? 'S01' });
+                                            }
+                                            if (option.id === 'teacher' && sortedTeacherExercises.length > 0) {
+                                                onChange({ exerciseId: selectedTeacherExercise?.id ?? sortedTeacherExercises[0].id });
+                                            }
+                                        }}
+                                        style={{
+                                            ...segmentedButtonBaseStyle,
+                                            ...(selected ? {
+                                                border: '2px solid #2BBAA0',
+                                                background: '#E8F8F0',
+                                                color: COLOR.primaryDark,
+                                            } : null),
+                                        }}
+                                    >
+                                        {option.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
 
-            <div>
-                <div style={labelStyle}>対象クラス（未選択＝全クラス）</div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {exerciseSource === 'teacher' ? (
+                            <input
+                                type="text"
+                                value={teacherExerciseQuery}
+                                onChange={(event) => setTeacherExerciseQuery(event.target.value)}
+                                placeholder={`${CANONICAL_TERMS.teacherExercise}をさがす`}
+                                style={{ ...inputStyle, marginTop: 10 }}
+                            />
+                        ) : null}
+
+                        <select
+                            value={values.exerciseId}
+                            onChange={(event) => onChange({ exerciseId: event.target.value })}
+                            style={{ ...inputStyle, appearance: 'auto', marginTop: 10 }}
+                        >
+                            {(exerciseSource === 'standard' ? EXERCISES : filteredTeacherExercises).map((exercise) => (
+                                <option key={exercise.id} value={exercise.id}>
+                                    {exercise.emoji} {exercise.name}
+                                </option>
+                            ))}
+                        </select>
+
+                        {exerciseSource === 'teacher' && sortedTeacherExercises.length === 0 ? (
+                            <div style={fieldHintStyle}>
+                                {CANONICAL_TERMS.teacherExercise}がまだありません。先にメニュー設定で作成してください。
+                            </div>
+                        ) : null}
+                        {exerciseSource === 'teacher' && sortedTeacherExercises.length > 0 && filteredTeacherExercises.length === 0 ? (
+                            <div style={fieldHintStyle}>
+                                この絞り込みに合う{CANONICAL_TERMS.teacherExercise}がありません。
+                            </div>
+                        ) : null}
+
+                        {selectedExercisePreview ? (
+                            <div style={{ ...selectionPreviewStyle, marginTop: 10 }}>
+                                <div style={previewIconStyle}>{selectedExercisePreview.emoji}</div>
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{
+                                        fontFamily: FONT.body,
+                                        fontSize: FONT_SIZE.sm,
+                                        fontWeight: 800,
+                                        color: COLOR.dark,
+                                    }}>
+                                        {selectedExercisePreview.name}
+                                    </div>
+                                    <div style={{
+                                        fontFamily: FONT.body,
+                                        fontSize: FONT_SIZE.xs + 1,
+                                        color: COLOR.muted,
+                                    }}>
+                                        {selectedExercisePreview.sec}秒 ・ {getExercisePlacementLabel(selectedExercisePreview.placement)}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : null}
+                    </Field>
+                ) : (
+                    <Field label={CANONICAL_TERMS.menu} hint="標準メニューか先生メニューを選べます。">
+                        <div style={segmentedRowStyle}>
+                            {([
+                                { id: 'preset', label: CANONICAL_TERMS.presetMenu },
+                                { id: 'teacher', label: CANONICAL_TERMS.teacherMenu },
+                            ] as const).map((option) => {
+                                const selected = values.menuSource === option.id;
+                                return (
+                                    <button
+                                        key={option.id}
+                                        type="button"
+                                        onClick={() => onChange({
+                                            menuSource: option.id,
+                                            targetMenuId: option.id === 'preset'
+                                                ? (selectedPresetMenu?.id ?? PRESET_GROUPS[0]?.id ?? '')
+                                                : (selectedTeacherMenu?.id ?? sortedTeacherMenus[0]?.id ?? ''),
+                                        })}
+                                        style={{
+                                            ...segmentedButtonBaseStyle,
+                                            ...(selected ? {
+                                                border: '2px solid #2BBAA0',
+                                                background: '#E8F8F0',
+                                                color: COLOR.primaryDark,
+                                            } : null),
+                                        }}
+                                    >
+                                        {option.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {values.menuSource === 'teacher' ? (
+                            <input
+                                type="text"
+                                value={teacherMenuQuery}
+                                onChange={(event) => setTeacherMenuQuery(event.target.value)}
+                                placeholder={`${CANONICAL_TERMS.teacherMenu}をさがす`}
+                                style={{ ...inputStyle, marginTop: 10 }}
+                            />
+                        ) : null}
+
+                        <select
+                            value={values.targetMenuId}
+                            onChange={(event) => onChange({ targetMenuId: event.target.value })}
+                            style={{ ...inputStyle, appearance: 'auto', marginTop: 10 }}
+                        >
+                            {(values.menuSource === 'preset' ? PRESET_GROUPS : filteredTeacherMenus).map((menu) => (
+                                <option key={menu.id} value={menu.id}>
+                                    {menu.emoji} {menu.name}
+                                </option>
+                            ))}
+                        </select>
+
+                        {values.menuSource === 'teacher' && sortedTeacherMenus.length === 0 ? (
+                            <div style={fieldHintStyle}>
+                                先生メニューがまだありません。先にメニュー設定で作成してください。
+                            </div>
+                        ) : null}
+                        {values.menuSource === 'teacher' && sortedTeacherMenus.length > 0 && filteredTeacherMenus.length === 0 ? (
+                            <div style={fieldHintStyle}>
+                                この絞り込みに合う{CANONICAL_TERMS.teacherMenu}がありません。
+                            </div>
+                        ) : null}
+
+                        {selectedMenuPreview ? (
+                            <div style={{ ...selectionPreviewStyle, marginTop: 10 }}>
+                                <div style={previewIconStyle}>{selectedMenuPreview.emoji}</div>
+                                <div style={{ minWidth: 0 }}>
+                                    <div style={{
+                                        fontFamily: FONT.body,
+                                        fontSize: FONT_SIZE.sm,
+                                        fontWeight: 800,
+                                        color: COLOR.dark,
+                                    }}>
+                                        {selectedMenuPreview.name}
+                                    </div>
+                                    <div style={{
+                                        fontFamily: FONT.body,
+                                        fontSize: FONT_SIZE.xs + 1,
+                                        color: COLOR.muted,
+                                    }}>
+                                        {selectedMenuPreview.exerciseIds.length}種目 ・ {values.menuSource === 'teacher' ? '先生メニュー' : '標準メニュー'}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : null}
+                    </Field>
+                )}
+
+                <div style={metricGridStyle}>
+                    <Field label="目標回数" hint="クリアまでに必要な合計回数です。">
+                        <input
+                            type="number"
+                            min={1}
+                            value={values.targetCount}
+                            onChange={(event) => onChange({ targetCount: Number(event.target.value) })}
+                            style={inputStyle}
+                        />
+                    </Field>
+
+                    <Field label="1日上限" hint="1日に増える回数の上限です。">
+                        <input
+                            type="number"
+                            min={1}
+                            value={values.dailyCap}
+                            onChange={(event) => onChange({ dailyCap: Number(event.target.value) })}
+                            style={inputStyle}
+                        />
+                    </Field>
+                </div>
+            </Section>
+
+            <Section title="期間" description="いつからいつまで表示するかを決めます。">
+                <div style={metricGridStyle}>
+                    <Field label="開始日">
+                        <input
+                            type="date"
+                            value={values.startDate}
+                            onChange={(event) => onChange({ startDate: event.target.value })}
+                            style={inputStyle}
+                        />
+                    </Field>
+                    <Field label="終了日">
+                        <input
+                            type="date"
+                            value={values.endDate}
+                            onChange={(event) => onChange({ endDate: event.target.value })}
+                            style={{
+                                ...inputStyle,
+                                ...(dateError ? { border: '1px solid #E17055' } : {}),
+                            }}
+                        />
+                    </Field>
+                </div>
+
+                {dateError ? (
+                    <div style={{
+                        fontFamily: FONT.body,
+                        fontSize: FONT_SIZE.xs + 1,
+                        color: COLOR.danger,
+                        fontWeight: 700,
+                    }}>
+                        {dateError}
+                    </div>
+                ) : null}
+            </Section>
+
+            <Section title="対象クラス" description="選ばなければ全クラスに表示します。">
+                <div style={classLevelWrapStyle}>
                     {CLASS_LEVELS.map((classLevel) => {
                         const selected = values.classLevels.includes(classLevel.id);
                         return (
                             <button
                                 key={classLevel.id}
+                                type="button"
                                 onClick={() => onToggleClassLevel(classLevel.id)}
                                 style={{
-                                    padding: '6px 12px',
-                                    borderRadius: 20,
-                                    border: selected ? '2px solid #2BBAA0' : '1px solid #E0E0E0',
-                                    background: selected ? '#E8F8F0' : '#FFF',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 12,
+                                    padding: '8px 12px',
+                                    borderRadius: RADIUS.full,
+                                    border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
+                                    background: selected ? '#E8F8F0' : COLOR.white,
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.sm,
                                     fontWeight: 700,
-                                    color: selected ? '#2BBAA0' : '#8395A7',
+                                    color: selected ? COLOR.primaryDark : COLOR.text,
                                     cursor: 'pointer',
-                                    display: 'flex',
+                                    display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: 4,
+                                    gap: 6,
                                 }}
                             >
-                                {classLevel.emoji} {classLevel.id}
+                                <span>{classLevel.emoji}</span>
+                                <span>{classLevel.id}</span>
                             </button>
                         );
                     })}
                 </div>
-            </div>
+            </Section>
 
-            <div>
-                <div style={{ ...labelStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span>{values.rewardKind === 'star' ? 'ほし（報酬）' : 'バッジメダル（報酬）'}</span>
-                    <button
-                        onClick={onRandomReward}
-                        style={{
-                            fontSize: 11,
-                            color: '#2BBAA0',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontWeight: 700,
-                            padding: '2px 6px',
-                        }}
-                    >
-                        🔀 おまかせ
-                    </button>
+            <div style={rewardNoteStyle}>
+                <div style={{
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.sm,
+                    fontWeight: 800,
+                    color: COLOR.dark,
+                }}>
+                    ごほうび
                 </div>
-                {values.rewardKind === 'star' ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <input
-                            type="number"
-                            min={1}
-                            value={values.rewardValue}
-                            onChange={(event) => onChange({ rewardValue: Number(event.target.value) })}
-                            style={{ ...inputStyle, width: 120 }}
-                        />
-                        <div style={{ fontFamily: FONT.body, fontSize: FONT_SIZE.sm, color: COLOR.text }}>
-                            クリアで ほし {values.rewardValue}こ
-                        </div>
-                    </div>
-                ) : (
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        {Array.from({ length: 12 }, (_, index) => (
-                            <button
-                                key={index}
-                                onClick={() => onChange({ rewardValue: index })}
-                                style={{
-                                    width: 48,
-                                    height: 48,
-                                    borderRadius: 12,
-                                    border: values.rewardValue === index ? '2px solid #FFB800' : '1px solid #E0E0E0',
-                                    background: values.rewardValue === index ? '#FFF9E6' : '#FFF',
-                                    padding: 2,
-                                    cursor: 'pointer',
-                                    boxShadow: values.rewardValue === index ? '0 0 0 2px rgba(255,184,0,0.2)' : 'none',
-                                }}
-                            >
-                                <img
-                                    src={`/medal/${index}.webp`}
-                                    alt={`medal ${index}`}
-                                    loading="lazy"
-                                    style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
-                                />
-                            </button>
-                        ))}
-                    </div>
-                )}
+                <div style={{
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.sm,
+                    color: COLOR.text,
+                    lineHeight: 1.6,
+                }}>
+                    {!isEditing && values.rewardKind === 'star' && values.rewardValue === 1
+                        ? '新しく作るチャレンジは、クリアで ほし 1こ です。'
+                        : rewardMessage}
+                </div>
+                <div style={{
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.xs + 1,
+                    color: COLOR.muted,
+                    lineHeight: 1.6,
+                }}>
+                    アイコンは別で入力せず、選んだ種目やメニューの見た目をそのまま使います。
+                </div>
             </div>
 
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                 <button
+                    type="button"
                     onClick={onCancel}
                     style={{
                         flex: 1,
@@ -662,6 +727,7 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                     キャンセル
                 </button>
                 <button
+                    type="button"
                     onClick={onSubmit}
                     disabled={hasError || submitting}
                     style={{

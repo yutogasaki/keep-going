@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Target } from 'lucide-react';
 import type { Challenge } from '../../lib/challenges';
+import { getChallengeCardText } from '../../lib/challenges';
 import { CLASS_EMOJI } from '../../data/exercises';
 
 interface InviteChallengeCardProps {
@@ -23,6 +24,8 @@ export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
     onJoin,
     onOpenDetail,
 }) => {
+    const cardText = getChallengeCardText(challenge);
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -58,8 +61,8 @@ export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
                         gap: 6,
                         flexWrap: 'wrap',
                     }}>
-                        {challenge.summary && (
-                            <span style={{ color: '#52606D' }}>{challenge.summary}</span>
+                        {cardText && (
+                            <span style={{ color: '#52606D' }}>{cardText}</span>
                         )}
                         <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                             <Target size={12} color="#2BBAA0" />

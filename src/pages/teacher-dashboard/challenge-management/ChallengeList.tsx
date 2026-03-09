@@ -3,7 +3,7 @@ import { Loader2, Pencil, Trash2 } from 'lucide-react';
 import { getTodayKey } from '../../../lib/db';
 import { CLASS_EMOJI, EXERCISES } from '../../../data/exercises';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
-import { getChallengeRewardLabel, type Challenge } from '../../../lib/challenges';
+import { getChallengeCardText, getChallengeRewardLabel, type Challenge } from '../../../lib/challenges';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
 import { getTeacherVisibilityLabel } from '../../../lib/teacherExerciseMetadata';
 
@@ -68,6 +68,7 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                 const targetMetadata = challenge.challengeType === 'menu' ? teacherMenu : teacherExerciseMap.get(challenge.exerciseId ?? '');
                 const isActive = challenge.startDate <= today && challenge.endDate >= today;
                 const isPast = challenge.endDate < today;
+                const cardText = getChallengeCardText(challenge);
 
                 return (
                     <div key={challenge.id} className="card" style={{
@@ -114,14 +115,14 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                     {getChallengeRewardLabel(challenge)} ・
                                     {challenge.startDate.slice(5).replace('-', '/')} 〜 {challenge.endDate.slice(5).replace('-', '/')}
                                 </div>
-                                {challenge.summary && (
+                                {cardText && (
                                     <div style={{
                                         fontFamily: "'Noto Sans JP', sans-serif",
                                         fontSize: 11,
                                         color: '#52606D',
                                         marginTop: 4,
                                     }}>
-                                        {challenge.summary}
+                                        {cardText}
                                     </div>
                                 )}
                                 <div style={{

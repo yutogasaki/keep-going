@@ -82,13 +82,15 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
         }
 
         setSubmitting(true);
+        const trimmedTitle = formValues.title.trim();
+        const trimmedDescription = formValues.description.trim();
 
         try {
             if (editingId) {
                 await updateChallenge(editingId, {
-                    title: formValues.title.trim(),
-                    summary: formValues.summary.trim() || formValues.title.trim(),
-                    description: formValues.description.trim() || null,
+                    title: trimmedTitle,
+                    summary: null,
+                    description: trimmedDescription || null,
                     challengeType: formValues.challengeType,
                     exerciseId: formValues.challengeType === 'exercise' ? formValues.exerciseId : null,
                     targetMenuId: formValues.challengeType === 'menu' ? formValues.targetMenuId : null,
@@ -106,9 +108,9 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                 });
             } else {
                 await createChallenge({
-                    title: formValues.title.trim(),
-                    summary: formValues.summary.trim() || formValues.title.trim(),
-                    description: formValues.description.trim() || null,
+                    title: trimmedTitle,
+                    summary: null,
+                    description: trimmedDescription || null,
                     challengeType: formValues.challengeType,
                     exerciseId: formValues.challengeType === 'exercise' ? formValues.exerciseId : null,
                     targetMenuId: formValues.challengeType === 'menu' ? formValues.targetMenuId : null,
@@ -178,14 +180,6 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                         setFormValues((previous) => ({ ...previous, ...patch }));
                     }}
                     onToggleClassLevel={toggleClassLevel}
-                    onRandomReward={() => {
-                        setFormValues((previous) => ({
-                            ...previous,
-                            rewardValue: previous.rewardKind === 'medal'
-                                ? Math.floor(Math.random() * 10)
-                                : Math.max(1, Math.floor(Math.random() * 5) + 1),
-                        }));
-                    }}
                     onCancel={handleCancel}
                     onSubmit={handleSubmit}
                 />

@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { countChallengeProgress, getChallengeRewardLabel, type Challenge } from '../challenges';
-import { getAllSessions } from '../db';
+import {
+    countChallengeProgress,
+    getChallengeCardText,
+    getChallengeDescriptionText,
+    getChallengeHeaderText,
+    getChallengeRewardLabel,
+    type Challenge,
+} from '../challenges';
+import { getAllSessions, type SessionRecord } from '../db';
 
 vi.mock('../db', () => ({
     getAllSessions: vi.fn(),
@@ -8,6 +15,10 @@ vi.mock('../db', () => ({
 }));
 
 const mockedGetAllSessions = vi.mocked(getAllSessions);
+
+function asSessions(records: SessionRecord[]): SessionRecord[] {
+    return records;
+}
 
 function makeChallenge(overrides: Partial<Challenge> = {}): Challenge {
     return {
@@ -42,7 +53,7 @@ beforeEach(() => {
 
 describe('countChallengeProgress', () => {
     it('caps daily exercise counts by dailyCap', async () => {
-        mockedGetAllSessions.mockResolvedValue([
+        mockedGetAllSessions.mockResolvedValue(asSessions([
             {
                 id: 's1',
                 date: '2026-03-05',
@@ -70,7 +81,7 @@ describe('countChallengeProgress', () => {
                 skippedIds: [],
                 userIds: ['u1'],
             },
-        ] as any);
+        ]));
 
         const progress = await countChallengeProgress(makeChallenge(), ['u1']);
 
@@ -78,7 +89,7 @@ describe('countChallengeProgress', () => {
     });
 
     it('ignores sessions outside the date range and other users', async () => {
-        mockedGetAllSessions.mockResolvedValue([
+        mockedGetAllSessions.mockResolvedValue(asSessions([
             {
                 id: 's1',
                 date: '2026-02-28',
@@ -97,7 +108,7 @@ describe('countChallengeProgress', () => {
                 skippedIds: [],
                 userIds: ['u2'],
             },
-        ] as any);
+        ]));
 
         const progress = await countChallengeProgress(makeChallenge({
             startDate: '2026-03-01',
@@ -108,7 +119,7 @@ describe('countChallengeProgress', () => {
     });
 
     it('counts only completed matching menu sessions and applies dailyCap', async () => {
-        mockedGetAllSessions.mockResolvedValue([
+        mockedGetAllSessions.mockResolvedValue(asSessions([
             {
                 id: 'menu-1',
                 date: '2026-03-05',
@@ -157,7 +168,7 @@ describe('countChallengeProgress', () => {
                 sourceMenuId: 'preset-basic',
                 sourceMenuSource: 'preset',
             },
-        ] as any);
+        ]));
 
         const progress = await countChallengeProgress(makeChallenge({
             challengeType: 'menu',
@@ -184,5 +195,34 @@ describe('getChallengeRewardLabel', () => {
             rewardFuwafuwaType: 4,
             tier: 'big',
         }))).toBe('メダル');
+    });
+});
+
+describe('challenge text helpers', () => {
+    it('prefers summary for compact card text', () => {
+        expect(getChallengeCardText(makeChallenge())).toBe('1日1回の開脚');
+    });
+
+    it('falls back to description when summary matches title', () => {
+        expect(getChallengeCardText(makeChallenge({
+            summary: '開脚チャレンジ',
+            description: 'ゆっくりやる',
+        }))).toBe('ゆっくりやる');
+    });
+
+    it('shows header text only when summary differs from title', () => {
+        expect(getChallengeHeaderText(makeChallenge())).toBe('1日1回の開脚');
+        expect(getChallengeHeaderText(makeChallenge({ summary: '開脚チャレンジ' }))).toBeNull();
+    });
+
+    it('hides detail description when it duplicates summary', () => {
+        expect(getChallengeDescriptionText(makeChallenge({
+            summary: '同じ',
+            description: '同じ',
+        }))).toBeNull();
+        expect(getChallengeDescriptionText(makeChallenge({
+            summary: 'ひとこと',
+            description: '詳しい説明',
+        }))).toBe('詳しい説明');
     });
 });

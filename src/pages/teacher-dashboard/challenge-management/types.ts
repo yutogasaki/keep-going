@@ -1,6 +1,5 @@
 export interface ChallengeFormValues {
     title: string;
-    summary: string;
     description: string;
     challengeType: 'exercise' | 'menu';
     exerciseId: string;

@@ -7,7 +7,6 @@ export function createDefaultChallengeFormValues(): ChallengeFormValues {
     const { startDate, endDate } = getDefaultDateRange();
     return {
         title: '',
-        summary: '',
         description: '',
         challengeType: 'exercise',
         exerciseId: 'S01',
@@ -17,10 +16,10 @@ export function createDefaultChallengeFormValues(): ChallengeFormValues {
         dailyCap: 1,
         startDate,
         endDate,
-        tier: 'big',
-        rewardKind: 'medal',
-        rewardValue: Math.floor(Math.random() * 10),
-        iconEmoji: '🎯',
+        tier: 'small',
+        rewardKind: 'star',
+        rewardValue: 1,
+        iconEmoji: '',
         classLevels: [],
     };
 }
@@ -28,8 +27,7 @@ export function createDefaultChallengeFormValues(): ChallengeFormValues {
 export function createChallengeFormValuesFromChallenge(challenge: Challenge): ChallengeFormValues {
     return {
         title: challenge.title,
-        summary: challenge.summary ?? challenge.title,
-        description: challenge.description ?? '',
+        description: challenge.description?.trim() || challenge.summary?.trim() || '',
         challengeType: challenge.challengeType,
         exerciseId: challenge.exerciseId ?? 'S01',
         targetMenuId: challenge.targetMenuId ?? PRESET_GROUPS[0]?.id ?? '',
