@@ -6,6 +6,7 @@ import { TeacherEditorEmojiPicker } from './TeacherEditorEmojiPicker';
 import { TeacherEditorFooterActions } from './TeacherEditorFooterActions';
 import { TeacherEditorStatusSection } from './TeacherEditorStatusSection';
 import { TeacherMenuExercisePicker } from './TeacherMenuExercisePicker';
+import { FONT, FONT_SIZE } from '../../../lib/styles';
 import {
     buildDefaultStatusByClass,
     buildMenuEditorExercises,
@@ -29,6 +30,7 @@ interface TeacherMenuEditorProps {
     onPlay?: () => void;
     onDelete?: () => void;
     submitting: boolean;
+    error?: string | null;
 }
 
 const MENU_STATUS_OPTIONS: TeacherEditorStatusOption[] = [
@@ -50,6 +52,7 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
     onPlay,
     onDelete,
     submitting,
+    error,
 }) => {
     const [name, setName] = useState(initial?.name ?? '');
     const [emoji, setEmoji] = useState(initial?.emoji ?? '📋');
@@ -155,6 +158,23 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
                     }))}
                 />
             </EditorSection>
+
+            {error ? (
+                <div
+                    style={{
+                        padding: '10px 14px',
+                        borderRadius: 12,
+                        background: 'rgba(225, 112, 85, 0.1)',
+                        border: '1px solid rgba(225, 112, 85, 0.25)',
+                        fontFamily: FONT.body,
+                        fontSize: FONT_SIZE.sm,
+                        color: '#E17055',
+                        lineHeight: 1.5,
+                    }}
+                >
+                    {error}
+                </div>
+            ) : null}
 
             <div style={{ flex: 1 }} />
 

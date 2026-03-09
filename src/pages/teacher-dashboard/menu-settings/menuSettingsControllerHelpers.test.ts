@@ -4,6 +4,7 @@ import {
     buildBuiltInExerciseInitial,
     buildBuiltInMenuInitial,
     getMenuSettingStatusByClass,
+    hasStatusByClassChanges,
 } from './menuSettingsControllerHelpers';
 
 function createOverride(overrides: Partial<TeacherItemOverride> & Pick<TeacherItemOverride, 'id' | 'itemId' | 'itemType'>): TeacherItemOverride {
@@ -82,5 +83,17 @@ describe('menuSettingsControllerHelpers', () => {
 
         expect(statusByClass['初級']).toBe('required');
         expect(statusByClass['中級']).toBe('optional');
+    });
+
+    it('detects whether per-class statuses changed', () => {
+        expect(hasStatusByClassChanges(
+            { 初級: 'required', 中級: 'optional' },
+            { 初級: 'required', 中級: 'optional' },
+        )).toBe(false);
+
+        expect(hasStatusByClassChanges(
+            { 初級: 'hidden', 中級: 'optional' },
+            { 初級: 'required', 中級: 'optional' },
+        )).toBe(true);
     });
 });

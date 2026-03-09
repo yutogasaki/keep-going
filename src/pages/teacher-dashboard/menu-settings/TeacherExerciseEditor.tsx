@@ -36,6 +36,7 @@ interface TeacherExerciseEditorProps {
     onDelete?: () => void;
     placementLocked?: boolean;
     submitting: boolean;
+    error?: string | null;
 }
 
 const STATUS_OPTIONS: TeacherEditorStatusOption[] = [
@@ -60,6 +61,7 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
     onDelete,
     placementLocked,
     submitting,
+    error,
 }) => {
     const [name, setName] = useState(initial?.name ?? '');
     const [emoji, setEmoji] = useState(initial?.emoji ?? '🌸');
@@ -268,6 +270,23 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
                     }))}
                 />
             </EditorSection>
+
+            {error ? (
+                <div
+                    style={{
+                        padding: '10px 14px',
+                        borderRadius: 12,
+                        background: 'rgba(225, 112, 85, 0.1)',
+                        border: '1px solid rgba(225, 112, 85, 0.25)',
+                        fontFamily: FONT.body,
+                        fontSize: FONT_SIZE.sm,
+                        color: '#E17055',
+                        lineHeight: 1.5,
+                    }}
+                >
+                    {error}
+                </div>
+            ) : null}
 
             <div style={{ flex: 1 }} />
 

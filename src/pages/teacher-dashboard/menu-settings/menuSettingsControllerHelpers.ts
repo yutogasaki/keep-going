@@ -51,6 +51,28 @@ export function getMenuSettingStatusByClass(
     return statusByClass;
 }
 
+export function hasStatusByClassChanges(
+    nextStatusByClass: Record<string, MenuSettingStatus> | undefined,
+    currentStatusByClass: Record<string, MenuSettingStatus>,
+): boolean {
+    if (!nextStatusByClass) {
+        return false;
+    }
+
+    const keys = new Set([
+        ...Object.keys(nextStatusByClass),
+        ...Object.keys(currentStatusByClass),
+    ]);
+
+    for (const key of keys) {
+        if ((nextStatusByClass[key] ?? 'optional') !== (currentStatusByClass[key] ?? 'optional')) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 export function getTeacherItemOverride(
     overrides: TeacherItemOverride[],
     itemId: string,

@@ -167,6 +167,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     key={exerciseEditorItemId ?? 'new'}
                     initial={exerciseEditorInitial}
                     initialStatuses={exerciseEditorStatuses}
+                    error={error}
                     onSave={handleSaveExercise}
                     onCancel={closeExerciseForm}
                     onPlay={exerciseEditorItemId ? () => { audio.initTTS(); startTeacherPreviewSession([exerciseEditorItemId]); } : undefined}
@@ -183,6 +184,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     initial={menuEditorInitial}
                     initialStatuses={menuEditorStatuses}
                     teacherExercises={teacherExercises}
+                    error={error}
                     onSave={handleSaveMenu}
                     onCancel={closeMenuForm}
                     onPlay={menuEditorItemId ? () => { audio.initTTS(); startTeacherPreviewSession(menuEditorInitial?.exerciseIds ?? []); } : undefined}

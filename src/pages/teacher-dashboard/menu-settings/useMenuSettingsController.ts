@@ -20,6 +20,7 @@ import {
     buildBuiltInExerciseInitial,
     buildBuiltInMenuInitial,
     getMenuSettingStatusByClass,
+    hasStatusByClassChanges,
     getTeacherItemOverride,
     saveStatuses,
 } from './menuSettingsControllerHelpers';
@@ -158,7 +159,8 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
                     itemId = (await createTeacherExercise({ ...data, createdBy: teacherEmail })) ?? '';
                 }
 
-                if (itemId) {
+                const currentStatusByClass = getStatusByClass(itemId, 'exercise');
+                if (itemId && hasStatusByClassChanges(data.statusByClass, currentStatusByClass)) {
                     await saveStatuses(itemId, 'exercise', data.statusByClass, teacherEmail);
                 }
             }
@@ -168,7 +170,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
             dispatchTeacherContentUpdated();
         } catch (err) {
             console.warn('[MenuSettings] save exercise failed:', err);
-            setError('種目の保存に失敗しました。');
+            setError(err instanceof Error ? `種目の保存に失敗しました: ${err.message}` : '種目の保存に失敗しました。');
         } finally {
             setSubmitting(false);
         }
@@ -210,7 +212,8 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
                     itemId = (await createTeacherMenu({ ...data, createdBy: teacherEmail })) ?? '';
                 }
 
-                if (itemId) {
+                const currentStatusByClass = getStatusByClass(itemId, 'menu_group');
+                if (itemId && hasStatusByClassChanges(data.statusByClass, currentStatusByClass)) {
                     await saveStatuses(itemId, 'menu_group', data.statusByClass, teacherEmail);
                 }
             }
@@ -220,7 +223,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
             dispatchTeacherContentUpdated();
         } catch (err) {
             console.warn('[MenuSettings] save menu failed:', err);
-            setError('メニューの保存に失敗しました。');
+            setError(err instanceof Error ? `メニューの保存に失敗しました: ${err.message}` : 'メニューの保存に失敗しました。');
         } finally {
             setSubmitting(false);
         }
