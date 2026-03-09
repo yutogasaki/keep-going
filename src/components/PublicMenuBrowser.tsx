@@ -206,17 +206,15 @@ const BrowserMenuCard: React.FC<{
     menu: PublicMenu;
     onTap: () => void;
 }> = ({ menu, onTap }) => {
+    const resolveExercise = (id: string) =>
+        EXERCISES.find((exercise) => exercise.id === id)
+        ?? menu.customExerciseData?.find((exercise) => exercise.id === id);
     const exerciseNames = menu.exerciseIds
-        .slice(0, 4)
-        .map(id =>
-            EXERCISES.find(e => e.id === id)?.name
-            ?? menu.customExerciseData?.find(e => e.id === id)?.name
-            ?? id
-        );
-    const remaining = menu.exerciseIds.length - 4;
+        .slice(0, 3)
+        .map((id) => resolveExercise(id)?.name ?? id);
+    const remaining = menu.exerciseIds.length - 3;
     const totalSec = menu.exerciseIds.reduce((sum, id) => {
-        const exercise = EXERCISES.find(e => e.id === id)
-            ?? menu.customExerciseData?.find(e => e.id === id);
+        const exercise = resolveExercise(id);
         return sum + (exercise?.sec ?? 0);
     }, 0);
     const minutes = Math.ceil(totalSec / 60);
@@ -295,17 +293,42 @@ const BrowserMenuCard: React.FC<{
                 </div>
             ) : null}
 
-            <div style={{
-                fontFamily: FONT.body,
-                fontSize: FONT_SIZE.sm,
-                color: COLOR.muted,
-                lineHeight: 1.6,
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical' as const,
-                overflow: 'hidden',
-            }}>
-                {exerciseNames.join('、')}{remaining > 0 ? `、+${remaining}` : ''}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: SPACE.xs }}>
+                {exerciseNames.map((name) => (
+                    <span
+                        key={name}
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            padding: '5px 9px',
+                            borderRadius: RADIUS.full,
+                            background: 'rgba(43, 186, 160, 0.08)',
+                            fontFamily: FONT.body,
+                            fontSize: FONT_SIZE.xs + 1,
+                            fontWeight: 700,
+                            color: COLOR.primary,
+                        }}
+                    >
+                        {name}
+                    </span>
+                ))}
+                {remaining > 0 ? (
+                    <span
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            padding: '5px 9px',
+                            borderRadius: RADIUS.full,
+                            background: 'rgba(0,0,0,0.04)',
+                            fontFamily: FONT.body,
+                            fontSize: FONT_SIZE.xs + 1,
+                            fontWeight: 700,
+                            color: COLOR.muted,
+                        }}
+                    >
+                        +{remaining}
+                    </span>
+                ) : null}
             </div>
 
             <div style={{
@@ -338,8 +361,45 @@ const BrowserMenuCard: React.FC<{
                     fontSize: FONT_SIZE.xs + 1,
                     color: COLOR.light,
                 }}>
+                    {menu.exerciseIds.length}種目
+                </span>
+                <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '4px 8px',
+                    borderRadius: RADIUS.full,
+                    background: 'rgba(0,0,0,0.04)',
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.xs + 1,
+                    color: COLOR.light,
+                }}>
                     <Download size={11} />
                     {menu.downloadCount}回もらわれた
+                </span>
+            </div>
+
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingTop: 2,
+            }}>
+                <span style={{
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.xs + 1,
+                    fontWeight: 700,
+                    color: COLOR.muted,
+                }}>
+                    くわしく見る
+                </span>
+                <span style={{
+                    fontFamily: FONT.heading,
+                    fontSize: FONT_SIZE.sm,
+                    fontWeight: 700,
+                    color: COLOR.primary,
+                }}>
+                    OPEN
                 </span>
             </div>
         </button>

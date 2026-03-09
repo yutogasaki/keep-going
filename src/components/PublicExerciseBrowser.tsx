@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Clock } from 'lucide-react';
+import { X, Loader2, Clock, Download } from 'lucide-react';
 import { getExercisePlacementLabel } from '../data/exercisePlacement';
 import { dedupeExercisesByIdentity } from '../lib/publicExerciseUtils';
 import { fetchPopularExercises, type PublicExercise } from '../lib/publicExercises';
 import { ExerciseDetailSheet } from './ExerciseDetailSheet';
 import { DISPLAY_TERMS } from '../lib/terminology';
 import { useAppStore } from '../store/useAppStore';
-import { Z } from '../lib/styles';
+import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE, Z } from '../lib/styles';
 
 interface PublicExerciseBrowserProps {
     open: boolean;
@@ -197,67 +197,163 @@ const BrowserExerciseCard: React.FC<{
     exercise: PublicExercise;
     onTap: () => void;
 }> = ({ exercise, onTap }) => {
+    const subtitle = `${exercise.authorName} さんの種目`;
+    const description = exercise.description || `${getExercisePlacementLabel(exercise.placement)}の ${exercise.sec}秒の種目`;
+
     return (
         <button
             onClick={onTap}
             style={{
-                background: '#FFF',
-                borderRadius: 14,
-                padding: '14px 16px',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                background: COLOR.white,
+                borderRadius: RADIUS.lg,
+                padding: `${SPACE.lg}px`,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.05)',
                 border: 'none',
                 cursor: 'pointer',
                 textAlign: 'left',
                 width: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: SPACE.sm,
             }}
         >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 24 }}>{exercise.emoji}</span>
-                <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: SPACE.md, width: '100%' }}>
+                <div style={{
+                    width: 42,
+                    height: 42,
+                    borderRadius: RADIUS.lg,
+                    background: 'rgba(43, 186, 160, 0.12)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                }}>
+                    <span style={{ fontSize: 24, lineHeight: 1 }}>{exercise.emoji}</span>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 14,
+                        fontFamily: FONT.body,
+                        fontSize: FONT_SIZE.md,
                         fontWeight: 700,
-                        color: '#2D3436',
+                        color: COLOR.dark,
+                        lineHeight: 1.4,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical' as const,
+                        overflow: 'hidden',
                     }}>
                         {exercise.name}
                     </div>
                     <div style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 11,
-                        color: '#8395A7',
-                        display: 'flex',
-                        gap: 6,
-                        alignItems: 'center',
-                        flexWrap: 'wrap',
+                        fontFamily: FONT.body,
+                        fontSize: FONT_SIZE.sm,
+                        color: COLOR.muted,
                         marginTop: 2,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical' as const,
+                        overflow: 'hidden',
                     }}>
-                        <span>{exercise.authorName}</span>
-                        <span>·</span>
-                        <span>{exercise.downloadCount}回もらわれた</span>
-                        <span>·</span>
-                        <Clock size={10} />
-                        <span>{exercise.sec}秒</span>
-                        <span>·</span>
-                        <span>{getExercisePlacementLabel(exercise.placement)}</span>
+                        {subtitle}
                     </div>
                 </div>
             </div>
-            {exercise.description && (
-                <div style={{
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 12,
-                    color: '#636E72',
-                    lineHeight: 1.5,
-                    marginTop: 6,
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical' as const,
-                    overflow: 'hidden',
+
+            <div style={{
+                fontFamily: FONT.body,
+                fontSize: FONT_SIZE.sm,
+                color: COLOR.text,
+                lineHeight: 1.5,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical' as const,
+                overflow: 'hidden',
+            }}>
+                {description}
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: SPACE.sm }}>
+                <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '4px 8px',
+                    borderRadius: RADIUS.full,
+                    background: 'rgba(0,0,0,0.04)',
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.xs + 1,
+                    color: COLOR.light,
                 }}>
-                    {exercise.description}
-                </div>
-            )}
+                    <Clock size={11} />
+                    {exercise.sec}秒
+                </span>
+                <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '4px 8px',
+                    borderRadius: RADIUS.full,
+                    background: 'rgba(0,0,0,0.04)',
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.xs + 1,
+                    color: COLOR.light,
+                }}>
+                    {getExercisePlacementLabel(exercise.placement)}
+                </span>
+                <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    padding: '4px 8px',
+                    borderRadius: RADIUS.full,
+                    background: 'rgba(0,0,0,0.04)',
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.xs + 1,
+                    color: COLOR.light,
+                }}>
+                    <Download size={11} />
+                    {exercise.downloadCount}回
+                </span>
+                {exercise.hasSplit ? (
+                    <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        padding: '4px 8px',
+                        borderRadius: RADIUS.full,
+                        background: 'rgba(253, 203, 110, 0.15)',
+                        fontFamily: FONT.body,
+                        fontSize: FONT_SIZE.xs + 1,
+                        color: '#C58B00',
+                    }}>
+                        切替あり
+                    </span>
+                ) : null}
+            </div>
+
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingTop: 2,
+            }}>
+                <span style={{
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.xs + 1,
+                    fontWeight: 700,
+                    color: COLOR.muted,
+                }}>
+                    くわしく見る
+                </span>
+                <span style={{
+                    fontFamily: FONT.heading,
+                    fontSize: FONT_SIZE.sm,
+                    fontWeight: 700,
+                    color: COLOR.primary,
+                }}>
+                    OPEN
+                </span>
+            </div>
         </button>
     );
 };
