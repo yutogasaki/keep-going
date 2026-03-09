@@ -61,7 +61,6 @@ describe('createAuthActions', () => {
             email: 'parent@example.com',
             options: {
                 shouldCreateUser: false,
-                emailRedirectTo: 'https://keepgoing.example',
             },
         });
     });
@@ -78,7 +77,6 @@ describe('createAuthActions', () => {
             email: 'parent@example.com',
             options: {
                 shouldCreateUser: true,
-                emailRedirectTo: 'https://keepgoing.example',
             },
         });
     });

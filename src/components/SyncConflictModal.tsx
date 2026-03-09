@@ -244,7 +244,7 @@ export const SyncConflictModal: React.FC<SyncConflictModalProps> = ({
                             color: COLOR.text,
                         }}
                     >
-                        クラウドにもこの端末にもデータがあります。必要ならこの端末をベースにまとめられます。
+                        クラウドにもこの端末にもデータがあります。片方だけ使うか、両方をまとめるか選べます。
                     </p>
                 </div>
 
@@ -291,8 +291,8 @@ export const SyncConflictModal: React.FC<SyncConflictModalProps> = ({
                     />
                     <ChoiceCard
                         icon={<ArrowRightLeft size={18} />}
-                        title="この端末をベースにまとめる"
-                        description="この端末を残しながら、クラウドの記録やカスタム項目も重複を避けて合わせます。"
+                        title="両方をまとめる"
+                        description="この端末の内容を残しながら、クラウドの記録やカスタム項目も重複を避けて追加します。"
                         onClick={onChooseMerge}
                         emphasized={recommendedResolution === 'merge'}
                     />

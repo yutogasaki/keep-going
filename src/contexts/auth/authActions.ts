@@ -24,7 +24,6 @@ export function createAuthActions({ user, setToastMessage }: CreateAuthActionsPa
             email,
             options: {
                 shouldCreateUser: mode === 'signUp',
-                emailRedirectTo,
             },
         });
 

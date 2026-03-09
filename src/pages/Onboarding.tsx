@@ -17,6 +17,7 @@ import { WelcomeStep } from './onboarding/WelcomeStep';
 import { NotificationStep } from './onboarding/NotificationStep';
 import type { OnboardingStep } from './onboarding/types';
 import { getLoginSyncFailureMessage } from '../contexts/auth/syncFlowMessages';
+import { shouldFinishOnboardingAfterLogin } from './onboarding/postLoginFlow';
 
 export const Onboarding: React.FC = () => {
     const setOnboardingCompleted = useAppStore((state) => state.setOnboardingCompleted);
@@ -54,7 +55,12 @@ export const Onboarding: React.FC = () => {
             }
 
             const restoredState = useAppStore.getState();
-            if (restoredState.onboardingCompleted && restoredState.users.length > 0) {
+            if (shouldFinishOnboardingAfterLogin({
+                authMode,
+                onboardingCompleted: restoredState.onboardingCompleted,
+                userCount: restoredState.users.length,
+            })) {
+                setOnboardingCompleted(true);
                 setLoginContext(null);
                 return;
             }
@@ -67,7 +73,7 @@ export const Onboarding: React.FC = () => {
             setLoginContext(null);
             setStep('account');
         }
-    }, [requestSyncConflictResolution, setLoginContext]);
+    }, [authMode, requestSyncConflictResolution, setLoginContext, setOnboardingCompleted]);
 
     useEffect(() => {
         if (user && !user.is_anonymous && loginContext === 'onboarding' && step !== 'restoring') {

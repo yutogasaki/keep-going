@@ -104,7 +104,7 @@ describe('buildSyncConflictPrompt', () => {
         });
 
         expect(prompt.recommendedResolution).toBe('merge');
-        expect(prompt.recommendationReason).toContain('この端末をベースにまとめる');
+        expect(prompt.recommendationReason).toContain('両方をまとめる');
     });
 
     it('falls back to a neutral prompt when summaries are effectively tied', () => {

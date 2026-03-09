@@ -62,7 +62,7 @@ export function getLoginSyncSuccessMessage(context: LoginSyncMessageContext): st
     }
 
     if (prefersMergeMessage(context)) {
-        return wrapSummary('この端末をベースにまとめました', context.localSummary);
+        return wrapSummary('両方のデータをまとめました', context.localSummary);
     }
 
     if (context.action === 'push_local') {
@@ -70,7 +70,7 @@ export function getLoginSyncSuccessMessage(context: LoginSyncMessageContext): st
     }
 
     if (context.action === 'merge') {
-        return wrapSummary('この端末とクラウドをまとめました', context.cloudSummary);
+        return wrapSummary('両方のデータをまとめました', context.cloudSummary);
     }
 
     return 'ログインしました';
@@ -82,7 +82,7 @@ export function getLoginSyncFailureMessage(context: LoginSyncMessageContext): st
     }
 
     if (prefersMergeMessage(context)) {
-        return 'この端末とクラウドのまとめに失敗しました。この端末のデータはそのままです。';
+        return '両方のデータのまとめに失敗しました。この端末のデータはそのままです。';
     }
 
     if (context.action === 'push_local') {
@@ -90,7 +90,7 @@ export function getLoginSyncFailureMessage(context: LoginSyncMessageContext): st
     }
 
     if (context.action === 'merge') {
-        return 'この端末とクラウドのまとめに失敗しました。この端末のデータはそのままです。';
+        return '両方のデータのまとめに失敗しました。この端末のデータはそのままです。';
     }
 
     return 'ログイン後の同期に失敗しました。この端末のデータはそのままです。';

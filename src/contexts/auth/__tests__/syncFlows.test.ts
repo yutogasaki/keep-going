@@ -115,7 +115,7 @@ describe('sync flow messages', () => {
             action: 'merge',
             resolution: 'merge',
             localSummary: createSummary({ users: 1, sessions: 3 }),
-        })).toBe('この端末をベースにまとめました（きろく3回 / おこさま1人）');
+        })).toBe('両方のデータをまとめました（きろく3回 / おこさま1人）');
         expect(getLoginSyncFailureMessage({ action: 'restore_from_cloud' })).toBe('クラウドのデータ復元に失敗しました。この端末のデータはそのままです。');
     });
 });

@@ -81,7 +81,7 @@ function decideRecommendedResolution({
 
         return {
             recommendedResolution: 'merge',
-            recommendationReason: 'この端末のほうに記録が多いので、この端末をベースにまとめるのがおすすめです。',
+            recommendationReason: 'この端末のほうに記録が多いので、両方をまとめるのがおすすめです。',
         };
     }
 
@@ -95,7 +95,7 @@ function decideRecommendedResolution({
 
         return {
             recommendedResolution: 'merge',
-            recommendationReason: 'この端末のほうに登録されているおこさまが多いです。',
+            recommendationReason: 'この端末のほうに登録されているおこさまが多いので、両方をまとめるのがおすすめです。',
         };
     }
 
@@ -111,7 +111,7 @@ function decideRecommendedResolution({
 
         return {
             recommendedResolution: 'merge',
-            recommendationReason: 'この端末のほうにカスタム項目が多いです。',
+            recommendationReason: 'この端末のほうにカスタム項目が多いので、両方をまとめるのがおすすめです。',
         };
     }
 
@@ -125,7 +125,7 @@ function decideRecommendedResolution({
 
         return {
             recommendedResolution: 'merge',
-            recommendationReason: 'この端末側には保存済みのせっていがあります。',
+            recommendationReason: 'この端末側には保存済みのせっていがあるので、両方をまとめるのがおすすめです。',
         };
     }
 
@@ -145,7 +145,7 @@ function decideRecommendedResolution({
         }
         : {
             recommendedResolution: 'merge',
-            recommendationReason: 'この端末のほうが情報量が多いです。',
+            recommendationReason: 'この端末のほうが情報量が多いので、両方をまとめるのがおすすめです。',
         };
 }
 
