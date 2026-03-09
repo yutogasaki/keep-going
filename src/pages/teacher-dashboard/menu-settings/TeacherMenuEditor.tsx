@@ -76,6 +76,9 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
     const allExercises = buildMenuEditorExercises(teacherExercises);
     const canSave = name.trim().length > 0 && exerciseIds.length > 0;
     const metadataEditable = !initial || Boolean(initial.createdBy);
+    const title = initial
+        ? (metadataEditable ? '先生のメニューを編集' : '標準メニューを調整')
+        : '先生のメニューを作成';
 
     const handleSubmit = () => {
         if (!canSave || submitting) return;
@@ -95,7 +98,7 @@ export const TeacherMenuEditor: React.FC<TeacherMenuEditorProps> = ({
 
     return (
         <EditorShell
-            title={initial ? '先生のメニューを編集' : '先生のメニューを作成'}
+            title={title}
             onBack={onCancel}
         >
             <EditorSection label="アイコン">

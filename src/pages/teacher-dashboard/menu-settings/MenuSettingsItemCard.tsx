@@ -20,6 +20,7 @@ interface MenuSettingsItemCardProps {
     onDelete?: () => void;
     onPlay?: () => void;
     itemType?: 'exercise' | 'menu_group';
+    editLabel?: string;
 }
 
 const STATUS_OPTIONS: { status: MenuSettingStatus; bg: string; color: string; label: string; dotColor: string }[] = [
@@ -48,6 +49,7 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
     onDelete,
     onPlay,
     itemType = 'exercise',
+    editLabel = '編集',
 }) => {
     return (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -274,7 +276,7 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
                                         }}
                                     >
                                         <Edit2 size={12} />
-                                        編集
+                                        {editLabel}
                                     </button>
                                 )}
                                 {onDelete && (

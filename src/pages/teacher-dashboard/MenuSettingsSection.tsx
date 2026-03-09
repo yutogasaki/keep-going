@@ -169,7 +169,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                 }}
             >
                 <Plus size={16} />
-                {subTab === 'exercises' ? `新しい${CANONICAL_TERMS.exercise}を作成` : `新しい${CANONICAL_TERMS.menu}を作成`}
+                {subTab === 'exercises' ? `新しい${CANONICAL_TERMS.teacherExercise}を作成` : `新しい${CANONICAL_TERMS.teacherMenu}を作成`}
             </button>
 
             {/* Exercise editor (full-screen portal) */}
@@ -251,6 +251,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                     onEdit={() => openTeacherExerciseEditor(ex)}
                                     onDelete={() => promptDeleteExercise(ex)}
                                     onPlay={() => { audio.initTTS(); startTeacherPreviewSession([ex.id]); }}
+                                    editLabel="編集"
                                 />
                             ))}
                         </>
@@ -273,6 +274,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                 onStatusChange={(cl, status) => handleStatusChange(ex.id, 'exercise', cl, status)}
                                 onEdit={() => openBuiltInExerciseEditor(ex.id)}
                                 onPlay={() => { audio.initTTS(); startTeacherPreviewSession([ex.id]); }}
+                                editLabel="調整"
                             />
                         );
                     })}
@@ -301,6 +303,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                     onDelete={() => promptDeleteMenu(menu)}
                                     onPlay={() => { audio.initTTS(); startTeacherPreviewSession(menu.exerciseIds); }}
                                     itemType="menu_group"
+                                    editLabel="編集"
                                 />
                             ))}
                         </>
@@ -323,6 +326,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                 onEdit={() => openBuiltInMenuEditor(group.id)}
                                 onPlay={() => { audio.initTTS(); startTeacherPreviewSession(group.exerciseIds); }}
                                 itemType="menu_group"
+                                editLabel="調整"
                             />
                         );
                     })}

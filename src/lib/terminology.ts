@@ -8,7 +8,7 @@ export const CANONICAL_TERMS = {
     autoMenu: 'おまかせメニュー',
     customExercise: 'カスタム種目',
     customMenu: 'カスタムメニュー',
-    presetMenu: 'セットメニュー',
+    presetMenu: '標準メニュー',
     publicExercise: '公開種目',
     publicMenu: '公開メニュー',
     session: 'セッション',

@@ -85,6 +85,9 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
     const [statusByClass, setStatusByClass] = useState<Record<string, MenuSettingStatus>>(() => buildDefaultStatusByClass(initialStatuses));
 
     const canSave = name.trim().length > 0;
+    const title = initial
+        ? (placementLocked ? '標準種目を調整' : '先生の種目を編集')
+        : '先生の種目を作成';
 
     const handleSubmit = () => {
         if (!canSave || submitting) return;
@@ -106,7 +109,7 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
 
     return (
         <EditorShell
-            title={initial ? '先生の種目を編集' : '先生の種目を作成'}
+            title={title}
             onBack={onCancel}
         >
             <EditorSection label="アイコン">
