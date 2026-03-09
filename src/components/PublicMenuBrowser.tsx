@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Download, ChevronRight } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
+import type { ExercisePlacement } from '../data/exercisePlacement';
 import { dedupeMenusByIdentity, fetchPopularMenus, type PublicMenu } from '../lib/publicMenus';
 import { EXERCISES } from '../data/exercises';
 import { MenuDetailSheet } from './MenuDetailSheet';
-import { ExerciseIcon } from './ExerciseIcon';
+import { GroupCard } from '../pages/menu/GroupCard';
 import { useAppStore } from '../store/useAppStore';
-import { COLOR, FONT, FONT_SIZE, RADIUS, Z } from '../lib/styles';
+import { Z } from '../lib/styles';
 import { DISPLAY_TERMS } from '../lib/terminology';
 
 interface PublicMenuBrowserProps {
@@ -179,7 +180,7 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
                                         </div>
                                     ) : (
                                         menus.map(menu => (
-                                            <BrowserMenuCard
+                                            <PublicMenuListCard
                                                 key={menu.id}
                                                 menu={menu}
                                                 onTap={() => setSelectedMenu(menu)}
@@ -205,217 +206,50 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
     );
 };
 
-// ─── Tappable menu card (no direct import button) ────
-
-const BrowserMenuCard: React.FC<{
+const PublicMenuListCard: React.FC<{
     menu: PublicMenu;
     onTap: () => void;
 }> = ({ menu, onTap }) => {
-    const resolveExercise = (id: string) =>
-        EXERCISES.find((exercise) => exercise.id === id)
-        ?? menu.customExerciseData?.find((exercise) => exercise.id === id);
-    const exerciseNames = menu.exerciseIds
-        .slice(0, 3)
-        .map((id) => resolveExercise(id)?.name ?? id);
-    const remaining = menu.exerciseIds.length - 3;
-    const totalSec = menu.exerciseIds.reduce((sum, id) => {
-        const exercise = resolveExercise(id);
-        return sum + (exercise?.sec ?? 0);
-    }, 0);
-    const minutes = Math.ceil(totalSec / 60);
-    const previewCopy = menu.description || `${exerciseNames.join('・')}${remaining > 0 ? ` など${menu.exerciseIds.length}種目` : ''}`;
+    const exerciseMap = createPublicMenuExerciseMap(menu);
 
     return (
-        <div
-            className="card"
-            style={{
-                padding: 0,
-                overflow: 'hidden',
-                border: '1px solid rgba(43, 186, 160, 0.08)',
-                boxShadow: '0 10px 24px rgba(31, 41, 55, 0.08)',
+        <GroupCard
+            group={{
+                id: menu.id,
+                name: menu.name,
+                emoji: menu.emoji,
+                description: menu.description || `${menu.authorName} さんのメニュー`,
+                exerciseIds: menu.exerciseIds,
+                isPreset: false,
             }}
-        >
-            <button
-                onClick={onTap}
-                style={{
-                    border: 'none',
-                    background: 'none',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: 0,
-                }}
-            >
-                <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 14,
-                    padding: '16px 16px 12px',
-                }}>
-                    <div
-                        style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: 16,
-                            background: 'linear-gradient(135deg, #E8F8F0, #FFE5D9)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                        }}
-                    >
-                        <ExerciseIcon id={menu.exerciseIds[0] || 'S01'} emoji={menu.emoji} size={24} color="#2BBAA0" />
-                    </div>
-
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <div
-                            style={{
-                                fontFamily: FONT.body,
-                                fontSize: 16,
-                                fontWeight: 700,
-                                color: COLOR.dark,
-                                lineHeight: 1.4,
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical' as const,
-                                overflow: 'hidden',
-                            }}
-                        >
-                            {menu.name}
-                        </div>
-                        <div
-                            style={{
-                                fontFamily: FONT.body,
-                                fontSize: 12,
-                                color: COLOR.muted,
-                                display: 'flex',
-                                gap: 8,
-                                alignItems: 'center',
-                                flexWrap: 'wrap',
-                                marginTop: 4,
-                            }}
-                        >
-                            <span>👤 {menu.authorName}</span>
-                            <span aria-hidden="true">·</span>
-                            <span>約{minutes}分</span>
-                            <span aria-hidden="true">·</span>
-                            <span>{menu.exerciseIds.length}種目</span>
-                        </div>
-                    </div>
-
-                    <div
-                        aria-hidden="true"
-                        style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 12,
-                            background: 'rgba(43, 186, 160, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                        }}
-                    >
-                        <ChevronRight size={16} color={COLOR.primary} />
-                    </div>
-                </div>
-
-                <div style={{
-                    borderTop: '1px solid rgba(0,0,0,0.05)',
-                    padding: '12px 16px 14px',
-                    background: 'rgba(248, 249, 250, 0.72)',
-                }}>
-                    <div style={{
-                        fontFamily: FONT.body,
-                        fontSize: FONT_SIZE.sm,
-                        color: COLOR.text,
-                        lineHeight: 1.55,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical' as const,
-                        overflow: 'hidden',
-                    }}>
-                        {previewCopy}
-                    </div>
-
-                    <div style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: 6,
-                        marginTop: 10,
-                    }}>
-                        {exerciseNames.map((name) => (
-                            <span
-                                key={name}
-                                style={{
-                                    padding: '4px 10px',
-                                    borderRadius: 8,
-                                    background: 'rgba(43, 186, 160, 0.1)',
-                                    fontFamily: FONT.body,
-                                    fontSize: 12,
-                                    fontWeight: 700,
-                                    color: COLOR.primary,
-                                }}
-                            >
-                                {name}
-                            </span>
-                        ))}
-                        {remaining > 0 ? (
-                            <span
-                                style={{
-                                    padding: '4px 10px',
-                                    borderRadius: 8,
-                                    background: 'rgba(0,0,0,0.04)',
-                                    fontFamily: FONT.body,
-                                    fontSize: 12,
-                                    color: COLOR.muted,
-                                }}
-                            >
-                                +{remaining}種目
-                            </span>
-                        ) : null}
-                    </div>
-
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginTop: 12,
-                    }}>
-                        <MetaChip icon={<Download size={11} />} label={`${menu.downloadCount}回もらわれた`} />
-                        <span style={{
-                            fontFamily: FONT.heading,
-                            fontSize: FONT_SIZE.sm,
-                            fontWeight: 700,
-                            color: COLOR.primary,
-                        }}>
-                            OPEN
-                        </span>
-                    </div>
-                </div>
-            </button>
-        </div>
+            index={0}
+            exerciseMap={exerciseMap}
+            creatorName={menu.authorName}
+            onTap={onTap}
+            isCustom
+            isPublished
+            downloadCount={menu.downloadCount}
+        />
     );
 };
 
-const MetaChip: React.FC<{
-    label: string;
-    icon?: React.ReactNode;
-}> = ({ label, icon }) => (
-    <span style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 4,
-        padding: '4px 8px',
-        borderRadius: RADIUS.full,
-        background: 'rgba(15, 23, 42, 0.05)',
-        fontFamily: FONT.body,
-        fontSize: FONT_SIZE.xs + 1,
-        color: COLOR.light,
-    }}>
-        {icon}
-        {label}
-    </span>
-);
+function createPublicMenuExerciseMap(menu: PublicMenu) {
+    const map = new Map<string, { name: string; emoji: string; sec: number; placement: ExercisePlacement }>();
+    for (const exercise of EXERCISES) {
+        map.set(exercise.id, {
+            name: exercise.name,
+            emoji: exercise.emoji,
+            sec: exercise.sec,
+            placement: exercise.placement,
+        });
+    }
+    for (const exercise of menu.customExerciseData ?? []) {
+        map.set(exercise.id, {
+            name: exercise.name,
+            emoji: exercise.emoji,
+            sec: exercise.sec,
+            placement: exercise.placement,
+        });
+    }
+    return map;
+}
