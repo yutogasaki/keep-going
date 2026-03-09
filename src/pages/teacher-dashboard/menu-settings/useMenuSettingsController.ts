@@ -32,6 +32,38 @@ import type {
 import { useMenuSettingsData } from './useMenuSettingsData';
 import { useMenuSettingsEditorState } from './useMenuSettingsEditorState';
 
+function getUnknownErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof Error && error.message.trim()) {
+        return error.message.trim();
+    }
+
+    if (typeof error === 'string' && error.trim()) {
+        return error.trim();
+    }
+
+    if (error && typeof error === 'object') {
+        const candidate = error as {
+            message?: unknown;
+            details?: unknown;
+            hint?: unknown;
+            code?: unknown;
+        };
+
+        const parts = [
+            typeof candidate.message === 'string' ? candidate.message.trim() : '',
+            typeof candidate.details === 'string' ? candidate.details.trim() : '',
+            typeof candidate.hint === 'string' ? candidate.hint.trim() : '',
+            typeof candidate.code === 'string' ? `code: ${candidate.code}` : '',
+        ].filter((part) => part.length > 0);
+
+        if (parts.length > 0) {
+            return parts.join(' / ');
+        }
+    }
+
+    return fallback;
+}
+
 export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsControllerParams) {
     const {
         error,
@@ -117,7 +149,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
             dispatchTeacherContentUpdated();
         } catch (err) {
             console.warn('[MenuSettings] status change failed:', err);
-            setError('保存に失敗しました。deploy.sql を実行してテーブルを作成してください。');
+            setError(`保存に失敗しました: ${getUnknownErrorMessage(err, 'deploy.sql を実行してテーブルを作成してください。')}`);
             void loadAll();
         }
     }, [loadAll, setError, setSettings, teacherEmail]);
@@ -170,7 +202,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
             dispatchTeacherContentUpdated();
         } catch (err) {
             console.warn('[MenuSettings] save exercise failed:', err);
-            setError(err instanceof Error ? `種目の保存に失敗しました: ${err.message}` : '種目の保存に失敗しました。');
+            setError(`種目の保存に失敗しました: ${getUnknownErrorMessage(err, '原因不明のエラー')}`);
         } finally {
             setSubmitting(false);
         }
@@ -223,7 +255,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
             dispatchTeacherContentUpdated();
         } catch (err) {
             console.warn('[MenuSettings] save menu failed:', err);
-            setError(err instanceof Error ? `メニューの保存に失敗しました: ${err.message}` : 'メニューの保存に失敗しました。');
+            setError(`メニューの保存に失敗しました: ${getUnknownErrorMessage(err, '原因不明のエラー')}`);
         } finally {
             setSubmitting(false);
         }
