@@ -3,6 +3,14 @@ import { ChevronDown, Clock, Play } from 'lucide-react';
 import { ExerciseIcon } from '../../../components/ExerciseIcon';
 import type { MenuGroup } from '../../../data/menuGroups';
 import { getTeacherVisibilityLabel } from '../../../lib/teacherExerciseMetadata';
+import {
+    catalogExpandButtonStyle,
+    catalogHeaderRowStyle,
+    catalogIconSurfaceStyle,
+    catalogMetaLineStyle,
+    catalogPlayButtonStyle,
+    catalogTitleStyle,
+} from '../shared/catalogCardChrome';
 
 interface GroupCardMainRowProps {
     group: MenuGroup;
@@ -34,12 +42,7 @@ export const GroupCardMainRow: React.FC<GroupCardMainRowProps> = ({
 
     return (
         <div
-            style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                padding: '16px 16px',
-            }}
+            style={catalogHeaderRowStyle}
         >
             <button
                 type="button"
@@ -49,7 +52,7 @@ export const GroupCardMainRow: React.FC<GroupCardMainRowProps> = ({
                     flex: 1,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 14,
+                    gap: 12,
                     border: 'none',
                     background: 'none',
                     padding: 0,
@@ -57,29 +60,19 @@ export const GroupCardMainRow: React.FC<GroupCardMainRowProps> = ({
                     textAlign: 'left',
                 }}
             >
-                <div
-                    style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 16,
-                        background: 'linear-gradient(135deg, #E8F8F0, #FFE5D9)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                    }}
-                >
+                <div style={catalogIconSurfaceStyle}>
                     <ExerciseIcon id={group.exerciseIds[0] || 'S01'} emoji={group.emoji} size={24} color="#2BBAA0" />
                 </div>
 
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                         style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 16,
-                            fontWeight: 700,
-                            color: '#2D3436',
+                            ...catalogTitleStyle,
                             marginBottom: 2,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
                         }}
                     >
                         {group.name}
@@ -140,11 +133,8 @@ export const GroupCardMainRow: React.FC<GroupCardMainRowProps> = ({
                     </div>
                     <div
                         style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 12,
-                            color: '#8395A7',
+                            ...catalogMetaLineStyle,
                             display: 'flex',
-                            gap: 8,
                             alignItems: 'center',
                         }}
                     >
@@ -191,15 +181,7 @@ export const GroupCardMainRow: React.FC<GroupCardMainRowProps> = ({
 
                 <div
                     aria-hidden="true"
-                    style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: '50%',
-                        background: '#2BBAA0',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}
+                    style={catalogPlayButtonStyle}
                 >
                     <Play size={14} color="white" fill="white" />
                 </div>
@@ -211,18 +193,7 @@ export const GroupCardMainRow: React.FC<GroupCardMainRowProps> = ({
                 aria-expanded={expanded}
                 aria-controls={detailsId}
                 aria-label={openDetailsLabel}
-                style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 10,
-                    border: 'none',
-                    background: 'rgba(0,0,0,0.04)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                }}
+                style={catalogExpandButtonStyle}
             >
                 <ChevronDown
                     size={16}

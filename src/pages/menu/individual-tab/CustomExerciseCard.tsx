@@ -6,6 +6,14 @@ import { ExerciseIcon } from '../../../components/ExerciseIcon';
 import type { CustomExercise } from '../../../lib/db';
 import type { PublicExercise } from '../../../lib/publicExercises';
 import { ExerciseSelectionIndicator } from './ExerciseSelectionIndicator';
+import {
+    catalogExpandButtonStyle,
+    catalogHeaderRowStyle,
+    catalogIconSurfaceStyle,
+    catalogMetaLineStyle,
+    catalogPlayButtonStyle,
+    catalogTitleStyle,
+} from '../shared/catalogCardChrome';
 
 interface CustomExerciseCardProps {
     exercise: CustomExercise;
@@ -62,19 +70,16 @@ export const CustomExerciseCard: React.FC<CustomExerciseCardProps> = ({
             }}
         >
             <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '14px 16px',
-                }}
+                style={catalogHeaderRowStyle}
             >
                 {selectionMode ? (
                     <ExerciseSelectionIndicator selected={selected} />
                 ) : (
-                    <ExerciseIcon id={exercise.id} emoji={exercise.emoji} size={24} color="#2D3436" />
+                    <div style={catalogIconSurfaceStyle}>
+                        <ExerciseIcon id={exercise.id} emoji={exercise.emoji} size={24} color="#2D3436" />
+                    </div>
                 )}
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                         style={{
                             display: 'flex',
@@ -85,10 +90,8 @@ export const CustomExerciseCard: React.FC<CustomExerciseCardProps> = ({
                     >
                         <span
                             style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 15,
-                                fontWeight: 700,
-                                color: '#2D3436',
+                                ...catalogTitleStyle,
+                                minWidth: 0,
                             }}
                         >
                             {exercise.name}
@@ -113,12 +116,7 @@ export const CustomExerciseCard: React.FC<CustomExerciseCardProps> = ({
                     </div>
                     <div
                         style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 11,
-                            color: '#8395A7',
-                            display: 'flex',
-                            gap: 8,
-                            flexWrap: 'wrap',
+                            ...catalogMetaLineStyle,
                         }}
                     >
                         <span>{exercise.sec}秒</span>
@@ -134,17 +132,7 @@ export const CustomExerciseCard: React.FC<CustomExerciseCardProps> = ({
                                 event.stopPropagation();
                                 onToggleExpand(exercise.id);
                             }}
-                            style={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: 10,
-                                border: 'none',
-                                background: 'rgba(0,0,0,0.04)',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
+                            style={catalogExpandButtonStyle}
                         >
                             <ChevronDown
                                 size={16}
@@ -158,19 +146,9 @@ export const CustomExerciseCard: React.FC<CustomExerciseCardProps> = ({
                         <motion.button
                             whileTap={{ scale: 0.9 }}
                             onClick={() => onStart(exercise.id)}
-                            style={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: '50%',
-                                background: 'rgba(43, 186, 160, 0.1)',
-                                border: 'none',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
+                            style={catalogPlayButtonStyle}
                         >
-                            <Play size={14} color="#2BBAA0" fill="#2BBAA0" />
+                            <Play size={14} color="white" fill="white" />
                         </motion.button>
                     </div>
                 ) : null}

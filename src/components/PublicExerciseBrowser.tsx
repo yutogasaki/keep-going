@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Download } from 'lucide-react';
-import type { Exercise } from '../data/exercises';
+import { X, Loader2 } from 'lucide-react';
 import { dedupeExercisesByIdentity } from '../lib/publicExerciseUtils';
 import { fetchPopularExercises, type PublicExercise } from '../lib/publicExercises';
 import { ExerciseDetailSheet } from './ExerciseDetailSheet';
 import { DISPLAY_TERMS } from '../lib/terminology';
 import { useAppStore } from '../store/useAppStore';
-import { COLOR, FONT, FONT_SIZE, RADIUS, Z } from '../lib/styles';
-import { StandardExerciseCard } from '../pages/menu/individual-tab/StandardExerciseCard';
+import { Z } from '../lib/styles';
+import { PublicExerciseCard } from './PublicExerciseCard';
 
 interface PublicExerciseBrowserProps {
     open: boolean;
@@ -22,7 +21,6 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [selectedExercise, setSelectedExercise] = useState<PublicExercise | null>(null);
-    const [expandedId, setExpandedId] = useState<string | null>(null);
     const startSessionWithExercises = useAppStore(s => s.startSessionWithExercises);
 
     useEffect(() => {
@@ -174,13 +172,9 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
                                         </div>
                                     ) : (
                                         exercises.map(ex => (
-                                            <PublicExerciseListCard
+                                            <PublicExerciseCard
                                                 key={ex.id}
                                                 exercise={ex}
-                                                expanded={expandedId === ex.id}
-                                                onToggleExpand={(exerciseId) => {
-                                                    setExpandedId((current) => current === exerciseId ? null : exerciseId);
-                                                }}
                                                 onTap={() => setSelectedExercise(ex)}
                                             />
                                         ))
@@ -202,92 +196,3 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
         </>
     );
 };
-
-const PublicExerciseListCard: React.FC<{
-    exercise: PublicExercise;
-    expanded: boolean;
-    onToggleExpand: (exerciseId: string) => void;
-    onTap: () => void;
-}> = ({ exercise, expanded, onToggleExpand, onTap }) => {
-    const cardExercise = toPublicExerciseCardExercise(exercise);
-
-    return (
-        <div
-            className="card"
-            style={{
-                padding: 0,
-                overflow: 'hidden',
-                border: '1px solid rgba(43, 186, 160, 0.08)',
-                boxShadow: '0 10px 24px rgba(31, 41, 55, 0.08)',
-            }}
-        >
-            <StandardExerciseCard
-                exercise={cardExercise}
-                index={0}
-                expanded={expanded}
-                required={false}
-                selected={false}
-                onToggleExpand={onToggleExpand}
-                onStartExercise={onTap}
-            />
-            <div style={{
-                borderTop: '1px solid rgba(0,0,0,0.05)',
-                padding: '12px 16px 14px',
-                background: 'rgba(248, 249, 250, 0.72)',
-            }}>
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: 10,
-                    flexWrap: 'wrap',
-                }}>
-                    <span style={{
-                        fontFamily: FONT.body,
-                        fontSize: FONT_SIZE.sm,
-                        color: '#8395A7',
-                        fontWeight: 600,
-                    }}>
-                        👤 {exercise.authorName} さんの種目
-                    </span>
-                    <MetaChip icon={<Download size={11} />} label={`${exercise.downloadCount}回もらわれた`} />
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const MetaChip: React.FC<{
-    label: string;
-    icon?: React.ReactNode;
-}> = ({ label, icon }) => (
-    <span style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 4,
-        padding: '4px 8px',
-        borderRadius: RADIUS.full,
-        background: 'rgba(15, 23, 42, 0.05)',
-        fontFamily: FONT.body,
-        fontSize: FONT_SIZE.xs + 1,
-        color: COLOR.light,
-    }}>
-        {icon}
-        {label}
-    </span>
-);
-
-function toPublicExerciseCardExercise(exercise: PublicExercise): Exercise {
-    return {
-        id: exercise.id,
-        name: exercise.name,
-        sec: exercise.sec,
-        placement: exercise.placement,
-        internal: exercise.hasSplit ? 'P10・F10×3' : 'single',
-        classes: ['プレ', '初級', '中級', '上級'],
-        priority: 'medium',
-        emoji: exercise.emoji,
-        hasSplit: exercise.hasSplit,
-        description: exercise.description ?? undefined,
-    };
-}
