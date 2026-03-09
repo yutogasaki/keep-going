@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Clock, Download } from 'lucide-react';
 import { dedupeMenusByIdentity, fetchPopularMenus, type PublicMenu } from '../lib/publicMenus';
 import { EXERCISES } from '../data/exercises';
 import { MenuDetailSheet } from './MenuDetailSheet';
 import { useAppStore } from '../store/useAppStore';
-import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../lib/styles';
+import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE, Z } from '../lib/styles';
 import { DISPLAY_TERMS } from '../lib/terminology';
 
 interface PublicMenuBrowserProps {
@@ -50,142 +51,143 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
 
     return (
         <>
-            <AnimatePresence>
-                {open && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        style={{
-                            position: 'fixed',
-                            inset: 0,
-                            zIndex: 100,
-                            background: 'rgba(0,0,0,0.4)',
-                            display: 'flex',
-                            alignItems: 'flex-end',
-                            justifyContent: 'center',
-                        }}
-                        onClick={onClose}
-                    >
+            {createPortal(
+                <AnimatePresence>
+                    {open && (
                         <motion.div
-                            initial={{ y: '100%' }}
-                            animate={{ y: 0 }}
-                            exit={{ y: '100%' }}
-                            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                            onClick={e => e.stopPropagation()}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
                             style={{
-                                width: '100%',
-                                maxWidth: 480,
-                                maxHeight: '80vh',
-                                background: '#F8F9FA',
-                                borderRadius: '20px 20px 0 0',
+                                position: 'fixed',
+                                inset: 0,
+                                zIndex: Z.modal,
+                                background: 'rgba(0,0,0,0.4)',
                                 display: 'flex',
-                                flexDirection: 'column',
-                                overflow: 'hidden',
+                                alignItems: 'flex-end',
+                                justifyContent: 'center',
                             }}
+                            onClick={onClose}
                         >
-                            {/* Header */}
-                            <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                padding: '20px 20px 12px',
-                                gap: 12,
-                            }}>
-                                <h2 style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 18,
-                                    fontWeight: 800,
-                                    color: '#2D3436',
-                                    margin: 0,
-                                    flex: 1,
+                            <motion.div
+                                initial={{ y: '100%' }}
+                                animate={{ y: 0 }}
+                                exit={{ y: '100%' }}
+                                transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                                onClick={e => e.stopPropagation()}
+                                style={{
+                                    width: '100%',
+                                    maxWidth: 480,
+                                    maxHeight: '80vh',
+                                    background: '#F8F9FA',
+                                    borderRadius: '20px 20px 0 0',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    overflow: 'hidden',
+                                }}
+                            >
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    padding: '20px 20px 12px',
+                                    gap: 12,
                                 }}>
-                                    {DISPLAY_TERMS.publicMenu}
-                                </h2>
-                                <button
-                                    onClick={onClose}
-                                    style={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: '50%',
-                                        border: 'none',
-                                        background: '#F0F3F5',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        cursor: 'pointer',
-                                        color: '#8395A7',
-                                    }}
-                                >
-                                    <X size={16} />
-                                </button>
-                            </div>
+                                    <h2 style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 18,
+                                        fontWeight: 800,
+                                        color: '#2D3436',
+                                        margin: 0,
+                                        flex: 1,
+                                    }}>
+                                        {DISPLAY_TERMS.publicMenu}
+                                    </h2>
+                                    <button
+                                        onClick={onClose}
+                                        style={{
+                                            width: 32,
+                                            height: 32,
+                                            borderRadius: '50%',
+                                            border: 'none',
+                                            background: '#F0F3F5',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            color: '#8395A7',
+                                        }}
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
 
-                            {/* Content */}
-                            <div style={{
-                                flex: 1,
-                                overflowY: 'auto',
-                                padding: '0 20px 80px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 10,
-                            }}>
-                                {loading ? (
-                                    <div style={{
-                                        textAlign: 'center',
-                                        padding: 48,
-                                        color: '#8395A7',
-                                    }}>
-                                        <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
-                                        <p style={{
-                                            fontFamily: "'Noto Sans JP', sans-serif",
-                                            fontSize: 14,
-                                            margin: '12px 0 0',
+                                <div style={{
+                                    flex: 1,
+                                    overflowY: 'auto',
+                                    padding: '0 20px 80px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 10,
+                                }}>
+                                    {loading ? (
+                                        <div style={{
+                                            textAlign: 'center',
+                                            padding: 48,
+                                            color: '#8395A7',
                                         }}>
-                                            読み込み中...
-                                        </p>
-                                    </div>
-                                ) : error ? (
-                                    <div style={{
-                                        textAlign: 'center',
-                                        padding: 48,
-                                        color: '#E84393',
-                                    }}>
-                                        <p style={{
-                                            fontFamily: "'Noto Sans JP', sans-serif",
-                                            fontSize: 14,
-                                            margin: 0,
+                                            <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
+                                            <p style={{
+                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                fontSize: 14,
+                                                margin: '12px 0 0',
+                                            }}>
+                                                読み込み中...
+                                            </p>
+                                        </div>
+                                    ) : error ? (
+                                        <div style={{
+                                            textAlign: 'center',
+                                            padding: 48,
+                                            color: '#E84393',
                                         }}>
-                                            読み込みに失敗しました
-                                        </p>
-                                    </div>
-                                ) : menus.length === 0 ? (
-                                    <div style={{
-                                        textAlign: 'center',
-                                        padding: 48,
-                                        color: '#8395A7',
-                                    }}>
-                                        <p style={{
-                                            fontFamily: "'Noto Sans JP', sans-serif",
-                                            fontSize: 14,
-                                            margin: 0,
+                                            <p style={{
+                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                fontSize: 14,
+                                                margin: 0,
+                                            }}>
+                                                読み込みに失敗しました
+                                            </p>
+                                        </div>
+                                    ) : menus.length === 0 ? (
+                                        <div style={{
+                                            textAlign: 'center',
+                                            padding: 48,
+                                            color: '#8395A7',
                                         }}>
-                                            まだ{DISPLAY_TERMS.publicMenu}がありません
-                                        </p>
-                                    </div>
-                                ) : (
-                                    menus.map(menu => (
-                                        <BrowserMenuCard
-                                            key={menu.id}
-                                            menu={menu}
-                                            onTap={() => setSelectedMenu(menu)}
-                                        />
-                                    ))
-                                )}
-                            </div>
+                                            <p style={{
+                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                fontSize: 14,
+                                                margin: 0,
+                                            }}>
+                                                まだ{DISPLAY_TERMS.publicMenu}がありません
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        menus.map(menu => (
+                                            <BrowserMenuCard
+                                                key={menu.id}
+                                                menu={menu}
+                                                onTap={() => setSelectedMenu(menu)}
+                                            />
+                                        ))
+                                    )}
+                                </div>
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                    )}
+                </AnimatePresence>,
+                document.body,
+            )}
 
             {/* Detail sheet on top */}
             <MenuDetailSheet

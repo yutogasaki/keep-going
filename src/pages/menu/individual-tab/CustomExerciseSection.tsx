@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { CustomExercise } from '../../../lib/db';
 import type { PublicExercise } from '../../../lib/publicExercises';
 import { DISPLAY_TERMS } from '../../../lib/terminology';
 import { CreateCustomExerciseCard } from './CreateCustomExerciseCard';
 import { CustomExerciseList } from './CustomExerciseList';
 import { IndividualSectionHeading } from './IndividualSectionHeading';
+import { CollapsibleSectionHeader } from '../shared/CollapsibleSectionHeader';
 
 interface CustomExerciseSectionProps {
     customExercises: CustomExercise[];
@@ -41,11 +42,29 @@ export const CustomExerciseSection: React.FC<CustomExerciseSectionProps> = ({
     selectedIds,
     onToggleSelect,
 }) => {
+    const hasCustomExercises = customExercises.length > 0;
+    const [expanded, setExpanded] = useState(!hasCustomExercises);
+
+    useEffect(() => {
+        if (!hasCustomExercises) {
+            setExpanded(true);
+        }
+    }, [hasCustomExercises]);
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
-            <IndividualSectionHeading>{DISPLAY_TERMS.customExercise}</IndividualSectionHeading>
+            {hasCustomExercises ? (
+                <CollapsibleSectionHeader
+                    title={DISPLAY_TERMS.customExercise}
+                    count={customExercises.length}
+                    expanded={expanded}
+                    onToggle={() => setExpanded((current) => !current)}
+                />
+            ) : (
+                <IndividualSectionHeading>{DISPLAY_TERMS.customExercise}</IndividualSectionHeading>
+            )}
 
-            {showCustomSection ? (
+            {expanded && showCustomSection ? (
                 <CustomExerciseList
                     customExercises={customExercises}
                     isTogetherMode={isTogetherMode}
@@ -61,7 +80,7 @@ export const CustomExerciseSection: React.FC<CustomExerciseSectionProps> = ({
                     selectedIds={selectedIds}
                     onToggleSelect={onToggleSelect}
                 />
-            ) : (
+            ) : expanded ? (
                 <div
                     className="card card-sm"
                     style={{
@@ -73,9 +92,9 @@ export const CustomExerciseSection: React.FC<CustomExerciseSectionProps> = ({
                 >
                     このカテゴリの {DISPLAY_TERMS.customExercise}はまだありません。
                 </div>
-            )}
+            ) : null}
 
-            <CreateCustomExerciseCard onCreate={onCreate} />
+            {expanded ? <CreateCustomExerciseCard onCreate={onCreate} /> : null}
         </div>
     );
 };

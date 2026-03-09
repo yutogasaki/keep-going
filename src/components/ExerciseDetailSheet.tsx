@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Play, Loader2, Clock } from 'lucide-react';
 import { getExercisePlacementLabel } from '../data/exercisePlacement';
 import { type PublicExercise, importExercise } from '../lib/publicExercises';
+import { Z } from '../lib/styles';
 
 interface ExerciseDetailSheetProps {
     exercise: PublicExercise | null;
@@ -54,7 +56,7 @@ export const ExerciseDetailSheet: React.FC<ExerciseDetailSheetProps> = ({ exerci
         setImporting(false);
     }, [exercise?.id]);
 
-    return (
+    return createPortal(
         <AnimatePresence>
             {exercise ? (
                 <motion.div
@@ -64,7 +66,7 @@ export const ExerciseDetailSheet: React.FC<ExerciseDetailSheetProps> = ({ exerci
                     style={{
                         position: 'fixed',
                         inset: 0,
-                        zIndex: 110,
+                        zIndex: Z.modal + 10,
                         background: 'rgba(0,0,0,0.4)',
                         display: 'flex',
                         alignItems: 'flex-end',
@@ -285,7 +287,8 @@ export const ExerciseDetailSheet: React.FC<ExerciseDetailSheetProps> = ({ exerci
                     </motion.div>
                 </motion.div>
             ) : null}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body,
     );
 };
 

@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import type { ExercisePlacement } from '../../../data/exercisePlacement';
 import type { MenuGroup } from '../../../data/menuGroups';
 import type { PublicMenu } from '../../../lib/publicMenus';
 import { GroupCard } from '../GroupCard';
 import { CreateGroupCard } from './CreateGroupCard';
+import { CollapsibleSectionHeader } from '../shared/CollapsibleSectionHeader';
 
 interface CustomGroupsSectionProps {
     groups: MenuGroup[];
@@ -34,20 +35,40 @@ export const CustomGroupsSection: React.FC<CustomGroupsSectionProps> = ({
     onUnpublish,
     onCreate,
 }) => {
+    const hasGroups = groups.length > 0;
+    const [expanded, setExpanded] = useState(!hasGroups);
+
+    useEffect(() => {
+        if (!hasGroups) {
+            setExpanded(true);
+        }
+    }, [hasGroups]);
+
     return (
         <section>
-            <h2 style={{
-                fontFamily: "'Noto Sans JP', sans-serif",
-                fontSize: 13,
-                fontWeight: 700,
-                color: '#8395A7',
-                marginBottom: 10,
-                letterSpacing: 1,
-            }}>
-                じぶんのメニュー
-            </h2>
+            {hasGroups ? (
+                <div style={{ marginBottom: 10 }}>
+                    <CollapsibleSectionHeader
+                        title="じぶんのメニュー"
+                        count={groups.length}
+                        expanded={expanded}
+                        onToggle={() => setExpanded((current) => !current)}
+                    />
+                </div>
+            ) : (
+                <h2 style={{
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#8395A7',
+                    marginBottom: 10,
+                    letterSpacing: 1,
+                }}>
+                    じぶんのメニュー
+                </h2>
+            )}
 
-            {groups.length > 0 && (
+            {hasGroups && expanded ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 10 }}>
                     {groups.map((group, index) => {
                         const published = findPublishedMenu(group);
@@ -70,9 +91,9 @@ export const CustomGroupsSection: React.FC<CustomGroupsSectionProps> = ({
                         );
                     })}
                 </div>
-            )}
+            ) : null}
 
-            <CreateGroupCard hasGroups={groups.length > 0} onCreate={onCreate} />
+            {expanded ? <CreateGroupCard hasGroups={groups.length > 0} onCreate={onCreate} /> : null}
         </section>
     );
 };

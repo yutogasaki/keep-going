@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Play, Loader2, Clock } from 'lucide-react';
 import { type PublicMenu, importMenu } from '../lib/publicMenus';
 import { EXERCISES } from '../data/exercises';
+import { Z } from '../lib/styles';
 
 interface MenuDetailSheetProps {
     menu: PublicMenu | null;
@@ -59,7 +61,7 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
     }, 0) : 0;
     const minutes = Math.ceil(totalSec / 60);
 
-    return (
+    return createPortal(
         <AnimatePresence>
             {menu ? (
                 <motion.div
@@ -69,7 +71,7 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
                     style={{
                         position: 'fixed',
                         inset: 0,
-                        zIndex: 110,
+                        zIndex: Z.modal + 10,
                         background: 'rgba(0,0,0,0.4)',
                         display: 'flex',
                         alignItems: 'flex-end',
@@ -295,7 +297,8 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
                     </motion.div>
                 </motion.div>
             ) : null}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body,
     );
 };
 
