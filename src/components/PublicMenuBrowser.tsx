@@ -5,6 +5,7 @@ import { X, Loader2, Clock, Download, ChevronRight } from 'lucide-react';
 import { dedupeMenusByIdentity, fetchPopularMenus, type PublicMenu } from '../lib/publicMenus';
 import { EXERCISES } from '../data/exercises';
 import { MenuDetailSheet } from './MenuDetailSheet';
+import { ExerciseIcon } from './ExerciseIcon';
 import { useAppStore } from '../store/useAppStore';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE, Z } from '../lib/styles';
 import { DISPLAY_TERMS } from '../lib/terminology';
@@ -225,175 +226,177 @@ const BrowserMenuCard: React.FC<{
     const previewCopy = menu.description || `${exerciseNames.join('・')}${remaining > 0 ? ` など${menu.exerciseIds.length}種目` : ''}`;
 
     return (
-        <button
-            onClick={onTap}
+        <div
+            className="card"
             style={{
-                background: COLOR.white,
-                borderRadius: RADIUS.lg,
                 padding: 0,
-                boxShadow: '0 10px 24px rgba(31, 41, 55, 0.08)',
-                border: '1px solid rgba(43, 186, 160, 0.08)',
-                cursor: 'pointer',
-                textAlign: 'left',
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
                 overflow: 'hidden',
+                border: '1px solid rgba(43, 186, 160, 0.08)',
+                boxShadow: '0 10px 24px rgba(31, 41, 55, 0.08)',
             }}
         >
-            <div style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: SPACE.md,
-                width: '100%',
-                padding: `${SPACE.lg}px ${SPACE.lg}px ${SPACE.md}px`,
-            }}>
+            <button
+                onClick={onTap}
+                style={{
+                    border: 'none',
+                    background: 'none',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: 0,
+                }}
+            >
                 <div style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 18,
-                    background: 'linear-gradient(135deg, rgba(43, 186, 160, 0.12), rgba(255, 208, 191, 0.28))',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
+                    gap: 14,
+                    padding: '16px 16px 12px',
                 }}>
-                    <span style={{ fontSize: 28, lineHeight: 1 }}>{menu.emoji}</span>
+                    <div
+                        style={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: 16,
+                            background: 'linear-gradient(135deg, #E8F8F0, #FFE5D9)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                        }}
+                    >
+                        <ExerciseIcon id={menu.exerciseIds[0] || 'S01'} emoji={menu.emoji} size={24} color="#2BBAA0" />
+                    </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                            style={{
+                                fontFamily: FONT.body,
+                                fontSize: 16,
+                                fontWeight: 700,
+                                color: COLOR.dark,
+                                lineHeight: 1.4,
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical' as const,
+                                overflow: 'hidden',
+                            }}
+                        >
+                            {menu.name}
+                        </div>
+                        <div
+                            style={{
+                                fontFamily: FONT.body,
+                                fontSize: 12,
+                                color: COLOR.muted,
+                                display: 'flex',
+                                gap: 8,
+                                alignItems: 'center',
+                                flexWrap: 'wrap',
+                                marginTop: 4,
+                            }}
+                        >
+                            <span>👤 {menu.authorName}</span>
+                            <span aria-hidden="true">·</span>
+                            <span>約{minutes}分</span>
+                            <span aria-hidden="true">·</span>
+                            <span>{menu.exerciseIds.length}種目</span>
+                        </div>
+                    </div>
+
+                    <div
+                        aria-hidden="true"
+                        style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 12,
+                            background: 'rgba(43, 186, 160, 0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                        }}
+                    >
+                        <ChevronRight size={16} color={COLOR.primary} />
+                    </div>
                 </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
+
+                <div style={{
+                    borderTop: '1px solid rgba(0,0,0,0.05)',
+                    padding: '12px 16px 14px',
+                    background: 'rgba(248, 249, 250, 0.72)',
+                }}>
                     <div style={{
                         fontFamily: FONT.body,
-                        fontSize: FONT_SIZE.lg,
-                        fontWeight: 700,
-                        color: COLOR.dark,
-                        lineHeight: 1.4,
+                        fontSize: FONT_SIZE.sm,
+                        color: COLOR.text,
+                        lineHeight: 1.55,
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical' as const,
                         overflow: 'hidden',
                     }}>
-                        {menu.name}
+                        {previewCopy}
                     </div>
-                    <div style={{
-                        fontFamily: FONT.body,
-                        fontSize: FONT_SIZE.sm,
-                        color: COLOR.muted,
-                        marginTop: 4,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 6,
-                    }}>
-                        <span>{menu.authorName} さんのメニュー</span>
-                    </div>
+
                     <div style={{
                         display: 'flex',
                         flexWrap: 'wrap',
-                        gap: SPACE.xs,
+                        gap: 6,
                         marginTop: 10,
                     }}>
-                        <MetaChip icon={<Clock size={11} />} label={`約${minutes}分`} />
-                        <MetaChip label={`${menu.exerciseIds.length}種目`} />
-                        <MetaChip icon={<Download size={11} />} label={`${menu.downloadCount}回もらわれた`} />
+                        {exerciseNames.map((name) => (
+                            <span
+                                key={name}
+                                style={{
+                                    padding: '4px 10px',
+                                    borderRadius: 8,
+                                    background: 'rgba(43, 186, 160, 0.1)',
+                                    fontFamily: FONT.body,
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    color: COLOR.primary,
+                                }}
+                            >
+                                {name}
+                            </span>
+                        ))}
+                        {remaining > 0 ? (
+                            <span
+                                style={{
+                                    padding: '4px 10px',
+                                    borderRadius: 8,
+                                    background: 'rgba(0,0,0,0.04)',
+                                    fontFamily: FONT.body,
+                                    fontSize: 12,
+                                    color: COLOR.muted,
+                                }}
+                            >
+                                +{remaining}種目
+                            </span>
+                        ) : null}
                     </div>
-                </div>
-                <div style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 12,
-                    background: 'rgba(43, 186, 160, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    marginTop: 2,
-                }}>
-                    <ChevronRight size={16} color={COLOR.primary} />
-                </div>
-            </div>
 
-            <div style={{
-                padding: `0 ${SPACE.lg}px ${SPACE.md}px`,
-                fontFamily: FONT.body,
-                fontSize: FONT_SIZE.sm,
-                color: COLOR.text,
-                lineHeight: 1.6,
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical' as const,
-                overflow: 'hidden',
-            }}>
-                {previewCopy}
-            </div>
-
-            <div style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: SPACE.xs,
-                padding: `0 ${SPACE.lg}px ${SPACE.md}px`,
-            }}>
-                {exerciseNames.map((name) => (
-                    <span
-                        key={name}
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            padding: '6px 10px',
-                            borderRadius: RADIUS.full,
-                            background: 'rgba(43, 186, 160, 0.1)',
-                            fontFamily: FONT.body,
-                            fontSize: FONT_SIZE.xs + 1,
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginTop: 12,
+                    }}>
+                        <MetaChip icon={<Download size={11} />} label={`${menu.downloadCount}回もらわれた`} />
+                        <span style={{
+                            fontFamily: FONT.heading,
+                            fontSize: FONT_SIZE.sm,
                             fontWeight: 700,
                             color: COLOR.primary,
-                        }}
-                    >
-                        {name}
-                    </span>
-                ))}
-                {remaining > 0 ? (
-                    <span
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            padding: '6px 10px',
-                            borderRadius: RADIUS.full,
-                            background: 'rgba(15, 23, 42, 0.06)',
-                            fontFamily: FONT.body,
-                            fontSize: FONT_SIZE.xs + 1,
-                            fontWeight: 700,
-                            color: COLOR.muted,
-                        }}
-                    >
-                        +{remaining}
-                    </span>
-                ) : null}
-            </div>
-
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: `${SPACE.sm}px ${SPACE.lg}px ${SPACE.md}px`,
-                borderTop: '1px solid rgba(0,0,0,0.05)',
-                background: 'rgba(248, 249, 250, 0.9)',
-            }}>
-                <span style={{
-                    fontFamily: FONT.body,
-                    fontSize: FONT_SIZE.xs + 1,
-                    fontWeight: 700,
-                    color: COLOR.muted,
-                }}>
-                    くわしく見る
-                </span>
-                <span style={{
-                    fontFamily: FONT.heading,
-                    fontSize: FONT_SIZE.sm,
-                    fontWeight: 700,
-                    color: COLOR.primary,
-                }}>
-                    OPEN
-                </span>
-            </div>
-        </button>
+                        }}>
+                            OPEN
+                        </span>
+                    </div>
+                </div>
+            </button>
+        </div>
     );
 };
 

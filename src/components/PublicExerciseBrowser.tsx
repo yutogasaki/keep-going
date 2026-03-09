@@ -205,134 +205,156 @@ const BrowserExerciseCard: React.FC<{
     const description = exercise.description || `${getExercisePlacementLabel(exercise.placement)}の ${exercise.sec}秒の種目`;
 
     return (
-        <button
-            onClick={onTap}
+        <div
+            className="card"
             style={{
-                background: COLOR.white,
-                borderRadius: RADIUS.lg,
                 padding: 0,
-                boxShadow: '0 10px 24px rgba(31, 41, 55, 0.08)',
-                border: '1px solid rgba(43, 186, 160, 0.08)',
-                cursor: 'pointer',
-                textAlign: 'left',
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'column',
                 overflow: 'hidden',
+                border: '1px solid rgba(43, 186, 160, 0.08)',
+                boxShadow: '0 10px 24px rgba(31, 41, 55, 0.08)',
             }}
         >
-            <div style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: SPACE.md,
-                width: '100%',
-                padding: `${SPACE.lg}px ${SPACE.lg}px ${SPACE.md}px`,
-            }}>
+            <button
+                onClick={onTap}
+                style={{
+                    border: 'none',
+                    background: 'none',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: 0,
+                }}
+            >
                 <div style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 18,
-                    background: 'linear-gradient(135deg, rgba(43, 186, 160, 0.12), rgba(255, 208, 191, 0.28))',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
+                    gap: 14,
+                    padding: '16px 16px 12px',
                 }}>
-                    <span style={{ fontSize: 28, lineHeight: 1 }}>{exercise.emoji}</span>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                        fontFamily: FONT.body,
-                        fontSize: FONT_SIZE.lg,
-                        fontWeight: 700,
-                        color: COLOR.dark,
-                        lineHeight: 1.4,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical' as const,
-                        overflow: 'hidden',
-                    }}>
-                        {exercise.name}
+                    <div
+                        style={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: 16,
+                            background: 'linear-gradient(135deg, #E8F8F0, #FFE5D9)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                        }}
+                    >
+                        <span style={{ fontSize: 24, lineHeight: 1 }}>{exercise.emoji}</span>
                     </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                            style={{
+                                fontFamily: FONT.body,
+                                fontSize: 16,
+                                fontWeight: 700,
+                                color: COLOR.dark,
+                                lineHeight: 1.4,
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical' as const,
+                                overflow: 'hidden',
+                            }}
+                        >
+                            {exercise.name}
+                        </div>
+                        <div
+                            style={{
+                                fontFamily: FONT.body,
+                                fontSize: 12,
+                                color: COLOR.muted,
+                                display: 'flex',
+                                gap: 8,
+                                alignItems: 'center',
+                                flexWrap: 'wrap',
+                                marginTop: 4,
+                            }}
+                        >
+                            <span>👤 {exercise.authorName}</span>
+                            <span aria-hidden="true">·</span>
+                            <span>{exercise.sec}秒</span>
+                            <span aria-hidden="true">·</span>
+                            <span>{getExercisePlacementLabel(exercise.placement)}</span>
+                        </div>
+                    </div>
+
+                    <div
+                        aria-hidden="true"
+                        style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: 12,
+                            background: 'rgba(43, 186, 160, 0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                        }}
+                    >
+                        <ChevronRight size={16} color={COLOR.primary} />
+                    </div>
+                </div>
+
+                <div style={{
+                    borderTop: '1px solid rgba(0,0,0,0.05)',
+                    padding: '12px 16px 14px',
+                    background: 'rgba(248, 249, 250, 0.72)',
+                }}>
                     <div style={{
                         fontFamily: FONT.body,
                         fontSize: FONT_SIZE.sm,
-                        color: COLOR.muted,
-                        marginTop: 2,
+                        color: COLOR.text,
+                        lineHeight: 1.55,
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical' as const,
                         overflow: 'hidden',
                     }}>
-                        {subtitle}
+                        {description}
                     </div>
+
                     <div style={{
                         display: 'flex',
                         flexWrap: 'wrap',
-                        gap: SPACE.xs,
+                        gap: 6,
                         marginTop: 10,
                     }}>
-                        <MetaChip icon={<Clock size={11} />} label={`${exercise.sec}秒`} />
-                        <MetaChip label={getExercisePlacementLabel(exercise.placement)} />
-                        <MetaChip icon={<Download size={11} />} label={`${exercise.downloadCount}回`} />
+                        <MetaChip icon={<Download size={11} />} label={`${exercise.downloadCount}回もらわれた`} />
                         {exercise.hasSplit ? <AccentChip label="切替あり" /> : null}
                     </div>
-                </div>
-                <div style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 12,
-                    background: 'rgba(43, 186, 160, 0.1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    marginTop: 2,
-                }}>
-                    <ChevronRight size={16} color={COLOR.primary} />
-                </div>
-            </div>
 
-            <div style={{
-                padding: `0 ${SPACE.lg}px ${SPACE.md}px`,
-                fontFamily: FONT.body,
-                fontSize: FONT_SIZE.sm,
-                color: COLOR.text,
-                lineHeight: 1.5,
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical' as const,
-                overflow: 'hidden',
-            }}>
-                {description}
-            </div>
-
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: `${SPACE.sm}px ${SPACE.lg}px ${SPACE.md}px`,
-                borderTop: '1px solid rgba(0,0,0,0.05)',
-                background: 'rgba(248, 249, 250, 0.9)',
-            }}>
-                <span style={{
-                    fontFamily: FONT.body,
-                    fontSize: FONT_SIZE.xs + 1,
-                    fontWeight: 700,
-                    color: COLOR.muted,
-                }}>
-                    くわしく見る
-                </span>
-                <span style={{
-                    fontFamily: FONT.heading,
-                    fontSize: FONT_SIZE.sm,
-                    fontWeight: 700,
-                    color: COLOR.primary,
-                }}>
-                    OPEN
-                </span>
-            </div>
-        </button>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginTop: 12,
+                    }}>
+                        <span style={{
+                            fontFamily: FONT.body,
+                            fontSize: FONT_SIZE.xs + 1,
+                            fontWeight: 700,
+                            color: COLOR.muted,
+                        }}>
+                            くわしく見る
+                        </span>
+                        <span style={{
+                            fontFamily: FONT.heading,
+                            fontSize: FONT_SIZE.sm,
+                            fontWeight: 700,
+                            color: COLOR.primary,
+                        }}>
+                            OPEN
+                        </span>
+                    </div>
+                </div>
+            </button>
+        </div>
     );
 };
 
