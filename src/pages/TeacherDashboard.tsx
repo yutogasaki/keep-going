@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ArrowLeft, RefreshCw, Settings, Trophy, Users } from 'lucide-react';
 import { fetchAllStudents, calculateStreak, type StudentSummary } from '../lib/teacher';
-import { getTodayKey, getDateKeyOffset } from '../lib/db';
+import { getAllSessions, getTodayKey, getDateKeyOffset } from '../lib/db';
 import { CLASS_LEVELS } from '../data/exercises';
 import { fetchAllChallenges, type Challenge } from '../lib/challenges';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,6 +9,8 @@ import { ChallengeManagement } from './teacher-dashboard/ChallengeManagement';
 import { StudentsSection } from './teacher-dashboard/StudentsSection';
 import { MenuSettingsSection } from './teacher-dashboard/MenuSettingsSection';
 import type { IndividualStudent, WeeklyStats } from './teacher-dashboard/types';
+import { useAppStore } from '../store/useAppStore';
+import { getAccountId } from '../lib/sync/authState';
 
 const CLASS_ORDER = CLASS_LEVELS.map((c) => c.id);
 
@@ -20,6 +22,7 @@ type DashboardTab = 'students' | 'challenges' | 'menu-settings';
 
 export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) => {
     const { user } = useAuth();
+    const users = useAppStore((state) => state.users);
     const [activeTab, setActiveTab] = useState<DashboardTab>('students');
     const [students, setStudents] = useState<StudentSummary[]>([]);
     const [loading, setLoading] = useState(true);
@@ -34,14 +37,27 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
     const load = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await fetchAllStudents();
+            const currentAccountId = getAccountId();
+            const localSessions = currentAccountId ? await getAllSessions() : [];
+            const data = await fetchAllStudents({
+                currentAccountId,
+                localMembers: currentAccountId
+                    ? users.map((member) => ({
+                        id: member.id,
+                        name: member.name,
+                        classLevel: member.classLevel,
+                        avatarUrl: member.avatarUrl,
+                    }))
+                    : [],
+                localSessions,
+            });
             setStudents(data);
         } catch (err) {
             console.warn('[teacher] Failed to load students:', err);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [users]);
 
     const loadChallenges = useCallback(async () => {
         setChallengesLoading(true);
@@ -57,6 +73,25 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
 
     useEffect(() => {
         load();
+    }, [load]);
+
+    useEffect(() => {
+        const handleSessionSaved = () => {
+            void load();
+        };
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                void load();
+            }
+        };
+
+        window.addEventListener('sessionSaved', handleSessionSaved);
+        document.addEventListener('visibilitychange', handleVisibility);
+
+        return () => {
+            window.removeEventListener('sessionSaved', handleSessionSaved);
+            document.removeEventListener('visibilitychange', handleVisibility);
+        };
     }, [load]);
 
     useEffect(() => {

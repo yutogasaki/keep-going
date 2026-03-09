@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import type { Database } from './supabase-types';
-import { calculateStreak } from './db';
+import { calculateStreak, type SessionRecord } from './db';
 
 // Re-export so existing callers (TeacherDashboard, AccountCard) don't need to change imports
 export { calculateStreak };
@@ -31,6 +31,17 @@ export interface StudentSummary {
     lastActiveDate: string | null;
 }
 
+export interface LocalStudentMemberSnapshot {
+    id: string;
+    name: string;
+    classLevel: string;
+    avatarUrl?: string;
+}
+
+export interface LocalStudentSessionSnapshot extends Pick<SessionRecord, 'id' | 'date' | 'startedAt' | 'totalSeconds'> {
+    userIds?: string[];
+}
+
 // ─── Fetch all students ──────────────────────────────
 
 const TEACHER_FETCH_PAGE_SIZE = 1000;
@@ -49,6 +60,60 @@ type TeacherAppSettingsRow = Pick<
     Database['public']['Tables']['app_settings']['Row'],
     'account_id' | 'suspended'
 >;
+
+interface FetchAllStudentsOptions {
+    currentAccountId?: string | null;
+    localMembers?: LocalStudentMemberSnapshot[];
+    localSessions?: LocalStudentSessionSnapshot[];
+}
+
+function sortTeacherSessions<T extends Pick<TeacherSessionRow, 'date' | 'started_at'>>(sessions: T[]): T[] {
+    return [...sessions].sort((left, right) => {
+        const dateCompare = right.date.localeCompare(left.date);
+        if (dateCompare !== 0) {
+            return dateCompare;
+        }
+        return right.started_at.localeCompare(left.started_at);
+    });
+}
+
+function mergeRowsById<T extends { id: string }>(remoteRows: T[], localRows: T[]): T[] {
+    const merged = new Map(remoteRows.map((row) => [row.id, row]));
+    for (const row of localRows) {
+        merged.set(row.id, row);
+    }
+    return [...merged.values()];
+}
+
+function buildStudentSummary(
+    accountId: string,
+    accountMembers: TeacherFamilyMemberRow[],
+    accountSessions: TeacherSessionRow[],
+): StudentSummary {
+    const sortedSessions = sortTeacherSessions(accountSessions);
+    const streak = calculateStreak(sortedSessions);
+    const lastActiveDate = sortedSessions.length > 0 ? sortedSessions[0].date : null;
+
+    return {
+        accountId,
+        members: accountMembers.map((member) => ({
+            id: member.id,
+            name: member.name,
+            classLevel: member.class_level,
+            avatarUrl: member.avatar_url || undefined,
+        })),
+        sessions: sortedSessions.slice(0, 100).map((session) => ({
+            id: session.id,
+            date: session.date,
+            startedAt: session.started_at,
+            totalSeconds: session.total_seconds,
+            userIds: session.user_ids ?? [],
+        })),
+        streak,
+        totalSessions: sortedSessions.length,
+        lastActiveDate,
+    };
+}
 
 async function fetchAllPages<T>(
     fetchPage: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>,
@@ -110,7 +175,7 @@ async function fetchTeacherAppSettings(): Promise<TeacherAppSettingsRow[]> {
     );
 }
 
-export async function fetchAllStudents(): Promise<StudentSummary[]> {
+export async function fetchAllStudents(options: FetchAllStudentsOptions = {}): Promise<StudentSummary[]> {
     if (!supabase) return [];
 
     const [membersResult, sessionsResult, settingsResult] = await Promise.allSettled([
@@ -165,33 +230,43 @@ export async function fetchAllStudents(): Promise<StudentSummary[]> {
         }
     }
 
+    if (options.currentAccountId && !suspendedIds.has(options.currentAccountId)) {
+        const currentAccountId = options.currentAccountId;
+        const localMembers = (options.localMembers ?? []).map<TeacherFamilyMemberRow>((member) => ({
+            id: member.id,
+            account_id: currentAccountId,
+            name: member.name,
+            class_level: member.classLevel,
+            avatar_url: member.avatarUrl ?? null,
+        }));
+        const localSessions = (options.localSessions ?? []).map<TeacherSessionRow>((session) => ({
+            id: session.id,
+            account_id: currentAccountId,
+            date: session.date,
+            started_at: session.startedAt,
+            total_seconds: session.totalSeconds,
+            user_ids: session.userIds ?? [],
+        }));
+
+        if (localMembers.length > 0) {
+            membersByAccount.set(
+                currentAccountId,
+                mergeRowsById(membersByAccount.get(currentAccountId) ?? [], localMembers),
+            );
+        }
+
+        if (localSessions.length > 0) {
+            sessionsByAccount.set(
+                currentAccountId,
+                sortTeacherSessions(mergeRowsById(sessionsByAccount.get(currentAccountId) ?? [], localSessions)),
+            );
+        }
+    }
+
     const results: StudentSummary[] = [];
 
     for (const [accountId, accountMembers] of membersByAccount.entries()) {
-        const accountSessions = sessionsByAccount.get(accountId) ?? [];
-
-        const streak = calculateStreak(accountSessions);
-        const lastActiveDate = accountSessions.length > 0 ? accountSessions[0].date : null;
-
-        results.push({
-            accountId,
-            members: accountMembers.map((member) => ({
-                id: member.id,
-                name: member.name,
-                classLevel: member.class_level,
-                avatarUrl: member.avatar_url || undefined,
-            })),
-            sessions: accountSessions.slice(0, 100).map((session) => ({
-                id: session.id,
-                date: session.date,
-                startedAt: session.started_at,
-                totalSeconds: session.total_seconds,
-                userIds: session.user_ids ?? [],
-            })),
-            streak,
-            totalSessions: accountSessions.length,
-            lastActiveDate,
-        });
+        results.push(buildStudentSummary(accountId, accountMembers, sessionsByAccount.get(accountId) ?? []));
     }
 
     // Sort: active students first

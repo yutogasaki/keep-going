@@ -204,4 +204,56 @@ describe('fetchAllStudents', () => {
             { table: 'sessions', from: 1000, to: 1999 },
         ]);
     });
+
+    it('merges the current account local members and sessions so recent training appears immediately', async () => {
+        teacherSupabaseMocks.familyMembers = [
+            createFamilyMember('member-active', 'active-account'),
+        ];
+        teacherSupabaseMocks.sessions = [
+            createSession('session-remote', 'active-account', '2026-03-06'),
+        ];
+        teacherSupabaseMocks.appSettings = [
+            createAppSettings('active-account', false),
+        ];
+
+        const students = await fetchAllStudents({
+            currentAccountId: 'active-account',
+            localMembers: [
+                {
+                    id: 'member-active',
+                    name: 'local-member',
+                    classLevel: '初級',
+                    avatarUrl: 'https://example.com/avatar.png',
+                },
+            ],
+            localSessions: [
+                {
+                    id: 'session-local',
+                    date: '2026-03-07',
+                    startedAt: '2026-03-07T12:00:00Z',
+                    totalSeconds: 180,
+                    userIds: ['member-active'],
+                },
+            ],
+        });
+
+        expect(students).toHaveLength(1);
+        expect(students[0]).toMatchObject({
+            accountId: 'active-account',
+            totalSessions: 2,
+            lastActiveDate: '2026-03-07',
+            streak: 2,
+        });
+        expect(students[0].members[0]).toMatchObject({
+            id: 'member-active',
+            name: 'local-member',
+            avatarUrl: 'https://example.com/avatar.png',
+        });
+        expect(students[0].sessions[0]).toMatchObject({
+            id: 'session-local',
+            date: '2026-03-07',
+            totalSeconds: 180,
+            userIds: ['member-active'],
+        });
+    });
 });
