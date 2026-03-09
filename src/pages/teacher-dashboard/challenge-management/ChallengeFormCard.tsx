@@ -143,13 +143,13 @@ const classLevelWrapStyle: React.CSSProperties = {
     flexWrap: 'wrap',
 };
 
-const rewardNoteStyle: React.CSSProperties = {
+const rewardPanelStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    gap: 6,
+    gap: 10,
     padding: '14px 16px',
     borderRadius: RADIUS.xl,
-    background: 'linear-gradient(135deg, rgba(255, 248, 225, 0.9), rgba(232, 248, 240, 0.9))',
+    background: 'linear-gradient(135deg, rgba(255, 248, 225, 0.9), rgba(255, 255, 255, 0.92))',
     border: '1px solid rgba(255, 215, 0, 0.18)',
 };
 
@@ -305,9 +305,6 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
 
     const selectedExercisePreview = exerciseSource === 'teacher' ? selectedTeacherExercise : selectedStandardExercise;
     const selectedMenuPreview = values.menuSource === 'teacher' ? selectedTeacherMenu : selectedPresetMenu;
-    const rewardMessage = values.rewardKind === 'star'
-        ? `クリアで ほし ${values.rewardValue}こ`
-        : 'この既存チャレンジはメダル報酬のまま保存します';
 
     return (
         <div className="card" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -678,34 +675,128 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                 </div>
             </Section>
 
-            <div style={rewardNoteStyle}>
-                <div style={{
-                    fontFamily: FONT.body,
-                    fontSize: FONT_SIZE.sm,
-                    fontWeight: 800,
-                    color: COLOR.dark,
-                }}>
-                    ごほうび
-                </div>
-                <div style={{
-                    fontFamily: FONT.body,
-                    fontSize: FONT_SIZE.sm,
-                    color: COLOR.text,
-                    lineHeight: 1.6,
-                }}>
-                    {!isEditing && values.rewardKind === 'star' && values.rewardValue === 1
-                        ? '新しく作るチャレンジは、クリアで ほし 1こ です。'
-                        : rewardMessage}
-                </div>
-                <div style={{
-                    fontFamily: FONT.body,
-                    fontSize: FONT_SIZE.xs + 1,
-                    color: COLOR.muted,
-                    lineHeight: 1.6,
-                }}>
+            <Section title="ごほうび" description="小さいチャレンジはほし、大きいチャレンジはバッジです。">
+                <Field label="チャレンジの大きさ">
+                    <div style={optionGridStyle}>
+                        {([
+                            { id: 'small', label: 'スモール', description: 'ほしを配る軽めのチャレンジ' },
+                            { id: 'big', label: 'ビッグ', description: 'バッジを配るしっかり目のチャレンジ' },
+                        ] as const).map((option) => {
+                            const selected = values.tier === option.id;
+                            return (
+                                <button
+                                    key={option.id}
+                                    type="button"
+                                    onClick={() => {
+                                        if (option.id === 'small') {
+                                            onChange({
+                                                tier: 'small',
+                                                rewardKind: 'star',
+                                                rewardValue: values.rewardKind === 'star' ? Math.max(values.rewardValue, 1) : 1,
+                                            });
+                                            return;
+                                        }
+
+                                        onChange({
+                                            tier: 'big',
+                                            rewardKind: 'medal',
+                                            rewardValue: values.rewardKind === 'medal' ? values.rewardValue : 0,
+                                        });
+                                    }}
+                                    style={{
+                                        ...optionButtonBaseStyle,
+                                        ...(selected ? {
+                                            border: '2px solid #2BBAA0',
+                                            background: '#E8F8F0',
+                                        } : null),
+                                    }}
+                                >
+                                    <span style={{
+                                        fontFamily: FONT.body,
+                                        fontSize: FONT_SIZE.sm,
+                                        fontWeight: 800,
+                                        color: COLOR.dark,
+                                    }}>
+                                        {option.label}
+                                    </span>
+                                    <span style={{
+                                        fontFamily: FONT.body,
+                                        fontSize: FONT_SIZE.xs + 1,
+                                        color: COLOR.muted,
+                                        lineHeight: 1.5,
+                                    }}>
+                                        {option.description}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </Field>
+
+                {values.tier === 'small' ? (
+                    <div style={rewardPanelStyle}>
+                        <Field label="もらえるほし" hint="新しく作る時の初期値は1こですが、ここで増やせます。">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={Math.max(values.rewardValue, 1)}
+                                    onChange={(event) => onChange({ rewardValue: Math.max(Number(event.target.value), 1) })}
+                                    style={{ ...inputStyle, width: 120 }}
+                                />
+                                <div style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.sm,
+                                    color: COLOR.text,
+                                    fontWeight: 700,
+                                }}>
+                                    クリアで ほし {Math.max(values.rewardValue, 1)}こ
+                                </div>
+                            </div>
+                        </Field>
+                    </div>
+                ) : (
+                    <div style={rewardPanelStyle}>
+                        <Field label="もらえるバッジ" hint="1つ選ぶと、クリア時にそのバッジが配られます。">
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(56px, 1fr))',
+                                gap: 8,
+                            }}>
+                                {Array.from({ length: 12 }, (_, index) => (
+                                    <button
+                                        key={index}
+                                        type="button"
+                                        onClick={() => onChange({ rewardValue: index })}
+                                        aria-label={`バッジ ${index + 1}`}
+                                        style={{
+                                            width: '100%',
+                                            aspectRatio: '1 / 1',
+                                            borderRadius: 14,
+                                            border: values.rewardValue === index ? '2px solid #FFB800' : '1px solid rgba(0,0,0,0.08)',
+                                            background: values.rewardValue === index ? '#FFF9E6' : COLOR.white,
+                                            padding: 6,
+                                            cursor: 'pointer',
+                                            boxShadow: values.rewardValue === index ? '0 0 0 2px rgba(255,184,0,0.16)' : 'none',
+                                        }}
+                                    >
+                                        <img
+                                            src={`/medal/${index}.webp`}
+                                            alt={`バッジ ${index + 1}`}
+                                            loading="lazy"
+                                            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+                                        />
+                                    </button>
+                                ))}
+                            </div>
+                        </Field>
+                    </div>
+                )}
+
+                <div style={fieldHintStyle}>
                     アイコンは別で入力せず、選んだ種目やメニューの見た目をそのまま使います。
                 </div>
-            </div>
+            </Section>
 
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                 <button

@@ -39,7 +39,7 @@ export function createChallengeFormValuesFromChallenge(challenge: Challenge): Ch
         tier: challenge.tier,
         rewardKind: challenge.rewardKind,
         rewardValue: challenge.rewardValue,
-        iconEmoji: challenge.iconEmoji ?? '🎯',
+        iconEmoji: challenge.iconEmoji ?? '',
         classLevels: challenge.classLevels,
     };
 }
