@@ -2,6 +2,7 @@ import type { AuthError, User } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
 import { clearSyncQueue } from '../../lib/sync';
 import { SYNCED_ACCOUNT_KEY } from './constants';
+import type { EmailAuthMode } from './types';
 
 interface CreateAuthActionsParams {
     user: User | null;
@@ -10,6 +11,8 @@ interface CreateAuthActionsParams {
 }
 
 export function createAuthActions({ user, setIsAnonymous, setToastMessage }: CreateAuthActionsParams) {
+    const emailRedirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
+
     const signUp = async (email: string, password: string): Promise<{ error: AuthError | null }> => {
         if (!supabase) {
             return { error: { message: 'Supabase not configured' } as AuthError };
@@ -36,23 +39,58 @@ export function createAuthActions({ user, setIsAnonymous, setToastMessage }: Cre
         return { error };
     };
 
+    const startEmailAuth = async (
+        email: string,
+        mode: EmailAuthMode,
+    ): Promise<{ error: AuthError | null }> => {
+        if (!supabase) {
+            return { error: { message: 'Supabase not configured' } as AuthError };
+        }
+
+        const { error } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+                shouldCreateUser: mode === 'signUp',
+                emailRedirectTo,
+            },
+        });
+
+        return { error };
+    };
+
+    const verifyEmailAuthCode = async (
+        email: string,
+        code: string,
+        mode: EmailAuthMode,
+    ): Promise<{ error: AuthError | null }> => {
+        if (!supabase) {
+            return { error: { message: 'Supabase not configured' } as AuthError };
+        }
+
+        const { error } = await supabase.auth.verifyOtp({
+            email,
+            token: code,
+            type: mode === 'signUp' ? 'signup' : 'email',
+        });
+
+        return { error };
+    };
+
     const signInWithGoogle = async (): Promise<{ error: AuthError | null }> => {
         if (!supabase) {
             return { error: { message: 'Supabase not configured' } as AuthError };
         }
 
-        const redirectTo = window.location.origin;
-
         if (user?.is_anonymous) {
             const { error } = await supabase.auth.linkIdentity({
                 provider: 'google',
-                options: { redirectTo },
+                options: { redirectTo: emailRedirectTo },
             });
 
             if (error) {
                 const { error: oauthError } = await supabase.auth.signInWithOAuth({
                     provider: 'google',
-                    options: { redirectTo },
+                    options: { redirectTo: emailRedirectTo },
                 });
                 return { error: oauthError };
             }
@@ -62,7 +100,7 @@ export function createAuthActions({ user, setIsAnonymous, setToastMessage }: Cre
 
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo },
+            options: { redirectTo: emailRedirectTo },
         });
         return { error };
     };
@@ -86,6 +124,8 @@ export function createAuthActions({ user, setIsAnonymous, setToastMessage }: Cre
     return {
         signUp,
         signIn,
+        startEmailAuth,
+        verifyEmailAuthCode,
         signInWithGoogle,
         signOut,
     };

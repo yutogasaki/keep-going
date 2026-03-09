@@ -1,20 +1,34 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Chrome, Mail } from 'lucide-react';
+import { ChevronLeft, LogIn, UserPlus } from 'lucide-react';
 import { SyncAccountGuideCard } from '../../components/SyncAccountGuideCard';
 
 interface AccountStepProps {
     restoreError: string | null;
-    onGoogleLogin: () => void;
-    onEmailLogin: () => void;
+    onLogin: () => void;
+    onCreateAccount: () => void;
     onSkip: () => void;
     onBack: () => void;
 }
 
+const buttonBaseStyle: React.CSSProperties = {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: '15px 16px',
+    borderRadius: 16,
+    fontSize: 15,
+    fontWeight: 700,
+    fontFamily: "'Noto Sans JP', sans-serif",
+    cursor: 'pointer',
+};
+
 export const AccountStep: React.FC<AccountStepProps> = ({
     restoreError,
-    onGoogleLogin,
-    onEmailLogin,
+    onLogin,
+    onCreateAccount,
     onSkip,
     onBack,
 }) => {
@@ -55,28 +69,31 @@ export const AccountStep: React.FC<AccountStepProps> = ({
                 <ChevronLeft size={18} />
                 もどる
             </button>
+
             <h2
                 style={{
                     fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 22,
+                    fontSize: 24,
                     fontWeight: 700,
                     color: '#2D3436',
+                    margin: 0,
                 }}
             >
-                ほごしゃの かたへ
+                さいしょに えらんでね
             </h2>
+
             <p
                 style={{
                     fontFamily: "'Noto Sans JP', sans-serif",
                     fontSize: 13,
                     color: '#8395A7',
-                    lineHeight: 1.6,
-                    marginTop: -4,
+                    lineHeight: 1.7,
+                    margin: 0,
                 }}
             >
-                ログインすると データをひきついだり
+                先にログインやアカウント作成をしておくと、
                 <br />
-                クラウドにほぞんできます
+                あとで名前やクラスが消えません。
             </p>
 
             <SyncAccountGuideCard />
@@ -87,6 +104,7 @@ export const AccountStep: React.FC<AccountStepProps> = ({
                         fontSize: 13,
                         color: '#E74C3C',
                         margin: 0,
+                        lineHeight: 1.6,
                     }}
                 >
                     {restoreError}
@@ -94,51 +112,31 @@ export const AccountStep: React.FC<AccountStepProps> = ({
             )}
 
             <button
-                onClick={onGoogleLogin}
+                onClick={onLogin}
                 style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    padding: '14px 16px',
-                    borderRadius: 14,
-                    border: '1px solid rgba(0,0,0,0.1)',
-                    background: 'white',
-                    fontSize: 15,
-                    fontWeight: 600,
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    cursor: 'pointer',
-                    color: '#333',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                    ...buttonBaseStyle,
+                    border: 'none',
+                    background: 'linear-gradient(135deg, #2BBAA0 0%, #238F7B 100%)',
+                    color: 'white',
+                    boxShadow: '0 8px 20px rgba(43, 186, 160, 0.22)',
                 }}
             >
-                <Chrome size={18} />
-                Google でログイン
+                <LogIn size={18} />
+                ログインする
             </button>
 
             <button
-                onClick={onEmailLogin}
+                onClick={onCreateAccount}
                 style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    padding: '14px 16px',
-                    borderRadius: 14,
-                    border: '1px solid rgba(0,0,0,0.1)',
-                    background: 'white',
-                    fontSize: 15,
-                    fontWeight: 600,
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    cursor: 'pointer',
-                    color: '#333',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                    ...buttonBaseStyle,
+                    border: '1px solid rgba(43, 186, 160, 0.18)',
+                    background: 'rgba(255,255,255,0.92)',
+                    color: '#1E7F6D',
+                    boxShadow: '0 3px 10px rgba(0,0,0,0.04)',
                 }}
             >
-                <Mail size={18} />
-                メールでログイン
+                <UserPlus size={18} />
+                アカウントを作る
             </button>
 
             <div
@@ -160,20 +158,15 @@ export const AccountStep: React.FC<AccountStepProps> = ({
             <button
                 onClick={onSkip}
                 style={{
-                    width: '100%',
-                    padding: '14px 16px',
-                    borderRadius: 14,
+                    ...buttonBaseStyle,
                     border: 'none',
                     background: 'rgba(0,0,0,0.04)',
-                    fontSize: 15,
-                    fontWeight: 600,
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    cursor: 'pointer',
                     color: '#8395A7',
                 }}
             >
-                ログインせずに始める
+                そのまま始める
             </button>
+
             <p
                 style={{
                     fontFamily: "'Noto Sans JP', sans-serif",
@@ -182,7 +175,7 @@ export const AccountStep: React.FC<AccountStepProps> = ({
                     marginTop: -8,
                 }}
             >
-                あとから設定で つなげられます
+                アカウントはあとからでもつなげられます
             </p>
         </motion.div>
     );

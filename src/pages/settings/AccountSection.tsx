@@ -1,17 +1,29 @@
-import React, { useState } from 'react';
-import { Cloud, LogOut, Loader2, UserPlus } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Cloud, LogIn, LogOut, Loader2, UserPlus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { SyncAccountGuideCard } from '../../components/SyncAccountGuideCard';
 import { LoginPage } from '../LoginPage';
+import type { EmailAuthMode } from '../../contexts/auth/types';
 
 export const AccountSection: React.FC = () => {
     const { user, isAnonymous, isSyncing, signOut, setLoginContext } = useAuth();
     const [showLogin, setShowLogin] = useState(false);
+    const [authMode, setAuthMode] = useState<EmailAuthMode>('signIn');
+
+    useEffect(() => {
+        if (showLogin && user && !user.is_anonymous) {
+            setShowLogin(false);
+        }
+    }, [showLogin, user]);
 
     if (showLogin) {
         return <LoginPage
-            onBack={() => setShowLogin(false)}
+            onBack={() => {
+                setLoginContext(null);
+                setShowLogin(false);
+            }}
             onLoginSuccess={() => setShowLogin(false)}
+            initialMode={authMode}
         />;
     }
 
@@ -88,32 +100,59 @@ export const AccountSection: React.FC = () => {
                             </p>
                         )}
                         <SyncAccountGuideCard compact />
-                        <button
-                            onClick={() => {
-                                setLoginContext('settings');
-                                setShowLogin(true);
-                            }}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: 6,
-                                padding: '10px 16px',
-                                borderRadius: 10,
-                                border: 'none',
-                                background: '#2BBAA0',
-                                color: 'white',
-                                fontSize: 14,
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                            }}
-                        >
-                            <UserPlus size={16} />
-                            {isAnonymous ? 'アカウント登録する' : 'ログイン / アカウント作成'}
-                        </button>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                            <button
+                                onClick={() => {
+                                    setLoginContext('settings');
+                                    setAuthMode('signIn');
+                                    setShowLogin(true);
+                                }}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 6,
+                                    padding: '11px 14px',
+                                    borderRadius: 12,
+                                    border: '1px solid rgba(43, 186, 160, 0.18)',
+                                    background: 'rgba(255,255,255,0.95)',
+                                    color: '#1E7F6D',
+                                    fontSize: 14,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <LogIn size={16} />
+                                ログイン
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setLoginContext('settings');
+                                    setAuthMode('signUp');
+                                    setShowLogin(true);
+                                }}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 6,
+                                    padding: '11px 14px',
+                                    borderRadius: 12,
+                                    border: 'none',
+                                    background: '#2BBAA0',
+                                    color: 'white',
+                                    fontSize: 14,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <UserPlus size={16} />
+                                アカウント作成
+                            </button>
+                        </div>
                         {isAnonymous && (
                             <p style={{ fontSize: 11, color: '#B2BEC3', margin: 0, lineHeight: 1.4 }}>
-                                登録すると他のデバイスでもデータが使えます
+                                先に作成しておくと、機種変更やホーム画面追加でも引きつぎしやすくなります
                             </p>
                         )}
                     </div>

@@ -7,6 +7,7 @@ import { initialSync } from '../lib/sync/initial';
 import { runPostLoginSync } from '../contexts/auth/syncFlows';
 import { LoginPage } from './LoginPage';
 import { type ClassLevel } from '../data/exercises';
+import type { EmailAuthMode } from '../contexts/auth/types';
 import { AccountStep } from './onboarding/AccountStep';
 import { ClassStep } from './onboarding/ClassStep';
 import { NameStep } from './onboarding/NameStep';
@@ -26,10 +27,10 @@ export const Onboarding: React.FC = () => {
     const [userName, setUserName] = useState('');
     const [selectedClass, setSelectedClass] = useState<ClassLevel | null>(null);
     const [restoreError, setRestoreError] = useState<string | null>(null);
+    const [authMode, setAuthMode] = useState<EmailAuthMode>('signUp');
 
     const {
         user,
-        signInWithGoogle,
         loginContext,
         requestSyncConflictResolution,
         setLoginContext,
@@ -59,7 +60,7 @@ export const Onboarding: React.FC = () => {
             }
 
             setLoginContext(null);
-            setStep('notification');
+            setStep('name');
         } catch (error) {
             console.error('[onboarding] Post-login restore failed:', error);
             setRestoreError('復元に失敗しました。もう一度お試しください。');
@@ -73,22 +74,6 @@ export const Onboarding: React.FC = () => {
             void handlePostLogin(user.id);
         }
     }, [user, loginContext, step, handlePostLogin]);
-
-    const handleGoogleLogin = async () => {
-        setLoginContext('onboarding');
-        const { error } = await signInWithGoogle();
-        if (error) {
-            setLoginContext(null);
-            setRestoreError('Googleログインに失敗しました。もう一度お試しください。');
-            console.warn('[onboarding] Google login error:', error.message);
-        }
-    };
-
-    const handleEmailLoginSuccess = () => {
-        if (user && step !== 'restoring') {
-            void handlePostLogin(user.id);
-        }
-    };
 
     const handleFinish = async () => {
         addUser({
@@ -124,7 +109,7 @@ export const Onboarding: React.FC = () => {
         }
     };
 
-    if (step === 'emailLogin') {
+    if (step === 'auth') {
         return (
             <div
                 style={{
@@ -136,8 +121,11 @@ export const Onboarding: React.FC = () => {
                 }}
             >
                 <LoginPage
-                    onBack={() => setStep('account')}
-                    onLoginSuccess={handleEmailLoginSuccess}
+                    onBack={() => {
+                        setLoginContext(null);
+                        setStep('account');
+                    }}
+                    initialMode={authMode}
                 />
             </div>
         );
@@ -156,21 +144,44 @@ export const Onboarding: React.FC = () => {
                 overflow: 'auto',
             }}
         >
-            <AnimatePresence mode="wait">
-                {step === 'welcome' && (
-                    <WelcomeStep onNext={() => setStep('name')} />
-                )}
+                <AnimatePresence mode="wait">
+                    {step === 'welcome' && (
+                        <WelcomeStep onNext={() => setStep('account')} />
+                    )}
 
-                {step === 'restoring' && <RestoringStep />}
+                    {step === 'restoring' && <RestoringStep />}
 
-                {step === 'name' && (
-                    <NameStep
-                        userName={userName}
-                        onNameChange={setUserName}
-                        onNext={() => setStep('class')}
-                        onBack={() => setStep('welcome')}
-                    />
-                )}
+                    {step === 'account' && (
+                        <AccountStep
+                            restoreError={restoreError}
+                            onLogin={() => {
+                                setRestoreError(null);
+                                setAuthMode('signIn');
+                                setLoginContext('onboarding');
+                                setStep('auth');
+                            }}
+                            onCreateAccount={() => {
+                                setRestoreError(null);
+                                setAuthMode('signUp');
+                                setLoginContext('onboarding');
+                                setStep('auth');
+                            }}
+                            onSkip={() => {
+                                setLoginContext(null);
+                                setStep('name');
+                            }}
+                            onBack={() => setStep('welcome')}
+                        />
+                    )}
+
+                    {step === 'name' && (
+                        <NameStep
+                            userName={userName}
+                            onNameChange={setUserName}
+                            onNext={() => setStep('class')}
+                            onBack={() => setStep('account')}
+                        />
+                    )}
 
                 {step === 'class' && (
                     <ClassStep
@@ -184,32 +195,18 @@ export const Onboarding: React.FC = () => {
 
                 {step === 'start' && (
                     <StartStep
-                        onNext={() => setStep('account')}
+                        onNext={() => setStep('notification')}
                         onBack={() => setStep('class')}
                     />
                 )}
 
-                {step === 'account' && (
-                    <AccountStep
-                        restoreError={restoreError}
-                        onGoogleLogin={handleGoogleLogin}
-                        onEmailLogin={() => {
-                            setLoginContext('onboarding');
-                            setStep('emailLogin');
-                        }}
-                        onSkip={() => setStep('notification')}
-                        onBack={() => setStep('start')}
-                    />
-                )}
-
-                {step === 'notification' && (
-                    <NotificationStep
-                        onDone={handleFinish}
-                        onBack={() => setStep('account')}
-                    />
-                )}
-            </AnimatePresence>
+                    {step === 'notification' && (
+                        <NotificationStep
+                            onDone={handleFinish}
+                            onBack={() => setStep('start')}
+                        />
+                    )}
+                </AnimatePresence>
         </div>
     );
 };
-

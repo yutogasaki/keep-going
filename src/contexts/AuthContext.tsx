@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const hasSyncedRef = useRef(false);
     const prevUserIdRef = useRef<string | null>(null);
+    const prevAnonymousRef = useRef<boolean | null>(null);
     const syncConflictResolverRef = useRef<((choice: SyncConflictResolution) => void) | null>(null);
 
     const setLoginContext = useCallback((ctx: LoginContext) => {
@@ -77,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
     }, [requestSyncConflictResolution, setLoginContext]);
 
-    const { signUp, signIn, signInWithGoogle, signOut } = useMemo(
+    const { signUp, signIn, startEmailAuth, verifyEmailAuthCode, signInWithGoogle, signOut } = useMemo(
         () => createAuthActions({ user, setIsAnonymous, setToastMessage }),
         [user],
     );
@@ -96,21 +97,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setIsAnonymous(false);
             hasSyncedRef.current = false;
             prevUserIdRef.current = null;
+            prevAnonymousRef.current = null;
             return;
         }
 
-        if (prevUserIdRef.current !== null && prevUserIdRef.current !== user.id) {
+        const wasAnonymous = prevAnonymousRef.current;
+        const isAnonymousUser = user.is_anonymous ?? false;
+
+        if (
+            prevUserIdRef.current !== null &&
+            (prevUserIdRef.current !== user.id || (wasAnonymous === true && !isAnonymousUser))
+        ) {
             hasSyncedRef.current = false;
         }
         prevUserIdRef.current = user.id;
+        prevAnonymousRef.current = isAnonymousUser;
 
         setAccountId(user.id);
-        setIsAnonymous(user.is_anonymous ?? false);
+        setIsAnonymous(isAnonymousUser);
 
         if (hasSyncedRef.current) return;
         hasSyncedRef.current = true;
 
-        if (user.is_anonymous) {
+        if (isAnonymousUser) {
             const state = useAppStore.getState();
             if (state.users.length > 0) {
                 initialSync(state.users, getAppSettingsSnapshot()).catch((err) => {
@@ -253,6 +262,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 requestSyncConflictResolution,
                 signUp,
                 signIn,
+                startEmailAuth,
+                verifyEmailAuthCode,
                 signInWithGoogle,
                 signOut,
             }}

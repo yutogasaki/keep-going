@@ -58,9 +58,9 @@ export const WelcomeStep: React.FC<WelcomeStepProps> = ({ onNext }) => {
                     lineHeight: 1.8,
                 }}
             >
-                なまえを いれて、したの まんなかの
+                ログインするか そのままはじめるか
                 <br />
-                みどりの まるボタンを おぼえたら すぐにはじめられるよ。
+                えらんだら、すぐにじゅんびできるよ。
             </p>
 
             <button
@@ -84,4 +84,3 @@ export const WelcomeStep: React.FC<WelcomeStepProps> = ({ onNext }) => {
         </motion.div>
     );
 };
-

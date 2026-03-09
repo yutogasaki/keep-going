@@ -1,43 +1,87 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { SignUpSuccessView } from './login/SignUpSuccessView';
+import type { EmailAuthMode } from '../contexts/auth/types';
 import { AuthFormView } from './login/AuthFormView';
 
 interface LoginPageProps {
     onBack: () => void;
     onLoginSuccess?: () => void;
+    initialMode?: EmailAuthMode;
 }
 
-export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) => {
-    const { signIn, signUp, signInWithGoogle } = useAuth();
+export const LoginPage: React.FC<LoginPageProps> = ({
+    onBack,
+    onLoginSuccess,
+    initialMode = 'signIn',
+}) => {
+    const {
+        user,
+        signInWithGoogle,
+        startEmailAuth,
+        verifyEmailAuthCode,
+    } = useAuth();
 
-    const [isSignUp, setIsSignUp] = useState(false);
+    const [mode, setMode] = useState<EmailAuthMode>(initialMode);
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [code, setCode] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const [signUpSuccess, setSignUpSuccess] = useState(false);
+    const [hasSentEmail, setHasSentEmail] = useState(false);
 
-    const handleSubmit = async (event: React.FormEvent) => {
+    useEffect(() => {
+        setMode(initialMode);
+        setCode('');
+        setError(null);
+        setHasSentEmail(false);
+    }, [initialMode]);
+
+    useEffect(() => {
+        if (user && !user.is_anonymous) {
+            onLoginSuccess?.();
+        }
+    }, [user, onLoginSuccess]);
+
+    const submitEmail = async (event: React.FormEvent) => {
         event.preventDefault();
         setError(null);
         setLoading(true);
 
         try {
-            if (isSignUp) {
-                const { error: signUpError } = await signUp(email, password);
-                if (signUpError) {
-                    setError(signUpError.message);
-                } else {
-                    setSignUpSuccess(true);
-                }
-            } else {
-                const { error: signInError } = await signIn(email, password);
-                if (signInError) {
-                    setError(signInError.message);
-                } else {
-                    (onLoginSuccess ?? onBack)();
-                }
+            const { error: authError } = await startEmailAuth(email.trim(), mode);
+            if (authError) {
+                setError(authError.message);
+                return;
+            }
+            setHasSentEmail(true);
+            setCode('');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const verifyCode = async (event: React.FormEvent) => {
+        event.preventDefault();
+        setError(null);
+        setLoading(true);
+
+        try {
+            const { error: authError } = await verifyEmailAuthCode(email.trim(), code.trim(), mode);
+            if (authError) {
+                setError(authError.message);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const resendEmail = async () => {
+        setError(null);
+        setLoading(true);
+
+        try {
+            const { error: authError } = await startEmailAuth(email.trim(), mode);
+            if (authError) {
+                setError(authError.message);
             }
         } finally {
             setLoading(false);
@@ -46,30 +90,42 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onBack, onLoginSuccess }) 
 
     const handleGoogleLogin = async () => {
         setError(null);
-        const { error: googleError } = await signInWithGoogle();
-        if (googleError) {
-            setError(googleError.message);
+        setLoading(true);
+
+        try {
+            const { error: googleError } = await signInWithGoogle();
+            if (googleError) {
+                setError(googleError.message);
+            }
+        } finally {
+            setLoading(false);
         }
     };
 
-    if (signUpSuccess) {
-        return <SignUpSuccessView email={email} onBack={onBack} />;
-    }
-
     return (
         <AuthFormView
-            isSignUp={isSignUp}
+            mode={mode}
             email={email}
-            password={password}
+            code={code}
             error={error}
             loading={loading}
+            hasSentEmail={hasSentEmail}
             onBack={onBack}
-            onSubmit={handleSubmit}
+            onStartEmailAuth={submitEmail}
+            onVerifyCode={verifyCode}
             onGoogleLogin={handleGoogleLogin}
             onEmailChange={setEmail}
-            onPasswordChange={setPassword}
+            onCodeChange={setCode}
             onToggleMode={() => {
-                setIsSignUp(!isSignUp);
+                setMode((previous) => (previous === 'signUp' ? 'signIn' : 'signUp'));
+                setHasSentEmail(false);
+                setCode('');
+                setError(null);
+            }}
+            onResend={resendEmail}
+            onEditEmail={() => {
+                setHasSentEmail(false);
+                setCode('');
                 setError(null);
             }}
         />
