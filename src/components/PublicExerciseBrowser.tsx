@@ -85,6 +85,10 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
                                     alignItems: 'center',
                                     padding: '20px 20px 12px',
                                     gap: 12,
+                                    position: 'relative',
+                                    zIndex: 1,
+                                    background: '#F8F9FA',
+                                    borderBottom: '1px solid rgba(0,0,0,0.05)',
                                 }}>
                                     <h2 style={{
                                         fontFamily: "'Noto Sans JP', sans-serif",
@@ -118,7 +122,7 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
                                 <div style={{
                                     flex: 1,
                                     overflowY: 'auto',
-                                    padding: '0 20px 80px',
+                                    padding: '12px 20px 80px',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     gap: 10,
