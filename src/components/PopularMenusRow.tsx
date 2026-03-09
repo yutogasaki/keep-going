@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, Clock, Download } from 'lucide-react';
-import { EXERCISES } from '../data/exercises';
 import { getExercisePlacementLabel } from '../data/exercisePlacement';
 import { fetchRecommendedExercises, type PublicExercise } from '../lib/publicExercises';
 import { fetchRecommendedMenus, type PublicMenu } from '../lib/publicMenus';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../lib/styles';
 import { CANONICAL_TERMS, DISPLAY_TERMS } from '../lib/terminology';
+import { PublicMenuCard } from './PublicMenuCard';
 
 type PublicHighlight =
     | { kind: 'menu'; item: PublicMenu }
@@ -116,7 +116,7 @@ export const PopularMenusRow: React.FC<PopularMenusRowProps> = ({
             }}>
                 {items.map((entry) => (
                     entry.kind === 'menu'
-                        ? <RecommendedMenuCard key={`menu-${entry.item.id}`} menu={entry.item} onTap={onMenuTap} />
+                        ? <PublicMenuCard key={`menu-${entry.item.id}`} menu={entry.item} onTap={onMenuTap} />
                         : <RecommendedExerciseCard key={`exercise-${entry.item.id}`} exercise={entry.item} onTap={onExerciseTap} />
                 ))}
             </div>
@@ -163,56 +163,6 @@ const chipStyle: React.CSSProperties = {
     fontFamily: FONT.body,
     fontSize: FONT_SIZE.xs + 1,
     color: COLOR.light,
-};
-
-const RecommendedMenuCard: React.FC<{
-    menu: PublicMenu;
-    onTap: (menu: PublicMenu) => void;
-}> = ({ menu, onTap }) => {
-    const resolveExercise = (id: string) =>
-        EXERCISES.find((exercise) => exercise.id === id)
-        ?? menu.customExerciseData?.find((exercise) => exercise.id === id);
-    const exerciseNames = menu.exerciseIds
-        .slice(0, 3)
-        .map((id) => resolveExercise(id)?.name ?? id);
-    const remaining = menu.exerciseIds.length - 3;
-    const totalSec = menu.exerciseIds.reduce(
-        (sum, id) => sum + (resolveExercise(id)?.sec ?? 0), 0,
-    );
-    const minutes = Math.ceil(totalSec / 60);
-
-    return (
-        <button
-            onClick={() => onTap(menu)}
-            style={cardStyle}
-        >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: SPACE.md, width: '100%' }}>
-                <div style={iconContainerStyle}>
-                    <span style={{ fontSize: 22, lineHeight: 1 }}>{menu.emoji}</span>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={titleStyle}>{menu.name}</div>
-                    <div style={subtitleStyle}>{menu.authorName} さんのメニュー</div>
-                </div>
-                <span style={kindBadgeStyle}>{CANONICAL_TERMS.menu}</span>
-            </div>
-
-            <div style={bodyTextStyle}>
-                {exerciseNames.join('、')}{remaining > 0 ? `、+${remaining}` : ''}
-            </div>
-
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: SPACE.sm }}>
-                <span style={chipStyle}>
-                    <Clock size={11} />
-                    {minutes}分
-                </span>
-                <span style={chipStyle}>
-                    <Download size={11} />
-                    {menu.downloadCount}
-                </span>
-            </div>
-        </button>
-    );
 };
 
 const RecommendedExerciseCard: React.FC<{
@@ -309,4 +259,3 @@ const kindBadgeStyle: React.CSSProperties = {
     fontWeight: 700,
     flexShrink: 0,
 };
-

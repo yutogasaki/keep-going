@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Clock, Download } from 'lucide-react';
+import { X, Loader2, type LucideIcon } from 'lucide-react';
 import { dedupeMenusByIdentity, fetchPopularMenus, type PublicMenu } from '../lib/publicMenus';
-import { EXERCISES } from '../data/exercises';
 import { MenuDetailSheet } from './MenuDetailSheet';
 import { useAppStore } from '../store/useAppStore';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE, Z } from '../lib/styles';
-import { CANONICAL_TERMS, DISPLAY_TERMS } from '../lib/terminology';
+import { DISPLAY_TERMS } from '../lib/terminology';
+import { PublicMenuCard } from './PublicMenuCard';
 
 interface PublicMenuBrowserProps {
     open: boolean;
@@ -177,13 +177,61 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
                                             </p>
                                         </div>
                                     ) : (
-                                        menus.map(menu => (
-                                            <PublicMenuListCard
-                                                key={menu.id}
-                                                menu={menu}
-                                                onTap={() => setSelectedMenu(menu)}
-                                            />
-                                        ))
+                                        <>
+                                            <div style={heroCardStyle}>
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'flex-start',
+                                                    justifyContent: 'space-between',
+                                                    gap: SPACE.md,
+                                                }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                        <span style={{
+                                                            fontFamily: FONT.body,
+                                                            fontSize: FONT_SIZE.sm,
+                                                            fontWeight: 700,
+                                                            color: COLOR.text,
+                                                        }}>
+                                                            みんなのメニューをさがす
+                                                        </span>
+                                                        <span style={{
+                                                            fontFamily: FONT.body,
+                                                            fontSize: FONT_SIZE.sm,
+                                                            color: COLOR.muted,
+                                                            lineHeight: 1.5,
+                                                        }}>
+                                                            ホームと同じカードで、人気のメニューをゆっくり見比べられます。
+                                                        </span>
+                                                    </div>
+                                                    <div style={{
+                                                        width: 44,
+                                                        height: 44,
+                                                        borderRadius: RADIUS.xl,
+                                                        background: 'linear-gradient(135deg, #E8F8F0, #DFF6F1)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        flexShrink: 0,
+                                                        fontSize: 22,
+                                                    }}>
+                                                        🌍
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: SPACE.sm }}>
+                                                    <HeroChip label={`${menus.length}件`} />
+                                                    <HeroChip label="人気順" />
+                                                    <HeroChip label="タップでくわしく" />
+                                                </div>
+                                            </div>
+
+                                            {menus.map(menu => (
+                                                <PublicMenuCard
+                                                    key={menu.id}
+                                                    menu={menu}
+                                                    onTap={() => setSelectedMenu(menu)}
+                                                />
+                                            ))}
+                                        </>
                                     )}
                                 </div>
                             </motion.div>
@@ -204,134 +252,18 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
     );
 };
 
-const PublicMenuListCard: React.FC<{
-    menu: PublicMenu;
-    onTap: () => void;
-}> = ({ menu, onTap }) => {
-    const resolveExercise = (id: string) =>
-        EXERCISES.find((exercise) => exercise.id === id)
-        ?? menu.customExerciseData.find((exercise) => exercise.id === id);
-    const exerciseNames = menu.exerciseIds
-        .slice(0, 3)
-        .map((id) => resolveExercise(id)?.name ?? id);
-    const remaining = menu.exerciseIds.length - 3;
-    const totalSec = menu.exerciseIds.reduce(
-        (sum, id) => sum + (resolveExercise(id)?.sec ?? 0),
-        0,
-    );
-    const minutes = Math.max(1, Math.ceil(totalSec / 60));
-
-    return (
-        <button
-            type="button"
-            onClick={onTap}
-            style={menuCardStyle}
-        >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: SPACE.md, width: '100%' }}>
-                <div style={iconContainerStyle}>
-                    <span style={{ fontSize: 24, lineHeight: 1 }}>{menu.emoji}</span>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={titleStyle}>{menu.name}</div>
-                    <div style={subtitleStyle}>{menu.authorName} さんのメニュー</div>
-                </div>
-                <span style={kindBadgeStyle}>{CANONICAL_TERMS.menu}</span>
-            </div>
-
-            <div style={descriptionStyle}>
-                {menu.description || `${exerciseNames.join('、')}${remaining > 0 ? `、+${remaining}` : ''}`}
-            </div>
-
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: SPACE.sm }}>
-                <span style={metaChipStyle}>
-                    <Clock size={11} />
-                    約{minutes}分
-                </span>
-                <span style={metaChipStyle}>
-                    {menu.exerciseIds.length}種目
-                </span>
-                <span style={metaChipStyle}>
-                    <Download size={11} />
-                    {menu.downloadCount}
-                </span>
-            </div>
-        </button>
-    );
-};
-
-const menuCardStyle: React.CSSProperties = {
-    width: '100%',
+const heroCardStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
-    gap: SPACE.sm,
+    gap: SPACE.md,
     padding: `${SPACE.lg}px`,
-    border: `1px solid ${COLOR.border}`,
-    background: COLOR.white,
-    cursor: 'pointer',
-    textAlign: 'left',
-    boxShadow: '0 8px 24px rgba(31, 41, 55, 0.08)',
     borderRadius: RADIUS['2xl'],
-    appearance: 'none',
-    WebkitAppearance: 'none',
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.98), rgba(232,248,240,0.9))',
+    border: '1px solid rgba(255,255,255,0.6)',
+    boxShadow: '0 8px 24px rgba(31, 41, 55, 0.06)',
 };
 
-const iconContainerStyle: React.CSSProperties = {
-    width: 44,
-    height: 44,
-    borderRadius: RADIUS.lg,
-    background: 'linear-gradient(135deg, #E8F8F0, #FFE5D9)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-};
-
-const titleStyle: React.CSSProperties = {
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.lg,
-    fontWeight: 700,
-    color: COLOR.dark,
-    lineHeight: 1.35,
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-};
-
-const subtitleStyle: React.CSSProperties = {
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.xs + 1,
-    color: COLOR.muted,
-    marginTop: 2,
-};
-
-const descriptionStyle: React.CSSProperties = {
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.sm,
-    color: COLOR.text,
-    lineHeight: 1.5,
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-    minHeight: 36,
-};
-
-const kindBadgeStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '4px 8px',
-    borderRadius: RADIUS.full,
-    background: 'rgba(43, 186, 160, 0.10)',
-    color: COLOR.primaryDark,
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.xs + 1,
-    fontWeight: 700,
-    flexShrink: 0,
-};
-
-const metaChipStyle: React.CSSProperties = {
+const heroChipStyle: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 4,
@@ -342,3 +274,13 @@ const metaChipStyle: React.CSSProperties = {
     fontSize: FONT_SIZE.xs + 1,
     color: COLOR.light,
 };
+
+const HeroChip: React.FC<{
+    label: string;
+    icon?: LucideIcon;
+}> = ({ label, icon: Icon }) => (
+    <span style={heroChipStyle}>
+        {Icon ? <Icon size={11} /> : null}
+        {label}
+    </span>
+);
