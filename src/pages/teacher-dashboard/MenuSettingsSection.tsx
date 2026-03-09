@@ -10,24 +10,15 @@ import { useMenuSettingsController } from './menu-settings/useMenuSettingsContro
 import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import { useAppStore } from '../../store/useAppStore';
 import { audio } from '../../lib/audio';
-import type { TeacherExercise } from '../../lib/teacherContent';
+import type { TeacherExercise, TeacherMenu } from '../../lib/teacherContent';
+import { sortTeacherContentByRecommendation } from '../../lib/teacherExerciseMetadata';
 
 function sortTeacherExercises(exercises: TeacherExercise[]): TeacherExercise[] {
-    return [...exercises].sort((left, right) => {
-        const leftRecommended = left.recommended ? 0 : 1;
-        const rightRecommended = right.recommended ? 0 : 1;
-        if (leftRecommended !== rightRecommended) {
-            return leftRecommended - rightRecommended;
-        }
+    return sortTeacherContentByRecommendation(exercises);
+}
 
-        const leftOrder = left.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
-        const rightOrder = right.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
-        if (leftOrder !== rightOrder) {
-            return leftOrder - rightOrder;
-        }
-
-        return left.name.localeCompare(right.name, 'ja');
-    });
+function sortTeacherMenus(menus: TeacherMenu[]): TeacherMenu[] {
+    return sortTeacherContentByRecommendation(menus);
 }
 
 type SubTab = 'exercises' | 'groups';
@@ -294,11 +285,15 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     {teacherMenus.length > 0 && (
                         <>
                             <SectionLabel text="先生がつくったメニュー" color="#0984E3" />
-                            {teacherMenus.map(menu => (
+                            {sortTeacherMenus(teacherMenus).map(menu => (
                                 <MenuSettingsItemCard
                                     key={menu.id}
                                     emoji={menu.emoji}
                                     name={menu.name}
+                                    metadataChips={menu.focusTags}
+                                    recommended={menu.recommended}
+                                    recommendedOrder={menu.recommendedOrder}
+                                    visibility={menu.visibility}
                                     statusByClass={getStatusByClass(menu.id, 'menu_group')}
                                     expanded={expandedItemId === menu.id}
                                     onToggleExpand={() => toggleExpandedItem(menu.id)}

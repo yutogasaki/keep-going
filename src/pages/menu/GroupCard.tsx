@@ -57,7 +57,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 minutes={summary.minutes}
                 exerciseCount={summary.exerciseCount}
                 creatorName={creatorName}
-                isTeacher={isTeacher}
+                isTeacher={isTeacher ?? group.origin === 'teacher'}
                 isNew={isNew}
                 detailsId={detailsId}
                 onTap={onTap}

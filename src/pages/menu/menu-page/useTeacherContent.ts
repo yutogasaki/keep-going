@@ -6,6 +6,7 @@ import { fetchTeacherMenuSettingsForClass } from '../../../lib/teacherMenuSettin
 import { subscribeTeacherContentUpdated } from '../../../lib/teacherContentEvents';
 import type { ClassLevel } from '../../../data/exercises';
 import type { MenuOverrideMap } from './shared';
+import { isTeacherContentVisible } from '../../../lib/teacherExerciseMetadata';
 
 const NEW_BADGE_DAYS = 14;
 
@@ -37,22 +38,12 @@ export function useTeacherContent({
 
             setTeacherExercises(
                 allExercises.filter(
-                    (exercise) => {
-                        if (exercise.visibility === 'teacher_only' && classLevel !== '先生') {
-                            return false;
-                        }
-
-                        if (exercise.visibility === 'class_limited') {
-                            return exercise.classLevels.length === 0 || exercise.classLevels.includes(classLevel);
-                        }
-
-                        return exercise.classLevels.length === 0 || exercise.classLevels.includes(classLevel);
-                    },
+                    (exercise) => isTeacherContentVisible(exercise.visibility, exercise.classLevels, classLevel),
                 ),
             );
             setTeacherMenus(
                 allMenus.filter(
-                    (menu) => menu.classLevels.length === 0 || menu.classLevels.includes(classLevel),
+                    (menu) => isTeacherContentVisible(menu.visibility, menu.classLevels, classLevel),
                 ),
             );
 

@@ -403,6 +403,10 @@ create table teacher_menus (
   description text,
   exercise_ids jsonb not null default '[]',
   class_levels text[] not null default '{}',
+  visibility text not null default 'public' check (visibility in ('public', 'class_limited', 'teacher_only')),
+  focus_tags text[] not null default '{}',
+  recommended boolean not null default false,
+  recommended_order int,
   created_by text not null,
   created_at timestamptz default now()
 );

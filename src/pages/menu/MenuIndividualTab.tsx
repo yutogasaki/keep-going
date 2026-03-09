@@ -13,16 +13,10 @@ import { CustomExerciseSection } from './individual-tab/CustomExerciseSection';
 import { IndividualCategoryToolbar } from './individual-tab/IndividualCategoryToolbar';
 import { PublicExerciseSection } from './individual-tab/PublicExerciseSection';
 import type { Exercise } from '../../data/exercises';
+import { sortTeacherContentByRecommendation } from '../../lib/teacherExerciseMetadata';
 
 function sortTeacherExercises(exercises: Exercise[]): Exercise[] {
-    return [...exercises].sort((left, right) => {
-        const leftOrder = left.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
-        const rightOrder = right.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
-        if (leftOrder !== rightOrder) {
-            return leftOrder - rightOrder;
-        }
-        return left.name.localeCompare(right.name, 'ja');
-    });
+    return sortTeacherContentByRecommendation(exercises);
 }
 
 export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {

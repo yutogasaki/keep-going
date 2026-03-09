@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronDown, Clock, Play } from 'lucide-react';
 import { ExerciseIcon } from '../../../components/ExerciseIcon';
 import type { MenuGroup } from '../../../data/menuGroups';
+import { getTeacherVisibilityLabel } from '../../../lib/teacherExerciseMetadata';
 
 interface GroupCardMainRowProps {
     group: MenuGroup;
@@ -152,6 +153,56 @@ export const GroupCardMainRow: React.FC<GroupCardMainRowProps> = ({
                         <span aria-hidden="true">·</span>
                         <span>{exerciseCount}種目</span>
                     </div>
+                    {(group.recommended || (group.visibility && group.visibility !== 'public') || (group.focusTags && group.focusTags.length > 0)) ? (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                            {group.recommended ? (
+                                <span
+                                    style={{
+                                        fontFamily: "'Outfit', sans-serif",
+                                        fontSize: 9,
+                                        fontWeight: 700,
+                                        color: '#FFF',
+                                        background: '#2BBAA0',
+                                        padding: '1px 5px',
+                                        borderRadius: 6,
+                                    }}
+                                >
+                                    {group.recommendedOrder != null ? `おすすめ ${group.recommendedOrder}` : 'おすすめ'}
+                                </span>
+                            ) : null}
+                            {group.visibility && group.visibility !== 'public' ? (
+                                <span
+                                    style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 9,
+                                        fontWeight: 700,
+                                        color: '#0984E3',
+                                        background: 'rgba(9, 132, 227, 0.1)',
+                                        padding: '1px 5px',
+                                        borderRadius: 6,
+                                    }}
+                                >
+                                    {getTeacherVisibilityLabel(group.visibility)}
+                                </span>
+                            ) : null}
+                            {group.focusTags?.slice(0, 3).map((tag) => (
+                                <span
+                                    key={tag}
+                                    style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 9,
+                                        fontWeight: 700,
+                                        color: '#2BBAA0',
+                                        background: 'rgba(43, 186, 160, 0.08)',
+                                        padding: '1px 5px',
+                                        borderRadius: 999,
+                                    }}
+                                >
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    ) : null}
                 </div>
 
                 <div

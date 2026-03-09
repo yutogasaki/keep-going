@@ -452,6 +452,17 @@ create table if not exists teacher_menus (
   created_at timestamptz default now()
 );
 
+do $$ begin alter table teacher_menus add column visibility text not null default 'public'; exception when duplicate_column then null; end $$;
+do $$ begin alter table teacher_menus add column focus_tags text[] not null default '{}'; exception when duplicate_column then null; end $$;
+do $$ begin alter table teacher_menus add column recommended boolean not null default false; exception when duplicate_column then null; end $$;
+do $$ begin alter table teacher_menus add column recommended_order int; exception when duplicate_column then null; end $$;
+do $$ begin
+  alter table teacher_menus drop constraint if exists teacher_menus_visibility_check;
+  alter table teacher_menus add constraint teacher_menus_visibility_check
+    check (visibility in ('public', 'class_limited', 'teacher_only'));
+exception when others then null;
+end $$;
+
 alter table teacher_menus enable row level security;
 
 do $$ begin

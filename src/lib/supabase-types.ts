@@ -332,6 +332,10 @@ export interface Database {
                     description: string | null;
                     exercise_ids: string[];
                     class_levels: string[];
+                    visibility: string;
+                    focus_tags: string[];
+                    recommended: boolean;
+                    recommended_order: number | null;
                     created_by: string;
                     created_at: string;
                 };
@@ -342,6 +346,10 @@ export interface Database {
                     description?: string | null;
                     exercise_ids?: string[];
                     class_levels?: string[];
+                    visibility?: string;
+                    focus_tags?: string[];
+                    recommended?: boolean;
+                    recommended_order?: number | null;
                     created_by: string;
                 };
                 Update: Partial<Database['public']['Tables']['teacher_menus']['Insert']>;

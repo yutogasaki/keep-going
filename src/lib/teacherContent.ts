@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 import type { Database } from './supabase-types';
 import { normalizeExercisePlacement, type ExercisePlacement } from '../data/exercisePlacement';
-import type { TeacherExerciseVisibility } from './teacherExerciseMetadata';
+import type { TeacherExerciseVisibility, TeacherMenuVisibility } from './teacherExerciseMetadata';
 
 type TeacherExerciseRow = Database['public']['Tables']['teacher_exercises']['Row'];
 type TeacherMenuRow = Database['public']['Tables']['teacher_menus']['Row'];
@@ -32,6 +32,10 @@ export interface TeacherMenu {
     description: string;
     exerciseIds: string[];
     classLevels: string[];
+    visibility: TeacherMenuVisibility;
+    focusTags: string[];
+    recommended: boolean;
+    recommendedOrder: number | null;
     createdBy: string;
     createdAt: string;
 }
@@ -178,6 +182,10 @@ export async function createTeacherMenu(data: {
     description: string;
     exerciseIds: string[];
     classLevels: string[];
+    visibility: TeacherMenuVisibility;
+    focusTags: string[];
+    recommended: boolean;
+    recommendedOrder: number | null;
     createdBy: string;
 }): Promise<string | null> {
     if (!supabase) return null;
@@ -188,6 +196,10 @@ export async function createTeacherMenu(data: {
         description: data.description,
         exercise_ids: data.exerciseIds,
         class_levels: data.classLevels,
+        visibility: data.visibility,
+        focus_tags: data.focusTags,
+        recommended: data.recommended,
+        recommended_order: data.recommendedOrder,
         created_by: data.createdBy,
     }).select('id').single();
 
@@ -202,6 +214,10 @@ export async function updateTeacherMenu(id: string, data: {
     description: string;
     exerciseIds: string[];
     classLevels: string[];
+    visibility: TeacherMenuVisibility;
+    focusTags: string[];
+    recommended: boolean;
+    recommendedOrder: number | null;
 }): Promise<void> {
     if (!supabase) return;
 
@@ -211,6 +227,10 @@ export async function updateTeacherMenu(id: string, data: {
         description: data.description,
         exercise_ids: data.exerciseIds,
         class_levels: data.classLevels,
+        visibility: data.visibility,
+        focus_tags: data.focusTags,
+        recommended: data.recommended,
+        recommended_order: data.recommendedOrder,
     }).eq('id', id);
 
     if (error) throw error;
@@ -254,6 +274,10 @@ function mapTeacherMenu(row: TeacherMenuRow): TeacherMenu {
         description: row.description ?? '',
         exerciseIds: (row.exercise_ids as string[]) ?? [],
         classLevels: row.class_levels ?? [],
+        visibility: normalizeTeacherExerciseVisibility(row.visibility),
+        focusTags: row.focus_tags ?? [],
+        recommended: row.recommended ?? false,
+        recommendedOrder: row.recommended_order ?? null,
         createdBy: row.created_by,
         createdAt: row.created_at,
     };

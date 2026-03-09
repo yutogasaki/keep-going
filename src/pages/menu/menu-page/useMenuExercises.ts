@@ -10,6 +10,7 @@ import type { CustomExercise } from '../../../lib/db';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
 import type { ClassLevel } from '../../../data/exercises';
 import type { MenuOverrideMap } from './shared';
+import { sortTeacherContentByRecommendation } from '../../../lib/teacherExerciseMetadata';
 
 interface UseMenuExercisesParams {
     classLevel: ClassLevel;
@@ -138,9 +139,14 @@ export function useMenuExercises({
                 description: menu.description,
                 exerciseIds: menu.exerciseIds,
                 isPreset: true,
+                origin: 'teacher' as const,
+                visibility: menu.visibility,
+                focusTags: menu.focusTags,
+                recommended: menu.recommended,
+                recommendedOrder: menu.recommendedOrder,
             }));
 
-        return [...filteredPresets, ...teacherAsGroup];
+        return [...filteredPresets, ...sortTeacherContentByRecommendation(teacherAsGroup)];
     }, [overrideMap, presets, teacherHiddenMenuIds, teacherMenus]);
 
     const effectiveCounts = useMemo(() => {

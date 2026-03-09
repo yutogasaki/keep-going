@@ -1,4 +1,5 @@
 import { getExercisesByClass, type ClassLevel } from './exercises';
+import type { TeacherMenuVisibility } from '../lib/teacherExerciseMetadata';
 
 export interface MenuGroup {
     id: string;
@@ -8,6 +9,11 @@ export interface MenuGroup {
     exerciseIds: string[];
     isPreset: boolean;
     creatorId?: string; // If undefined, it's a family shared menu
+    origin?: 'builtin' | 'teacher';
+    visibility?: TeacherMenuVisibility;
+    focusTags?: string[];
+    recommended?: boolean;
+    recommendedOrder?: number | null;
 }
 
 // ─── Preset Groups ───────────────────────────────────

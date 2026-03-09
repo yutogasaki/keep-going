@@ -123,6 +123,10 @@ export function buildBuiltInMenuInitial(
         description: override?.descriptionOverride ?? (group.description ?? ''),
         exerciseIds: override?.exerciseIdsOverride ?? group.exerciseIds,
         classLevels: [],
+        visibility: 'public',
+        focusTags: [],
+        recommended: false,
+        recommendedOrder: null,
         createdBy: '',
         createdAt: '',
     };

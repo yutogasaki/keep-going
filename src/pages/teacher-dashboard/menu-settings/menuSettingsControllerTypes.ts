@@ -33,5 +33,9 @@ export interface MenuEditorValues {
     description: string;
     exerciseIds: string[];
     classLevels: string[];
+    visibility: TeacherExerciseVisibility;
+    focusTags: string[];
+    recommended: boolean;
+    recommendedOrder: number | null;
     statusByClass?: Record<string, MenuSettingStatus>;
 }

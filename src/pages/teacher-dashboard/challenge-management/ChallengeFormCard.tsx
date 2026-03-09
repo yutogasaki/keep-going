@@ -2,6 +2,7 @@ import React from 'react';
 import { CLASS_LEVELS, EXERCISES } from '../../../data/exercises';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
 import type { TeacherMenu } from '../../../lib/teacherContent';
+import { getTeacherVisibilityLabel, sortTeacherContentByRecommendation } from '../../../lib/teacherExerciseMetadata';
 import type { ChallengeFormValues } from './types';
 import { COLOR, FONT, FONT_SIZE, RADIUS } from '../../../lib/styles';
 
@@ -48,12 +49,16 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
     onCancel,
     onSubmit,
 }) => {
+    const sortedTeacherMenus = sortTeacherContentByRecommendation(teacherMenus);
     const dateError = values.startDate && values.endDate && values.endDate < values.startDate
         ? '終了日は開始日より後にしてください'
         : '';
     const hasMenuTarget = values.menuSource === 'preset'
         ? PRESET_GROUPS.some((group) => group.id === values.targetMenuId)
-        : teacherMenus.some((menu) => menu.id === values.targetMenuId);
+        : sortedTeacherMenus.some((menu) => menu.id === values.targetMenuId);
+    const selectedTeacherMenu = values.menuSource === 'teacher'
+        ? sortedTeacherMenus.find((menu) => menu.id === values.targetMenuId) ?? null
+        : null;
     const hasError = !values.title.trim()
         || values.targetCount < 1
         || values.dailyCap < 1
@@ -161,7 +166,7 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                                 menuSource: option.id,
                                                 targetMenuId: option.id === 'preset'
                                                     ? PRESET_GROUPS[0]?.id ?? ''
-                                                    : teacherMenus[0]?.id ?? '',
+                                                    : sortedTeacherMenus[0]?.id ?? '',
                                             })}
                                             style={{
                                                 flex: 1,
@@ -186,13 +191,14 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                 onChange={(event) => onChange({ targetMenuId: event.target.value })}
                                 style={{ ...inputStyle, appearance: 'auto' }}
                             >
-                                {(values.menuSource === 'preset' ? PRESET_GROUPS : teacherMenus).map((menu) => (
+                                {(values.menuSource === 'preset' ? PRESET_GROUPS : sortedTeacherMenus).map((menu) => (
                                     <option key={menu.id} value={menu.id}>
                                         {menu.emoji} {menu.name}
+                                        {'recommended' in menu && menu.recommended ? ` / おすすめ${menu.recommendedOrder ? ` ${menu.recommendedOrder}` : ''}` : ''}
                                     </option>
                                 ))}
                             </select>
-                            {values.menuSource === 'teacher' && teacherMenus.length === 0 && (
+                            {values.menuSource === 'teacher' && sortedTeacherMenus.length === 0 && (
                                 <div style={{
                                     fontFamily: FONT.body,
                                     fontSize: FONT_SIZE.xs,
@@ -202,6 +208,58 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                     先生メニューがまだありません。先にメニュー設定で作成してください。
                                 </div>
                             )}
+                            {selectedTeacherMenu ? (
+                                <div style={{
+                                    marginTop: 8,
+                                    display: 'flex',
+                                    gap: 6,
+                                    flexWrap: 'wrap',
+                                    alignItems: 'center',
+                                }}>
+                                    {selectedTeacherMenu.recommended ? (
+                                        <span style={{
+                                            fontFamily: FONT.body,
+                                            fontSize: FONT_SIZE.xs,
+                                            fontWeight: 700,
+                                            color: '#FFF',
+                                            background: '#2BBAA0',
+                                            padding: '2px 8px',
+                                            borderRadius: 999,
+                                        }}>
+                                            {selectedTeacherMenu.recommendedOrder != null ? `おすすめ ${selectedTeacherMenu.recommendedOrder}` : 'おすすめ'}
+                                        </span>
+                                    ) : null}
+                                    {selectedTeacherMenu.visibility !== 'public' ? (
+                                        <span style={{
+                                            fontFamily: FONT.body,
+                                            fontSize: FONT_SIZE.xs,
+                                            fontWeight: 700,
+                                            color: '#0984E3',
+                                            background: 'rgba(9, 132, 227, 0.1)',
+                                            padding: '2px 8px',
+                                            borderRadius: 999,
+                                        }}>
+                                            {getTeacherVisibilityLabel(selectedTeacherMenu.visibility)}
+                                        </span>
+                                    ) : null}
+                                    {selectedTeacherMenu.focusTags.map((tag) => (
+                                        <span
+                                            key={tag}
+                                            style={{
+                                                fontFamily: FONT.body,
+                                                fontSize: FONT_SIZE.xs,
+                                                fontWeight: 700,
+                                                color: '#2BBAA0',
+                                                background: 'rgba(43,186,160,0.08)',
+                                                padding: '2px 8px',
+                                                borderRadius: 999,
+                                            }}
+                                        >
+                                            {tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            ) : null}
                         </>
                     )}
                 </div>
