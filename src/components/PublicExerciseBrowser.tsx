@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Clock, Download } from 'lucide-react';
+import { X, Loader2, Clock, Download, ChevronRight } from 'lucide-react';
 import { getExercisePlacementLabel } from '../data/exercisePlacement';
 import { dedupeExercisesByIdentity } from '../lib/publicExerciseUtils';
 import { fetchPopularExercises, type PublicExercise } from '../lib/publicExercises';
@@ -210,34 +210,40 @@ const BrowserExerciseCard: React.FC<{
             style={{
                 background: COLOR.white,
                 borderRadius: RADIUS.lg,
-                padding: `${SPACE.lg}px`,
-                boxShadow: '0 4px 16px rgba(0,0,0,0.05)',
-                border: 'none',
+                padding: 0,
+                boxShadow: '0 10px 24px rgba(31, 41, 55, 0.08)',
+                border: '1px solid rgba(43, 186, 160, 0.08)',
                 cursor: 'pointer',
                 textAlign: 'left',
                 width: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: SPACE.sm,
+                overflow: 'hidden',
             }}
         >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: SPACE.md, width: '100%' }}>
+            <div style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: SPACE.md,
+                width: '100%',
+                padding: `${SPACE.lg}px ${SPACE.lg}px ${SPACE.md}px`,
+            }}>
                 <div style={{
-                    width: 42,
-                    height: 42,
-                    borderRadius: RADIUS.lg,
-                    background: 'rgba(43, 186, 160, 0.12)',
+                    width: 56,
+                    height: 56,
+                    borderRadius: 18,
+                    background: 'linear-gradient(135deg, rgba(43, 186, 160, 0.12), rgba(255, 208, 191, 0.28))',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
                 }}>
-                    <span style={{ fontSize: 24, lineHeight: 1 }}>{exercise.emoji}</span>
+                    <span style={{ fontSize: 28, lineHeight: 1 }}>{exercise.emoji}</span>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{
                         fontFamily: FONT.body,
-                        fontSize: FONT_SIZE.md,
+                        fontSize: FONT_SIZE.lg,
                         fontWeight: 700,
                         color: COLOR.dark,
                         lineHeight: 1.4,
@@ -260,10 +266,35 @@ const BrowserExerciseCard: React.FC<{
                     }}>
                         {subtitle}
                     </div>
+                    <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: SPACE.xs,
+                        marginTop: 10,
+                    }}>
+                        <MetaChip icon={<Clock size={11} />} label={`${exercise.sec}秒`} />
+                        <MetaChip label={getExercisePlacementLabel(exercise.placement)} />
+                        <MetaChip icon={<Download size={11} />} label={`${exercise.downloadCount}回`} />
+                        {exercise.hasSplit ? <AccentChip label="切替あり" /> : null}
+                    </div>
+                </div>
+                <div style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 12,
+                    background: 'rgba(43, 186, 160, 0.1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    marginTop: 2,
+                }}>
+                    <ChevronRight size={16} color={COLOR.primary} />
                 </div>
             </div>
 
             <div style={{
+                padding: `0 ${SPACE.lg}px ${SPACE.md}px`,
                 fontFamily: FONT.body,
                 fontSize: FONT_SIZE.sm,
                 color: COLOR.text,
@@ -276,70 +307,13 @@ const BrowserExerciseCard: React.FC<{
                 {description}
             </div>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: SPACE.sm }}>
-                <span style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    padding: '4px 8px',
-                    borderRadius: RADIUS.full,
-                    background: 'rgba(0,0,0,0.04)',
-                    fontFamily: FONT.body,
-                    fontSize: FONT_SIZE.xs + 1,
-                    color: COLOR.light,
-                }}>
-                    <Clock size={11} />
-                    {exercise.sec}秒
-                </span>
-                <span style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    padding: '4px 8px',
-                    borderRadius: RADIUS.full,
-                    background: 'rgba(0,0,0,0.04)',
-                    fontFamily: FONT.body,
-                    fontSize: FONT_SIZE.xs + 1,
-                    color: COLOR.light,
-                }}>
-                    {getExercisePlacementLabel(exercise.placement)}
-                </span>
-                <span style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    padding: '4px 8px',
-                    borderRadius: RADIUS.full,
-                    background: 'rgba(0,0,0,0.04)',
-                    fontFamily: FONT.body,
-                    fontSize: FONT_SIZE.xs + 1,
-                    color: COLOR.light,
-                }}>
-                    <Download size={11} />
-                    {exercise.downloadCount}回
-                </span>
-                {exercise.hasSplit ? (
-                    <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        padding: '4px 8px',
-                        borderRadius: RADIUS.full,
-                        background: 'rgba(253, 203, 110, 0.15)',
-                        fontFamily: FONT.body,
-                        fontSize: FONT_SIZE.xs + 1,
-                        color: '#C58B00',
-                    }}>
-                        切替あり
-                    </span>
-                ) : null}
-            </div>
-
             <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                paddingTop: 2,
+                padding: `${SPACE.sm}px ${SPACE.lg}px ${SPACE.md}px`,
+                borderTop: '1px solid rgba(0,0,0,0.05)',
+                background: 'rgba(248, 249, 250, 0.9)',
             }}>
                 <span style={{
                     fontFamily: FONT.body,
@@ -361,3 +335,39 @@ const BrowserExerciseCard: React.FC<{
         </button>
     );
 };
+
+const MetaChip: React.FC<{
+    label: string;
+    icon?: React.ReactNode;
+}> = ({ label, icon }) => (
+    <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '4px 8px',
+        borderRadius: RADIUS.full,
+        background: 'rgba(15, 23, 42, 0.05)',
+        fontFamily: FONT.body,
+        fontSize: FONT_SIZE.xs + 1,
+        color: COLOR.light,
+    }}>
+        {icon}
+        {label}
+    </span>
+);
+
+const AccentChip: React.FC<{ label: string }> = ({ label }) => (
+    <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 4,
+        padding: '4px 8px',
+        borderRadius: RADIUS.full,
+        background: 'rgba(253, 203, 110, 0.15)',
+        fontFamily: FONT.body,
+        fontSize: FONT_SIZE.xs + 1,
+        color: '#C58B00',
+    }}>
+        {label}
+    </span>
+);
