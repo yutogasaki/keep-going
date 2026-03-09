@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, type LucideIcon } from 'lucide-react';
+import { X, Loader2 } from 'lucide-react';
 import { dedupeMenusByIdentity, fetchPopularMenus, type PublicMenu } from '../lib/publicMenus';
 import { MenuDetailSheet } from './MenuDetailSheet';
 import { useAppStore } from '../store/useAppStore';
-import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE, Z } from '../lib/styles';
+import { Z } from '../lib/styles';
 import { DISPLAY_TERMS } from '../lib/terminology';
 import { PublicMenuCard } from './PublicMenuCard';
 
@@ -177,61 +177,13 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
                                             </p>
                                         </div>
                                     ) : (
-                                        <>
-                                            <div style={heroCardStyle}>
-                                                <div style={{
-                                                    display: 'flex',
-                                                    alignItems: 'flex-start',
-                                                    justifyContent: 'space-between',
-                                                    gap: SPACE.md,
-                                                }}>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                                        <span style={{
-                                                            fontFamily: FONT.body,
-                                                            fontSize: FONT_SIZE.sm,
-                                                            fontWeight: 700,
-                                                            color: COLOR.text,
-                                                        }}>
-                                                            みんなのメニューをさがす
-                                                        </span>
-                                                        <span style={{
-                                                            fontFamily: FONT.body,
-                                                            fontSize: FONT_SIZE.sm,
-                                                            color: COLOR.muted,
-                                                            lineHeight: 1.5,
-                                                        }}>
-                                                            ホームと同じカードで、人気のメニューをゆっくり見比べられます。
-                                                        </span>
-                                                    </div>
-                                                    <div style={{
-                                                        width: 44,
-                                                        height: 44,
-                                                        borderRadius: RADIUS.xl,
-                                                        background: 'linear-gradient(135deg, #E8F8F0, #DFF6F1)',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        flexShrink: 0,
-                                                        fontSize: 22,
-                                                    }}>
-                                                        🌍
-                                                    </div>
-                                                </div>
-                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: SPACE.sm }}>
-                                                    <HeroChip label={`${menus.length}件`} />
-                                                    <HeroChip label="人気順" />
-                                                    <HeroChip label="タップでくわしく" />
-                                                </div>
-                                            </div>
-
-                                            {menus.map(menu => (
-                                                <PublicMenuCard
-                                                    key={menu.id}
-                                                    menu={menu}
-                                                    onTap={() => setSelectedMenu(menu)}
-                                                />
-                                            ))}
-                                        </>
+                                        menus.map(menu => (
+                                            <PublicMenuCard
+                                                key={menu.id}
+                                                menu={menu}
+                                                onTap={() => setSelectedMenu(menu)}
+                                            />
+                                        ))
                                     )}
                                 </div>
                             </motion.div>
@@ -251,36 +203,3 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
         </>
     );
 };
-
-const heroCardStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: SPACE.md,
-    padding: `${SPACE.lg}px`,
-    borderRadius: RADIUS['2xl'],
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.98), rgba(232,248,240,0.9))',
-    border: '1px solid rgba(255,255,255,0.6)',
-    boxShadow: '0 8px 24px rgba(31, 41, 55, 0.06)',
-};
-
-const heroChipStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 4,
-    padding: '4px 8px',
-    borderRadius: RADIUS.full,
-    background: 'rgba(0,0,0,0.04)',
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.xs + 1,
-    color: COLOR.light,
-};
-
-const HeroChip: React.FC<{
-    label: string;
-    icon?: LucideIcon;
-}> = ({ label, icon: Icon }) => (
-    <span style={heroChipStyle}>
-        {Icon ? <Icon size={11} /> : null}
-        {label}
-    </span>
-);

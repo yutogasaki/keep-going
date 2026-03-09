@@ -61,8 +61,8 @@ export const PublicMenuCard: React.FC<PublicMenuCardProps> = ({ menu, onTap }) =
 
 const cardStyle: React.CSSProperties = {
     width: '100%',
-    padding: `${SPACE.lg}px`,
-    borderRadius: RADIUS.lg,
+    padding: `${SPACE.xl}px ${SPACE.lg}px`,
+    borderRadius: RADIUS.xl,
     border: '1px solid rgba(255,255,255,0.55)',
     background: 'rgba(255,255,255,0.96)',
     boxShadow: '0 4px 16px rgba(0,0,0,0.05)',
@@ -70,8 +70,9 @@ const cardStyle: React.CSSProperties = {
     textAlign: 'left',
     display: 'flex',
     flexDirection: 'column',
-    gap: SPACE.sm,
-    minHeight: 92,
+    gap: SPACE.md,
+    minHeight: 132,
+    flexShrink: 0,
     appearance: 'none',
     WebkitAppearance: 'none',
 };
@@ -80,7 +81,7 @@ const chipStyle: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 4,
-    padding: '4px 8px',
+    padding: '6px 10px',
     borderRadius: RADIUS.full,
     background: 'rgba(0,0,0,0.04)',
     fontFamily: FONT.body,
@@ -89,9 +90,9 @@ const chipStyle: React.CSSProperties = {
 };
 
 const iconContainerStyle: React.CSSProperties = {
-    width: 40,
-    height: 40,
-    borderRadius: RADIUS.lg,
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.xl,
     background: 'rgba(43, 186, 160, 0.12)',
     display: 'flex',
     alignItems: 'center',
@@ -101,7 +102,7 @@ const iconContainerStyle: React.CSSProperties = {
 
 const titleStyle: React.CSSProperties = {
     fontFamily: FONT.body,
-    fontSize: FONT_SIZE.md,
+    fontSize: FONT_SIZE.lg,
     fontWeight: 700,
     color: COLOR.dark,
     lineHeight: 1.35,
@@ -113,33 +114,33 @@ const titleStyle: React.CSSProperties = {
 
 const subtitleStyle: React.CSSProperties = {
     fontFamily: FONT.body,
-    fontSize: FONT_SIZE.xs + 1,
+    fontSize: FONT_SIZE.sm + 1,
     color: COLOR.muted,
-    marginTop: 2,
+    marginTop: 4,
 };
 
 const bodyTextStyle: React.CSSProperties = {
     fontFamily: FONT.body,
-    fontSize: FONT_SIZE.sm,
+    fontSize: FONT_SIZE.md,
     color: COLOR.muted,
     lineHeight: 1.5,
     display: '-webkit-box',
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
     overflow: 'hidden',
-    minHeight: 36,
+    minHeight: 42,
 };
 
 const kindBadgeStyle: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '4px 8px',
+    padding: '6px 10px',
     borderRadius: RADIUS.full,
     background: 'rgba(43, 186, 160, 0.10)',
     color: COLOR.primaryDark,
     fontFamily: FONT.body,
-    fontSize: FONT_SIZE.xs + 1,
+    fontSize: FONT_SIZE.sm,
     fontWeight: 700,
     flexShrink: 0,
 };
