@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2 } from 'lucide-react';
-import type { ExercisePlacement } from '../data/exercisePlacement';
+import { X, Loader2, Clock, Download } from 'lucide-react';
 import { dedupeMenusByIdentity, fetchPopularMenus, type PublicMenu } from '../lib/publicMenus';
 import { EXERCISES } from '../data/exercises';
 import { MenuDetailSheet } from './MenuDetailSheet';
-import { GroupCard } from '../pages/menu/GroupCard';
 import { useAppStore } from '../store/useAppStore';
-import { Z } from '../lib/styles';
-import { DISPLAY_TERMS } from '../lib/terminology';
+import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE, Z } from '../lib/styles';
+import { CANONICAL_TERMS, DISPLAY_TERMS } from '../lib/terminology';
 
 interface PublicMenuBrowserProps {
     open: boolean;
@@ -210,46 +208,137 @@ const PublicMenuListCard: React.FC<{
     menu: PublicMenu;
     onTap: () => void;
 }> = ({ menu, onTap }) => {
-    const exerciseMap = createPublicMenuExerciseMap(menu);
+    const resolveExercise = (id: string) =>
+        EXERCISES.find((exercise) => exercise.id === id)
+        ?? menu.customExerciseData.find((exercise) => exercise.id === id);
+    const exerciseNames = menu.exerciseIds
+        .slice(0, 3)
+        .map((id) => resolveExercise(id)?.name ?? id);
+    const remaining = menu.exerciseIds.length - 3;
+    const totalSec = menu.exerciseIds.reduce(
+        (sum, id) => sum + (resolveExercise(id)?.sec ?? 0),
+        0,
+    );
+    const minutes = Math.max(1, Math.ceil(totalSec / 60));
 
     return (
-        <GroupCard
-            group={{
-                id: menu.id,
-                name: menu.name,
-                emoji: menu.emoji,
-                description: menu.description || `${menu.authorName} さんのメニュー`,
-                exerciseIds: menu.exerciseIds,
-                isPreset: false,
-            }}
-            index={0}
-            exerciseMap={exerciseMap}
-            creatorName={menu.authorName}
-            onTap={onTap}
-            isCustom
-            isPublished
-            downloadCount={menu.downloadCount}
-        />
+        <button
+            type="button"
+            onClick={onTap}
+            style={menuCardStyle}
+        >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: SPACE.md, width: '100%' }}>
+                <div style={iconContainerStyle}>
+                    <span style={{ fontSize: 24, lineHeight: 1 }}>{menu.emoji}</span>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={titleStyle}>{menu.name}</div>
+                    <div style={subtitleStyle}>{menu.authorName} さんのメニュー</div>
+                </div>
+                <span style={kindBadgeStyle}>{CANONICAL_TERMS.menu}</span>
+            </div>
+
+            <div style={descriptionStyle}>
+                {menu.description || `${exerciseNames.join('、')}${remaining > 0 ? `、+${remaining}` : ''}`}
+            </div>
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: SPACE.sm }}>
+                <span style={metaChipStyle}>
+                    <Clock size={11} />
+                    約{minutes}分
+                </span>
+                <span style={metaChipStyle}>
+                    {menu.exerciseIds.length}種目
+                </span>
+                <span style={metaChipStyle}>
+                    <Download size={11} />
+                    {menu.downloadCount}
+                </span>
+            </div>
+        </button>
     );
 };
 
-function createPublicMenuExerciseMap(menu: PublicMenu) {
-    const map = new Map<string, { name: string; emoji: string; sec: number; placement: ExercisePlacement }>();
-    for (const exercise of EXERCISES) {
-        map.set(exercise.id, {
-            name: exercise.name,
-            emoji: exercise.emoji,
-            sec: exercise.sec,
-            placement: exercise.placement,
-        });
-    }
-    for (const exercise of menu.customExerciseData ?? []) {
-        map.set(exercise.id, {
-            name: exercise.name,
-            emoji: exercise.emoji,
-            sec: exercise.sec,
-            placement: exercise.placement,
-        });
-    }
-    return map;
-}
+const menuCardStyle: React.CSSProperties = {
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: SPACE.sm,
+    padding: `${SPACE.lg}px`,
+    border: `1px solid ${COLOR.border}`,
+    background: COLOR.white,
+    cursor: 'pointer',
+    textAlign: 'left',
+    boxShadow: '0 8px 24px rgba(31, 41, 55, 0.08)',
+    borderRadius: RADIUS['2xl'],
+    appearance: 'none',
+    WebkitAppearance: 'none',
+};
+
+const iconContainerStyle: React.CSSProperties = {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.lg,
+    background: 'linear-gradient(135deg, #E8F8F0, #FFE5D9)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+};
+
+const titleStyle: React.CSSProperties = {
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.lg,
+    fontWeight: 700,
+    color: COLOR.dark,
+    lineHeight: 1.35,
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
+};
+
+const subtitleStyle: React.CSSProperties = {
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.xs + 1,
+    color: COLOR.muted,
+    marginTop: 2,
+};
+
+const descriptionStyle: React.CSSProperties = {
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.sm,
+    color: COLOR.text,
+    lineHeight: 1.5,
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden',
+    minHeight: 36,
+};
+
+const kindBadgeStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '4px 8px',
+    borderRadius: RADIUS.full,
+    background: 'rgba(43, 186, 160, 0.10)',
+    color: COLOR.primaryDark,
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.xs + 1,
+    fontWeight: 700,
+    flexShrink: 0,
+};
+
+const metaChipStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 4,
+    padding: '4px 8px',
+    borderRadius: RADIUS.full,
+    background: 'rgba(0,0,0,0.04)',
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.xs + 1,
+    color: COLOR.light,
+};
