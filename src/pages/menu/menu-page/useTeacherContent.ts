@@ -37,7 +37,17 @@ export function useTeacherContent({
 
             setTeacherExercises(
                 allExercises.filter(
-                    (exercise) => exercise.classLevels.length === 0 || exercise.classLevels.includes(classLevel),
+                    (exercise) => {
+                        if (exercise.visibility === 'teacher_only' && classLevel !== '先生') {
+                            return false;
+                        }
+
+                        if (exercise.visibility === 'class_limited') {
+                            return exercise.classLevels.length === 0 || exercise.classLevels.includes(classLevel);
+                        }
+
+                        return exercise.classLevels.length === 0 || exercise.classLevels.includes(classLevel);
+                    },
                 ),
             );
             setTeacherMenus(

@@ -10,6 +10,25 @@ import { useMenuSettingsController } from './menu-settings/useMenuSettingsContro
 import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import { useAppStore } from '../../store/useAppStore';
 import { audio } from '../../lib/audio';
+import type { TeacherExercise } from '../../lib/teacherContent';
+
+function sortTeacherExercises(exercises: TeacherExercise[]): TeacherExercise[] {
+    return [...exercises].sort((left, right) => {
+        const leftRecommended = left.recommended ? 0 : 1;
+        const rightRecommended = right.recommended ? 0 : 1;
+        if (leftRecommended !== rightRecommended) {
+            return leftRecommended - rightRecommended;
+        }
+
+        const leftOrder = left.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
+        const rightOrder = right.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
+        if (leftOrder !== rightOrder) {
+            return leftOrder - rightOrder;
+        }
+
+        return left.name.localeCompare(right.name, 'ja');
+    });
+}
 
 type SubTab = 'exercises' | 'groups';
 
@@ -224,12 +243,16 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     {teacherExercises.length > 0 && (
                         <>
                             <SectionLabel text="先生がつくった種目" color="#0984E3" />
-                            {teacherExercises.map(ex => (
+                            {sortTeacherExercises(teacherExercises).map(ex => (
                                 <MenuSettingsItemCard
                                     key={ex.id}
                                     emoji={ex.emoji}
                                     name={ex.name}
                                     categoryLabel={getExercisePlacementLabel(ex.placement)}
+                                    metadataChips={ex.focusTags}
+                                    recommended={ex.recommended}
+                                    recommendedOrder={ex.recommendedOrder}
+                                    visibility={ex.visibility}
                                     statusByClass={getStatusByClass(ex.id, 'exercise')}
                                     expanded={expandedItemId === ex.id}
                                     onToggleExpand={() => toggleExpandedItem(ex.id)}

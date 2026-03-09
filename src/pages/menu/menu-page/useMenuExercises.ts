@@ -46,11 +46,15 @@ export function useMenuExercises({
             .map((exercise) => {
                 const override = overrideMap.get(`exercise:${exercise.id}`);
                 if (!override) {
-                    return exercise;
+                    return {
+                        ...exercise,
+                        origin: 'builtin' as const,
+                    };
                 }
 
                 return {
                     ...exercise,
+                    origin: 'builtin' as const,
                     name: override.name ?? exercise.name,
                     description: override.description ?? exercise.description,
                     emoji: override.emoji ?? exercise.emoji,
@@ -72,10 +76,16 @@ export function useMenuExercises({
                 internal: exercise.hasSplit ? 'R30→L30' : 'single',
                 classes: ['プレ', '初級', '中級', '上級'],
                 priority: 'medium' as const,
+                origin: 'teacher' as const,
+                visibility: exercise.visibility,
+                focusTags: exercise.focusTags,
+                recommended: exercise.recommended,
+                recommendedOrder: exercise.recommendedOrder,
             }));
 
         const restExercises = EXERCISES
-            .filter((exercise) => exercise.placement === 'rest' && !teacherHiddenExerciseIds.has(exercise.id));
+            .filter((exercise) => exercise.placement === 'rest' && !teacherHiddenExerciseIds.has(exercise.id))
+            .map((exercise) => ({ ...exercise, origin: 'builtin' as const }));
 
         return [...builtIn, ...teacherAsExercise, ...restExercises];
     }, [classLevel, overrideMap, teacherExercises, teacherHiddenExerciseIds]);

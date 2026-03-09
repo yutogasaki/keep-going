@@ -381,6 +381,10 @@ create table teacher_exercises (
   has_split boolean default false,
   description text,
   class_levels text[] not null default '{}',
+  visibility text not null default 'public' check (visibility in ('public', 'class_limited', 'teacher_only')),
+  focus_tags text[] not null default '{}',
+  recommended boolean not null default false,
+  recommended_order int,
   created_by text not null,
   created_at timestamptz default now()
 );

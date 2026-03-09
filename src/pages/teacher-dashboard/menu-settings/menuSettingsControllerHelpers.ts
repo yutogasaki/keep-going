@@ -2,6 +2,7 @@ import { CLASS_LEVELS, EXERCISES } from '../../../data/exercises';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
 import type { TeacherItemOverride } from '../../../lib/teacherItemOverrides';
+import type { TeacherExerciseVisibility } from '../../../lib/teacherExerciseMetadata';
 import {
     upsertTeacherMenuSetting,
     type MenuSettingItemType,
@@ -98,6 +99,10 @@ export function buildBuiltInExerciseInitial(
         hasSplit: override?.hasSplitOverride ?? (exercise.hasSplit ?? false),
         description: override?.descriptionOverride ?? (exercise.description ?? ''),
         classLevels: exercise.classes as string[],
+        visibility: 'public' as TeacherExerciseVisibility,
+        focusTags: [],
+        recommended: false,
+        recommendedOrder: null,
         createdBy: '',
         createdAt: '',
     };

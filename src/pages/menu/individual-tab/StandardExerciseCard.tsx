@@ -4,6 +4,7 @@ import { ChevronDown, Play, Star } from 'lucide-react';
 import type { Exercise } from '../../../data/exercises';
 import { getExercisePlacementLabel } from '../../../data/exercisePlacement';
 import { ExerciseIcon } from '../../../components/ExerciseIcon';
+import { getTeacherExerciseVisibilityLabel } from '../../../lib/teacherExerciseMetadata';
 import { ExerciseSelectionIndicator } from './ExerciseSelectionIndicator';
 
 interface StandardExerciseCardProps {
@@ -107,6 +108,23 @@ export const StandardExerciseCard: React.FC<StandardExerciseCardProps> = ({
                                 先生
                             </span>
                         ) : null}
+                        {exercise.recommended ? (
+                            <span
+                                style={{
+                                    fontFamily: "'Outfit', sans-serif",
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    color: '#FFF',
+                                    background: '#2BBAA0',
+                                    padding: '1px 5px',
+                                    borderRadius: 6,
+                                    display: 'inline-block',
+                                    verticalAlign: 'middle',
+                                }}
+                            >
+                                おすすめ
+                            </span>
+                        ) : null}
                         {newBadge ? (
                             <span
                                 style={{
@@ -157,7 +175,30 @@ export const StandardExerciseCard: React.FC<StandardExerciseCardProps> = ({
                         <span>{exercise.sec}秒</span>
                         <span>{getExercisePlacementLabel(exercise.placement)}</span>
                         {internalLabel ? <span style={{ color: '#2BBAA0' }}>{internalLabel}</span> : null}
+                        {teacherBadge && exercise.visibility && exercise.visibility !== 'public' ? (
+                            <span style={{ color: '#0984E3' }}>{getTeacherExerciseVisibilityLabel(exercise.visibility)}</span>
+                        ) : null}
                     </div>
+                    {teacherBadge && exercise.focusTags && exercise.focusTags.length > 0 ? (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                            {exercise.focusTags.slice(0, 3).map((tag) => (
+                                <span
+                                    key={tag}
+                                    style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 10,
+                                        fontWeight: 700,
+                                        color: '#2BBAA0',
+                                        background: 'rgba(43, 186, 160, 0.08)',
+                                        padding: '2px 6px',
+                                        borderRadius: 999,
+                                    }}
+                                >
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
+                    ) : null}
                 </div>
 
                 {!selectionMode ? (

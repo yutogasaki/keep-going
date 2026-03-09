@@ -299,6 +299,10 @@ export interface Database {
                     has_split: boolean;
                     description: string | null;
                     class_levels: string[];
+                    visibility: string;
+                    focus_tags: string[];
+                    recommended: boolean;
+                    recommended_order: number | null;
                     created_by: string;
                     created_at: string;
                 };
@@ -311,6 +315,10 @@ export interface Database {
                     has_split?: boolean;
                     description?: string | null;
                     class_levels?: string[];
+                    visibility?: string;
+                    focus_tags?: string[];
+                    recommended?: boolean;
+                    recommended_order?: number | null;
                     created_by: string;
                 };
                 Update: Partial<Database['public']['Tables']['teacher_exercises']['Insert']>;

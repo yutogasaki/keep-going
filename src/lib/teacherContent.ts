@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import type { Database } from './supabase-types';
 import { normalizeExercisePlacement, type ExercisePlacement } from '../data/exercisePlacement';
+import type { TeacherExerciseVisibility } from './teacherExerciseMetadata';
 
 type TeacherExerciseRow = Database['public']['Tables']['teacher_exercises']['Row'];
 type TeacherMenuRow = Database['public']['Tables']['teacher_menus']['Row'];
@@ -16,6 +17,10 @@ export interface TeacherExercise {
     hasSplit: boolean;
     description: string;
     classLevels: string[];
+    visibility: TeacherExerciseVisibility;
+    focusTags: string[];
+    recommended: boolean;
+    recommendedOrder: number | null;
     createdBy: string;
     createdAt: string;
 }
@@ -75,6 +80,10 @@ export async function createTeacherExercise(data: {
     hasSplit: boolean;
     description: string;
     classLevels: string[];
+    visibility: TeacherExerciseVisibility;
+    focusTags: string[];
+    recommended: boolean;
+    recommendedOrder: number | null;
     createdBy: string;
 }): Promise<string | null> {
     if (!supabase) return null;
@@ -87,6 +96,10 @@ export async function createTeacherExercise(data: {
         has_split: data.hasSplit,
         description: data.description,
         class_levels: data.classLevels,
+        visibility: data.visibility,
+        focus_tags: data.focusTags,
+        recommended: data.recommended,
+        recommended_order: data.recommendedOrder,
         created_by: data.createdBy,
     }).select('id').single();
 
@@ -103,6 +116,10 @@ export async function updateTeacherExercise(id: string, data: {
     hasSplit: boolean;
     description: string;
     classLevels: string[];
+    visibility: TeacherExerciseVisibility;
+    focusTags: string[];
+    recommended: boolean;
+    recommendedOrder: number | null;
 }): Promise<void> {
     if (!supabase) return;
 
@@ -114,6 +131,10 @@ export async function updateTeacherExercise(id: string, data: {
         has_split: data.hasSplit,
         description: data.description,
         class_levels: data.classLevels,
+        visibility: data.visibility,
+        focus_tags: data.focusTags,
+        recommended: data.recommended,
+        recommended_order: data.recommendedOrder,
     }).eq('id', id);
 
     if (error) throw error;
@@ -216,6 +237,10 @@ function mapTeacherExercise(row: TeacherExerciseRow): TeacherExercise {
         hasSplit: row.has_split ?? false,
         description: row.description ?? '',
         classLevels: row.class_levels ?? [],
+        visibility: normalizeTeacherExerciseVisibility(row.visibility),
+        focusTags: row.focus_tags ?? [],
+        recommended: row.recommended ?? false,
+        recommendedOrder: row.recommended_order ?? null,
         createdBy: row.created_by,
         createdAt: row.created_at,
     };
@@ -232,4 +257,8 @@ function mapTeacherMenu(row: TeacherMenuRow): TeacherMenu {
         createdBy: row.created_by,
         createdAt: row.created_at,
     };
+}
+
+function normalizeTeacherExerciseVisibility(value: string | null | undefined): TeacherExerciseVisibility {
+    return value === 'class_limited' || value === 'teacher_only' ? value : 'public';
 }

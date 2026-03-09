@@ -18,6 +18,10 @@ function createTeacherExercise(overrides: Partial<TeacherExercise> & Pick<Teache
         hasSplit: overrides.hasSplit ?? false,
         description: overrides.description ?? '',
         classLevels: overrides.classLevels ?? ['初級'],
+        visibility: overrides.visibility ?? 'public',
+        focusTags: overrides.focusTags ?? [],
+        recommended: overrides.recommended ?? false,
+        recommendedOrder: overrides.recommendedOrder ?? null,
         createdBy: overrides.createdBy ?? 'teacher-1',
         createdAt: overrides.createdAt ?? '2026-03-08T00:00:00.000Z',
     };

@@ -2,12 +2,17 @@ import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Edit2, Play, Trash2 } from 'lucide-react';
 import { CLASS_LEVELS } from '../../../data/exercises';
+import { getTeacherExerciseVisibilityLabel, type TeacherExerciseVisibility } from '../../../lib/teacherExerciseMetadata';
 import type { MenuSettingStatus } from '../../../lib/teacherMenuSettings';
 
 interface MenuSettingsItemCardProps {
     emoji: string;
     name: string;
     categoryLabel?: string;
+    metadataChips?: string[];
+    recommended?: boolean;
+    recommendedOrder?: number | null;
+    visibility?: TeacherExerciseVisibility;
     statusByClass: Record<string, MenuSettingStatus>;
     expanded: boolean;
     onToggleExpand: () => void;
@@ -33,6 +38,10 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
     emoji,
     name,
     categoryLabel,
+    metadataChips,
+    recommended,
+    recommendedOrder,
+    visibility,
     statusByClass,
     expanded,
     onToggleExpand,
@@ -83,6 +92,52 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
                             {categoryLabel}
                         </div>
                     )}
+                    {(recommended || visibility || (metadataChips && metadataChips.length > 0)) ? (
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                            {recommended ? (
+                                <span style={{
+                                    fontFamily: "'Outfit', sans-serif",
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    color: '#FFF',
+                                    background: '#2BBAA0',
+                                    padding: '1px 6px',
+                                    borderRadius: 999,
+                                }}>
+                                    {recommendedOrder != null ? `おすすめ ${recommendedOrder}` : 'おすすめ'}
+                                </span>
+                            ) : null}
+                            {visibility && visibility !== 'public' ? (
+                                <span style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    color: '#0984E3',
+                                    background: 'rgba(9, 132, 227, 0.1)',
+                                    padding: '1px 6px',
+                                    borderRadius: 999,
+                                }}>
+                                    {getTeacherExerciseVisibilityLabel(visibility)}
+                                </span>
+                            ) : null}
+                            {metadataChips?.slice(0, 3).map((chip) => (
+                                <span
+                                    key={chip}
+                                    style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 9,
+                                        fontWeight: 700,
+                                        color: '#2BBAA0',
+                                        background: 'rgba(43,186,160,0.08)',
+                                        padding: '1px 6px',
+                                        borderRadius: 999,
+                                    }}
+                                >
+                                    {chip}
+                                </span>
+                            ))}
+                        </div>
+                    ) : null}
                 </div>
 
                 {/* Status dots */}

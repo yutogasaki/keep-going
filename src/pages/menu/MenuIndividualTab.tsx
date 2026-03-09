@@ -12,6 +12,18 @@ import {
 import { CustomExerciseSection } from './individual-tab/CustomExerciseSection';
 import { IndividualCategoryToolbar } from './individual-tab/IndividualCategoryToolbar';
 import { PublicExerciseSection } from './individual-tab/PublicExerciseSection';
+import type { Exercise } from '../../data/exercises';
+
+function sortTeacherExercises(exercises: Exercise[]): Exercise[] {
+    return [...exercises].sort((left, right) => {
+        const leftOrder = left.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
+        const rightOrder = right.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
+        if (leftOrder !== rightOrder) {
+            return leftOrder - rightOrder;
+        }
+        return left.name.localeCompare(right.name, 'ja');
+    });
+}
 
 export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
     onStartHybridSession?: (requiredIds: string[]) => void;
@@ -47,6 +59,22 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
     const filteredExercises = useMemo(
         () => filterStandardExercisesByCategory(exercises, category),
         [category, exercises],
+    );
+    const recommendedTeacherExercises = useMemo(
+        () => sortTeacherExercises(
+            filteredExercises.filter((exercise) => exercise.origin === 'teacher' && exercise.recommended)
+        ),
+        [filteredExercises],
+    );
+    const teacherExercises = useMemo(
+        () => sortTeacherExercises(
+            filteredExercises.filter((exercise) => exercise.origin === 'teacher' && !exercise.recommended)
+        ),
+        [filteredExercises],
+    );
+    const standardExercises = useMemo(
+        () => filteredExercises.filter((exercise) => exercise.origin !== 'teacher'),
+        [filteredExercises],
     );
     const filteredCustomExercises = useMemo(
         () => filterCustomExercisesByCategory(customExercises, category),
@@ -108,11 +136,39 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
             />
 
             <StandardExerciseList
-                exercises={filteredExercises}
+                title="先生のおすすめ"
+                exercises={recommendedTeacherExercises}
                 requiredExerciseIds={requiredExercises}
                 onStartExercise={onStartExercise}
                 teacherExerciseIds={teacherExerciseIds}
                 isNewTeacherContent={isNewTeacherContent}
+                emptyMessage={recommendedTeacherExercises.length === 0 ? 'おすすめの先生種目はまだありません。' : null}
+                selectionMode={selectionMode}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+            />
+
+            <StandardExerciseList
+                title="先生の種目"
+                exercises={teacherExercises}
+                requiredExerciseIds={requiredExercises}
+                onStartExercise={onStartExercise}
+                teacherExerciseIds={teacherExerciseIds}
+                isNewTeacherContent={isNewTeacherContent}
+                emptyMessage={teacherExercises.length === 0 ? 'このカテゴリの先生種目はまだありません。' : null}
+                selectionMode={selectionMode}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+            />
+
+            <StandardExerciseList
+                title="みんなの種目"
+                exercises={standardExercises}
+                requiredExerciseIds={requiredExercises}
+                onStartExercise={onStartExercise}
+                teacherExerciseIds={teacherExerciseIds}
+                isNewTeacherContent={isNewTeacherContent}
+                emptyMessage={standardExercises.length === 0 ? 'このカテゴリの種目はまだありません。' : null}
                 selectionMode={selectionMode}
                 selectedIds={selectedIds}
                 onToggleSelect={handleToggleSelect}

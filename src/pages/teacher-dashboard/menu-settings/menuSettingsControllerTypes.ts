@@ -1,4 +1,5 @@
 import type { TeacherExercise } from '../../../lib/teacherContent';
+import type { TeacherExerciseVisibility } from '../../../lib/teacherExerciseMetadata';
 import type { MenuSettingStatus } from '../../../lib/teacherMenuSettings';
 
 export interface UseMenuSettingsControllerParams {
@@ -19,6 +20,10 @@ export interface ExerciseEditorValues {
     hasSplit: boolean;
     description: string;
     classLevels: string[];
+    visibility: TeacherExerciseVisibility;
+    focusTags: string[];
+    recommended: boolean;
+    recommendedOrder: number | null;
     statusByClass?: Record<string, MenuSettingStatus>;
 }
 

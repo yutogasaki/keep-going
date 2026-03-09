@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { IndividualSelectionProps } from './types';
 import type { Exercise } from '../../../data/exercises';
 import { StandardExerciseCard } from './StandardExerciseCard';
+import { IndividualSectionHeading } from './IndividualSectionHeading';
 
 interface StandardExerciseListProps extends IndividualSelectionProps {
     exercises: Exercise[];
@@ -9,6 +10,8 @@ interface StandardExerciseListProps extends IndividualSelectionProps {
     onStartExercise: (exerciseId: string) => void;
     teacherExerciseIds?: Set<string>;
     isNewTeacherContent?: (id: string) => boolean;
+    title?: string;
+    emptyMessage?: string | null;
 }
 
 export const StandardExerciseList: React.FC<StandardExerciseListProps> = ({
@@ -17,6 +20,8 @@ export const StandardExerciseList: React.FC<StandardExerciseListProps> = ({
     onStartExercise,
     teacherExerciseIds,
     isNewTeacherContent,
+    title,
+    emptyMessage,
     selectionMode,
     selectedIds,
     onToggleSelect,
@@ -25,6 +30,20 @@ export const StandardExerciseList: React.FC<StandardExerciseListProps> = ({
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {title ? <IndividualSectionHeading>{title}</IndividualSectionHeading> : null}
+            {exercises.length === 0 && emptyMessage ? (
+                <div
+                    className="card card-sm"
+                    style={{
+                        padding: '14px 16px',
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 12,
+                        color: '#8395A7',
+                    }}
+                >
+                    {emptyMessage}
+                </div>
+            ) : null}
             {exercises.map((exercise, index) => (
                 <StandardExerciseCard
                     key={exercise.id}

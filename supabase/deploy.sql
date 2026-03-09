@@ -418,6 +418,10 @@ create table if not exists teacher_exercises (
   has_split boolean default false,
   description text,
   class_levels text[] not null default '{}',
+  visibility text not null default 'public',
+  focus_tags text[] not null default '{}',
+  recommended boolean not null default false,
+  recommended_order int,
   created_by text not null,
   created_at timestamptz default now()
 );
@@ -555,6 +559,33 @@ do $$ begin
   alter table teacher_exercises drop constraint if exists teacher_exercises_placement_check;
   alter table teacher_exercises add constraint teacher_exercises_placement_check
     check (placement in ('prep', 'stretch', 'core', 'barre', 'ending', 'rest'));
+exception when undefined_table then null;
+end $$;
+
+do $$ begin
+  alter table teacher_exercises add column visibility text not null default 'public';
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table teacher_exercises add column focus_tags text[] not null default '{}';
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table teacher_exercises add column recommended boolean not null default false;
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table teacher_exercises add column recommended_order int;
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table teacher_exercises drop constraint if exists teacher_exercises_visibility_check;
+  alter table teacher_exercises add constraint teacher_exercises_visibility_check
+    check (visibility in ('public', 'class_limited', 'teacher_only'));
 exception when undefined_table then null;
 end $$;
 
