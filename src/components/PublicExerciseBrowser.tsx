@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Download, ChevronRight } from 'lucide-react';
-import { getExercisePlacementLabel } from '../data/exercisePlacement';
+import { X, Loader2, Download } from 'lucide-react';
+import type { Exercise } from '../data/exercises';
 import { dedupeExercisesByIdentity } from '../lib/publicExerciseUtils';
 import { fetchPopularExercises, type PublicExercise } from '../lib/publicExercises';
 import { ExerciseDetailSheet } from './ExerciseDetailSheet';
 import { DISPLAY_TERMS } from '../lib/terminology';
 import { useAppStore } from '../store/useAppStore';
 import { COLOR, FONT, FONT_SIZE, RADIUS, Z } from '../lib/styles';
+import { StandardExerciseCard } from '../pages/menu/individual-tab/StandardExerciseCard';
 
 interface PublicExerciseBrowserProps {
     open: boolean;
@@ -21,6 +22,7 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [selectedExercise, setSelectedExercise] = useState<PublicExercise | null>(null);
+    const [expandedId, setExpandedId] = useState<string | null>(null);
     const startSessionWithExercises = useAppStore(s => s.startSessionWithExercises);
 
     useEffect(() => {
@@ -172,9 +174,13 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
                                         </div>
                                     ) : (
                                         exercises.map(ex => (
-                                            <BrowserExerciseCard
+                                            <PublicExerciseListCard
                                                 key={ex.id}
                                                 exercise={ex}
+                                                expanded={expandedId === ex.id}
+                                                onToggleExpand={(exerciseId) => {
+                                                    setExpandedId((current) => current === exerciseId ? null : exerciseId);
+                                                }}
                                                 onTap={() => setSelectedExercise(ex)}
                                             />
                                         ))
@@ -197,11 +203,13 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
     );
 };
 
-const BrowserExerciseCard: React.FC<{
+const PublicExerciseListCard: React.FC<{
     exercise: PublicExercise;
+    expanded: boolean;
+    onToggleExpand: (exerciseId: string) => void;
     onTap: () => void;
-}> = ({ exercise, onTap }) => {
-    const description = exercise.description || `${getExercisePlacementLabel(exercise.placement)}の ${exercise.sec}秒の種目`;
+}> = ({ exercise, expanded, onToggleExpand, onTap }) => {
+    const cardExercise = toPublicExerciseCardExercise(exercise);
 
     return (
         <div
@@ -213,146 +221,38 @@ const BrowserExerciseCard: React.FC<{
                 boxShadow: '0 10px 24px rgba(31, 41, 55, 0.08)',
             }}
         >
-            <button
-                onClick={onTap}
-                style={{
-                    border: 'none',
-                    background: 'none',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: 0,
-                }}
-            >
+            <StandardExerciseCard
+                exercise={cardExercise}
+                index={0}
+                expanded={expanded}
+                required={false}
+                selected={false}
+                onToggleExpand={onToggleExpand}
+                onStartExercise={onTap}
+            />
+            <div style={{
+                borderTop: '1px solid rgba(0,0,0,0.05)',
+                padding: '12px 16px 14px',
+                background: 'rgba(248, 249, 250, 0.72)',
+            }}>
                 <div style={{
                     display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    gap: 14,
-                    padding: '16px 16px 12px',
+                    gap: 10,
+                    flexWrap: 'wrap',
                 }}>
-                    <div
-                        style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: 16,
-                            background: 'linear-gradient(135deg, #E8F8F0, #FFE5D9)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                        }}
-                    >
-                        <span style={{ fontSize: 24, lineHeight: 1 }}>{exercise.emoji}</span>
-                    </div>
-
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <div
-                            style={{
-                                fontFamily: FONT.body,
-                                fontSize: 16,
-                                fontWeight: 700,
-                                color: COLOR.dark,
-                                lineHeight: 1.4,
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical' as const,
-                                overflow: 'hidden',
-                            }}
-                        >
-                            {exercise.name}
-                        </div>
-                        <div
-                            style={{
-                                fontFamily: FONT.body,
-                                fontSize: 12,
-                                color: COLOR.muted,
-                                display: 'flex',
-                                gap: 8,
-                                alignItems: 'center',
-                                flexWrap: 'wrap',
-                                marginTop: 4,
-                            }}
-                        >
-                            <span>👤 {exercise.authorName}</span>
-                            <span aria-hidden="true">·</span>
-                            <span>{exercise.sec}秒</span>
-                            <span aria-hidden="true">·</span>
-                            <span>{getExercisePlacementLabel(exercise.placement)}</span>
-                        </div>
-                    </div>
-
-                    <div
-                        aria-hidden="true"
-                        style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 12,
-                            background: 'rgba(43, 186, 160, 0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                        }}
-                    >
-                        <ChevronRight size={16} color={COLOR.primary} />
-                    </div>
-                </div>
-
-                <div style={{
-                    borderTop: '1px solid rgba(0,0,0,0.05)',
-                    padding: '12px 16px 14px',
-                    background: 'rgba(248, 249, 250, 0.72)',
-                }}>
-                    <div style={{
+                    <span style={{
                         fontFamily: FONT.body,
                         fontSize: FONT_SIZE.sm,
-                        color: COLOR.text,
-                        lineHeight: 1.55,
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical' as const,
-                        overflow: 'hidden',
+                        color: '#8395A7',
+                        fontWeight: 600,
                     }}>
-                        {description}
-                    </div>
-
-                    <div style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: 6,
-                        marginTop: 10,
-                    }}>
-                        <MetaChip icon={<Download size={11} />} label={`${exercise.downloadCount}回もらわれた`} />
-                        {exercise.hasSplit ? <AccentChip label="切替あり" /> : null}
-                    </div>
-
-                    <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginTop: 12,
-                    }}>
-                        <span style={{
-                            fontFamily: FONT.body,
-                            fontSize: FONT_SIZE.xs + 1,
-                            fontWeight: 700,
-                            color: COLOR.muted,
-                        }}>
-                            くわしく見る
-                        </span>
-                        <span style={{
-                            fontFamily: FONT.heading,
-                            fontSize: FONT_SIZE.sm,
-                            fontWeight: 700,
-                            color: COLOR.primary,
-                        }}>
-                            OPEN
-                        </span>
-                    </div>
+                        👤 {exercise.authorName} さんの種目
+                    </span>
+                    <MetaChip icon={<Download size={11} />} label={`${exercise.downloadCount}回もらわれた`} />
                 </div>
-            </button>
+            </div>
         </div>
     );
 };
@@ -377,18 +277,17 @@ const MetaChip: React.FC<{
     </span>
 );
 
-const AccentChip: React.FC<{ label: string }> = ({ label }) => (
-    <span style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 4,
-        padding: '4px 8px',
-        borderRadius: RADIUS.full,
-        background: 'rgba(253, 203, 110, 0.15)',
-        fontFamily: FONT.body,
-        fontSize: FONT_SIZE.xs + 1,
-        color: '#C58B00',
-    }}>
-        {label}
-    </span>
-);
+function toPublicExerciseCardExercise(exercise: PublicExercise): Exercise {
+    return {
+        id: exercise.id,
+        name: exercise.name,
+        sec: exercise.sec,
+        placement: exercise.placement,
+        internal: exercise.hasSplit ? 'P10・F10×3' : 'single',
+        classes: ['プレ', '初級', '中級', '上級'],
+        priority: 'medium',
+        emoji: exercise.emoji,
+        hasSplit: exercise.hasSplit,
+        description: exercise.description ?? undefined,
+    };
+}
