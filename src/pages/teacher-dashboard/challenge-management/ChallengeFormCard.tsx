@@ -52,8 +52,10 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
     onCancel,
     onSubmit,
 }) => {
+    const [teacherMenuQuery, setTeacherMenuQuery] = useState('');
     const [teacherMenuFocusFilter, setTeacherMenuFocusFilter] = useState<string | null>(null);
     const [exerciseSource, setExerciseSource] = useState<'standard' | 'teacher'>('standard');
+    const [teacherExerciseQuery, setTeacherExerciseQuery] = useState('');
     const [teacherExerciseFocusFilter, setTeacherExerciseFocusFilter] = useState<string | null>(null);
     const sortedTeacherMenus = sortTeacherContentByRecommendation(teacherMenus);
     const sortedTeacherExercises = sortTeacherContentByRecommendation(teacherExercises);
@@ -62,24 +64,36 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
         [sortedTeacherExercises],
     );
     const filteredTeacherExercises = useMemo(() => {
+        const normalizedQuery = teacherExerciseQuery.trim().toLowerCase();
         if (!teacherExerciseFocusFilter) {
-            return sortedTeacherExercises;
+            return sortedTeacherExercises.filter((exercise) => (
+                normalizedQuery.length === 0 || exercise.name.toLowerCase().includes(normalizedQuery)
+            ));
         }
 
-        return sortedTeacherExercises.filter((exercise) => exercise.focusTags.includes(teacherExerciseFocusFilter));
-    }, [sortedTeacherExercises, teacherExerciseFocusFilter]);
+        return sortedTeacherExercises.filter((exercise) => (
+            exercise.focusTags.includes(teacherExerciseFocusFilter)
+            && (normalizedQuery.length === 0 || exercise.name.toLowerCase().includes(normalizedQuery))
+        ));
+    }, [sortedTeacherExercises, teacherExerciseFocusFilter, teacherExerciseQuery]);
     const selectedTeacherExercise = sortedTeacherExercises.find((exercise) => exercise.id === values.exerciseId) ?? null;
     const availableTeacherMenuTags = useMemo(
         () => [...new Set(sortedTeacherMenus.flatMap((menu) => menu.focusTags))],
         [sortedTeacherMenus],
     );
     const filteredTeacherMenus = useMemo(() => {
+        const normalizedQuery = teacherMenuQuery.trim().toLowerCase();
         if (!teacherMenuFocusFilter) {
-            return sortedTeacherMenus;
+            return sortedTeacherMenus.filter((menu) => (
+                normalizedQuery.length === 0 || menu.name.toLowerCase().includes(normalizedQuery)
+            ));
         }
 
-        return sortedTeacherMenus.filter((menu) => menu.focusTags.includes(teacherMenuFocusFilter));
-    }, [sortedTeacherMenus, teacherMenuFocusFilter]);
+        return sortedTeacherMenus.filter((menu) => (
+            menu.focusTags.includes(teacherMenuFocusFilter)
+            && (normalizedQuery.length === 0 || menu.name.toLowerCase().includes(normalizedQuery))
+        ));
+    }, [sortedTeacherMenus, teacherMenuFocusFilter, teacherMenuQuery]);
     const dateError = values.startDate && values.endDate && values.endDate < values.startDate
         ? '終了日は開始日より後にしてください'
         : '';
@@ -104,10 +118,24 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
     }, [availableTeacherMenuTags, teacherMenuFocusFilter]);
 
     useEffect(() => {
+        if (values.menuSource !== 'teacher') {
+            setTeacherMenuQuery('');
+            setTeacherMenuFocusFilter(null);
+        }
+    }, [values.menuSource]);
+
+    useEffect(() => {
         if (teacherExerciseFocusFilter && !availableTeacherExerciseTags.includes(teacherExerciseFocusFilter)) {
             setTeacherExerciseFocusFilter(null);
         }
     }, [availableTeacherExerciseTags, teacherExerciseFocusFilter]);
+
+    useEffect(() => {
+        if (exerciseSource !== 'teacher') {
+            setTeacherExerciseQuery('');
+            setTeacherExerciseFocusFilter(null);
+        }
+    }, [exerciseSource]);
 
     useEffect(() => {
         if (selectedTeacherExercise) {
@@ -263,6 +291,13 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                             </div>
                             {exerciseSource === 'teacher' && availableTeacherExerciseTags.length > 0 ? (
                                 <div style={{ marginBottom: 8 }}>
+                                    <input
+                                        type="text"
+                                        value={teacherExerciseQuery}
+                                        onChange={(event) => setTeacherExerciseQuery(event.target.value)}
+                                        placeholder={`${CANONICAL_TERMS.teacherExercise}をさがす`}
+                                        style={{ ...inputStyle, marginBottom: 8 }}
+                                    />
                                     <div style={{ ...labelStyle, fontSize: FONT_SIZE.xs }}>ねらいで絞る</div>
                                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                                         <button
@@ -307,6 +342,14 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                         })}
                                     </div>
                                 </div>
+                            ) : exerciseSource === 'teacher' ? (
+                                <input
+                                    type="text"
+                                    value={teacherExerciseQuery}
+                                    onChange={(event) => setTeacherExerciseQuery(event.target.value)}
+                                    placeholder={`${CANONICAL_TERMS.teacherExercise}をさがす`}
+                                    style={{ ...inputStyle, marginBottom: 8 }}
+                                />
                             ) : null}
                             <select
                                 value={values.exerciseId}
@@ -431,6 +474,13 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                             </div>
                             {values.menuSource === 'teacher' && availableTeacherMenuTags.length > 0 ? (
                                 <div style={{ marginBottom: 8 }}>
+                                    <input
+                                        type="text"
+                                        value={teacherMenuQuery}
+                                        onChange={(event) => setTeacherMenuQuery(event.target.value)}
+                                        placeholder={`${CANONICAL_TERMS.teacherMenu}をさがす`}
+                                        style={{ ...inputStyle, marginBottom: 8 }}
+                                    />
                                     <div style={{ ...labelStyle, fontSize: FONT_SIZE.xs }}>ねらいで絞る</div>
                                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                                         <button
@@ -475,6 +525,14 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                         })}
                                     </div>
                                 </div>
+                            ) : values.menuSource === 'teacher' ? (
+                                <input
+                                    type="text"
+                                    value={teacherMenuQuery}
+                                    onChange={(event) => setTeacherMenuQuery(event.target.value)}
+                                    placeholder={`${CANONICAL_TERMS.teacherMenu}をさがす`}
+                                    style={{ ...inputStyle, marginBottom: 8 }}
+                                />
                             ) : null}
                             <select
                                 value={values.targetMenuId}

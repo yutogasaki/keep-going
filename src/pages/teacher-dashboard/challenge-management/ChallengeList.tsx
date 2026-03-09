@@ -5,6 +5,7 @@ import { CLASS_EMOJI, EXERCISES } from '../../../data/exercises';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
 import { getChallengeRewardLabel, type Challenge } from '../../../lib/challenges';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
+import { getTeacherVisibilityLabel } from '../../../lib/teacherExerciseMetadata';
 
 interface ChallengeListProps {
     loading: boolean;
@@ -64,6 +65,7 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                 const targetLabel = challenge.challengeType === 'menu'
                     ? (challenge.menuSource === 'preset' ? presetMenu?.name : teacherMenu?.name) ?? challenge.targetMenuId ?? 'メニュー'
                     : (exercise?.name ?? challenge.exerciseId ?? '種目');
+                const targetMetadata = challenge.challengeType === 'menu' ? teacherMenu : teacherExerciseMap.get(challenge.exerciseId ?? '');
                 const isActive = challenge.startDate <= today && challenge.endDate >= today;
                 const isPast = challenge.endDate < today;
 
@@ -166,6 +168,45 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                             </span>
                                         ))
                                     )}
+                                    {targetMetadata?.recommended ? (
+                                        <span style={{
+                                            fontSize: 10,
+                                            padding: '1px 6px',
+                                            borderRadius: 6,
+                                            background: '#E8F8F0',
+                                            color: '#2BBAA0',
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontWeight: 700,
+                                        }}>
+                                            {targetMetadata.recommendedOrder != null ? `おすすめ ${targetMetadata.recommendedOrder}` : 'おすすめ'}
+                                        </span>
+                                    ) : null}
+                                    {targetMetadata?.visibility && targetMetadata.visibility !== 'public' ? (
+                                        <span style={{
+                                            fontSize: 10,
+                                            padding: '1px 6px',
+                                            borderRadius: 6,
+                                            background: 'rgba(9, 132, 227, 0.1)',
+                                            color: '#0984E3',
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontWeight: 700,
+                                        }}>
+                                            {getTeacherVisibilityLabel(targetMetadata.visibility)}
+                                        </span>
+                                    ) : null}
+                                    {targetMetadata?.focusTags?.slice(0, 3).map((tag) => (
+                                        <span key={tag} style={{
+                                            fontSize: 10,
+                                            padding: '1px 6px',
+                                            borderRadius: 6,
+                                            background: 'rgba(43,186,160,0.08)',
+                                            color: '#2BBAA0',
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontWeight: 700,
+                                        }}>
+                                            {tag}
+                                        </span>
+                                    ))}
                                 </div>
                             </div>
                             <button
