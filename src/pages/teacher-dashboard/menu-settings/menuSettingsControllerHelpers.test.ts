@@ -18,6 +18,7 @@ function createOverride(overrides: Partial<TeacherItemOverride> & Pick<TeacherIt
         secOverride: overrides.secOverride ?? null,
         hasSplitOverride: overrides.hasSplitOverride ?? null,
         exerciseIdsOverride: overrides.exerciseIdsOverride ?? null,
+        displayModeOverride: overrides.displayModeOverride ?? null,
         createdBy: overrides.createdBy ?? 'teacher@example.com',
     };
 }
