@@ -163,8 +163,11 @@ export async function getRecentDays(): Promise<Map<string, SessionRecord[]>> {
 }
 
 export async function clearAllData(): Promise<void> {
-    await historyDB.clear();
-    await customExercisesDB.clear();
+    // IndexedDB: 'keepgoing' DB 全体を削除（history, custom_exercises, menuGroups, sync_queue）
+    await localforage.dropInstance({ name: 'keepgoing' });
+    // localStorage: Zustand persist store + sync account
+    localStorage.removeItem('keepgoing-app-state');
+    localStorage.removeItem('keepgoing_synced_account');
 }
 
 // Custom Exercise operations
