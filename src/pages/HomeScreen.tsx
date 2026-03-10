@@ -22,6 +22,8 @@ import { useHomeSessions } from './home/hooks/useHomeSessions';
 import { useHomeMilestoneWatcher } from './home/hooks/useHomeMilestoneWatcher';
 import { getMinClassLevel } from './menu/menuPageUtils';
 
+const noop = () => {};
+
 export const HomeScreen: React.FC = () => {
     const users = useAppStore((state) => state.users);
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
@@ -75,7 +77,7 @@ export const HomeScreen: React.FC = () => {
     );
     const teacherContent = useTeacherContent({
         classLevel: currentClassLevel,
-        onLoadError: () => {},
+        onLoadError: noop,
     });
     const teacherMenuHighlights = useMemo(
         () => pickTeacherContentHighlights(teacherContent.teacherMenus, 2),
