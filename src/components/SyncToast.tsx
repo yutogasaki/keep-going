@@ -1,6 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FLOATING_UI_BOTTOM } from '../lib/styles';
 
 interface SyncToastProps {
     message: string | null;
@@ -18,7 +19,7 @@ export const SyncToast: React.FC<SyncToastProps> = ({ message }) => {
                     transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                     style={{
                         position: 'fixed',
-                        bottom: 80,
+                        bottom: FLOATING_UI_BOTTOM,
                         left: '50%',
                         transform: 'translateX(-50%)',
                         zIndex: 9998,

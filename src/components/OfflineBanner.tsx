@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle, WifiOff } from 'lucide-react';
 import { useSyncStatus } from '../store/useSyncStatus';
+import { FLOATING_UI_BOTTOM } from '../lib/styles';
 
 export const OfflineBanner: React.FC = () => {
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -28,7 +29,7 @@ export const OfflineBanner: React.FC = () => {
             onClick={showSyncError ? clearFailure : undefined}
             style={{
                 position: 'fixed',
-                bottom: 80,
+                bottom: FLOATING_UI_BOTTOM,
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 1500,

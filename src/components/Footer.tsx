@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Home, BarChart3, List, Settings } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { audio } from '../lib/audio';
@@ -10,6 +10,7 @@ export const Footer: React.FC = () => {
     const currentTab = useAppStore((state) => state.currentTab);
     const setTab = useAppStore((state) => state.setTab);
     const startSession = useAppStore((state) => state.startSession);
+    const navRef = useRef<HTMLElement | null>(null);
     const handleTabChange = (tabId: TabId) => {
         if (tabId === currentTab) {
             return;
@@ -18,6 +19,45 @@ export const Footer: React.FC = () => {
         haptics.tick();
         setTab(tabId);
     };
+
+    useEffect(() => {
+        const nav = navRef.current;
+        if (!nav) {
+            return;
+        }
+
+        const handleClick = (event: MouseEvent) => {
+            const target = event.target;
+            if (!(target instanceof Element)) {
+                return;
+            }
+
+            const button = target.closest<HTMLButtonElement>('button[data-footer-action]');
+            if (!button) {
+                return;
+            }
+
+            const action = button.dataset.footerAction;
+            if (action === 'start-session') {
+                audio.initTTS();
+                haptics.pulse();
+                startSession();
+                return;
+            }
+
+            const tabId = button.dataset.tabId as TabId | undefined;
+            if (!tabId) {
+                return;
+            }
+
+            handleTabChange(tabId);
+        };
+
+        nav.addEventListener('click', handleClick);
+        return () => {
+            nav.removeEventListener('click', handleClick);
+        };
+    }, [currentTab, setTab, startSession]);
 
     const leftTabs: { id: TabId; icon: React.ElementType; label: string }[] = [
         { id: 'home', icon: Home, label: 'ホーム' },
@@ -31,6 +71,7 @@ export const Footer: React.FC = () => {
 
     return (
         <nav
+            ref={navRef}
             className="footer-nav"
             style={{
                 position: 'absolute',
@@ -54,9 +95,11 @@ export const Footer: React.FC = () => {
             {leftTabs.map(({ id, icon: Icon, label }) => (
                 <button
                     key={id}
-                    onClick={() => handleTabChange(id)}
+                    type="button"
                     aria-label={label}
                     aria-current={currentTab === id ? 'page' : undefined}
+                    data-footer-action="tab"
+                    data-tab-id={id}
                     style={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -71,11 +114,17 @@ export const Footer: React.FC = () => {
                         transition: 'color 0.2s ease',
                     }}
                 >
-                    <Icon size={22} strokeWidth={currentTab === id ? 2.5 : 2} />
+                    <Icon
+                        size={22}
+                        strokeWidth={currentTab === id ? 2.5 : 2}
+                        style={{ pointerEvents: 'none' }}
+                        aria-hidden="true"
+                    />
                     <span style={{
                         fontSize: 10,
                         fontWeight: 500,
                         fontFamily: "'Noto Sans JP', sans-serif",
+                        pointerEvents: 'none',
                     }}>{label}</span>
                 </button>
             ))}
@@ -83,12 +132,9 @@ export const Footer: React.FC = () => {
             {/* Center FAB */}
             <button
                 className="fab"
-                onClick={() => {
-                    audio.initTTS();
-                    haptics.pulse();
-                    startSession();
-                }}
+                type="button"
                 aria-label="ストレッチを始める"
+                data-footer-action="start-session"
             >
                 <div style={{
                     width: 0,
@@ -104,9 +150,11 @@ export const Footer: React.FC = () => {
             {rightTabs.map(({ id, icon: Icon, label }) => (
                 <button
                     key={id}
-                    onClick={() => handleTabChange(id)}
+                    type="button"
                     aria-label={label}
                     aria-current={currentTab === id ? 'page' : undefined}
+                    data-footer-action="tab"
+                    data-tab-id={id}
                     style={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -121,11 +169,17 @@ export const Footer: React.FC = () => {
                         transition: 'color 0.2s ease',
                     }}
                 >
-                    <Icon size={22} strokeWidth={currentTab === id ? 2.5 : 2} />
+                    <Icon
+                        size={22}
+                        strokeWidth={currentTab === id ? 2.5 : 2}
+                        style={{ pointerEvents: 'none' }}
+                        aria-hidden="true"
+                    />
                     <span style={{
                         fontSize: 10,
                         fontWeight: 500,
                         fontFamily: "'Noto Sans JP', sans-serif",
+                        pointerEvents: 'none',
                     }}>{label}</span>
                 </button>
             ))}

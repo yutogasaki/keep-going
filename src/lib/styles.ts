@@ -99,6 +99,10 @@ export const Z = {
     confirm: 2000,
 } as const;
 
+export const BOTTOM_NAV_HEIGHT = 56;
+export const FLOATING_UI_BOTTOM = `calc(${BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px) + 16px)`;
+export const FLOATING_UI_TOP = 'calc(env(safe-area-inset-top, 0px) + 16px)';
+
 /* ─── Common Style Mixins ──────── */
 
 /** 標準テキスト: Noto Sans JP */

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { RefreshCw, X } from 'lucide-react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { audio } from '../lib/audio';
+import { FLOATING_UI_TOP } from '../lib/styles';
 
 export const PwaReloadPrompt: React.FC = () => {
     const registrationRef = useRef<ServiceWorkerRegistration | undefined>(undefined);
@@ -65,10 +66,11 @@ export const PwaReloadPrompt: React.FC = () => {
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                     style={{
                         position: 'fixed',
-                        bottom: 80, // Above bottom nav
-                        left: 20,
-                        right: 20,
+                        top: FLOATING_UI_TOP,
+                        left: '50%',
+                        transform: 'translateX(-50%)',
                         zIndex: 9999,
+                        width: 'min(420px, calc(100vw - 32px))',
                         background: 'white',
                         borderRadius: 16,
                         padding: '16px 20px',

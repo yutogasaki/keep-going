@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FONT, FONT_SIZE, Z } from '../lib/styles';
+import { FLOATING_UI_BOTTOM, FONT, FONT_SIZE, Z } from '../lib/styles';
 
 interface ToastProps {
     message: string | null;
@@ -27,7 +27,7 @@ export const Toast: React.FC<ToastProps> = ({ message, onClose, duration = 2500,
                     transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                     style={{
                         position: 'fixed',
-                        bottom: 100,
+                        bottom: FLOATING_UI_BOTTOM,
                         left: '50%',
                         transform: 'translateX(-50%)',
                         zIndex: Z.confirm + 10,
