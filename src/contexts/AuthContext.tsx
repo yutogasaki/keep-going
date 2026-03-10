@@ -135,6 +135,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (loginContext === 'onboarding') {
             setLoginContext(null);
+            // Trigger queue processing so data created during onboarding syncs immediately
+            processQueue().catch((err) => {
+                console.warn('[sync]', err);
+            });
             return;
         }
 
