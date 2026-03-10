@@ -20,6 +20,7 @@ import {
     buildBuiltInExerciseInitial,
     buildBuiltInMenuInitial,
     getMenuSettingStatusByClass,
+    getUpdatedVisibleClassLevels,
     hasStatusByClassChanges,
     getTeacherItemOverride,
     saveStatuses,
@@ -120,6 +121,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
         newStatus: MenuSettingStatus,
     ) => {
         setError(null);
+        const currentStatusByClass = getStatusByClass(itemId, itemType);
 
         setSettings((prev) => {
             const filtered = prev.filter(
@@ -145,6 +147,62 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
         });
 
         try {
+            const teacherExercise = itemType === 'exercise'
+                ? teacherExercises.find((exercise) => exercise.id === itemId)
+                : null;
+            if (teacherExercise) {
+                const nextClassLevels = getUpdatedVisibleClassLevels(
+                    teacherExercise.classLevels,
+                    currentStatusByClass,
+                    classLevel,
+                    newStatus,
+                );
+
+                if (nextClassLevels) {
+                    await updateTeacherExercise(teacherExercise.id, {
+                        name: teacherExercise.name,
+                        sec: teacherExercise.sec,
+                        emoji: teacherExercise.emoji,
+                        placement: teacherExercise.placement,
+                        hasSplit: teacherExercise.hasSplit,
+                        description: teacherExercise.description,
+                        classLevels: nextClassLevels,
+                        visibility: teacherExercise.visibility,
+                        focusTags: teacherExercise.focusTags,
+                        recommended: teacherExercise.recommended,
+                        recommendedOrder: teacherExercise.recommendedOrder,
+                        displayMode: teacherExercise.displayMode,
+                    });
+                }
+            }
+
+            const teacherMenu = itemType === 'menu_group'
+                ? teacherMenus.find((menu) => menu.id === itemId)
+                : null;
+            if (teacherMenu) {
+                const nextClassLevels = getUpdatedVisibleClassLevels(
+                    teacherMenu.classLevels,
+                    currentStatusByClass,
+                    classLevel,
+                    newStatus,
+                );
+
+                if (nextClassLevels) {
+                    await updateTeacherMenu(teacherMenu.id, {
+                        name: teacherMenu.name,
+                        emoji: teacherMenu.emoji,
+                        description: teacherMenu.description,
+                        exerciseIds: teacherMenu.exerciseIds,
+                        classLevels: nextClassLevels,
+                        visibility: teacherMenu.visibility,
+                        focusTags: teacherMenu.focusTags,
+                        recommended: teacherMenu.recommended,
+                        recommendedOrder: teacherMenu.recommendedOrder,
+                        displayMode: teacherMenu.displayMode,
+                    });
+                }
+            }
+
             await upsertTeacherMenuSetting(itemId, itemType, classLevel, newStatus, teacherEmail);
             dispatchTeacherContentUpdated();
         } catch (err) {
@@ -152,7 +210,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
             setError(`保存に失敗しました: ${getUnknownErrorMessage(err, 'deploy.sql を実行してテーブルを作成してください。')}`);
             void loadAll();
         }
-    }, [loadAll, setError, setSettings, teacherEmail]);
+    }, [getStatusByClass, loadAll, setError, setSettings, teacherEmail, teacherExercises, teacherMenus]);
 
     const handleSaveExercise = useCallback(async (data: ExerciseEditorValues) => {
         setSubmitting(true);

@@ -12,6 +12,7 @@ import {
     type MenuSettingStatus,
     type TeacherMenuSetting,
 } from '../../../lib/teacherMenuSettings';
+import { deriveVisibleClassLevels } from './teacherEditorHelpers';
 
 export async function saveStatuses(
     itemId: string,
@@ -77,6 +78,37 @@ export function hasStatusByClassChanges(
     return false;
 }
 
+export function applyStatusChange(
+    currentStatusByClass: Record<string, MenuSettingStatus>,
+    classLevel: string,
+    newStatus: MenuSettingStatus,
+): Record<string, MenuSettingStatus> {
+    return {
+        ...currentStatusByClass,
+        [classLevel]: newStatus,
+    };
+}
+
+export function getUpdatedVisibleClassLevels(
+    currentClassLevels: string[],
+    currentStatusByClass: Record<string, MenuSettingStatus>,
+    classLevel: string,
+    newStatus: MenuSettingStatus,
+): string[] | null {
+    const nextClassLevels = deriveVisibleClassLevels(
+        applyStatusChange(currentStatusByClass, classLevel, newStatus),
+    );
+    const normalizedCurrent = CLASS_LEVELS
+        .map((target) => target.id)
+        .filter((target) => currentClassLevels.includes(target));
+
+    if (JSON.stringify(nextClassLevels) === JSON.stringify(normalizedCurrent)) {
+        return null;
+    }
+
+    return nextClassLevels;
+}
+
 export function getTeacherItemOverride(
     overrides: TeacherItemOverride[],
     itemId: string,
@@ -92,7 +124,7 @@ export function buildBuiltInExerciseInitial(
     const exercise = EXERCISES.find((item) => item.id === exerciseId);
     if (!exercise) return null;
 
-const override = getTeacherItemOverride(overrides, exerciseId, 'exercise');
+    const override = getTeacherItemOverride(overrides, exerciseId, 'exercise');
     return {
         id: exercise.id,
         name: override?.nameOverride ?? exercise.name,

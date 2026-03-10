@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { TeacherItemOverride } from '../../../lib/teacherItemOverrides';
 import {
+    applyStatusChange,
     buildBuiltInExerciseInitial,
     buildBuiltInMenuInitial,
     getMenuSettingStatusByClass,
+    getUpdatedVisibleClassLevels,
     hasStatusByClassChanges,
 } from './menuSettingsControllerHelpers';
 
@@ -96,5 +98,33 @@ describe('menuSettingsControllerHelpers', () => {
             { 初級: 'hidden', 中級: 'optional' },
             { 初級: 'required', 中級: 'optional' },
         )).toBe(true);
+    });
+
+    it('applies a single class status change without losing other classes', () => {
+        expect(applyStatusChange(
+            { 初級: 'hidden', 中級: 'optional', 上級: 'excluded' },
+            '中級',
+            'hidden',
+        )).toEqual({
+            初級: 'hidden',
+            中級: 'hidden',
+            上級: 'excluded',
+        });
+    });
+
+    it('derives updated visible class levels for quick card changes', () => {
+        expect(getUpdatedVisibleClassLevels(
+            ['初級'],
+            { プレ: 'hidden', 初級: 'optional', 中級: 'hidden', 上級: 'hidden' },
+            '中級',
+            'optional',
+        )).toEqual(['初級', '中級']);
+
+        expect(getUpdatedVisibleClassLevels(
+            ['初級', '中級'],
+            { プレ: 'hidden', 初級: 'optional', 中級: 'optional', 上級: 'hidden' },
+            '中級',
+            'hidden',
+        )).toEqual(['初級']);
     });
 });
