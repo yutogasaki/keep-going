@@ -141,8 +141,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (loginContext === 'settings') {
             handleSettingsLogin(user.id);
         } else {
-            processQueue().then(({ failed }) => {
-                if (failed === 0) useSyncStatus.getState().clearFailure();
+            processQueue().then(({ failed, dropped }) => {
+                if (dropped > 0) {
+                    useSyncStatus.getState().reportFailure(`${dropped}件のデータ同期に失敗しました`);
+                } else if (failed === 0) {
+                    useSyncStatus.getState().clearFailure();
+                }
             }).catch((err) => {
                 console.warn('[sync]', err);
                 useSyncStatus.getState().reportFailure(String(err));
@@ -190,8 +194,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Skip queue processing while a pull/merge is in progress
             // to avoid pushing stale data during account transitions
             if (isPulling()) return;
-            processQueue().then(({ failed }) => {
-                if (failed === 0) useSyncStatus.getState().clearFailure();
+            processQueue().then(({ failed, dropped }) => {
+                if (dropped > 0) {
+                    useSyncStatus.getState().reportFailure(`${dropped}件のデータ同期に失敗しました`);
+                } else if (failed === 0) {
+                    useSyncStatus.getState().clearFailure();
+                }
             }).catch((err) => {
                 console.warn('[sync]', err);
                 useSyncStatus.getState().reportFailure(String(err));

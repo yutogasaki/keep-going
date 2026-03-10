@@ -12,12 +12,29 @@ interface CreateAuthActionsParams {
 export function createAuthActions({ user, setToastMessage }: CreateAuthActionsParams) {
     const emailRedirectTo = typeof window !== 'undefined' ? window.location.origin : undefined;
 
+    // Track whether we used updateUser (anonymous → email link) vs signInWithOtp
+    // so verifyEmailAuthCode knows which OTP type to use
+    let isLinkingEmail = false;
+
     const startEmailAuth = async (
         email: string,
         mode: EmailAuthMode,
     ): Promise<{ error: AuthError | null }> => {
         if (!supabase) {
             return { error: { message: 'Supabase not configured' } as AuthError };
+        }
+
+        isLinkingEmail = false;
+
+        // Anonymous user signing up → link email to preserve anonymous account data
+        if (user?.is_anonymous && mode === 'signUp') {
+            const { error } = await supabase.auth.updateUser({ email });
+            if (!error) {
+                isLinkingEmail = true;
+                return { error: null };
+            }
+            // If email already registered, fall through to regular OTP sign-in
+            console.warn('[auth] updateUser (link email) failed, falling back to OTP:', error.message);
         }
 
         const { error } = await supabase.auth.signInWithOtp({
@@ -41,7 +58,7 @@ export function createAuthActions({ user, setToastMessage }: CreateAuthActionsPa
         const { error } = await supabase.auth.verifyOtp({
             email,
             token: code,
-            type: 'email',
+            type: isLinkingEmail ? 'email_change' : 'email',
         });
 
         return { error };

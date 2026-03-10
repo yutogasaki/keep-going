@@ -54,8 +54,12 @@ export async function initialSync(
 export function setupOnlineListener(): () => void {
     const handler = () => {
         if (navigator.onLine && getAccountId()) {
-            processQueue().then(({ failed }) => {
-                if (failed === 0) useSyncStatus.getState().clearFailure();
+            processQueue().then(({ failed, dropped }) => {
+                if (dropped > 0) {
+                    useSyncStatus.getState().reportFailure(`${dropped}件のデータ同期に失敗しました`);
+                } else if (failed === 0) {
+                    useSyncStatus.getState().clearFailure();
+                }
             }).catch((err) => {
                 console.warn('[sync]', err);
                 useSyncStatus.getState().reportFailure(String(err));

@@ -26,14 +26,14 @@ export async function enqueueSyncEntry(entry: Omit<SyncQueueEntry, 'id' | 'creat
     });
 }
 
-export async function processQueue(): Promise<{ failed: number }> {
+export async function processQueue(): Promise<{ failed: number; dropped: number }> {
     if (!supabase || !getAccountId()) {
-        return { failed: 0 };
+        return { failed: 0, dropped: 0 };
     }
 
     // Guard against concurrent queue processing (e.g. flaky network triggering multiple 'online' events)
     if (processing) {
-        return { failed: 0 };
+        return { failed: 0, dropped: 0 };
     }
     processing = true;
 
@@ -45,6 +45,7 @@ export async function processQueue(): Promise<{ failed: number }> {
     entries.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
     let failed = 0;
+    let dropped = 0;
 
     try {
         for (const entry of entries) {
@@ -65,8 +66,9 @@ export async function processQueue(): Promise<{ failed: number }> {
             } catch (error) {
                 const retryCount = (entry.retryCount ?? 0) + 1;
                 if (retryCount >= MAX_RETRIES) {
-                    console.warn(`[sync] Dropping queue entry ${entry.id} after ${MAX_RETRIES} retries:`, error);
+                    console.warn(`[sync] Dropping queue entry ${entry.id} (${entry.table}/${entry.operation}) after ${MAX_RETRIES} retries:`, error);
                     await syncQueueDB.removeItem(entry.id);
+                    dropped++;
                 } else {
                     await syncQueueDB.setItem(entry.id, { ...entry, retryCount });
                 }
@@ -77,7 +79,7 @@ export async function processQueue(): Promise<{ failed: number }> {
         processing = false;
     }
 
-    return { failed };
+    return { failed, dropped };
 }
 
 export async function clearSyncQueue(): Promise<void> {
