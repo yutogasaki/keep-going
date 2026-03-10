@@ -4,9 +4,11 @@ import { motion } from 'framer-motion';
 import { RotateCcw, Trash2 } from 'lucide-react';
 import { clearAllData } from '../../lib/db';
 import { useAppStore } from '../../store/useAppStore';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const AppInfoActionsSection: React.FC = () => {
     const setOnboardingCompleted = useAppStore(s => s.setOnboardingCompleted);
+    const { isAnonymous, signOut } = useAuth();
 
     const [showConfirmReset, setShowConfirmReset] = useState(false);
     const [showConfirmRedo, setShowConfirmRedo] = useState(false);
@@ -14,7 +16,12 @@ export const AppInfoActionsSection: React.FC = () => {
     const handleReset = async () => {
         await clearAllData();
         setShowConfirmReset(false);
-        window.location.reload();
+        if (!isAnonymous) {
+            // Logged-in user: sign out → anonymous session → reload (handled by signOut)
+            await signOut();
+        } else {
+            window.location.reload();
+        }
     };
 
     const handleRedoOnboarding = () => {
@@ -137,6 +144,12 @@ export const AppInfoActionsSection: React.FC = () => {
                             lineHeight: 1.5,
                         }}>
                             すべての記録とプロフィールが<br />削除されます。
+                            {!isAnonymous && (
+                                <>
+                                    <br />
+                                    <span style={{ color: '#E17055' }}>ログアウトされます。</span>
+                                </>
+                            )}
                         </p>
                         <div style={{ display: 'flex', gap: 10 }}>
                             <button

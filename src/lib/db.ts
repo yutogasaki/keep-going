@@ -163,11 +163,39 @@ export async function getRecentDays(): Promise<Map<string, SessionRecord[]>> {
 }
 
 export async function clearAllData(): Promise<void> {
+    // Cloud: delete user's data from all Supabase tables
+    await deleteCloudData();
     // IndexedDB: 'keepgoing' DB 全体を削除（history, custom_exercises, menuGroups, sync_queue）
     await localforage.dropInstance({ name: 'keepgoing' });
     // localStorage: Zustand persist store + sync account
     localStorage.removeItem('keepgoing-app-state');
     localStorage.removeItem('keepgoing_synced_account');
+}
+
+const CLOUD_TABLES_TO_CLEAR = [
+    'challenge_completions',
+    'exercise_downloads',
+    'public_exercises',
+    'menu_downloads',
+    'public_menus',
+    'app_settings',
+    'menu_groups',
+    'custom_exercises',
+    'sessions',
+    'family_members',
+] as const;
+
+async function deleteCloudData(): Promise<void> {
+    const { supabase } = await import('./supabase');
+    const accountId = getAccountId();
+    if (!supabase || !accountId) return;
+
+    for (const table of CLOUD_TABLES_TO_CLEAR) {
+        const { error } = await supabase.from(table).delete().eq('account_id', accountId);
+        if (error) {
+            console.warn(`[reset] Failed to delete ${table}:`, error.message);
+        }
+    }
 }
 
 // Custom Exercise operations
