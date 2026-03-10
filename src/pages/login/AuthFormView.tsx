@@ -190,7 +190,7 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
                             </form>
 
                             <p style={{ color: '#8395A7', fontSize: 12, margin: 0, lineHeight: 1.6 }}>
-                                メールに届く 6けたの確認コードを、この画面で入力して続けます。
+                                メールに届く確認コードを、この画面で入力して続けます。
                             </p>
                             {!isSignUp && (
                                 <p style={{ color: '#2B7A6A', fontSize: 12, margin: 0, lineHeight: 1.6 }}>
@@ -213,7 +213,7 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
                             <div style={{ fontSize: 13, color: '#52606D', lineHeight: 1.6, marginTop: 6 }}>
                                 {email}
                                 <br />
-                                メールに届いた 6けたの確認コードを、この画面の下に入力してください。
+                                メールに届いた確認コードを、この画面の下に入力してください。
                             </div>
                         </div>
 
@@ -222,13 +222,13 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
                                 <KeyRound size={16} color="#8395A7" />
                                 <input
                                     type="text"
-                                    placeholder="6けたコード"
+                                    placeholder="確認コード"
                                     aria-label="確認コード"
                                     value={code}
                                     inputMode="numeric"
                                     autoComplete="one-time-code"
-                                    maxLength={6}
-                                    onChange={(event) => onCodeChange(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    maxLength={8}
+                                    onChange={(event) => onCodeChange(event.target.value.replace(/\D/g, '').slice(0, 8))}
                                     style={{
                                         flex: 1,
                                         border: 'none',
@@ -242,8 +242,8 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
 
                             <button
                                 type="submit"
-                                disabled={loading || code.trim().length !== 6}
-                                style={primaryButtonStyle(loading || code.trim().length !== 6)}
+                                disabled={loading || code.trim().length < 6}
+                                style={primaryButtonStyle(loading || code.trim().length < 6)}
                             >
                                 {loading ? '確認中...' : 'コードで続ける'}
                             </button>
