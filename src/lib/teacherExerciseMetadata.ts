@@ -29,7 +29,8 @@ export function normalizeTeacherContentDisplayMode(
     value: string | null | undefined,
     fallback: TeacherContentDisplayMode = 'teacher_section',
 ): TeacherContentDisplayMode {
-    return value === 'standard_inline' ? value : fallback;
+    if (value === 'standard_inline' || value === 'teacher_section') return value;
+    return fallback;
 }
 
 export function getTeacherContentDisplayModeLabel(displayMode: TeacherContentDisplayMode): string {

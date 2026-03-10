@@ -310,48 +310,6 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
                         </div>
                     </EditorSection>
 
-                    <EditorSection label="表示する場所">
-                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                            {([
-                                {
-                                    id: 'teacher_section' as const,
-                                    description: '先生種目にまとめて表示します',
-                                },
-                                {
-                                    id: 'standard_inline' as const,
-                                    description: `「${getExercisePlacementLabel(placement)}」のいちばん下に入れます。おすすめでも先頭には出しません`,
-                                },
-                            ]).map((option) => {
-                                const selected = displayMode === option.id;
-                                return (
-                                    <button
-                                        key={option.id}
-                                        type="button"
-                                        onClick={() => setDisplayMode(option.id)}
-                                        style={{
-                                            padding: '10px 14px',
-                                            borderRadius: 12,
-                                            border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
-                                            background: selected ? 'rgba(43,186,160,0.08)' : '#FFF',
-                                            color: selected ? '#2BBAA0' : COLOR.dark,
-                                            fontFamily: FONT.body,
-                                            fontSize: 13,
-                                            fontWeight: 700,
-                                            cursor: 'pointer',
-                                        }}
-                                    >
-                                        {getTeacherContentDisplayModeLabel(option.id)}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        <div style={{ marginTop: 8, fontFamily: FONT.body, fontSize: 12, color: COLOR.muted, lineHeight: 1.6 }}>
-                            {displayMode === 'standard_inline'
-                                ? `この種目は「${getExercisePlacementLabel(placement)}」カテゴリの最後に追加します。`
-                                : 'この種目は「先生種目」にまとめて表示します。'}
-                        </div>
-                    </EditorSection>
-
                     <EditorSection>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <div>
@@ -432,6 +390,48 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
                     </EditorSection>
                 </>
             ) : null}
+
+            <EditorSection label="表示する場所">
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {([
+                        {
+                            id: 'teacher_section' as const,
+                            description: '先生種目にまとめて表示します',
+                        },
+                        {
+                            id: 'standard_inline' as const,
+                            description: `「${getExercisePlacementLabel(placement)}」のいちばん下に入れます。おすすめでも先頭には出しません`,
+                        },
+                    ]).map((option) => {
+                        const selected = displayMode === option.id;
+                        return (
+                            <button
+                                key={option.id}
+                                type="button"
+                                onClick={() => setDisplayMode(option.id)}
+                                style={{
+                                    padding: '10px 14px',
+                                    borderRadius: 12,
+                                    border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
+                                    background: selected ? 'rgba(43,186,160,0.08)' : '#FFF',
+                                    color: selected ? '#2BBAA0' : COLOR.dark,
+                                    fontFamily: FONT.body,
+                                    fontSize: 13,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                {getTeacherContentDisplayModeLabel(option.id)}
+                            </button>
+                        );
+                    })}
+                </div>
+                <div style={{ marginTop: 8, fontFamily: FONT.body, fontSize: 12, color: COLOR.muted, lineHeight: 1.6 }}>
+                    {displayMode === 'standard_inline'
+                        ? `この種目は「${getExercisePlacementLabel(placement)}」カテゴリの最後に追加します。`
+                        : 'この種目は「先生種目」にまとめて表示します。'}
+                </div>
+            </EditorSection>
 
             <EditorSection label="クラスごとの設定">
                 <TeacherEditorStatusSection

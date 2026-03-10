@@ -29,7 +29,10 @@ describe('teacherExerciseMetadata', () => {
 
     it('normalizes display modes and exposes short labels', () => {
         expect(normalizeTeacherContentDisplayMode('standard_inline')).toBe('standard_inline');
+        expect(normalizeTeacherContentDisplayMode('teacher_section')).toBe('teacher_section');
+        expect(normalizeTeacherContentDisplayMode('teacher_section', 'standard_inline')).toBe('teacher_section');
         expect(normalizeTeacherContentDisplayMode('unexpected')).toBe('teacher_section');
+        expect(normalizeTeacherContentDisplayMode(null, 'standard_inline')).toBe('standard_inline');
         expect(getTeacherContentDisplayModeLabel('standard_inline')).toBe('標準欄');
         expect(getTeacherContentDisplayModeLabel('teacher_section')).toBe('先生欄');
     });

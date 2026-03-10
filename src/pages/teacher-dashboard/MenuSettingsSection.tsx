@@ -11,7 +11,7 @@ import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import { useAppStore } from '../../store/useAppStore';
 import { audio } from '../../lib/audio';
 import type { TeacherExercise, TeacherMenu } from '../../lib/teacherContent';
-import { sortTeacherContentByRecommendation } from '../../lib/teacherExerciseMetadata';
+import { sortTeacherContentByRecommendation, type TeacherContentDisplayMode } from '../../lib/teacherExerciseMetadata';
 import { CANONICAL_TERMS, DISPLAY_TERMS } from '../../lib/terminology';
 
 function sortTeacherExercises(exercises: TeacherExercise[]): TeacherExercise[] {
@@ -263,12 +263,14 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                         const ov = getOverride(ex.id, 'exercise');
                         const displayName = ov?.nameOverride ?? ex.name;
                         const displayEmoji = ov?.emojiOverride ?? ex.emoji;
+                        const displayModeOv = ov?.displayModeOverride as TeacherContentDisplayMode | null | undefined;
                         return (
                             <MenuSettingsItemCard
                                 key={ex.id}
                                 emoji={displayEmoji}
                                 name={displayName}
                                 categoryLabel={getExercisePlacementLabel(ex.placement)}
+                                displayMode={displayModeOv ?? undefined}
                                 statusByClass={getStatusByClass(ex.id, 'exercise')}
                                 expanded={expandedItemId === ex.id}
                                 onToggleExpand={() => toggleExpandedItem(ex.id)}
@@ -316,11 +318,13 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                         const ov = getOverride(group.id, 'menu_group');
                         const displayName = ov?.nameOverride ?? group.name;
                         const displayEmoji = ov?.emojiOverride ?? group.emoji;
+                        const displayModeOv = ov?.displayModeOverride as TeacherContentDisplayMode | null | undefined;
                         return (
                             <MenuSettingsItemCard
                                 key={group.id}
                                 emoji={displayEmoji}
                                 name={displayName}
+                                displayMode={displayModeOv ?? undefined}
                                 statusByClass={getStatusByClass(group.id, 'menu_group')}
                                 expanded={expandedItemId === group.id}
                                 onToggleExpand={() => toggleExpandedItem(group.id)}
