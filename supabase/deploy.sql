@@ -16,6 +16,8 @@ create index if not exists idx_user_roles_role on user_roles (role);
 
 alter table user_roles enable row level security;
 
+-- NOTE: 初期ロール割り当て。本番メールアドレスを含む。
+-- 追加のロール管理は Supabase ダッシュボードの user_roles テーブルで行う。
 insert into user_roles (email, role)
 values
   ('yu.togasaki@gmail.com', 'teacher'),

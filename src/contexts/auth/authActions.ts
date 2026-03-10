@@ -53,12 +53,13 @@ export function createAuthActions({ user, setToastMessage }: CreateAuthActionsPa
         }
 
         if (user?.is_anonymous) {
-            const { error } = await supabase.auth.linkIdentity({
+            const { error: linkError } = await supabase.auth.linkIdentity({
                 provider: 'google',
                 options: { redirectTo: emailRedirectTo },
             });
 
-            if (error) {
+            if (linkError) {
+                console.warn('[auth] linkIdentity failed, falling back to signInWithOAuth:', linkError.message);
                 const { error: oauthError } = await supabase.auth.signInWithOAuth({
                     provider: 'google',
                     options: { redirectTo: emailRedirectTo },
@@ -66,7 +67,7 @@ export function createAuthActions({ user, setToastMessage }: CreateAuthActionsPa
                 return { error: oauthError };
             }
 
-            return { error };
+            return { error: linkError };
         }
 
         const { error } = await supabase.auth.signInWithOAuth({
@@ -82,14 +83,18 @@ export function createAuthActions({ user, setToastMessage }: CreateAuthActionsPa
         await supabase.auth.signOut();
         await clearSyncQueue();
         localStorage.removeItem(SYNCED_ACCOUNT_KEY);
-        setToastMessage('ログアウトしました');
+        // Clear persisted Zustand store so next login starts clean
+        localStorage.removeItem('keepgoing-app-state');
 
-        supabase.auth.signInAnonymously().then(({ error }) => {
-            if (error) {
-                console.warn('[auth] anonymous re-sign-in failed:', error);
-                setToastMessage('再接続に失敗しました。アプリを再起動してください。');
-            }
-        });
+        const { error } = await supabase.auth.signInAnonymously();
+        if (error) {
+            console.warn('[auth] anonymous re-sign-in failed:', error);
+            setToastMessage('再接続に失敗しました。アプリを再起動してください。');
+            return;
+        }
+
+        // Reload to reinitialize app with fresh state
+        window.location.reload();
     };
 
     return {

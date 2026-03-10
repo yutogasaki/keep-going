@@ -2,15 +2,19 @@
 -- Run this in the Supabase SQL Editor (Dashboard > SQL Editor)
 
 -- ─── 開発者判定関数 ─────────────────────────────────
+-- NOTE: deploy.sql の正本と同じ user_roles ベース実装に統一
 create or replace function is_developer()
 returns boolean
 language sql
 security definer
 stable
+set search_path = public
 as $$
-  select coalesce(
-    (select email from auth.users where id = auth.uid()) = 'yu.togasaki@gmail.com',
-    false
+  select exists(
+    select 1
+    from public.user_roles
+    where email = lower(coalesce((select email from auth.users where id = auth.uid()), ''))
+      and role = 'developer'
   );
 $$;
 

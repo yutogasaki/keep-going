@@ -59,7 +59,10 @@ async function deleteWithQueue(
 
 export async function pushSession(record: SessionRecord): Promise<void> {
     const accountId = getAccountId();
-    if (!accountId) return;
+    if (!accountId) {
+        console.warn('[sync] pushSession skipped: no accountId');
+        return;
+    }
 
     const payload = toSessionUpsertPayload(record, accountId);
     await upsertWithQueue('sessions', payload, 'pushSession');
@@ -67,7 +70,10 @@ export async function pushSession(record: SessionRecord): Promise<void> {
 
 export async function pushFamilyMember(user: UserProfileStore): Promise<void> {
     const accountId = getAccountId();
-    if (!accountId) return;
+    if (!accountId) {
+        console.warn('[sync] pushFamilyMember skipped: no accountId');
+        return;
+    }
 
     const payload = toFamilyMemberUpsertPayload(user, accountId);
     await upsertWithQueue('family_members', payload, 'pushFamilyMember');
@@ -75,7 +81,10 @@ export async function pushFamilyMember(user: UserProfileStore): Promise<void> {
 
 export async function deleteFamilyMember(userId: string): Promise<void> {
     const accountId = getAccountId();
-    if (!accountId) return;
+    if (!accountId) {
+        console.warn('[sync] deleteFamilyMember skipped: no accountId');
+        return;
+    }
 
     const payload = { id: userId, account_id: accountId };
     await deleteWithQueue('family_members', payload, 'deleteFamilyMember');
@@ -83,7 +92,10 @@ export async function deleteFamilyMember(userId: string): Promise<void> {
 
 export async function pushCustomExercise(exercise: CustomExercise): Promise<void> {
     const accountId = getAccountId();
-    if (!accountId) return;
+    if (!accountId) {
+        console.warn('[sync] pushCustomExercise skipped: no accountId');
+        return;
+    }
 
     const payload = toCustomExerciseUpsertPayload(exercise, accountId);
     await upsertWithQueue('custom_exercises', payload, 'pushCustomExercise');
@@ -91,7 +103,10 @@ export async function pushCustomExercise(exercise: CustomExercise): Promise<void
 
 export async function deleteCustomExerciseRemote(exerciseId: string): Promise<void> {
     const accountId = getAccountId();
-    if (!accountId) return;
+    if (!accountId) {
+        console.warn('[sync] deleteCustomExerciseRemote skipped: no accountId');
+        return;
+    }
 
     const payload = { id: exerciseId, account_id: accountId };
     await deleteWithQueue('custom_exercises', payload, 'deleteCustomExerciseRemote');
@@ -99,7 +114,10 @@ export async function deleteCustomExerciseRemote(exerciseId: string): Promise<vo
 
 export async function pushMenuGroup(group: MenuGroup): Promise<void> {
     const accountId = getAccountId();
-    if (!accountId) return;
+    if (!accountId) {
+        console.warn('[sync] pushMenuGroup skipped: no accountId');
+        return;
+    }
 
     const payload = toMenuGroupUpsertPayload(group, accountId);
     await upsertWithQueue('menu_groups', payload, 'pushMenuGroup');
@@ -107,7 +125,10 @@ export async function pushMenuGroup(group: MenuGroup): Promise<void> {
 
 export async function deleteMenuGroupRemote(groupId: string): Promise<void> {
     const accountId = getAccountId();
-    if (!accountId) return;
+    if (!accountId) {
+        console.warn('[sync] deleteMenuGroupRemote skipped: no accountId');
+        return;
+    }
 
     const payload = { id: groupId, account_id: accountId };
     await deleteWithQueue('menu_groups', payload, 'deleteMenuGroupRemote');
@@ -115,7 +136,10 @@ export async function deleteMenuGroupRemote(groupId: string): Promise<void> {
 
 export async function pushAppSettings(settings: AppSettingsInput): Promise<void> {
     const accountId = getAccountId();
-    if (!accountId) return;
+    if (!accountId) {
+        console.warn('[sync] pushAppSettings skipped: no accountId');
+        return;
+    }
 
     const payload = toAppSettingsUpsertPayload(settings, accountId);
     await upsertWithQueue('app_settings', payload, 'pushAppSettings');

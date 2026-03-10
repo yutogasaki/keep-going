@@ -10,7 +10,7 @@ import {
 } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { initialSync, processQueue, setAccountId, setupOnlineListener } from '../lib/sync';
+import { initialSync, isPulling, processQueue, setAccountId, setupOnlineListener } from '../lib/sync';
 import { useAppStore } from '../store/useAppStore';
 import { useSyncStatus } from '../store/useSyncStatus';
 import { SyncConflictModal } from '../components/SyncConflictModal';
@@ -187,6 +187,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!user) return;
 
         const interval = setInterval(() => {
+            // Skip queue processing while a pull/merge is in progress
+            // to avoid pushing stale data during account transitions
+            if (isPulling()) return;
             processQueue().then(({ failed }) => {
                 if (failed === 0) useSyncStatus.getState().clearFailure();
             }).catch((err) => {
