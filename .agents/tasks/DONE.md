@@ -35,3 +35,6 @@
 - session overlay の主要ボタンへ aria-label を追加し、background resume countdown 完了時に再生を戻す修正を入れた
 - 旧仕様書に残っていた `ぴよ` 呼称を主要仕様書から除去し、`ふわふわ` / `お部屋` ベースへ統一した
 
+## 2026-03-10: 公開種目 migration 補完
+- `supabase/migration_public_exercises.sql` を追加し、既存 Supabase 環境でも `public_exercises` / `exercise_downloads` / 公開種目 RPC を後追い適用できるようにした
+- `じぶん種目` の公開失敗要因だった公開種目用 migration 抜けを埋め、`npm run verify:quick` で型チェックとテスト通過を確認した
