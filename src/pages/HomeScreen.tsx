@@ -6,10 +6,13 @@ import { PublicExerciseBrowser } from '../components/PublicExerciseBrowser';
 import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
 import { ExerciseDetailSheet } from '../components/ExerciseDetailSheet';
 import { MenuDetailSheet } from '../components/MenuDetailSheet';
+import type { ExercisePlacement } from '../data/exercisePlacement';
 import type { PublicExercise } from '../lib/publicExercises';
 import type { PublicMenu } from '../lib/publicMenus';
 import { audio } from '../lib/audio';
+import { pickTeacherContentHighlights } from '../lib/teacherExerciseMetadata';
 import { useAppStore } from '../store/useAppStore';
+import { useTeacherContent } from '../hooks/useTeacherContent';
 import { HomeMilestoneModal } from './home/HomeMilestoneModal';
 import { HomeAnimatedBackground } from './home/HomeAnimatedBackground';
 import { FuwafuwaHomeCard } from './home/FuwafuwaHomeCard';
@@ -17,11 +20,13 @@ import { HomeChallengesAndMenus } from './home/HomeChallengesAndMenus';
 import { useHomeChallenges } from './home/hooks/useHomeChallenges';
 import { useHomeSessions } from './home/hooks/useHomeSessions';
 import { useHomeMilestoneWatcher } from './home/hooks/useHomeMilestoneWatcher';
+import { getMinClassLevel } from './menu/menuPageUtils';
 
 export const HomeScreen: React.FC = () => {
     const users = useAppStore((state) => state.users);
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const setSessionUserIds = useAppStore((state) => state.setSessionUserIds);
+    const setTab = useAppStore((state) => state.setTab);
     const updateUser = useAppStore((state) => state.updateUser);
     const activeMilestoneModal = useAppStore((state) => state.activeMilestoneModal);
     const setActiveMilestoneModal = useAppStore((state) => state.setActiveMilestoneModal);
@@ -56,10 +61,43 @@ export const HomeScreen: React.FC = () => {
     }, [users, sessionUserIds, setSessionUserIds]);
 
     const isTogetherMode = sessionUserIds.length > 1;
+    const currentUsers = useMemo(
+        () => users.filter((user) => sessionUserIds.includes(user.id)),
+        [sessionUserIds, users],
+    );
+    const currentClassLevel = useMemo(
+        () => getMinClassLevel(currentUsers),
+        [currentUsers],
+    );
     const selectedUser = useMemo(
         () => activeUsers[0] ?? users.find((user) => user.id === sessionUserIds[0]) ?? null,
         [activeUsers, sessionUserIds, users],
     );
+    const teacherContent = useTeacherContent({
+        classLevel: currentClassLevel,
+        onLoadError: () => {},
+    });
+    const teacherMenuHighlights = useMemo(
+        () => pickTeacherContentHighlights(teacherContent.teacherMenus, 2),
+        [teacherContent.teacherMenus],
+    );
+    const teacherMenuExerciseMap = useMemo(() => {
+        const map = new Map<string, {
+            name: string;
+            emoji: string;
+            sec: number;
+            placement: ExercisePlacement;
+        }>();
+        for (const exercise of teacherContent.teacherExercises) {
+            map.set(exercise.id, {
+                name: exercise.name,
+                emoji: exercise.emoji,
+                sec: exercise.sec,
+                placement: exercise.placement,
+            });
+        }
+        return map;
+    }, [teacherContent.teacherExercises]);
 
     const {
         filteredChallenges,
@@ -173,11 +211,22 @@ export const HomeScreen: React.FC = () => {
                     pastChallenges={pastChallenges}
                     completions={completions}
                     teacherExercises={teacherExercises}
+                    teacherMenuHighlights={teacherMenuHighlights}
+                    teacherMenuExerciseMap={teacherMenuExerciseMap}
+                    isNewTeacherContent={teacherContent.isNewTeacherContent}
                     pastExpanded={pastExpanded}
                     onTogglePastExpanded={() => setPastExpanded((previous) => !previous)}
                     onChallengesUpdated={loadChallenges}
                     onOpenMenuBrowser={() => setMenuBrowserOpen(true)}
                     onOpenExerciseBrowser={() => setExerciseBrowserOpen(true)}
+                    onOpenMenuTab={() => setTab('menu')}
+                    onTeacherMenuTap={(menu) => {
+                        startSessionWithExercises(menu.exerciseIds, {
+                            sourceMenuId: menu.id,
+                            sourceMenuSource: 'teacher',
+                            sourceMenuName: menu.name,
+                        });
+                    }}
                     onMenuTap={setSelectedPublicMenu}
                     onExerciseTap={setSelectedPublicExercise}
                 />

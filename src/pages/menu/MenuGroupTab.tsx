@@ -1,6 +1,7 @@
 import React from 'react';
 import { AutoMenuSettingsCard } from './group-tab/AutoMenuSettingsCard';
 import { PresetGroupsSection } from './group-tab/PresetGroupsSection';
+import { TeacherGroupsSection } from './group-tab/TeacherGroupsSection';
 import { CustomGroupsSection } from './group-tab/CustomGroupsSection';
 import { PublicMenuSection } from './group-tab/PublicMenuSection';
 import type { MenuGroupTabProps } from './group-tab/types';
@@ -29,8 +30,8 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
     teacherMenuIds,
     isNewTeacherContent,
 }) => {
-    const recommendedTeacherGroups = presets.filter((group) => teacherMenuIds?.has(group.id) && group.recommended);
-    const mainGroups = presets.filter((group) => !(teacherMenuIds?.has(group.id) && group.recommended));
+    const teacherGroups = presets.filter((group) => teacherMenuIds?.has(group.id));
+    const mainGroups = presets.filter((group) => !teacherMenuIds?.has(group.id));
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '0 20px' }}>
@@ -43,17 +44,6 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
                 onOpenCustomMenu={onOpenCustomMenu}
             />
 
-            {recommendedTeacherGroups.length > 0 ? (
-                <PresetGroupsSection
-                    title="先生のおすすめ"
-                    groups={recommendedTeacherGroups}
-                    exerciseMap={exerciseMap}
-                    onTap={onGroupTap}
-                    teacherMenuIds={teacherMenuIds}
-                    isNewTeacherContent={isNewTeacherContent}
-                />
-            ) : null}
-
             <PresetGroupsSection
                 title="メニュー"
                 groups={mainGroups}
@@ -62,6 +52,13 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
                 teacherMenuIds={teacherMenuIds}
                 isNewTeacherContent={isNewTeacherContent}
                 emptyMessage="いま使えるメニューはまだありません。"
+            />
+
+            <TeacherGroupsSection
+                groups={teacherGroups}
+                exerciseMap={exerciseMap}
+                onTap={onGroupTap}
+                isNewTeacherContent={isNewTeacherContent}
             />
 
             <CustomGroupsSection

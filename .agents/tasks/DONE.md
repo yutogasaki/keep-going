@@ -38,3 +38,8 @@
 ## 2026-03-10: 公開種目 migration 補完
 - `supabase/migration_public_exercises.sql` を追加し、既存 Supabase 環境でも `public_exercises` / `exercise_downloads` / 公開種目 RPC を後追い適用できるようにした
 - `じぶん種目` の公開失敗要因だった公開種目用 migration 抜けを埋め、`npm run verify:quick` で型チェックとテスト通過を確認した
+
+## 2026-03-10: 先生メニューの表示整理
+- メニュー画面の先生メニューを `先生のおすすめ` と通常欄へ分割せず、`先生メニュー` の1セクションへ集約して折りたたみ可能にした
+- ホームに `先生から` の気づき導線を追加し、先生メニューの `NEW` / `おすすめ` を最大2件まで表示する構成にした
+- `NEW` 判定を 14 日の共通 helper に寄せ、型チェック・218件のテスト・desktop/mobile の visual QA で空状態の崩れなしを確認した

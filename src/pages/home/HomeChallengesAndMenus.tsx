@@ -3,21 +3,28 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { ChallengeCard } from '../../components/ChallengeCard';
 import { PopularMenusRow } from '../../components/PopularMenusRow';
+import { HomeTeacherMenuHighlights } from './HomeTeacherMenuHighlights';
+import type { ExercisePlacement } from '../../data/exercisePlacement';
 import type { Challenge, ChallengeCompletion } from '../../lib/challenges';
 import type { PublicExercise } from '../../lib/publicExercises';
 import type { PublicMenu } from '../../lib/publicMenus';
-import type { TeacherExercise } from '../../lib/teacherContent';
+import type { TeacherExercise, TeacherMenu } from '../../lib/teacherContent';
 
 interface HomeChallengesAndMenusProps {
     filteredChallenges: Challenge[];
     pastChallenges: Challenge[];
     completions: ChallengeCompletion[];
     teacherExercises: TeacherExercise[];
+    teacherMenuHighlights: TeacherMenu[];
+    teacherMenuExerciseMap: Map<string, { name: string; emoji: string; sec: number; placement: ExercisePlacement }>;
+    isNewTeacherContent: (id: string) => boolean;
     pastExpanded: boolean;
     onTogglePastExpanded: () => void;
     onChallengesUpdated: () => void;
     onOpenMenuBrowser: () => void;
     onOpenExerciseBrowser: () => void;
+    onOpenMenuTab: () => void;
+    onTeacherMenuTap: (menu: TeacherMenu) => void;
     onMenuTap: (menu: PublicMenu) => void;
     onExerciseTap: (exercise: PublicExercise) => void;
 }
@@ -27,11 +34,16 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
     pastChallenges,
     completions,
     teacherExercises,
+    teacherMenuHighlights,
+    teacherMenuExerciseMap,
+    isNewTeacherContent,
     pastExpanded,
     onTogglePastExpanded,
     onChallengesUpdated,
     onOpenMenuBrowser,
     onOpenExerciseBrowser,
+    onOpenMenuTab,
+    onTeacherMenuTap,
     onMenuTap,
     onExerciseTap,
 }) => {
@@ -128,6 +140,14 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                     </AnimatePresence>
                 </div>
             )}
+
+            <HomeTeacherMenuHighlights
+                menus={teacherMenuHighlights}
+                exerciseMap={teacherMenuExerciseMap}
+                isNewTeacherContent={isNewTeacherContent}
+                onTap={onTeacherMenuTap}
+                onOpenMenuTab={onOpenMenuTab}
+            />
 
             <div
                 style={{

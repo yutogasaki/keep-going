@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+    isTeacherContentNew,
     isTeacherContentVisible,
+    pickTeacherContentHighlights,
     sortTeacherContentByRecommendation,
 } from '../teacherExerciseMetadata';
 
@@ -21,5 +23,48 @@ describe('teacherExerciseMetadata', () => {
         ]);
 
         expect(sorted.map((item) => item.name)).toEqual(['A', 'C', 'D', 'B']);
+    });
+
+    it('treats items created within 14 days as new', () => {
+        const now = new Date('2026-03-10T00:00:00Z').getTime();
+
+        expect(isTeacherContentNew('2026-02-24T00:00:00Z', now)).toBe(true);
+        expect(isTeacherContentNew('2026-02-23T23:59:59Z', now)).toBe(false);
+    });
+
+    it('picks home highlights by newness first and then recommendation order', () => {
+        const now = new Date('2026-03-10T00:00:00Z').getTime();
+        const picked = pickTeacherContentHighlights([
+            {
+                name: '古いおすすめ',
+                createdAt: '2026-02-01T00:00:00Z',
+                recommended: true,
+                recommendedOrder: 1,
+            },
+            {
+                name: '新しい通常',
+                createdAt: '2026-03-09T00:00:00Z',
+                recommended: false,
+                recommendedOrder: null,
+            },
+            {
+                name: '新しいおすすめ',
+                createdAt: '2026-03-08T00:00:00Z',
+                recommended: true,
+                recommendedOrder: 2,
+            },
+            {
+                name: '古い通常',
+                createdAt: '2026-02-01T00:00:00Z',
+                recommended: false,
+                recommendedOrder: null,
+            },
+        ], 3, now);
+
+        expect(picked.map((item) => item.name)).toEqual([
+            '新しいおすすめ',
+            '新しい通常',
+            '古いおすすめ',
+        ]);
     });
 });

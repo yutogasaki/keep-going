@@ -24,6 +24,9 @@ export const TEACHER_FOCUS_TAG_OPTIONS = [
     'リラックス',
 ] as const;
 
+export const TEACHER_CONTENT_NEW_DAYS = 14;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 export function getTeacherVisibilityLabel(visibility: TeacherContentVisibility): string {
     return TEACHER_EXERCISE_VISIBILITY_OPTIONS.find((option) => option.id === visibility)?.label ?? 'みんな';
 }
@@ -68,4 +71,52 @@ export function sortTeacherContentByRecommendation<T extends {
 
         return left.name.localeCompare(right.name, 'ja');
     });
+}
+
+export function isTeacherContentNew(createdAt: string, now = Date.now()): boolean {
+    const createdAtTime = new Date(createdAt).getTime();
+    if (Number.isNaN(createdAtTime)) {
+        return false;
+    }
+
+    return now - createdAtTime <= TEACHER_CONTENT_NEW_DAYS * DAY_MS;
+}
+
+export function pickTeacherContentHighlights<T extends {
+    name: string;
+    createdAt: string;
+    recommended?: boolean;
+    recommendedOrder?: number | null;
+}>(items: T[], limit = 2, now = Date.now()): T[] {
+    return [...items]
+        .filter((item) => item.recommended || isTeacherContentNew(item.createdAt, now))
+        .sort((left, right) => {
+            const leftNewPriority = isTeacherContentNew(left.createdAt, now) ? 0 : 1;
+            const rightNewPriority = isTeacherContentNew(right.createdAt, now) ? 0 : 1;
+            if (leftNewPriority !== rightNewPriority) {
+                return leftNewPriority - rightNewPriority;
+            }
+
+            const leftRecommendedPriority = left.recommended ? 0 : 1;
+            const rightRecommendedPriority = right.recommended ? 0 : 1;
+            if (leftRecommendedPriority !== rightRecommendedPriority) {
+                return leftRecommendedPriority - rightRecommendedPriority;
+            }
+
+            const leftRecommendedOrder = left.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
+            const rightRecommendedOrder = right.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
+            if (leftRecommendedOrder !== rightRecommendedOrder) {
+                return leftRecommendedOrder - rightRecommendedOrder;
+            }
+
+            const leftCreatedAtTime = new Date(left.createdAt).getTime();
+            const rightCreatedAtTime = new Date(right.createdAt).getTime();
+            if (!Number.isNaN(leftCreatedAtTime) && !Number.isNaN(rightCreatedAtTime)
+                && leftCreatedAtTime !== rightCreatedAtTime) {
+                return rightCreatedAtTime - leftCreatedAtTime;
+            }
+
+            return left.name.localeCompare(right.name, 'ja');
+        })
+        .slice(0, limit);
 }
