@@ -3,7 +3,7 @@ import {
     isRestPlacement,
     type ExercisePlacement,
 } from './exercisePlacement';
-import type { TeacherExerciseVisibility } from '../lib/teacherExerciseMetadata';
+import type { TeacherContentDisplayMode, TeacherExerciseVisibility } from '../lib/teacherExerciseMetadata';
 
 export type ClassLevel = '先生' | 'プレ' | '初級' | '中級' | '上級' | 'その他';
 
@@ -48,6 +48,7 @@ export interface Exercise {
     focusTags?: string[];
     recommended?: boolean;
     recommendedOrder?: number | null;
+    displayMode?: TeacherContentDisplayMode;
 }
 
 export const EXERCISES: Exercise[] = [

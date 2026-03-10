@@ -303,6 +303,7 @@ export interface Database {
                     focus_tags: string[];
                     recommended: boolean;
                     recommended_order: number | null;
+                    display_mode: string;
                     created_by: string;
                     created_at: string;
                 };
@@ -319,6 +320,7 @@ export interface Database {
                     focus_tags?: string[];
                     recommended?: boolean;
                     recommended_order?: number | null;
+                    display_mode?: string;
                     created_by: string;
                 };
                 Update: Partial<Database['public']['Tables']['teacher_exercises']['Insert']>;
@@ -336,6 +338,7 @@ export interface Database {
                     focus_tags: string[];
                     recommended: boolean;
                     recommended_order: number | null;
+                    display_mode: string;
                     created_by: string;
                     created_at: string;
                 };
@@ -350,6 +353,7 @@ export interface Database {
                     focus_tags?: string[];
                     recommended?: boolean;
                     recommended_order?: number | null;
+                    display_mode?: string;
                     created_by: string;
                 };
                 Update: Partial<Database['public']['Tables']['teacher_menus']['Insert']>;

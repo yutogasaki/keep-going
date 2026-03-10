@@ -2,7 +2,10 @@ import { CLASS_LEVELS, EXERCISES } from '../../../data/exercises';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
 import type { TeacherItemOverride } from '../../../lib/teacherItemOverrides';
-import type { TeacherExerciseVisibility } from '../../../lib/teacherExerciseMetadata';
+import type {
+    TeacherContentDisplayMode,
+    TeacherExerciseVisibility,
+} from '../../../lib/teacherExerciseMetadata';
 import {
     upsertTeacherMenuSetting,
     type MenuSettingItemType,
@@ -89,7 +92,7 @@ export function buildBuiltInExerciseInitial(
     const exercise = EXERCISES.find((item) => item.id === exerciseId);
     if (!exercise) return null;
 
-    const override = getTeacherItemOverride(overrides, exerciseId, 'exercise');
+const override = getTeacherItemOverride(overrides, exerciseId, 'exercise');
     return {
         id: exercise.id,
         name: override?.nameOverride ?? exercise.name,
@@ -103,6 +106,7 @@ export function buildBuiltInExerciseInitial(
         focusTags: [],
         recommended: false,
         recommendedOrder: null,
+        displayMode: 'standard_inline' as TeacherContentDisplayMode,
         createdBy: '',
         createdAt: '',
     };
@@ -127,6 +131,7 @@ export function buildBuiltInMenuInitial(
         focusTags: [],
         recommended: false,
         recommendedOrder: null,
+        displayMode: 'teacher_section' as TeacherContentDisplayMode,
         createdBy: '',
         createdAt: '',
     };

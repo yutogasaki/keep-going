@@ -1,6 +1,7 @@
 export type TeacherContentVisibility = 'public' | 'class_limited' | 'teacher_only';
 export type TeacherExerciseVisibility = TeacherContentVisibility;
 export type TeacherMenuVisibility = TeacherContentVisibility;
+export type TeacherContentDisplayMode = 'teacher_section' | 'standard_inline';
 
 export const TEACHER_EXERCISE_VISIBILITY_OPTIONS: Array<{
     id: TeacherContentVisibility;
@@ -23,6 +24,17 @@ export const TEACHER_FOCUS_TAG_OPTIONS = [
     'バレエ前',
     'リラックス',
 ] as const;
+
+export function normalizeTeacherContentDisplayMode(
+    value: string | null | undefined,
+    fallback: TeacherContentDisplayMode = 'teacher_section',
+): TeacherContentDisplayMode {
+    return value === 'standard_inline' ? value : fallback;
+}
+
+export function getTeacherContentDisplayModeLabel(displayMode: TeacherContentDisplayMode): string {
+    return displayMode === 'standard_inline' ? '標準欄' : '先生欄';
+}
 
 export const TEACHER_CONTENT_NEW_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;

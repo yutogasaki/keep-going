@@ -5,6 +5,7 @@ import {
     getExercisesByClass,
     type Exercise,
 } from '../../../data/exercises';
+import { EXERCISE_PLACEMENTS } from '../../../data/exercisePlacement';
 import type { MenuGroup } from '../../../data/menuGroups';
 import type { CustomExercise } from '../../../lib/db';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
@@ -25,6 +26,43 @@ interface UseMenuExercisesParams {
     overrideMap: MenuOverrideMap;
     requiredExercises: string[];
     excludedExercises: string[];
+}
+
+export function orderMenuExercisesForDisplay(
+    builtInExercises: Exercise[],
+    restExercises: Exercise[],
+    teacherExercises: Exercise[],
+): Exercise[] {
+    const inlineTeacherExercises = teacherExercises.filter((exercise) => exercise.displayMode === 'standard_inline');
+    const teacherSectionExercises = sortTeacherContentByRecommendation(
+        teacherExercises.filter((exercise) => exercise.displayMode !== 'standard_inline')
+    );
+    const standardBuiltInExercises = [...builtInExercises, ...restExercises];
+
+    return [
+        ...EXERCISE_PLACEMENTS.flatMap((placement) => [
+            ...standardBuiltInExercises.filter((exercise) => exercise.placement === placement),
+            ...sortTeacherContentByRecommendation(
+                inlineTeacherExercises.filter((exercise) => exercise.placement === placement),
+            ),
+        ]),
+        ...teacherSectionExercises,
+    ];
+}
+
+export function orderMenuGroupsForDisplay(
+    presetGroups: MenuGroup[],
+    teacherGroups: MenuGroup[],
+): MenuGroup[] {
+    return [
+        ...presetGroups,
+        ...sortTeacherContentByRecommendation(
+            teacherGroups.filter((group) => group.displayMode === 'standard_inline'),
+        ),
+        ...sortTeacherContentByRecommendation(
+            teacherGroups.filter((group) => group.displayMode !== 'standard_inline'),
+        ),
+    ];
 }
 
 export function useMenuExercises({
@@ -64,6 +102,10 @@ export function useMenuExercises({
                 };
             });
 
+        const restExercises = EXERCISES
+            .filter((exercise) => exercise.placement === 'rest' && !teacherHiddenExerciseIds.has(exercise.id))
+            .map((exercise) => ({ ...exercise, origin: 'builtin' as const }));
+
         const teacherAsExercise: Exercise[] = teacherExercises
             .filter((exercise) => !teacherHiddenExerciseIds.has(exercise.id))
             .map((exercise) => ({
@@ -82,13 +124,10 @@ export function useMenuExercises({
                 focusTags: exercise.focusTags,
                 recommended: exercise.recommended,
                 recommendedOrder: exercise.recommendedOrder,
+                displayMode: exercise.displayMode,
             }));
 
-        const restExercises = EXERCISES
-            .filter((exercise) => exercise.placement === 'rest' && !teacherHiddenExerciseIds.has(exercise.id))
-            .map((exercise) => ({ ...exercise, origin: 'builtin' as const }));
-
-        return [...builtIn, ...teacherAsExercise, ...restExercises];
+        return orderMenuExercisesForDisplay(builtIn, restExercises, teacherAsExercise);
     }, [classLevel, overrideMap, teacherExercises, teacherHiddenExerciseIds]);
 
     const exerciseMap = useMemo(() => {
@@ -144,9 +183,10 @@ export function useMenuExercises({
                 focusTags: menu.focusTags,
                 recommended: menu.recommended,
                 recommendedOrder: menu.recommendedOrder,
+                displayMode: menu.displayMode,
             }));
 
-        return [...filteredPresets, ...sortTeacherContentByRecommendation(teacherAsGroup)];
+        return orderMenuGroupsForDisplay(filteredPresets, teacherAsGroup);
     }, [overrideMap, presets, teacherHiddenMenuIds, teacherMenus]);
 
     const effectiveCounts = useMemo(() => {

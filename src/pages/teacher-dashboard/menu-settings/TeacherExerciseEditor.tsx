@@ -8,7 +8,9 @@ import {
 } from '../../../data/exercisePlacement';
 import type { TeacherExercise } from '../../../lib/teacherContent';
 import {
+    getTeacherContentDisplayModeLabel,
     TEACHER_EXERCISE_VISIBILITY_OPTIONS,
+    type TeacherContentDisplayMode,
     type TeacherExerciseVisibility,
 } from '../../../lib/teacherExerciseMetadata';
 import type { MenuSettingStatus } from '../../../lib/teacherMenuSettings';
@@ -37,6 +39,7 @@ interface TeacherExerciseEditorProps {
         focusTags: string[];
         recommended: boolean;
         recommendedOrder: number | null;
+        displayMode: TeacherContentDisplayMode;
         statusByClass: Record<string, MenuSettingStatus>;
     }) => void;
     onCancel: () => void;
@@ -82,6 +85,7 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
     const [recommendedOrderInput, setRecommendedOrderInput] = useState(
         initial?.recommendedOrder != null ? String(initial.recommendedOrder) : '1'
     );
+    const [displayMode, setDisplayMode] = useState<TeacherContentDisplayMode>(initial?.displayMode ?? 'teacher_section');
     const [statusByClass, setStatusByClass] = useState<Record<string, MenuSettingStatus>>(() => buildDefaultStatusByClass(initialStatuses));
 
     const canSave = name.trim().length > 0;
@@ -103,6 +107,7 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
             focusTags: [],
             recommended,
             recommendedOrder: recommended ? Math.max(1, Number.parseInt(recommendedOrderInput, 10) || 1) : null,
+            displayMode,
             statusByClass,
         });
     };
@@ -302,6 +307,48 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
                         </div>
                         <div style={{ marginTop: 8, fontFamily: FONT.body, fontSize: 12, color: COLOR.muted }}>
                             {TEACHER_EXERCISE_VISIBILITY_OPTIONS.find((option) => option.id === visibility)?.description}
+                        </div>
+                    </EditorSection>
+
+                    <EditorSection label="表示する場所">
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            {([
+                                {
+                                    id: 'teacher_section' as const,
+                                    description: '先生種目にまとめて表示します',
+                                },
+                                {
+                                    id: 'standard_inline' as const,
+                                    description: `「${getExercisePlacementLabel(placement)}」のいちばん下に入れます。おすすめでも先頭には出しません`,
+                                },
+                            ]).map((option) => {
+                                const selected = displayMode === option.id;
+                                return (
+                                    <button
+                                        key={option.id}
+                                        type="button"
+                                        onClick={() => setDisplayMode(option.id)}
+                                        style={{
+                                            padding: '10px 14px',
+                                            borderRadius: 12,
+                                            border: selected ? '2px solid #2BBAA0' : '1px solid rgba(0,0,0,0.08)',
+                                            background: selected ? 'rgba(43,186,160,0.08)' : '#FFF',
+                                            color: selected ? '#2BBAA0' : COLOR.dark,
+                                            fontFamily: FONT.body,
+                                            fontSize: 13,
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        {getTeacherContentDisplayModeLabel(option.id)}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        <div style={{ marginTop: 8, fontFamily: FONT.body, fontSize: 12, color: COLOR.muted, lineHeight: 1.6 }}>
+                            {displayMode === 'standard_inline'
+                                ? `この種目は「${getExercisePlacementLabel(placement)}」カテゴリの最後に追加します。`
+                                : 'この種目は「先生種目」にまとめて表示します。'}
                         </div>
                     </EditorSection>
 

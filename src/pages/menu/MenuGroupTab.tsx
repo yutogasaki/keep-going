@@ -30,8 +30,12 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
     teacherMenuIds,
     isNewTeacherContent,
 }) => {
-    const teacherGroups = presets.filter((group) => teacherMenuIds?.has(group.id));
-    const mainGroups = presets.filter((group) => !teacherMenuIds?.has(group.id));
+    const teacherGroups = presets.filter(
+        (group) => group.origin === 'teacher' && group.displayMode !== 'standard_inline'
+    );
+    const mainGroups = presets.filter(
+        (group) => group.origin !== 'teacher' || group.displayMode === 'standard_inline'
+    );
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '0 20px' }}>
@@ -51,7 +55,7 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
                 onTap={onGroupTap}
                 teacherMenuIds={teacherMenuIds}
                 isNewTeacherContent={isNewTeacherContent}
-                emptyMessage="いま使えるメニューはまだありません。"
+                emptyMessage={mainGroups.length === 0 && teacherGroups.length === 0 ? 'いま使えるメニューはまだありません。' : null}
             />
 
             <TeacherGroupsSection

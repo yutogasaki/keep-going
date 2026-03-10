@@ -1,5 +1,5 @@
 import { getExercisesByClass, type ClassLevel } from './exercises';
-import type { TeacherMenuVisibility } from '../lib/teacherExerciseMetadata';
+import type { TeacherContentDisplayMode, TeacherMenuVisibility } from '../lib/teacherExerciseMetadata';
 
 export interface MenuGroup {
     id: string;
@@ -14,6 +14,7 @@ export interface MenuGroup {
     focusTags?: string[];
     recommended?: boolean;
     recommendedOrder?: number | null;
+    displayMode?: TeacherContentDisplayMode;
 }
 
 // ─── Preset Groups ───────────────────────────────────

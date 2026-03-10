@@ -2,7 +2,12 @@ import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Edit2, Play, Trash2 } from 'lucide-react';
 import { CLASS_LEVELS } from '../../../data/exercises';
-import { getTeacherExerciseVisibilityLabel, type TeacherExerciseVisibility } from '../../../lib/teacherExerciseMetadata';
+import {
+    getTeacherContentDisplayModeLabel,
+    getTeacherExerciseVisibilityLabel,
+    type TeacherContentDisplayMode,
+    type TeacherExerciseVisibility,
+} from '../../../lib/teacherExerciseMetadata';
 import type { MenuSettingStatus } from '../../../lib/teacherMenuSettings';
 
 interface MenuSettingsItemCardProps {
@@ -12,6 +17,7 @@ interface MenuSettingsItemCardProps {
     recommended?: boolean;
     recommendedOrder?: number | null;
     visibility?: TeacherExerciseVisibility;
+    displayMode?: TeacherContentDisplayMode;
     statusByClass: Record<string, MenuSettingStatus>;
     expanded: boolean;
     onToggleExpand: () => void;
@@ -41,6 +47,7 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
     recommended,
     recommendedOrder,
     visibility,
+    displayMode,
     statusByClass,
     expanded,
     onToggleExpand,
@@ -92,7 +99,7 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
                             {categoryLabel}
                         </div>
                     )}
-                    {(recommended || visibility) ? (
+                    {(recommended || visibility || displayMode) ? (
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
                             {recommended ? (
                                 <span style={{
@@ -118,6 +125,19 @@ export const MenuSettingsItemCard: React.FC<MenuSettingsItemCardProps> = ({
                                     borderRadius: 999,
                                 }}>
                                     {getTeacherExerciseVisibilityLabel(visibility)}
+                                </span>
+                            ) : null}
+                            {displayMode ? (
+                                <span style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    color: displayMode === 'standard_inline' ? '#2BBAA0' : '#636E72',
+                                    background: displayMode === 'standard_inline' ? 'rgba(43,186,160,0.1)' : '#F0F3F5',
+                                    padding: '1px 6px',
+                                    borderRadius: 999,
+                                }}>
+                                    {getTeacherContentDisplayModeLabel(displayMode)}
                                 </span>
                             ) : null}
                         </div>

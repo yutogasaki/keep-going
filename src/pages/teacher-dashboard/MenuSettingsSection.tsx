@@ -244,6 +244,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                     recommended={ex.recommended}
                                     recommendedOrder={ex.recommendedOrder}
                                     visibility={ex.visibility}
+                                    displayMode={ex.displayMode}
                                     statusByClass={getStatusByClass(ex.id, 'exercise')}
                                     expanded={expandedItemId === ex.id}
                                     onToggleExpand={() => toggleExpandedItem(ex.id)}
@@ -295,6 +296,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                     recommended={menu.recommended}
                                     recommendedOrder={menu.recommendedOrder}
                                     visibility={menu.visibility}
+                                    displayMode={menu.displayMode}
                                     statusByClass={getStatusByClass(menu.id, 'menu_group')}
                                     expanded={expandedItemId === menu.id}
                                     onToggleExpand={() => toggleExpandedItem(menu.id)}

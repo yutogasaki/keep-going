@@ -22,6 +22,7 @@ function createTeacherExercise(overrides: Partial<TeacherExercise> & Pick<Teache
         focusTags: overrides.focusTags ?? [],
         recommended: overrides.recommended ?? false,
         recommendedOrder: overrides.recommendedOrder ?? null,
+        displayMode: overrides.displayMode ?? 'teacher_section',
         createdBy: overrides.createdBy ?? 'teacher-1',
         createdAt: overrides.createdAt ?? '2026-03-08T00:00:00.000Z',
     };

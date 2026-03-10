@@ -385,6 +385,7 @@ create table teacher_exercises (
   focus_tags text[] not null default '{}',
   recommended boolean not null default false,
   recommended_order int,
+  display_mode text not null default 'standard_inline' check (display_mode in ('teacher_section', 'standard_inline')),
   created_by text not null,
   created_at timestamptz default now()
 );
@@ -407,6 +408,7 @@ create table teacher_menus (
   focus_tags text[] not null default '{}',
   recommended boolean not null default false,
   recommended_order int,
+  display_mode text not null default 'teacher_section' check (display_mode in ('teacher_section', 'standard_inline')),
   created_by text not null,
   created_at timestamptz default now()
 );

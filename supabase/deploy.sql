@@ -422,6 +422,7 @@ create table if not exists teacher_exercises (
   focus_tags text[] not null default '{}',
   recommended boolean not null default false,
   recommended_order int,
+  display_mode text not null default 'standard_inline',
   created_by text not null,
   created_at timestamptz default now()
 );
@@ -448,6 +449,7 @@ create table if not exists teacher_menus (
   description text,
   exercise_ids jsonb not null default '[]',
   class_levels text[] not null default '{}',
+  display_mode text not null default 'teacher_section',
   created_by text not null,
   created_at timestamptz default now()
 );
@@ -456,10 +458,19 @@ do $$ begin alter table teacher_menus add column visibility text not null defaul
 do $$ begin alter table teacher_menus add column focus_tags text[] not null default '{}'; exception when duplicate_column then null; end $$;
 do $$ begin alter table teacher_menus add column recommended boolean not null default false; exception when duplicate_column then null; end $$;
 do $$ begin alter table teacher_menus add column recommended_order int; exception when duplicate_column then null; end $$;
+do $$ begin alter table teacher_menus add column display_mode text not null default 'teacher_section'; exception when duplicate_column then null; end $$;
+update teacher_menus set display_mode = 'teacher_section' where display_mode is null;
 do $$ begin
   alter table teacher_menus drop constraint if exists teacher_menus_visibility_check;
   alter table teacher_menus add constraint teacher_menus_visibility_check
     check (visibility in ('public', 'class_limited', 'teacher_only'));
+exception when others then null;
+end $$;
+
+do $$ begin
+  alter table teacher_menus drop constraint if exists teacher_menus_display_mode_check;
+  alter table teacher_menus add constraint teacher_menus_display_mode_check
+    check (display_mode in ('teacher_section', 'standard_inline'));
 exception when others then null;
 end $$;
 
@@ -594,9 +605,23 @@ exception when duplicate_column then null;
 end $$;
 
 do $$ begin
+  alter table teacher_exercises add column display_mode text not null default 'standard_inline';
+exception when duplicate_column then null;
+end $$;
+
+update teacher_exercises set display_mode = 'standard_inline' where display_mode is null;
+
+do $$ begin
   alter table teacher_exercises drop constraint if exists teacher_exercises_visibility_check;
   alter table teacher_exercises add constraint teacher_exercises_visibility_check
     check (visibility in ('public', 'class_limited', 'teacher_only'));
+exception when undefined_table then null;
+end $$;
+
+do $$ begin
+  alter table teacher_exercises drop constraint if exists teacher_exercises_display_mode_check;
+  alter table teacher_exercises add constraint teacher_exercises_display_mode_check
+    check (display_mode in ('teacher_section', 'standard_inline'));
 exception when undefined_table then null;
 end $$;
 

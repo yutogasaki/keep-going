@@ -12,20 +12,6 @@ import {
 import { CustomExerciseSection } from './individual-tab/CustomExerciseSection';
 import { IndividualCategoryToolbar } from './individual-tab/IndividualCategoryToolbar';
 import { PublicExerciseSection } from './individual-tab/PublicExerciseSection';
-import type { Exercise } from '../../data/exercises';
-import { isRestExercise } from '../../data/exercises';
-import { sortTeacherContentByRecommendation } from '../../lib/teacherExerciseMetadata';
-
-function sortTeacherExercises(exercises: Exercise[]): Exercise[] {
-    return sortTeacherContentByRecommendation(exercises);
-}
-
-function moveRestExercisesToEnd(exercises: Exercise[]): Exercise[] {
-    return [
-        ...exercises.filter((exercise) => !isRestExercise(exercise)),
-        ...exercises.filter((exercise) => isRestExercise(exercise)),
-    ];
-}
 
 export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
     onStartHybridSession?: (requiredIds: string[]) => void;
@@ -62,19 +48,16 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
         () => filterStandardExercisesByCategory(exercises, category),
         [category, exercises],
     );
-    const recommendedTeacherExercises = useMemo(
-        () => sortTeacherExercises(
-            filteredExercises.filter((exercise) => exercise.origin === 'teacher' && exercise.recommended)
+    const mainExercises = useMemo(
+        () => filteredExercises.filter(
+            (exercise) => exercise.origin !== 'teacher' || exercise.displayMode === 'standard_inline'
         ),
         [filteredExercises],
     );
-    const mainExercises = useMemo(
-        () => moveRestExercisesToEnd([
-            ...sortTeacherExercises(
-                filteredExercises.filter((exercise) => exercise.origin === 'teacher' && !exercise.recommended)
-            ),
-            ...filteredExercises.filter((exercise) => exercise.origin !== 'teacher'),
-        ]),
+    const teacherSectionExercises = useMemo(
+        () => filteredExercises.filter(
+            (exercise) => exercise.origin === 'teacher' && exercise.displayMode !== 'standard_inline'
+        ),
         [filteredExercises],
     );
     const filteredCustomExercises = useMemo(
@@ -136,10 +119,27 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                 onToggleMode={handleToggleMode}
             />
 
-            {recommendedTeacherExercises.length > 0 ? (
+            <StandardExerciseList
+                title="種目"
+                exercises={mainExercises}
+                requiredExerciseIds={requiredExercises}
+                onStartExercise={onStartExercise}
+                teacherExerciseIds={teacherExerciseIds}
+                isNewTeacherContent={isNewTeacherContent}
+                emptyMessage={
+                    mainExercises.length === 0 && teacherSectionExercises.length === 0
+                        ? 'このカテゴリの種目はまだありません。'
+                        : null
+                }
+                selectionMode={selectionMode}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+            />
+
+            {teacherSectionExercises.length > 0 ? (
                 <StandardExerciseList
-                    title="先生のおすすめ"
-                    exercises={recommendedTeacherExercises}
+                    title="先生種目"
+                    exercises={teacherSectionExercises}
                     requiredExerciseIds={requiredExercises}
                     onStartExercise={onStartExercise}
                     teacherExerciseIds={teacherExerciseIds}
@@ -149,19 +149,6 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                     onToggleSelect={handleToggleSelect}
                 />
             ) : null}
-
-            <StandardExerciseList
-                title="種目"
-                exercises={mainExercises}
-                requiredExerciseIds={requiredExercises}
-                onStartExercise={onStartExercise}
-                teacherExerciseIds={teacherExerciseIds}
-                isNewTeacherContent={isNewTeacherContent}
-                emptyMessage={mainExercises.length === 0 ? 'このカテゴリの種目はまだありません。' : null}
-                selectionMode={selectionMode}
-                selectedIds={selectedIds}
-                onToggleSelect={handleToggleSelect}
-            />
 
             <CustomExerciseSection
                 customExercises={filteredCustomExercises}

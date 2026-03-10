@@ -1,7 +1,12 @@
 import { supabase } from './supabase';
 import type { Database } from './supabase-types';
 import { normalizeExercisePlacement, type ExercisePlacement } from '../data/exercisePlacement';
-import type { TeacherExerciseVisibility, TeacherMenuVisibility } from './teacherExerciseMetadata';
+import {
+    normalizeTeacherContentDisplayMode,
+    type TeacherContentDisplayMode,
+    type TeacherExerciseVisibility,
+    type TeacherMenuVisibility,
+} from './teacherExerciseMetadata';
 
 type TeacherExerciseRow = Database['public']['Tables']['teacher_exercises']['Row'];
 type TeacherMenuRow = Database['public']['Tables']['teacher_menus']['Row'];
@@ -21,6 +26,7 @@ export interface TeacherExercise {
     focusTags: string[];
     recommended: boolean;
     recommendedOrder: number | null;
+    displayMode: TeacherContentDisplayMode;
     createdBy: string;
     createdAt: string;
 }
@@ -36,6 +42,7 @@ export interface TeacherMenu {
     focusTags: string[];
     recommended: boolean;
     recommendedOrder: number | null;
+    displayMode: TeacherContentDisplayMode;
     createdBy: string;
     createdAt: string;
 }
@@ -88,6 +95,7 @@ export async function createTeacherExercise(data: {
     focusTags: string[];
     recommended: boolean;
     recommendedOrder: number | null;
+    displayMode: TeacherContentDisplayMode;
     createdBy: string;
 }): Promise<string | null> {
     if (!supabase) return null;
@@ -104,6 +112,7 @@ export async function createTeacherExercise(data: {
         focus_tags: data.focusTags,
         recommended: data.recommended,
         recommended_order: data.recommendedOrder,
+        display_mode: data.displayMode,
         created_by: data.createdBy,
     }).select('id').single();
 
@@ -124,6 +133,7 @@ export async function updateTeacherExercise(id: string, data: {
     focusTags: string[];
     recommended: boolean;
     recommendedOrder: number | null;
+    displayMode: TeacherContentDisplayMode;
 }): Promise<void> {
     if (!supabase) return;
 
@@ -139,6 +149,7 @@ export async function updateTeacherExercise(id: string, data: {
         focus_tags: data.focusTags,
         recommended: data.recommended,
         recommended_order: data.recommendedOrder,
+        display_mode: data.displayMode,
     }).eq('id', id);
 
     if (error) throw error;
@@ -186,6 +197,7 @@ export async function createTeacherMenu(data: {
     focusTags: string[];
     recommended: boolean;
     recommendedOrder: number | null;
+    displayMode: TeacherContentDisplayMode;
     createdBy: string;
 }): Promise<string | null> {
     if (!supabase) return null;
@@ -200,6 +212,7 @@ export async function createTeacherMenu(data: {
         focus_tags: data.focusTags,
         recommended: data.recommended,
         recommended_order: data.recommendedOrder,
+        display_mode: data.displayMode,
         created_by: data.createdBy,
     }).select('id').single();
 
@@ -218,6 +231,7 @@ export async function updateTeacherMenu(id: string, data: {
     focusTags: string[];
     recommended: boolean;
     recommendedOrder: number | null;
+    displayMode: TeacherContentDisplayMode;
 }): Promise<void> {
     if (!supabase) return;
 
@@ -231,6 +245,7 @@ export async function updateTeacherMenu(id: string, data: {
         focus_tags: data.focusTags,
         recommended: data.recommended,
         recommended_order: data.recommendedOrder,
+        display_mode: data.displayMode,
     }).eq('id', id);
 
     if (error) throw error;
@@ -261,6 +276,7 @@ function mapTeacherExercise(row: TeacherExerciseRow): TeacherExercise {
         focusTags: row.focus_tags ?? [],
         recommended: row.recommended ?? false,
         recommendedOrder: row.recommended_order ?? null,
+        displayMode: normalizeTeacherContentDisplayMode(row.display_mode, 'standard_inline'),
         createdBy: row.created_by,
         createdAt: row.created_at,
     };
@@ -278,6 +294,7 @@ function mapTeacherMenu(row: TeacherMenuRow): TeacherMenu {
         focusTags: row.focus_tags ?? [],
         recommended: row.recommended ?? false,
         recommendedOrder: row.recommended_order ?? null,
+        displayMode: normalizeTeacherContentDisplayMode(row.display_mode, 'teacher_section'),
         createdBy: row.created_by,
         createdAt: row.created_at,
     };

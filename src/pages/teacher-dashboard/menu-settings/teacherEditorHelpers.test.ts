@@ -33,6 +33,7 @@ describe('teacherEditorHelpers', () => {
                 focusTags: [],
                 recommended: false,
                 recommendedOrder: null,
+                displayMode: 'teacher_section',
                 createdBy: 'teacher@example.com',
                 createdAt: '2026-03-08T00:00:00.000Z',
             },

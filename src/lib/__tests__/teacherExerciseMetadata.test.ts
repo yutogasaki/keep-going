@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+    getTeacherContentDisplayModeLabel,
     isTeacherContentNew,
     isTeacherContentVisible,
+    normalizeTeacherContentDisplayMode,
     pickTeacherContentHighlights,
     sortTeacherContentByRecommendation,
 } from '../teacherExerciseMetadata';
@@ -23,6 +25,13 @@ describe('teacherExerciseMetadata', () => {
         ]);
 
         expect(sorted.map((item) => item.name)).toEqual(['A', 'C', 'D', 'B']);
+    });
+
+    it('normalizes display modes and exposes short labels', () => {
+        expect(normalizeTeacherContentDisplayMode('standard_inline')).toBe('standard_inline');
+        expect(normalizeTeacherContentDisplayMode('unexpected')).toBe('teacher_section');
+        expect(getTeacherContentDisplayModeLabel('standard_inline')).toBe('標準欄');
+        expect(getTeacherContentDisplayModeLabel('teacher_section')).toBe('先生欄');
     });
 
     it('treats items created within 14 days as new', () => {
