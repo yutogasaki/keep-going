@@ -35,3 +35,5 @@ build/
 temp/
 artifacts/
 *.tsbuildinfo
+.playwright-cli/
+output/playwright/
