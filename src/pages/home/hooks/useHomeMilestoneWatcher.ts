@@ -21,31 +21,37 @@ export function useHomeMilestoneWatcher({
             return;
         }
 
-        let shouldTriggerModal: 'egg' | 'fairy' | 'adult' | null = null;
-
-        users.forEach((user) => {
+        // Show one milestone modal at a time: find the first user with an
+        // un-notified stage. Only mark *that* user as notified so subsequent
+        // renders pick up the next user's milestone.
+        for (const user of users) {
             if (!user.fuwafuwaBirthDate) {
-                return;
+                continue;
             }
 
-            const status = calculateFuwafuwaStatus(user.fuwafuwaBirthDate, allSessions);
+            // Filter sessions to only include ones this user participated in.
+            // Sessions with empty userIds are attributed to all users.
+            const userSessions = allSessions.filter(
+                (s) => !s.userIds || s.userIds.length === 0 || s.userIds.includes(user.id),
+            );
+
+            const status = calculateFuwafuwaStatus(user.fuwafuwaBirthDate, userSessions);
             const currentStage = status.stage;
 
             if (!status.isSayonara && !(user.notifiedFuwafuwaStages || []).includes(currentStage)) {
                 updateUser(user.id, { notifiedFuwafuwaStages: [...(user.notifiedFuwafuwaStages || []), currentStage] });
 
-                if (currentStage === 1) {
-                    shouldTriggerModal = 'egg';
-                } else if (currentStage === 2) {
-                    shouldTriggerModal = 'fairy';
-                } else if (currentStage === 3) {
-                    shouldTriggerModal = 'adult';
+                const modal: 'egg' | 'fairy' | 'adult' | null =
+                    currentStage === 1 ? 'egg'
+                        : currentStage === 2 ? 'fairy'
+                            : currentStage === 3 ? 'adult'
+                                : null;
+                if (modal) {
+                    setActiveMilestoneModal(modal);
                 }
+                // Only process one milestone per render cycle
+                return;
             }
-        });
-
-        if (shouldTriggerModal) {
-            setActiveMilestoneModal(shouldTriggerModal);
         }
     }, [allSessions, users, updateUser, setActiveMilestoneModal]);
 }

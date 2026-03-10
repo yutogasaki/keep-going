@@ -79,9 +79,11 @@ export function useSessionProgressEffects({
     const wasPlayingBeforeHiddenRef = useRef(false);
     const goToNextRef = useRef<() => void>(() => { });
     const completionTimerRef = useRef<number | null>(null);
+    const hasInitializedTimeRef = useRef(false);
 
     useEffect(() => {
-        if (!isLoading && sessionExercises.length > 0) {
+        if (!isLoading && sessionExercises.length > 0 && !hasInitializedTimeRef.current) {
+            hasInitializedTimeRef.current = true;
             setTimeLeft(sessionExercises[0].sec);
         }
     }, [isLoading, sessionExercises, setTimeLeft]);

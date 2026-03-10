@@ -210,7 +210,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
         } finally {
             setSubmitting(false);
         }
-    }, [closeExerciseForm, editingBuiltInExerciseId, editingExercise, loadAll, setError, teacherEmail]);
+    }, [closeExerciseForm, editingBuiltInExerciseId, editingExercise, getStatusByClass, loadAll, setError, teacherEmail]);
 
     const handleSaveMenu = useCallback(async (data: MenuEditorValues) => {
         setSubmitting(true);
@@ -267,7 +267,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
         } finally {
             setSubmitting(false);
         }
-    }, [closeMenuForm, editingBuiltInMenuId, editingMenu, loadAll, setError, teacherEmail]);
+    }, [closeMenuForm, editingBuiltInMenuId, editingMenu, getStatusByClass, loadAll, setError, teacherEmail]);
 
     const handleConfirmDelete = useCallback(async () => {
         if (!deleteTarget) return;
