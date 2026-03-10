@@ -5,6 +5,7 @@ export interface MenuOverrideValue {
     sec: number | null;
     hasSplit: boolean | null;
     exerciseIds: string[] | null;
+    displayMode: string | null;
 }
 
 export type MenuOverrideMap = Map<string, MenuOverrideValue>;

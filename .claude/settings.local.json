@@ -43,7 +43,8 @@
       "Bash(find /Users/yutogasaki/Projects/keep-going/src/store -name \"*.ts\" -type f -exec wc -l {} +)",
       "Bash(find /Users/yutogasaki/Projects/keep-going/src -name \"*.tsx\" -exec grep -l \"useCallback\" {} ;)",
       "Bash(find /Users/yutogasaki/Projects/keep-going/src -name \"*.tsx\" -exec wc -l {} +)",
-      "Bash(grep -r \"AudioTogglesCard\\\\|bgmEnabled\" /Users/yutogasaki/Projects/keep-going/src/pages/settings* --include=\"*.tsx\" -n)"
+      "Bash(grep -r \"AudioTogglesCard\\\\|bgmEnabled\" /Users/yutogasaki/Projects/keep-going/src/pages/settings* --include=\"*.tsx\" -n)",
+      "Bash(ps -p 15238 -o command=)"
     ]
   }
 }

@@ -537,6 +537,7 @@ do $$ begin alter table teacher_item_overrides add column emoji_override text; e
 do $$ begin alter table teacher_item_overrides add column sec_override int; exception when duplicate_column then null; end $$;
 do $$ begin alter table teacher_item_overrides add column has_split_override boolean; exception when duplicate_column then null; end $$;
 do $$ begin alter table teacher_item_overrides add column exercise_ids_override text[]; exception when duplicate_column then null; end $$;
+do $$ begin alter table teacher_item_overrides add column display_mode_override text; exception when duplicate_column then null; end $$;
 
 -- ─── custom_exercises に description カラム追加 ──────
 do $$ begin

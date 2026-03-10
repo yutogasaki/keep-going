@@ -75,6 +75,7 @@ export function useTeacherContent({
                     sec: override.secOverride,
                     hasSplit: override.hasSplitOverride,
                     exerciseIds: override.exerciseIdsOverride,
+                    displayMode: override.displayModeOverride,
                 });
             }
             setOverrideMap(nextOverrideMap);

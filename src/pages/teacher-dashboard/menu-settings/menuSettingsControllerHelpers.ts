@@ -106,7 +106,7 @@ const override = getTeacherItemOverride(overrides, exerciseId, 'exercise');
         focusTags: [],
         recommended: false,
         recommendedOrder: null,
-        displayMode: 'standard_inline' as TeacherContentDisplayMode,
+        displayMode: (override?.displayModeOverride ?? 'standard_inline') as TeacherContentDisplayMode,
         createdBy: '',
         createdAt: '',
     };
@@ -131,7 +131,7 @@ export function buildBuiltInMenuInitial(
         focusTags: [],
         recommended: false,
         recommendedOrder: null,
-        displayMode: 'teacher_section' as TeacherContentDisplayMode,
+        displayMode: (override?.displayModeOverride ?? 'teacher_section') as TeacherContentDisplayMode,
         createdBy: '',
         createdAt: '',
     };

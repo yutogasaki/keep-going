@@ -177,6 +177,10 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
                                 data.hasSplit !== (builtInExercise.hasSplit ?? false)
                                     ? data.hasSplit
                                     : null,
+                            displayModeOverride:
+                                data.displayMode !== 'standard_inline'
+                                    ? data.displayMode
+                                    : null,
                         },
                         teacherEmail,
                     );
@@ -229,6 +233,10 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
                             exerciseIdsOverride:
                                 JSON.stringify(data.exerciseIds) !== JSON.stringify(builtInMenu.exerciseIds)
                                     ? data.exerciseIds
+                                    : null,
+                            displayModeOverride:
+                                data.displayMode !== 'teacher_section'
+                                    ? data.displayMode
                                     : null,
                         },
                         teacherEmail,

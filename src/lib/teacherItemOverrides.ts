@@ -13,6 +13,7 @@ export interface TeacherItemOverride {
     secOverride: number | null;
     hasSplitOverride: boolean | null;
     exerciseIdsOverride: string[] | null;
+    displayModeOverride: string | null;
     createdBy: string;
 }
 
@@ -60,6 +61,7 @@ export async function upsertTeacherItemOverride(
         secOverride?: number | null;
         hasSplitOverride?: boolean | null;
         exerciseIdsOverride?: string[] | null;
+        displayModeOverride?: string | null;
     },
     createdBy: string,
 ): Promise<void> {
@@ -71,10 +73,11 @@ export async function upsertTeacherItemOverride(
     const sec = overrides.secOverride ?? null;
     const hasSplit = overrides.hasSplitOverride ?? null;
     const exerciseIds = overrides.exerciseIdsOverride ?? null;
+    const displayMode = overrides.displayModeOverride || null;
 
     // If all overrides are null, delete the override row
     // Note: exerciseIds can be an empty array (valid override), so check with !== null
-    const hasAny = name || desc || emoji || sec !== null || hasSplit !== null || exerciseIds !== null;
+    const hasAny = name || desc || emoji || sec !== null || hasSplit !== null || exerciseIds !== null || displayMode;
     if (!hasAny) {
         await supabase
             .from('teacher_item_overrides')
@@ -93,6 +96,7 @@ export async function upsertTeacherItemOverride(
                 sec_override: sec,
                 has_split_override: hasSplit,
                 exercise_ids_override: exerciseIds,
+                display_mode_override: displayMode,
                 created_by: createdBy,
             }, { onConflict: 'item_id,item_type' });
 
@@ -115,6 +119,7 @@ function mapOverride(row: TeacherItemOverrideRow): TeacherItemOverride {
         secOverride: row.sec_override ?? null,
         hasSplitOverride: row.has_split_override ?? null,
         exerciseIdsOverride: row.exercise_ids_override ?? null,
+        displayModeOverride: row.display_mode_override ?? null,
         createdBy: row.created_by,
     };
 }

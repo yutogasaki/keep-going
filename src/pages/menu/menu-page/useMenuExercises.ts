@@ -10,6 +10,7 @@ import type { MenuGroup } from '../../../data/menuGroups';
 import type { CustomExercise } from '../../../lib/db';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
 import type { ClassLevel } from '../../../data/exercises';
+import type { TeacherContentDisplayMode } from '../../../lib/teacherExerciseMetadata';
 import type { MenuOverrideMap } from './shared';
 import { sortTeacherContentByRecommendation } from '../../../lib/teacherExerciseMetadata';
 
@@ -99,8 +100,13 @@ export function useMenuExercises({
                     emoji: override.emoji ?? exercise.emoji,
                     sec: override.sec ?? exercise.sec,
                     hasSplit: override.hasSplit ?? exercise.hasSplit,
+                    displayMode: (override.displayMode ?? undefined) as TeacherContentDisplayMode | undefined,
                 };
             });
+
+        // Built-in exercises overridden to teacher_section should move to the teacher list
+        const builtInStandard = builtIn.filter((exercise) => exercise.displayMode !== 'teacher_section');
+        const builtInPromoted = builtIn.filter((exercise) => exercise.displayMode === 'teacher_section');
 
         const restExercises = EXERCISES
             .filter((exercise) => exercise.placement === 'rest' && !teacherHiddenExerciseIds.has(exercise.id))
@@ -127,7 +133,7 @@ export function useMenuExercises({
                 displayMode: exercise.displayMode,
             }));
 
-        return orderMenuExercisesForDisplay(builtIn, restExercises, teacherAsExercise);
+        return orderMenuExercisesForDisplay(builtInStandard, restExercises, [...builtInPromoted, ...teacherAsExercise]);
     }, [classLevel, overrideMap, teacherExercises, teacherHiddenExerciseIds]);
 
     const exerciseMap = useMemo(() => {
@@ -166,6 +172,7 @@ export function useMenuExercises({
                     description: override.description ?? preset.description,
                     emoji: override.emoji ?? preset.emoji,
                     exerciseIds: override.exerciseIds ?? preset.exerciseIds,
+                    displayMode: (override.displayMode ?? undefined) as TeacherContentDisplayMode | undefined,
                 };
             });
 

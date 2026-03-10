@@ -412,6 +412,7 @@ export interface Database {
                     sec_override: number | null;
                     has_split_override: boolean | null;
                     exercise_ids_override: string[] | null;
+                    display_mode_override: string | null;
                     created_by: string;
                     created_at: string;
                     updated_at: string;
@@ -426,6 +427,7 @@ export interface Database {
                     sec_override?: number | null;
                     has_split_override?: boolean | null;
                     exercise_ids_override?: string[] | null;
+                    display_mode_override?: string | null;
                     created_by: string;
                 };
                 Update: Partial<Database['public']['Tables']['teacher_item_overrides']['Insert']>;
