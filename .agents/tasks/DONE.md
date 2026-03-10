@@ -4,6 +4,13 @@
 細かい修正は日単位・テーマ単位に要約する。
 詳細履歴は `.agents/tasks/archive/YYYY-MM.md` に移す。
 
+## 2026-03-11: ホームの先生/みんな導線を再設計
+- ホームの情報設計を `チャレンジ -> 先生のメニュー -> みんなのメニュー` に整理し、仕様書でも `先生` と `みんな` を同じカードファミリーの別バリアントとして扱う方針を明文化した
+- `先生のメニュー` はホーム専用カード + 詳細シートに組み替え、`teacher_section` のみを対象にして「くわしく見る」と「はじめる」を分離した
+- `みんなのメニュー` は公開メニュー3件を主役にしたカード群へ再設計し、ホームから `みんなの種目` 発見を途切れさせない導線を同セクション内へ追加した
+- 公開メニュー詳細に「このメニューで見つかる みんなの種目」を表示し、公開種目の発見価値をカードと詳細の両方で伝わるようにした
+- `npx tsc --noEmit`、`npm test`、`npm run build` を通し、desktop/mobile の Playwright スクリーンショットで先生/みんなカードと詳細シートの見た目を確認した
+
 ## 2026-03-08: agent guide canonical 化と done 圧縮
 - `AGENTS.md` / `CLAUDE.md` を短い入口にし、共通の詳細を `.agents/agent-guide.md` へ集約
 - `docs/development-governance.md` と governance skill / script を shared guide + done archive 方針へ更新

@@ -54,6 +54,10 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
         setImporting(false);
     }, [menu?.id]);
 
+    const discoverableExercises = menu
+        ? menu.customExerciseData.filter((exercise) => menu.exerciseIds.includes(exercise.id))
+        : [];
+
     const totalSec = menu ? menu.exerciseIds.reduce((total, id) => {
         const exercise = EXERCISES.find((item) => item.id === id)
             ?? menu.customExerciseData?.find((item) => item.id === id);
@@ -190,6 +194,40 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({ menu, onClose,
                                 >
                                     {menu.description}
                                 </p>
+                            ) : null}
+
+                            {discoverableExercises.length > 0 ? (
+                                <>
+                                    <div
+                                        style={{
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                            color: '#8395A7',
+                                            marginBottom: 8,
+                                        }}
+                                    >
+                                        このメニューで見つかる みんなの種目
+                                    </div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                                        {discoverableExercises.map((exercise) => (
+                                            <span
+                                                key={exercise.id}
+                                                style={{
+                                                    padding: '8px 12px',
+                                                    borderRadius: 999,
+                                                    background: '#FFF6E6',
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontSize: 12,
+                                                    fontWeight: 700,
+                                                    color: '#B86A2C',
+                                                }}
+                                            >
+                                                {exercise.emoji} {exercise.name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </>
                             ) : null}
 
                             <div

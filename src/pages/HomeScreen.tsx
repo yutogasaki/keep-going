@@ -6,9 +6,11 @@ import { PublicExerciseBrowser } from '../components/PublicExerciseBrowser';
 import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
 import { ExerciseDetailSheet } from '../components/ExerciseDetailSheet';
 import { MenuDetailSheet } from '../components/MenuDetailSheet';
+import { EXERCISES } from '../data/exercises';
 import type { ExercisePlacement } from '../data/exercisePlacement';
 import type { PublicExercise } from '../lib/publicExercises';
 import type { PublicMenu } from '../lib/publicMenus';
+import type { TeacherMenu } from '../lib/teacherContent';
 import { audio } from '../lib/audio';
 import { pickTeacherContentHighlights } from '../lib/teacherExerciseMetadata';
 import { useAppStore } from '../store/useAppStore';
@@ -17,6 +19,7 @@ import { HomeMilestoneModal } from './home/HomeMilestoneModal';
 import { HomeAnimatedBackground } from './home/HomeAnimatedBackground';
 import { FuwafuwaHomeCard } from './home/FuwafuwaHomeCard';
 import { HomeChallengesAndMenus } from './home/HomeChallengesAndMenus';
+import { TeacherMenuDetailSheet } from './home/TeacherMenuDetailSheet';
 import { useHomeChallenges } from './home/hooks/useHomeChallenges';
 import { useHomeSessions } from './home/hooks/useHomeSessions';
 import { useHomeMilestoneWatcher } from './home/hooks/useHomeMilestoneWatcher';
@@ -39,6 +42,7 @@ export const HomeScreen: React.FC = () => {
     const [exerciseBrowserOpen, setExerciseBrowserOpen] = useState(false);
     const [selectedPublicMenu, setSelectedPublicMenu] = useState<PublicMenu | null>(null);
     const [selectedPublicExercise, setSelectedPublicExercise] = useState<PublicExercise | null>(null);
+    const [selectedTeacherMenu, setSelectedTeacherMenu] = useState<TeacherMenu | null>(null);
 
     const { allSessions, activeUsers, targetSeconds, perUserMagic, displaySeconds } = useHomeSessions({
         users,
@@ -80,7 +84,10 @@ export const HomeScreen: React.FC = () => {
         onLoadError: noop,
     });
     const teacherMenuHighlights = useMemo(
-        () => pickTeacherContentHighlights(teacherContent.teacherMenus, 2),
+        () => pickTeacherContentHighlights(
+            teacherContent.teacherMenus.filter((menu) => menu.displayMode === 'teacher_section'),
+            2,
+        ),
         [teacherContent.teacherMenus],
     );
     const teacherMenuExerciseMap = useMemo(() => {
@@ -90,6 +97,14 @@ export const HomeScreen: React.FC = () => {
             sec: number;
             placement: ExercisePlacement;
         }>();
+        for (const exercise of EXERCISES) {
+            map.set(exercise.id, {
+                name: exercise.name,
+                emoji: exercise.emoji,
+                sec: exercise.sec,
+                placement: exercise.placement,
+            });
+        }
         for (const exercise of teacherContent.teacherExercises) {
             map.set(exercise.id, {
                 name: exercise.name,
@@ -222,7 +237,8 @@ export const HomeScreen: React.FC = () => {
                     onOpenMenuBrowser={() => setMenuBrowserOpen(true)}
                     onOpenExerciseBrowser={() => setExerciseBrowserOpen(true)}
                     onOpenMenuTab={() => setTab('menu')}
-                    onTeacherMenuTap={(menu) => {
+                    onTeacherMenuPreview={setSelectedTeacherMenu}
+                    onTeacherMenuStart={(menu) => {
                         startSessionWithExercises(menu.exerciseIds, {
                             sourceMenuId: menu.id,
                             sourceMenuSource: 'teacher',
@@ -237,6 +253,20 @@ export const HomeScreen: React.FC = () => {
             <PublicMenuBrowser
                 open={menuBrowserOpen}
                 onClose={() => setMenuBrowserOpen(false)}
+            />
+
+            <TeacherMenuDetailSheet
+                menu={selectedTeacherMenu}
+                exerciseMap={teacherMenuExerciseMap}
+                onClose={() => setSelectedTeacherMenu(null)}
+                onOpenMenuTab={() => setTab('menu')}
+                onStart={(menu) => {
+                    startSessionWithExercises(menu.exerciseIds, {
+                        sourceMenuId: menu.id,
+                        sourceMenuSource: 'teacher',
+                        sourceMenuName: menu.name,
+                    });
+                }}
             />
 
             <PublicExerciseBrowser

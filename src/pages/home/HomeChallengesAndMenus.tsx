@@ -24,7 +24,8 @@ interface HomeChallengesAndMenusProps {
     onOpenMenuBrowser: () => void;
     onOpenExerciseBrowser: () => void;
     onOpenMenuTab: () => void;
-    onTeacherMenuTap: (menu: TeacherMenu) => void;
+    onTeacherMenuPreview: (menu: TeacherMenu) => void;
+    onTeacherMenuStart: (menu: TeacherMenu) => void;
     onMenuTap: (menu: PublicMenu) => void;
     onExerciseTap: (exercise: PublicExercise) => void;
 }
@@ -43,7 +44,8 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
     onOpenMenuBrowser,
     onOpenExerciseBrowser,
     onOpenMenuTab,
-    onTeacherMenuTap,
+    onTeacherMenuPreview,
+    onTeacherMenuStart,
     onMenuTap,
     onExerciseTap,
 }) => {
@@ -145,7 +147,8 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                 menus={teacherMenuHighlights}
                 exerciseMap={teacherMenuExerciseMap}
                 isNewTeacherContent={isNewTeacherContent}
-                onTap={onTeacherMenuTap}
+                onPreview={onTeacherMenuPreview}
+                onStart={onTeacherMenuStart}
                 onOpenMenuTab={onOpenMenuTab}
             />
 

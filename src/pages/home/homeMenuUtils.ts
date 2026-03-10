@@ -1,0 +1,99 @@
+import { EXERCISES } from '../../data/exercises';
+import type { PublicExercise } from '../../lib/publicExercises';
+import type { PublicMenu } from '../../lib/publicMenuTypes';
+import type { TeacherMenu } from '../../lib/teacherContent';
+import { isTeacherContentNew } from '../../lib/teacherExerciseMetadata';
+import type { MenuGroup } from '../../data/menuGroups';
+
+export function toTeacherMenuGroup(menu: TeacherMenu): MenuGroup {
+    return {
+        id: menu.id,
+        name: menu.name,
+        emoji: menu.emoji,
+        description: menu.description,
+        exerciseIds: menu.exerciseIds,
+        isPreset: true,
+        origin: 'teacher',
+        visibility: menu.visibility,
+        focusTags: menu.focusTags,
+        recommended: menu.recommended,
+        recommendedOrder: menu.recommendedOrder,
+        displayMode: menu.displayMode,
+    };
+}
+
+export function isRecentContent(createdAt: string, now = Date.now(), days = 7): boolean {
+    const createdAtTime = new Date(createdAt).getTime();
+    if (Number.isNaN(createdAtTime)) {
+        return false;
+    }
+
+    return now - createdAtTime <= days * 24 * 60 * 60 * 1000;
+}
+
+export function getTeacherMenuLead(menu: TeacherMenu, now = Date.now()): string {
+    const description = menu.description.trim();
+    if (description.length > 0) {
+        return description;
+    }
+
+    if (menu.recommended) {
+        return '先生がおすすめしているメニュー';
+    }
+
+    if (isTeacherContentNew(menu.createdAt, now)) {
+        return '先生から届いた新しいメニュー';
+    }
+
+    if (menu.focusTags.length > 0) {
+        return `${menu.focusTags[0]} を意識したメニュー`;
+    }
+
+    return '先生がホームに置いたメニュー';
+}
+
+export function getPublicMenuBadgeLabel(menu: PublicMenu, now = Date.now()): string | null {
+    if (menu.customExerciseData.length > 0) {
+        return 'みんなの種目あり';
+    }
+
+    if (isRecentContent(menu.createdAt, now)) {
+        return 'New';
+    }
+
+    if (menu.downloadCount > 0) {
+        return '人気';
+    }
+
+    return null;
+}
+
+export function buildPublicMenuExercisePreview(menu: PublicMenu, limit = 3): string {
+    const resolveExercise = (id: string) =>
+        EXERCISES.find((exercise) => exercise.id === id)
+        ?? menu.customExerciseData.find((exercise) => exercise.id === id);
+
+    const names = menu.exerciseIds
+        .slice(0, limit)
+        .map((id) => resolveExercise(id)?.name ?? id);
+    const remaining = menu.exerciseIds.length - limit;
+
+    return `${names.join('、')}${remaining > 0 ? `、+${remaining}` : ''}`;
+}
+
+export function getPublicMenuMinutes(menu: PublicMenu): number {
+    const resolveExercise = (id: string) =>
+        EXERCISES.find((exercise) => exercise.id === id)
+        ?? menu.customExerciseData.find((exercise) => exercise.id === id);
+
+    const totalSec = menu.exerciseIds.reduce(
+        (sum, id) => sum + (resolveExercise(id)?.sec ?? 0),
+        0,
+    );
+
+    return Math.ceil(totalSec / 60);
+}
+
+export function buildFeaturedExerciseCopy(exercise: PublicExercise): string {
+    return `${exercise.authorName} さんの ${exercise.sec}秒の種目`;
+}
