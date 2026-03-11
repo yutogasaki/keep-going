@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import type { ExercisePlacement } from '../../../data/exercisePlacement';
 import type { MenuGroup } from '../../../data/menuGroups';
 import { GroupCard } from '../GroupCard';
@@ -9,6 +9,8 @@ interface TeacherGroupsSectionProps {
     exerciseMap: Map<string, { name: string; emoji: string; sec: number; placement: ExercisePlacement }>;
     onTap: (group: MenuGroup) => void;
     isNewTeacherContent?: (id: string) => boolean;
+    expanded: boolean;
+    onToggle: () => void;
 }
 
 export const TeacherGroupsSection: React.FC<TeacherGroupsSectionProps> = ({
@@ -16,24 +18,22 @@ export const TeacherGroupsSection: React.FC<TeacherGroupsSectionProps> = ({
     exerciseMap,
     onTap,
     isNewTeacherContent,
+    expanded,
+    onToggle,
 }) => {
     const hasGroups = groups.length > 0;
-    const hasHighlightedGroups = useMemo(
-        () => groups.some((group) => group.recommended || isNewTeacherContent?.(group.id)),
+    const recommendedCount = useMemo(
+        () => groups.filter((group) => group.recommended).length,
+        [groups],
+    );
+    const newCount = useMemo(
+        () => groups.filter((group) => isNewTeacherContent?.(group.id)).length,
         [groups, isNewTeacherContent],
     );
-    const [expanded, setExpanded] = useState(hasHighlightedGroups);
-
-    useEffect(() => {
-        if (!hasGroups) {
-            setExpanded(true);
-            return;
-        }
-
-        if (hasHighlightedGroups) {
-            setExpanded(true);
-        }
-    }, [hasGroups, hasHighlightedGroups]);
+    const summary = [
+        recommendedCount > 0 ? `おすすめ${recommendedCount}` : null,
+        newCount > 0 ? `New${newCount}` : null,
+    ].filter(Boolean).join(' · ');
 
     if (!hasGroups) {
         return null;
@@ -45,8 +45,9 @@ export const TeacherGroupsSection: React.FC<TeacherGroupsSectionProps> = ({
                 <CollapsibleSectionHeader
                     title="先生メニュー"
                     count={groups.length}
+                    summary={summary || undefined}
                     expanded={expanded}
-                    onToggle={() => setExpanded((current) => !current)}
+                    onToggle={onToggle}
                 />
             </div>
 

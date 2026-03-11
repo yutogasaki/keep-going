@@ -64,10 +64,13 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
     const isLoggedIn = !!getAccountId();
     const isEditing = !!initial;
 
-    // Built-in exercises (including rest exercises for manual menu building)
     const builtInExercises = useMemo(
-        () => [...getExercisesByClass(classLevel as ClassLevel), ...EXERCISES.filter(e => e.placement === 'rest')],
+        () => getExercisesByClass(classLevel as ClassLevel),
         [classLevel],
+    );
+    const restExercises = useMemo(
+        () => EXERCISES.filter((exercise) => exercise.placement === 'rest'),
+        [],
     );
 
     // Convert built-in to PickerExercise format
@@ -80,6 +83,15 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
             splitLabel: ex.internal !== 'single' ? ex.internal : undefined,
         })),
         [builtInExercises],
+    );
+    const restPicker: PickerExercise[] = useMemo(
+        () => restExercises.map((exercise) => ({
+            id: exercise.id,
+            name: exercise.name,
+            sec: exercise.sec,
+            emoji: exercise.emoji,
+        })),
+        [restExercises],
     );
 
     // Convert custom & teacher exercises
@@ -94,8 +106,8 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
 
     // All exercises flat list for lookups (time calc, selected card)
     const allExercises = useMemo(
-        () => [...builtInPicker, ...customPicker, ...teacherPicker],
-        [builtInPicker, customPicker, teacherPicker],
+        () => [...builtInPicker, ...restPicker, ...customPicker, ...teacherPicker],
+        [builtInPicker, customPicker, restPicker, teacherPicker],
     );
 
     // Sections for picker
@@ -230,6 +242,7 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
                 sections={sections}
                 selectedIds={selectedIds}
                 onAddExercise={addExercise}
+                restExercises={restPicker}
             />
 
             {isLoggedIn && !isEditing && (

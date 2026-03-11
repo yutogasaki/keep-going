@@ -1,6 +1,7 @@
 import type { ExercisePlacement } from '../../../data/exercisePlacement';
 import type { MenuGroup } from '../../../data/menuGroups';
 import type { PublicMenu } from '../../../lib/publicMenus';
+import type { MenuSectionVisibilityState } from '../menu-page/types';
 
 export interface MenuGroupTabProps {
     exerciseMap: Map<string, { name: string; emoji: string; sec: number; placement: ExercisePlacement }>;
@@ -25,4 +26,6 @@ export interface MenuGroupTabProps {
     onOpenPublicBrowser: () => void;
     teacherMenuIds?: Set<string>;
     isNewTeacherContent?: (id: string) => boolean;
+    sectionState: MenuSectionVisibilityState;
+    onToggleSection: (sectionId: keyof MenuSectionVisibilityState, nextExpanded: boolean) => void;
 }

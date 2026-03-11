@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import type { ExercisePlacement } from '../../../data/exercisePlacement';
 import type { MenuGroup } from '../../../data/menuGroups';
 import type { PublicMenu } from '../../../lib/publicMenus';
@@ -19,6 +19,8 @@ interface CustomGroupsSectionProps {
     onPublish: (group: MenuGroup) => void;
     onUnpublish: (group: MenuGroup) => void;
     onCreate: () => void;
+    expanded: boolean;
+    onToggle: () => void;
 }
 
 export const CustomGroupsSection: React.FC<CustomGroupsSectionProps> = ({
@@ -34,15 +36,15 @@ export const CustomGroupsSection: React.FC<CustomGroupsSectionProps> = ({
     onPublish,
     onUnpublish,
     onCreate,
+    expanded,
+    onToggle,
 }) => {
     const hasGroups = groups.length > 0;
-    const [expanded, setExpanded] = useState(!hasGroups);
-
-    useEffect(() => {
-        if (!hasGroups) {
-            setExpanded(true);
-        }
-    }, [hasGroups]);
+    const publishedCount = useMemo(
+        () => groups.filter((group) => Boolean(findPublishedMenu(group))).length,
+        [findPublishedMenu, groups],
+    );
+    const summary = publishedCount > 0 ? `公開中${publishedCount}` : undefined;
 
     return (
         <section>
@@ -51,8 +53,9 @@ export const CustomGroupsSection: React.FC<CustomGroupsSectionProps> = ({
                     <CollapsibleSectionHeader
                         title="じぶんのメニュー"
                         count={groups.length}
+                        summary={summary}
                         expanded={expanded}
-                        onToggle={() => setExpanded((current) => !current)}
+                        onToggle={onToggle}
                     />
                 </div>
             ) : (

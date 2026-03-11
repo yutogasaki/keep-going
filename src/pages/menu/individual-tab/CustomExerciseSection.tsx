@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import type { CustomExercise } from '../../../lib/db';
 import type { PublicExercise } from '../../../lib/publicExercises';
 import { DISPLAY_TERMS } from '../../../lib/terminology';
@@ -23,6 +23,8 @@ interface CustomExerciseSectionProps {
     selectionMode?: boolean;
     selectedIds?: Set<string>;
     onToggleSelect?: (exerciseId: string) => void;
+    expanded: boolean;
+    onToggle: () => void;
 }
 
 export const CustomExerciseSection: React.FC<CustomExerciseSectionProps> = ({
@@ -41,15 +43,15 @@ export const CustomExerciseSection: React.FC<CustomExerciseSectionProps> = ({
     selectionMode,
     selectedIds,
     onToggleSelect,
+    expanded,
+    onToggle,
 }) => {
     const hasCustomExercises = customExercises.length > 0;
-    const [expanded, setExpanded] = useState(!hasCustomExercises);
-
-    useEffect(() => {
-        if (!hasCustomExercises) {
-            setExpanded(true);
-        }
-    }, [hasCustomExercises]);
+    const publishedCount = useMemo(
+        () => customExercises.filter((exercise) => Boolean(findPublishedExercise?.(exercise))).length,
+        [customExercises, findPublishedExercise],
+    );
+    const summary = publishedCount > 0 ? `公開中${publishedCount}` : undefined;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
@@ -57,8 +59,9 @@ export const CustomExerciseSection: React.FC<CustomExerciseSectionProps> = ({
                 <CollapsibleSectionHeader
                     title={DISPLAY_TERMS.customExercise}
                     count={customExercises.length}
+                    summary={summary}
                     expanded={expanded}
-                    onToggle={() => setExpanded((current) => !current)}
+                    onToggle={onToggle}
                 />
             ) : (
                 <IndividualSectionHeading>{DISPLAY_TERMS.customExercise}</IndividualSectionHeading>

@@ -4,6 +4,7 @@ import { ChevronDown } from 'lucide-react';
 interface CollapsibleSectionHeaderProps {
     title: string;
     count?: number;
+    summary?: string;
     expanded: boolean;
     onToggle: () => void;
 }
@@ -11,6 +12,7 @@ interface CollapsibleSectionHeaderProps {
 export const CollapsibleSectionHeader: React.FC<CollapsibleSectionHeaderProps> = ({
     title,
     count,
+    summary,
     expanded,
     onToggle,
 }) => (
@@ -60,6 +62,22 @@ export const CollapsibleSectionHeader: React.FC<CollapsibleSectionHeaderProps> =
                     }}
                 >
                     {count}
+                </span>
+            ) : null}
+            {summary ? (
+                <span
+                    style={{
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: '#98A6AD',
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                    }}
+                >
+                    {summary}
                 </span>
             ) : null}
         </div>

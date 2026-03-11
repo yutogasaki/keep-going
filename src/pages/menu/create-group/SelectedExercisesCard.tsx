@@ -18,9 +18,9 @@ export const SelectedExercisesCard: React.FC<SelectedExercisesCardProps> = ({
 }) => {
     const resolveExercise = (id: string) => {
         const builtIn = getExerciseById(id);
-        if (builtIn) return { name: builtIn.name, emoji: builtIn.emoji };
+        if (builtIn) return { name: builtIn.name, emoji: builtIn.emoji, placement: builtIn.placement };
         const extra = allExercises?.find((e) => e.id === id);
-        if (extra) return { name: extra.name, emoji: extra.emoji };
+        if (extra) return { name: extra.name, emoji: extra.emoji, placement: null };
         return null;
     };
     return (
@@ -93,16 +93,20 @@ export const SelectedExercisesCard: React.FC<SelectedExercisesCardProps> = ({
                                     padding: '8px 14px',
                                     borderRadius: 12,
                                     border: 'none',
-                                    background: 'rgba(43, 186, 160, 0.1)',
+                                    background: exercise.placement === 'rest'
+                                        ? 'rgba(143, 164, 178, 0.16)'
+                                        : 'rgba(43, 186, 160, 0.1)',
                                     cursor: 'pointer',
                                     fontFamily: "'Noto Sans JP', sans-serif",
                                     fontSize: 14,
                                     fontWeight: 600,
-                                    color: '#00796B',
+                                    color: exercise.placement === 'rest' ? '#5A6B75' : '#00796B',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 6,
-                                    boxShadow: '0 2px 4px rgba(43, 186, 160, 0.05)',
+                                    boxShadow: exercise.placement === 'rest'
+                                        ? '0 2px 4px rgba(143, 164, 178, 0.08)'
+                                        : '0 2px 4px rgba(43, 186, 160, 0.05)',
                                 }}
                             >
                                 {exercise.emoji} {exercise.name}
@@ -114,7 +118,7 @@ export const SelectedExercisesCard: React.FC<SelectedExercisesCardProps> = ({
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    color: '#00796B',
+                                    color: exercise.placement === 'rest' ? '#5A6B75' : '#00796B',
                                     fontSize: 10,
                                     marginLeft: 4,
                                 }}>

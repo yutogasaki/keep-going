@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { getExercisePlacementLabel } from '../../data/exercisePlacement';
 import { StandardExerciseList } from './individual-tab/StandardExerciseList';
 import { SelectionBar } from './individual-tab/SelectionBar';
 import type { MenuIndividualTabProps } from './individual-tab/types';
@@ -12,6 +13,8 @@ import {
 import { CustomExerciseSection } from './individual-tab/CustomExerciseSection';
 import { IndividualCategoryToolbar } from './individual-tab/IndividualCategoryToolbar';
 import { PublicExerciseSection } from './individual-tab/PublicExerciseSection';
+import { TeacherExerciseSection } from './individual-tab/TeacherExerciseSection';
+import { MenuHighlightsStrip, type MenuHighlightItem } from './shared/MenuHighlightsStrip';
 
 export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
     onStartHybridSession?: (requiredIds: string[]) => void;
@@ -34,6 +37,8 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
     onUnpublishExercise,
     onOpenPublicExerciseBrowser,
     onStartHybridSession,
+    sectionState,
+    onToggleSection,
 }) => {
     const selectionEnabled = Boolean(onStartHybridSession);
     const [selectionMode, setSelectionMode] = useState(false);
@@ -68,6 +73,60 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
         () => shouldShowCustomExercises(customExercises, category),
         [category, customExercises],
     );
+    const hasTeacherHighlights = useMemo(
+        () => teacherSectionExercises.some(
+            (exercise) => exercise.recommended || isNewTeacherContent?.(exercise.id),
+        ),
+        [isNewTeacherContent, teacherSectionExercises],
+    );
+    const teacherExpanded = teacherSectionExercises.length === 0
+        ? false
+        : sectionState.teacher ?? hasTeacherHighlights;
+    const customExpanded = filteredCustomExercises.length === 0
+        ? true
+        : sectionState.custom ?? false;
+    const highlightItems = useMemo<MenuHighlightItem[]>(
+        () => filteredExercises
+            .filter((exercise) => exercise.recommended || isNewTeacherContent?.(exercise.id))
+            .sort((left, right) => {
+                const leftRecommended = left.recommended ? 0 : 1;
+                const rightRecommended = right.recommended ? 0 : 1;
+                if (leftRecommended !== rightRecommended) {
+                    return leftRecommended - rightRecommended;
+                }
+
+                const leftNew = isNewTeacherContent?.(left.id) ? 0 : 1;
+                const rightNew = isNewTeacherContent?.(right.id) ? 0 : 1;
+                if (leftNew !== rightNew) {
+                    return leftNew - rightNew;
+                }
+
+                const leftOrder = left.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
+                const rightOrder = right.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
+                if (leftOrder !== rightOrder) {
+                    return leftOrder - rightOrder;
+                }
+
+                return left.name.localeCompare(right.name, 'ja');
+            })
+            .slice(0, 3)
+            .map((exercise) => ({
+                id: exercise.id,
+                emoji: exercise.emoji,
+                title: exercise.name,
+                meta: `${exercise.sec}秒 · ${getExercisePlacementLabel(exercise.placement)}`,
+                caption: exercise.recommended
+                    ? '先生のおすすめをすぐ始められます'
+                    : '新しく届いた種目を試せます',
+                badges: [
+                    ...(exercise.recommended ? ['おすすめ'] : []),
+                    ...(isNewTeacherContent?.(exercise.id) ? ['New'] : []),
+                ],
+                onSelect: () => onStartExercise(exercise.id),
+            })),
+        [filteredExercises, isNewTeacherContent, onStartExercise],
+    );
+    const mainTitle = category === 'all' ? '今日つかう種目' : `${getExercisePlacementLabel(category)}の種目`;
 
     useEffect(() => {
         if (!availableCategories.includes(category)) {
@@ -119,8 +178,14 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                 onToggleMode={handleToggleMode}
             />
 
+            <MenuHighlightsStrip
+                title="先生のおすすめ"
+                description="おすすめや新着の種目を先に見つけられます"
+                items={highlightItems}
+            />
+
             <StandardExerciseList
-                title="種目"
+                title={mainTitle}
                 exercises={mainExercises}
                 requiredExerciseIds={requiredExercises}
                 onStartExercise={onStartExercise}
@@ -137,8 +202,7 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
             />
 
             {teacherSectionExercises.length > 0 ? (
-                <StandardExerciseList
-                    title="先生種目"
+                <TeacherExerciseSection
                     exercises={teacherSectionExercises}
                     requiredExerciseIds={requiredExercises}
                     onStartExercise={onStartExercise}
@@ -147,6 +211,8 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                     selectionMode={selectionMode}
                     selectedIds={selectedIds}
                     onToggleSelect={handleToggleSelect}
+                    expanded={teacherExpanded}
+                    onToggle={() => onToggleSection('teacher', !teacherExpanded)}
                 />
             ) : null}
 
@@ -166,6 +232,8 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                 selectionMode={selectionMode}
                 selectedIds={selectedIds}
                 onToggleSelect={handleToggleSelect}
+                expanded={customExpanded}
+                onToggle={() => onToggleSection('custom', !customExpanded)}
             />
 
             {onOpenPublicExerciseBrowser ? (

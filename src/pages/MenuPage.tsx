@@ -13,6 +13,7 @@ import { MenuGroupTab } from './menu/MenuGroupTab';
 import { MenuIndividualTab } from './menu/MenuIndividualTab';
 import { MenuTabs } from './menu/menu-page/MenuTabs';
 import { useMenuPageData } from './menu/menu-page/useMenuPageData';
+import type { MenuSectionVisibilityState } from './menu/menu-page/types';
 
 export const MenuPage: React.FC = () => {
     const users = useAppStore((state) => state.users);
@@ -23,6 +24,8 @@ export const MenuPage: React.FC = () => {
 
     const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
     const [deleteExId, setDeleteExId] = useState<string | null>(null);
+    const [groupSectionState, setGroupSectionState] = useState<MenuSectionVisibilityState>({});
+    const [individualSectionState, setIndividualSectionState] = useState<MenuSectionVisibilityState>({});
 
     const {
         tab,
@@ -166,6 +169,13 @@ export const MenuPage: React.FC = () => {
                     onOpenPublicBrowser={() => setShowPublicBrowser(true)}
                     teacherMenuIds={teacherMenuIds}
                     isNewTeacherContent={isNewTeacherContent}
+                    sectionState={groupSectionState}
+                    onToggleSection={(sectionId, nextExpanded) => {
+                        setGroupSectionState((current) => ({
+                            ...current,
+                            [sectionId]: nextExpanded,
+                        }));
+                    }}
                 />
             )}
 
@@ -189,6 +199,13 @@ export const MenuPage: React.FC = () => {
                     onUnpublishExercise={handleUnpublishExercise}
                     onOpenPublicExerciseBrowser={() => setShowPublicExerciseBrowser(true)}
                     onStartHybridSession={handleStartHybridSession}
+                    sectionState={individualSectionState}
+                    onToggleSection={(sectionId, nextExpanded) => {
+                        setIndividualSectionState((current) => ({
+                            ...current,
+                            [sectionId]: nextExpanded,
+                        }));
+                    }}
                 />
             )}
 
