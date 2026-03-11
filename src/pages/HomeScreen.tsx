@@ -10,7 +10,7 @@ import { EXERCISES } from '../data/exercises';
 import type { ExercisePlacement } from '../data/exercisePlacement';
 import type { PublicExercise } from '../lib/publicExercises';
 import type { PublicMenu } from '../lib/publicMenus';
-import type { TeacherMenu } from '../lib/teacherContent';
+import type { TeacherExercise, TeacherMenu } from '../lib/teacherContent';
 import { audio } from '../lib/audio';
 import { pickTeacherContentHighlights } from '../lib/teacherExerciseMetadata';
 import { useAppStore } from '../store/useAppStore';
@@ -19,10 +19,12 @@ import { HomeMilestoneModal } from './home/HomeMilestoneModal';
 import { HomeAnimatedBackground } from './home/HomeAnimatedBackground';
 import { FuwafuwaHomeCard } from './home/FuwafuwaHomeCard';
 import { HomeChallengesAndMenus } from './home/HomeChallengesAndMenus';
+import { TeacherExerciseDetailSheet } from './home/TeacherExerciseDetailSheet';
 import { TeacherMenuDetailSheet } from './home/TeacherMenuDetailSheet';
 import { useHomeChallenges } from './home/hooks/useHomeChallenges';
 import { useHomeSessions } from './home/hooks/useHomeSessions';
 import { useHomeMilestoneWatcher } from './home/hooks/useHomeMilestoneWatcher';
+import { pickTeacherExerciseDiscovery } from './home/homeMenuUtils';
 import { getMinClassLevel } from './menu/menuPageUtils';
 
 const noop = () => {};
@@ -43,6 +45,7 @@ export const HomeScreen: React.FC = () => {
     const [selectedPublicMenu, setSelectedPublicMenu] = useState<PublicMenu | null>(null);
     const [selectedPublicExercise, setSelectedPublicExercise] = useState<PublicExercise | null>(null);
     const [selectedTeacherMenu, setSelectedTeacherMenu] = useState<TeacherMenu | null>(null);
+    const [selectedTeacherExercise, setSelectedTeacherExercise] = useState<TeacherExercise | null>(null);
 
     const { allSessions, activeUsers, targetSeconds, perUserMagic, displaySeconds } = useHomeSessions({
         users,
@@ -89,6 +92,10 @@ export const HomeScreen: React.FC = () => {
             2,
         ),
         [teacherContent.teacherMenus],
+    );
+    const teacherExerciseHighlight = useMemo(
+        () => pickTeacherExerciseDiscovery(teacherContent.teacherExercises),
+        [teacherContent.teacherExercises],
     );
     const teacherMenuExerciseMap = useMemo(() => {
         const map = new Map<string, {
@@ -229,6 +236,7 @@ export const HomeScreen: React.FC = () => {
                     completions={completions}
                     teacherExercises={teacherExercises}
                     teacherMenuHighlights={teacherMenuHighlights}
+                    teacherExerciseHighlight={teacherExerciseHighlight}
                     teacherMenuExerciseMap={teacherMenuExerciseMap}
                     isNewTeacherContent={teacherContent.isNewTeacherContent}
                     pastExpanded={pastExpanded}
@@ -238,6 +246,7 @@ export const HomeScreen: React.FC = () => {
                     onOpenExerciseBrowser={() => setExerciseBrowserOpen(true)}
                     onOpenMenuTab={() => setTab('menu')}
                     onTeacherMenuPreview={setSelectedTeacherMenu}
+                    onTeacherExercisePreview={setSelectedTeacherExercise}
                     onTeacherMenuStart={(menu) => {
                         startSessionWithExercises(menu.exerciseIds, {
                             sourceMenuId: menu.id,
@@ -266,6 +275,15 @@ export const HomeScreen: React.FC = () => {
                         sourceMenuSource: 'teacher',
                         sourceMenuName: menu.name,
                     });
+                }}
+            />
+
+            <TeacherExerciseDetailSheet
+                exercise={selectedTeacherExercise}
+                onClose={() => setSelectedTeacherExercise(null)}
+                onOpenMenuTab={() => setTab('menu')}
+                onStart={(exercise) => {
+                    startSessionWithExercises([exercise.id]);
                 }}
             />
 

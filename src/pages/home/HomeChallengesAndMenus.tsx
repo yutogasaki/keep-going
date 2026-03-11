@@ -16,6 +16,7 @@ interface HomeChallengesAndMenusProps {
     completions: ChallengeCompletion[];
     teacherExercises: TeacherExercise[];
     teacherMenuHighlights: TeacherMenu[];
+    teacherExerciseHighlight: TeacherExercise | null;
     teacherMenuExerciseMap: Map<string, { name: string; emoji: string; sec: number; placement: ExercisePlacement }>;
     isNewTeacherContent: (id: string) => boolean;
     pastExpanded: boolean;
@@ -25,6 +26,7 @@ interface HomeChallengesAndMenusProps {
     onOpenExerciseBrowser: () => void;
     onOpenMenuTab: () => void;
     onTeacherMenuPreview: (menu: TeacherMenu) => void;
+    onTeacherExercisePreview: (exercise: TeacherExercise) => void;
     onTeacherMenuStart: (menu: TeacherMenu) => void;
     onMenuTap: (menu: PublicMenu) => void;
     onExerciseTap: (exercise: PublicExercise) => void;
@@ -36,6 +38,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
     completions,
     teacherExercises,
     teacherMenuHighlights,
+    teacherExerciseHighlight,
     teacherMenuExerciseMap,
     isNewTeacherContent,
     pastExpanded,
@@ -45,6 +48,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
     onOpenExerciseBrowser,
     onOpenMenuTab,
     onTeacherMenuPreview,
+    onTeacherExercisePreview,
     onTeacherMenuStart,
     onMenuTap,
     onExerciseTap,
@@ -145,9 +149,11 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
 
             <HomeTeacherMenuHighlights
                 menus={teacherMenuHighlights}
+                featuredExercise={teacherExerciseHighlight}
                 exerciseMap={teacherMenuExerciseMap}
                 isNewTeacherContent={isNewTeacherContent}
                 onPreview={onTeacherMenuPreview}
+                onExercisePreview={onTeacherExercisePreview}
                 onStart={onTeacherMenuStart}
                 onOpenMenuTab={onOpenMenuTab}
             />

@@ -1,25 +1,31 @@
 import React, { useMemo } from 'react';
-import { ChevronRight, Clock, Play } from 'lucide-react';
-import type { TeacherMenu } from '../../lib/teacherContent';
+import { ChevronRight, Clock, Play, Sparkles } from 'lucide-react';
+import { getExercisePlacementLabel } from '../../data/exercisePlacement';
+import { getTeacherVisibilityLabel, isTeacherContentNew } from '../../lib/teacherExerciseMetadata';
+import type { TeacherExercise, TeacherMenu } from '../../lib/teacherContent';
 import type { GroupExerciseMap } from '../menu/group-card/groupCardUtils';
 import { buildGroupCardSummary } from '../menu/group-card/groupCardUtils';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../lib/styles';
-import { getTeacherMenuLead, toTeacherMenuGroup } from './homeMenuUtils';
+import { getTeacherExerciseLead, getTeacherMenuLead, toTeacherMenuGroup } from './homeMenuUtils';
 
 interface HomeTeacherMenuHighlightsProps {
     menus: TeacherMenu[];
+    featuredExercise: TeacherExercise | null;
     exerciseMap: GroupExerciseMap;
     isNewTeacherContent: (id: string) => boolean;
     onPreview: (menu: TeacherMenu) => void;
+    onExercisePreview: (exercise: TeacherExercise) => void;
     onStart: (menu: TeacherMenu) => void;
     onOpenMenuTab: () => void;
 }
 
 export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps> = ({
     menus,
+    featuredExercise,
     exerciseMap,
     isNewTeacherContent,
     onPreview,
+    onExercisePreview,
     onStart,
     onOpenMenuTab,
 }) => {
@@ -32,7 +38,7 @@ export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps>
         [exerciseMap, isNewTeacherContent, menus],
     );
 
-    if (displayMenus.length === 0) {
+    if (displayMenus.length === 0 && !featuredExercise) {
         return null;
     }
 
@@ -47,7 +53,7 @@ export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps>
             <div style={sectionHeaderStyle}>
                 <div style={{ minWidth: 0 }}>
                     <div style={sectionTitleStyle}>先生のメニュー</div>
-                    <div style={sectionSubtitleStyle}>先生がおすすめしているメニュー</div>
+                    <div style={sectionSubtitleStyle}>先生がおすすめしているメニューや種目</div>
                 </div>
                 <button
                     type="button"
@@ -105,6 +111,68 @@ export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps>
                         </div>
                     </div>
                 ))}
+
+                {featuredExercise ? (
+                    <div style={teacherDiscoveryPanelStyle}>
+                        <button
+                            type="button"
+                            onClick={() => onExercisePreview(featuredExercise)}
+                            style={teacherDiscoveryButtonStyle}
+                            aria-label={`${featuredExercise.name}の詳細をみる`}
+                        >
+                            <div style={teacherDiscoveryLabelStyle}>
+                                <Sparkles size={14} />
+                                先生の新しい種目
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+                                <div style={teacherDiscoveryIconStyle}>
+                                    <span style={{ fontSize: 24, lineHeight: 1 }}>{featuredExercise.emoji}</span>
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                                        <span style={teacherBadgeStyle}>先生</span>
+                                        {featuredExercise.recommended ? (
+                                            <span style={recommendedBadgeStyle}>おすすめ</span>
+                                        ) : null}
+                                        {isTeacherContentNew(featuredExercise.createdAt) ? (
+                                            <span style={newBadgeStyle}>New</span>
+                                        ) : null}
+                                    </div>
+                                    <div style={teacherTitleStyle}>{featuredExercise.name}</div>
+                                    <div style={teacherLeadStyle}>{getTeacherExerciseLead(featuredExercise)}</div>
+                                </div>
+                            </div>
+                        </button>
+
+                        <div style={teacherDiscoveryFooterStyle}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                <span style={teacherMetaChipStyle}>
+                                    <Clock size={11} />
+                                    {featuredExercise.sec}秒
+                                </span>
+                                <span style={teacherMetaChipStyle}>
+                                    {getExercisePlacementLabel(featuredExercise.placement)}
+                                </span>
+                                {featuredExercise.focusTags[0] ? (
+                                    <span style={teacherFocusChipStyle}>{featuredExercise.focusTags[0]}</span>
+                                ) : null}
+                                {featuredExercise.visibility !== 'public' ? (
+                                    <span style={teacherMetaChipStyle}>
+                                        {getTeacherVisibilityLabel(featuredExercise.visibility)}
+                                    </span>
+                                ) : null}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={onOpenMenuTab}
+                                style={teacherDiscoveryLinkStyle}
+                            >
+                                種目も見る
+                                <ChevronRight size={14} />
+                            </button>
+                        </div>
+                    </div>
+                ) : null}
             </div>
         </section>
     );
@@ -180,6 +248,72 @@ const teacherIconStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
+};
+
+const teacherDiscoveryPanelStyle: React.CSSProperties = {
+    borderRadius: RADIUS['2xl'],
+    border: '1px solid rgba(255,255,255,0.6)',
+    background: 'linear-gradient(180deg, rgba(244,249,255,0.98) 0%, rgba(255,255,255,0.98) 100%)',
+    boxShadow: '0 6px 18px rgba(0,0,0,0.05)',
+    overflow: 'hidden',
+};
+
+const teacherDiscoveryButtonStyle: React.CSSProperties = {
+    width: '100%',
+    border: 'none',
+    background: 'none',
+    padding: `${SPACE.lg}px`,
+    cursor: 'pointer',
+    textAlign: 'left',
+};
+
+const teacherDiscoveryLabelStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 12,
+    padding: '6px 10px',
+    borderRadius: RADIUS.full,
+    background: 'rgba(9, 132, 227, 0.08)',
+    color: '#0984E3',
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.xs + 1,
+    fontWeight: 700,
+};
+
+const teacherDiscoveryIconStyle: React.CSSProperties = {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.xl,
+    background: 'rgba(9, 132, 227, 0.10)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+};
+
+const teacherDiscoveryFooterStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: SPACE.sm,
+    padding: `0 ${SPACE.lg}px ${SPACE.lg}px`,
+    flexWrap: 'wrap',
+};
+
+const teacherDiscoveryLinkStyle: React.CSSProperties = {
+    background: 'none',
+    border: 'none',
+    color: COLOR.info,
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.sm,
+    fontWeight: 700,
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 2,
+    padding: 0,
     flexShrink: 0,
 };
 
