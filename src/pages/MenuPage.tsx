@@ -11,6 +11,7 @@ import { CreateGroupView } from './menu/CreateGroupView';
 import { SingleExerciseEditor } from './menu/SingleExerciseEditor';
 import { MenuGroupTab } from './menu/MenuGroupTab';
 import { MenuIndividualTab } from './menu/MenuIndividualTab';
+import { toggleMenuSection } from './menu/menu-page/sectionVisibility';
 import { MenuTabs } from './menu/menu-page/MenuTabs';
 import { useMenuPageData } from './menu/menu-page/useMenuPageData';
 import type { MenuSectionVisibilityState } from './menu/menu-page/types';
@@ -171,10 +172,7 @@ export const MenuPage: React.FC = () => {
                     isNewTeacherContent={isNewTeacherContent}
                     sectionState={groupSectionState}
                     onToggleSection={(sectionId, nextExpanded) => {
-                        setGroupSectionState((current) => ({
-                            ...current,
-                            [sectionId]: nextExpanded,
-                        }));
+                        setGroupSectionState((current) => toggleMenuSection(current, sectionId, nextExpanded));
                     }}
                 />
             )}
@@ -201,10 +199,7 @@ export const MenuPage: React.FC = () => {
                     onStartHybridSession={handleStartHybridSession}
                     sectionState={individualSectionState}
                     onToggleSection={(sectionId, nextExpanded) => {
-                        setIndividualSectionState((current) => ({
-                            ...current,
-                            [sectionId]: nextExpanded,
-                        }));
+                        setIndividualSectionState((current) => toggleMenuSection(current, sectionId, nextExpanded));
                     }}
                 />
             )}
