@@ -213,9 +213,27 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         [ambientCue, announcement, idleBeat, isMagicDeliveryActive, pokeDepth, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
     );
 
+    const activeSpeech = isTogetherMode ? familySpeech : selectedUserSpeech;
+    const isDailySpeech = useMemo(
+        () => activeSpeech.id.startsWith('ambient:')
+            || activeSpeech.category === 'relationship'
+            || activeSpeech.category === 'mechanic_hint'
+            || (
+                activeSpeech.category === 'progress'
+                && !activeSpeech.id.endsWith('hatching_soon')
+                && !activeSpeech.id.endsWith('growth_soon')
+            ),
+        [activeSpeech],
+    );
+
     const advanceConversation = () => {
-        setPokeDepth((currentDepth) => Math.min(2, currentDepth + 1));
         setSpeechVariantSeed((currentSeed) => currentSeed + 1);
+
+        if (isDailySpeech) {
+            return;
+        }
+
+        setPokeDepth((currentDepth) => (currentDepth + 1) % 3);
     };
 
     useEffect(() => {
