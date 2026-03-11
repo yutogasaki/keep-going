@@ -43,6 +43,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     onAnnouncementAction,
 }) => {
     const [pokeDepth, setPokeDepth] = useState(0);
+    const [speechVariantSeed, setSpeechVariantSeed] = useState(0);
     const pokeResetTimerRef = useRef<number | null>(null);
     const perUserMagicMap = useMemo(
         () => new Map(perUserMagic.map((userMagic) => [userMagic.userId, userMagic])),
@@ -90,12 +91,12 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         };
     }, [activeUsers, milestoneEventsByUserId]);
     const familyBaseSpeech = useMemo(
-        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement, familyMilestoneLead, 0),
-        [activeUsers.length, announcement, displaySeconds, familyMilestoneLead, targetSeconds],
+        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement, familyMilestoneLead, 0, speechVariantSeed),
+        [activeUsers.length, announcement, displaySeconds, familyMilestoneLead, speechVariantSeed, targetSeconds],
     );
     const familySpeech = useMemo(
-        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement, familyMilestoneLead, pokeDepth),
-        [activeUsers.length, announcement, displaySeconds, familyMilestoneLead, pokeDepth, targetSeconds],
+        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement, familyMilestoneLead, pokeDepth, speechVariantSeed),
+        [activeUsers.length, announcement, displaySeconds, familyMilestoneLead, pokeDepth, speechVariantSeed, targetSeconds],
     );
     const selectedUserBaseSpeech = useMemo(
         () => selectedUserStatus
@@ -108,6 +109,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 announcement,
                 0,
                 selectedUserStatus.daysAlive,
+                speechVariantSeed,
             )
             : {
                 id: 'user:none',
@@ -115,7 +117,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 accent: 'primary' as const,
                 lines: [],
             },
-        [announcement, recentMilestoneEvent, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds],
+        [announcement, recentMilestoneEvent, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, speechVariantSeed],
     );
     const selectedUserSpeech = useMemo(
         () => selectedUserStatus
@@ -128,6 +130,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 announcement,
                 pokeDepth,
                 selectedUserStatus.daysAlive,
+                speechVariantSeed,
             )
             : {
                 id: 'user:none',
@@ -135,8 +138,12 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 accent: 'primary' as const,
                 lines: [],
             },
-        [announcement, pokeDepth, recentMilestoneEvent, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds],
+        [announcement, pokeDepth, recentMilestoneEvent, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, speechVariantSeed],
     );
+
+    useEffect(() => {
+        setSpeechVariantSeed((currentSeed) => currentSeed + 1);
+    }, [isTogetherMode, selectedUser?.id]);
 
     useEffect(() => {
         setPokeDepth(0);

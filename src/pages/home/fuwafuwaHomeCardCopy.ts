@@ -103,6 +103,7 @@ interface FamilySpeechContext {
     announcement: HomeAnnouncement | null;
     milestoneLead: FamilyMilestoneLead | null;
     depth: number;
+    variantSeed: number;
 }
 
 interface UserSpeechContext {
@@ -114,6 +115,11 @@ interface UserSpeechContext {
     announcement: HomeAnnouncement | null;
     recentMilestoneEvent: FuwafuwaMilestoneEvent | null;
     depth: number;
+    variantSeed: number;
+}
+
+function pickVariant<T>(variants: readonly T[], seed: number): T {
+    return variants[Math.abs(seed) % variants.length];
 }
 
 function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
@@ -279,7 +285,10 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             category: 'relationship',
             accent: 'info',
             lines: context.depth === 0
-                ? [`${peopleLabel} ちからを`, 'あわせよう！']
+                ? pickVariant([
+                    [`${peopleLabel} ちからを`, 'あわせよう！'],
+                    ['みんなで いっしょに', 'やってみよう？'],
+                ], context.variantSeed)
                 : context.depth === 1
                     ? ['みんなで やると', 'たのもしいね']
                     : ['いっしょだと', 'たのしいね'],
@@ -292,7 +301,10 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             category: 'progress',
             accent: 'info',
             lines: context.depth === 0
-                ? ['みんなの まほうエネルギーが', 'もうすこしで まんたん！']
+                ? pickVariant([
+                    ['みんなの まほうエネルギーが', 'もうすこしで まんたん！'],
+                    ['いいかんじ！', 'みんなで もうすこしだよ'],
+                ], context.variantSeed)
                 : context.depth === 1
                     ? ['ここに すこしずつ', 'たまってきたね']
                     : ['このまま いけば', 'すぐ たまりそう'],
@@ -305,7 +317,10 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             category: 'progress',
             accent: 'info',
             lines: context.depth === 0
-                ? ['みんなの まほうエネルギーが', 'たまってきたよ']
+                ? pickVariant([
+                    ['みんなの まほうエネルギーが', 'たまってきたよ'],
+                    ['いいかんじ！', 'まほうエネルギーが ふえてきたよ'],
+                ], context.variantSeed)
                 : context.depth === 1
                     ? ['ここに すこしずつ', 'たまるんだよ']
                     : ['みんなで あつめるの', 'たのしいね'],
@@ -317,7 +332,10 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
         category: 'progress',
         accent: 'info',
         lines: context.depth === 0
-            ? ['まほうエネルギーを', 'みんなで ためてるね']
+            ? pickVariant([
+                ['まほうエネルギーを', 'みんなで ためてるね'],
+                ['すこしずつ', 'みんなで ためていこう'],
+            ], context.variantSeed)
             : context.depth === 1
                 ? ['いまも ちゃんと', 'たまってるよ']
                 : ['ゆっくりでも', 'だいじょうぶ'],
@@ -331,6 +349,7 @@ export function getFamilySpeech(
     announcement: HomeAnnouncement | null,
     milestoneLead: FamilyMilestoneLead | null = null,
     pokeDepth = 0,
+    variantSeed = 0,
 ): FuwafuwaSpeech {
     const context: FamilySpeechContext = {
         activeCount,
@@ -339,6 +358,7 @@ export function getFamilySpeech(
         announcement,
         milestoneLead,
         depth: Math.max(0, Math.min(2, pokeDepth)),
+        variantSeed,
     };
 
     return buildFamilySpeech(pickFamilyTopic(context), context);
@@ -464,7 +484,10 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
             category: 'progress',
             accent: 'primary',
             lines: context.depth === 0
-                ? ['まほうエネルギーが', 'もうすこしで まんたん！']
+                ? pickVariant([
+                    ['まほうエネルギーが', 'もうすこしで まんたん！'],
+                    ['いいかんじ！', 'あと すこしで まんたん！'],
+                ], context.variantSeed)
                 : context.depth === 1
                     ? ['あと ほんのちょっとで', 'いっぱいだよ']
                     : ['このまま いけば', 'すぐ たまるよ'],
@@ -477,7 +500,10 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
             category: 'progress',
             accent: 'primary',
             lines: context.depth === 0
-                ? ['まほうエネルギーが', 'たまってきたよ']
+                ? pickVariant([
+                    ['まほうエネルギーが', 'たまってきたよ'],
+                    ['いいかんじ！', 'まほうエネルギーが ふえてきたよ'],
+                ], context.variantSeed)
                 : context.depth === 1
                     ? ['ここに すこしずつ', 'たまるんだよ']
                     : ['このまま', 'ためてみよう'],
@@ -489,7 +515,10 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
         category: 'progress',
         accent: 'primary',
         lines: context.depth === 0
-            ? ['まほうエネルギーが', 'すこし たまってきたよ']
+            ? pickVariant([
+                ['まほうエネルギーが', 'すこし たまってきたよ'],
+                ['すこしずつ', 'まほうエネルギーが ふえてるよ'],
+            ], context.variantSeed)
             : context.depth === 1
                 ? ['ここに ちょっとずつ', 'たまるんだよ']
                 : ['あせらなくて', 'だいじょうぶ'],
@@ -504,14 +533,20 @@ function buildUserRelationshipSpeech(context: UserSpeechContext): FuwafuwaSpeech
         lines: context.stage === 1
             ? (
                 context.depth === 0
-                    ? ['きょうも まってたよ', 'いっしょに やってみよう？']
+                    ? pickVariant([
+                        ['きょうも まってたよ', 'いっしょに やってみよう？'],
+                        ['あえて うれしいな', 'きょうは なにする？'],
+                    ], context.variantSeed)
                     : context.depth === 1
                         ? ['ツンツン してくれて', 'うれしいな']
                         : ['また さわってくれて', 'ありがとう']
             )
             : (
                 context.depth === 0
-                    ? ['あえて うれしいな', 'いっしょに やってみよう？']
+                    ? pickVariant([
+                        ['あえて うれしいな', 'いっしょに やってみよう？'],
+                        ['きょうも きてくれたね', 'なにから はじめようか？'],
+                    ], context.variantSeed)
                     : context.depth === 1
                         ? ['ふわふわ なんだか', 'ごきげんだよ']
                         : ['いっしょだと', 'たのしいね']
@@ -563,7 +598,10 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
         category: 'mechanic_hint',
         accent: 'primary',
         lines: context.depth === 0
-            ? ['まほうエネルギーは', 'ここに たまるんだよ']
+            ? pickVariant([
+                ['まほうエネルギーは', 'ここに たまるんだよ'],
+                ['ここに まほうエネルギーが', 'たまっていくんだよ'],
+            ], context.variantSeed)
             : context.depth === 1
                 ? ['たまると', 'いいこと あるよ']
                 : ['すこしずつ', 'あつめてみよう'],
@@ -579,6 +617,7 @@ export function getUserSpeech(
     announcement: HomeAnnouncement | null,
     pokeDepth = 0,
     daysAlive = 0,
+    variantSeed = 0,
 ): FuwafuwaSpeech {
     const context: UserSpeechContext = {
         percent: Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100),
@@ -589,6 +628,7 @@ export function getUserSpeech(
         announcement,
         recentMilestoneEvent,
         depth: Math.max(0, Math.min(2, pokeDepth)),
+        variantSeed,
     };
 
     return buildUserSpeech(pickUserTopic(context), context);

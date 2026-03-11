@@ -185,6 +185,22 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
     });
 
+    it('rotates low-priority solo speech variants with a seed', () => {
+        expect(getUserSpeech(0, 600, 1, 0, null, null, 0, 0, 1)).toEqual({
+            id: 'user:mechanic_hint',
+            category: 'mechanic_hint',
+            accent: 'primary',
+            lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
+        });
+
+        expect(getUserSpeech(300, 600, 2, 4, null, null, 0, 0, 1)).toEqual({
+            id: 'user:growing',
+            category: 'progress',
+            accent: 'primary',
+            lines: ['いいかんじ！', 'まほうエネルギーが ふえてきたよ'],
+        });
+    });
+
     it('uses progress depth to explain how magic energy builds up', () => {
         expect(getUserSpeech(300, 600, 2, 4, null, null)).toEqual({
             id: 'user:growing',
@@ -232,6 +248,22 @@ describe('fuwafuwaHomeCardCopy', () => {
             category: 'progress',
             accent: 'info',
             lines: ['ここに すこしずつ', 'たまるんだよ'],
+        });
+    });
+
+    it('rotates low-priority together-mode speech variants with a seed', () => {
+        expect(getFamilySpeech(2, 0, 600, null, null, 0, 1)).toEqual({
+            id: 'family:idle:2',
+            category: 'relationship',
+            accent: 'info',
+            lines: ['みんなで いっしょに', 'やってみよう？'],
+        });
+
+        expect(getFamilySpeech(2, 300, 600, null, null, 0, 1)).toEqual({
+            id: 'family:growing',
+            category: 'progress',
+            accent: 'info',
+            lines: ['いいかんじ！', 'まほうエネルギーが ふえてきたよ'],
         });
     });
 
