@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAnimation } from 'framer-motion';
+import type { AnimationDefinition } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
 import { calculateFuwafuwaStatus, pickNextFuwafuwaType } from '../lib/fuwafuwa';
@@ -80,7 +81,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
 
     useEffect(() => {
         if (!status.isSayonara) {
-            controls.start({
+            void controls.start({
                 y: [0, -8, 0],
                 scale: [displayScale * 0.98, displayScale * 1.02, displayScale * 0.98],
                 transition: {
@@ -145,47 +146,136 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
         particleTimers.current.push(timerId);
 
         const baseScale = displayScale;
+        const restartIdle = () => {
+            if (status.isSayonara) {
+                return;
+            }
+
+            void controls.start({
+                y: [0, -8, 0],
+                scale: [baseScale * 0.98, baseScale * 1.02, baseScale * 0.98],
+                transition: {
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                },
+            });
+        };
+
+        const playReaction = (animation: AnimationDefinition) => {
+            void controls.start(animation).then(restartIdle);
+        };
+
+        const reactionRoll = Math.random();
 
         if (reactionStyle === 'celebrating') {
-            controls.start({
-                y: [0, -30, 0, -15, 0],
-                scale: [baseScale, baseScale * 1.1, baseScale, baseScale * 1.05, baseScale],
-                transition: { duration: 0.6, type: 'spring', bounce: 0.5 },
+            if (reactionRoll < 0.34) {
+                playReaction({
+                    y: [0, -30, 0, -15, 0],
+                    scale: [baseScale, baseScale * 1.1, baseScale, baseScale * 1.05, baseScale],
+                    rotate: [0, -8, 8, 0],
+                    transition: { duration: 0.6, type: 'spring', bounce: 0.5 },
+                });
+                return;
+            }
+
+            if (reactionRoll < 0.67) {
+                playReaction({
+                    y: [0, -18, 0],
+                    rotate: [0, 360],
+                    scale: [baseScale, baseScale * 1.06, baseScale],
+                    transition: { duration: 0.72, ease: 'easeInOut' },
+                });
+                return;
+            }
+
+            playReaction({
+                rotate: [0, -12, 12, -10, 10, 0],
+                scale: [baseScale, baseScale * 1.1, baseScale * 0.96, baseScale],
+                transition: { duration: 0.68, ease: 'easeInOut' },
             });
             return;
         }
 
         if (reactionStyle === 'sharing') {
-            controls.start({
-                x: [0, -10, 10, -10, 10, 0],
-                y: [0, -6, 0],
-                transition: { duration: 0.4 },
-            });
-            return;
-        }
+            if (reactionRoll < 0.5) {
+                playReaction({
+                    x: [0, -10, 10, -10, 10, 0],
+                    y: [0, -6, 0],
+                    transition: { duration: 0.4 },
+                });
+                return;
+            }
 
-        if (reactionStyle === 'growing') {
-            controls.start({
-                y: [0, -18, 0, -8, 0],
-                scale: [baseScale, baseScale * 1.08, baseScale, baseScale * 1.03, baseScale],
+            playReaction({
+                rotate: [0, -8, 8, -4, 0],
+                y: [0, -10, 0],
+                scale: [baseScale, baseScale * 1.04, baseScale],
                 transition: { duration: 0.55, ease: 'easeInOut' },
             });
             return;
         }
 
-        if (reactionStyle === 'guiding') {
-            controls.start({
-                rotate: [0, -5, 5, -2, 0],
-                scale: [baseScale, baseScale * 1.03, baseScale],
-                transition: { duration: 0.5, ease: 'easeInOut' },
+        if (reactionStyle === 'growing') {
+            if (reactionRoll < 0.5) {
+                playReaction({
+                    y: [0, -18, 0, -8, 0],
+                    scale: [baseScale, baseScale * 1.08, baseScale, baseScale * 1.03, baseScale],
+                    transition: { duration: 0.55, ease: 'easeInOut' },
+                });
+                return;
+            }
+
+            playReaction({
+                y: [0, -20, 0],
+                rotate: [0, 360],
+                scale: [baseScale, baseScale * 1.07, baseScale],
+                transition: { duration: 0.7, ease: 'easeInOut' },
             });
             return;
         }
 
-        controls.start({
-            y: [0, -12, 0],
-            scale: [baseScale, baseScale * 1.05, baseScale],
-            transition: { duration: 0.5 },
+        if (reactionStyle === 'guiding') {
+            if (reactionRoll < 0.5) {
+                playReaction({
+                    rotate: [0, -5, 5, -2, 0],
+                    scale: [baseScale, baseScale * 1.03, baseScale],
+                    transition: { duration: 0.5, ease: 'easeInOut' },
+                });
+                return;
+            }
+
+            playReaction({
+                x: [0, -6, 6, -4, 0],
+                rotate: [0, 10, -10, 0],
+                transition: { duration: 0.45, ease: 'easeInOut' },
+            });
+            return;
+        }
+
+        if (reactionRoll < 0.34) {
+            playReaction({
+                y: [0, -12, 0],
+                scale: [baseScale, baseScale * 1.05, baseScale],
+                transition: { duration: 0.5 },
+            });
+            return;
+        }
+
+        if (reactionRoll < 0.67) {
+            playReaction({
+                rotate: [0, -10, 10, -6, 0],
+                y: [0, -8, 0],
+                transition: { duration: 0.55, ease: 'easeInOut' },
+            });
+            return;
+        }
+
+        playReaction({
+            y: [0, -14, 0],
+            rotate: [0, 360],
+            scale: [baseScale, baseScale * 1.03, baseScale],
+            transition: { duration: 0.66, ease: 'easeInOut' },
         });
     };
 

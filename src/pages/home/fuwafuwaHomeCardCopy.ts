@@ -170,16 +170,28 @@ function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
     }
 
     if (context.displaySeconds === 0) {
-        if (context.depth > 0 && context.ambientCue && context.depth >= 2) {
+        if (context.depth >= 2 && context.ambientCue) {
             return 'ambient';
+        }
+
+        if (context.depth >= 1) {
+            return 'progress';
         }
 
         return pickIdleCycle(
             context.ambientCue
-                ? ['greeting', 'mood', 'ambient', 'greeting']
-                : ['greeting', 'mood', 'greeting'],
+                ? ['greeting', 'mood', 'progress', 'ambient', 'greeting']
+                : ['greeting', 'mood', 'progress', 'greeting'],
             context.idleBeat,
         );
+    }
+
+    if (context.depth >= 2 && context.ambientCue) {
+        return 'ambient';
+    }
+
+    if (context.depth >= 1) {
+        return 'progress';
     }
 
     return pickIdleCycle(
@@ -790,14 +802,18 @@ function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
         );
     }
 
-    if (context.ambientCue && context.depth >= 2) {
+    if (context.depth >= 2 && context.ambientCue) {
         return 'ambient';
+    }
+
+    if (context.depth >= 1) {
+        return 'mechanic';
     }
 
     return pickIdleCycle(
         context.ambientCue
-            ? ['greeting', 'mood', 'ambient', 'greeting']
-            : ['greeting', 'mood', 'greeting'],
+            ? ['greeting', 'mood', 'mechanic', 'ambient', 'greeting']
+            : ['greeting', 'mood', 'mechanic', 'greeting'],
         context.idleBeat,
     );
 }
