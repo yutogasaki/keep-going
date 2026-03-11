@@ -3,6 +3,7 @@ import { DISPLAY_TERMS } from '../../../lib/terminology';
 export type MenuTab = 'group' | 'individual';
 
 export interface MenuSectionVisibilityState {
+    standard?: boolean;
     teacher?: boolean;
     custom?: boolean;
 }

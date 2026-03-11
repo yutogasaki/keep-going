@@ -3,9 +3,11 @@ import type { IndividualSelectionProps } from './types';
 import type { Exercise } from '../../../data/exercises';
 import { StandardExerciseCard } from './StandardExerciseCard';
 import { IndividualSectionHeading } from './IndividualSectionHeading';
+import { RestExerciseCard } from './RestExerciseCard';
 
 interface StandardExerciseListProps extends IndividualSelectionProps {
     exercises: Exercise[];
+    restExercises?: Exercise[];
     requiredExerciseIds: string[];
     onStartExercise: (exerciseId: string) => void;
     teacherExerciseIds?: Set<string>;
@@ -16,6 +18,7 @@ interface StandardExerciseListProps extends IndividualSelectionProps {
 
 export const StandardExerciseList: React.FC<StandardExerciseListProps> = ({
     exercises,
+    restExercises = [],
     requiredExerciseIds,
     onStartExercise,
     teacherExerciseIds,
@@ -31,7 +34,7 @@ export const StandardExerciseList: React.FC<StandardExerciseListProps> = ({
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {title ? <IndividualSectionHeading>{title}</IndividualSectionHeading> : null}
-            {exercises.length === 0 && emptyMessage ? (
+            {exercises.length === 0 && restExercises.length === 0 && emptyMessage ? (
                 <div
                     className="card card-sm"
                     style={{
@@ -62,6 +65,14 @@ export const StandardExerciseList: React.FC<StandardExerciseListProps> = ({
                     onStartExercise={onStartExercise}
                 />
             ))}
+            {restExercises.length > 0 ? (
+                <RestExerciseCard
+                    exercises={restExercises}
+                    selectionMode={selectionMode}
+                    selectedIds={selectedIds}
+                    onToggleSelect={onToggleSelect}
+                />
+            ) : null}
         </div>
     );
 };

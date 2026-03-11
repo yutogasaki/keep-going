@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { isRestExercise } from '../../data/exercises';
 import { getExercisePlacementLabel } from '../../data/exercisePlacement';
-import { StandardExerciseList } from './individual-tab/StandardExerciseList';
 import { SelectionBar } from './individual-tab/SelectionBar';
 import type { MenuIndividualTabProps } from './individual-tab/types';
 import {
@@ -13,6 +13,7 @@ import {
 import { CustomExerciseSection } from './individual-tab/CustomExerciseSection';
 import { IndividualCategoryToolbar } from './individual-tab/IndividualCategoryToolbar';
 import { PublicExerciseSection } from './individual-tab/PublicExerciseSection';
+import { StandardExerciseSection } from './individual-tab/StandardExerciseSection';
 import { TeacherExerciseSection } from './individual-tab/TeacherExerciseSection';
 import { MenuHighlightsStrip, type MenuHighlightItem } from './shared/MenuHighlightsStrip';
 
@@ -59,6 +60,14 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
         ),
         [filteredExercises],
     );
+    const standardExercises = useMemo(
+        () => mainExercises.filter((exercise) => !isRestExercise(exercise)),
+        [mainExercises],
+    );
+    const restExercises = useMemo(
+        () => mainExercises.filter((exercise) => isRestExercise(exercise)),
+        [mainExercises],
+    );
     const teacherSectionExercises = useMemo(
         () => filteredExercises.filter(
             (exercise) => exercise.origin === 'teacher' && exercise.displayMode !== 'standard_inline'
@@ -73,6 +82,7 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
         () => shouldShowCustomExercises(customExercises, category),
         [category, customExercises],
     );
+    const standardExpanded = sectionState.standard ?? true;
     const hasTeacherHighlights = useMemo(
         () => teacherSectionExercises.some(
             (exercise) => exercise.recommended || isNewTeacherContent?.(exercise.id),
@@ -87,7 +97,7 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
         : sectionState.custom ?? false;
     const highlightItems = useMemo<MenuHighlightItem[]>(
         () => filteredExercises
-            .filter((exercise) => exercise.recommended || isNewTeacherContent?.(exercise.id))
+            .filter((exercise) => !isRestExercise(exercise) && (exercise.recommended || isNewTeacherContent?.(exercise.id)))
             .sort((left, right) => {
                 const leftRecommended = left.recommended ? 0 : 1;
                 const rightRecommended = right.recommended ? 0 : 1;
@@ -126,7 +136,11 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
             })),
         [filteredExercises, isNewTeacherContent, onStartExercise],
     );
-    const mainTitle = category === 'all' ? '今日つかう種目' : `${getExercisePlacementLabel(category)}の種目`;
+    const mainTitle = category === 'all'
+        ? '今日つかう種目'
+        : category === 'rest'
+            ? '休憩'
+            : `${getExercisePlacementLabel(category)}の種目`;
 
     useEffect(() => {
         if (!availableCategories.includes(category)) {
@@ -184,21 +198,24 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                 items={highlightItems}
             />
 
-            <StandardExerciseList
+            <StandardExerciseSection
                 title={mainTitle}
-                exercises={mainExercises}
+                exercises={standardExercises}
+                restExercises={restExercises}
                 requiredExerciseIds={requiredExercises}
                 onStartExercise={onStartExercise}
                 teacherExerciseIds={teacherExerciseIds}
                 isNewTeacherContent={isNewTeacherContent}
                 emptyMessage={
-                    mainExercises.length === 0 && teacherSectionExercises.length === 0
+                    standardExercises.length === 0 && teacherSectionExercises.length === 0 && restExercises.length === 0
                         ? 'このカテゴリの種目はまだありません。'
                         : null
                 }
                 selectionMode={selectionMode}
                 selectedIds={selectedIds}
                 onToggleSelect={handleToggleSelect}
+                expanded={standardExpanded}
+                onToggle={() => onToggleSection('standard', !standardExpanded)}
             />
 
             {teacherSectionExercises.length > 0 ? (
