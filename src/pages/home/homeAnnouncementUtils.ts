@@ -98,7 +98,7 @@ export function pickHomeAnnouncement({
             id: createTeacherMenuAnnouncementId(teacherMenu.id),
             kind: 'teacher_menu',
             badgeLabel: '先生',
-            title: 'せんせいから おすすめが とどいたよ',
+            title: 'せんせいの おすすめメニューが きたよ',
             detail: teacherMenu.name,
             actionLabel: 'メニューへ',
         };
@@ -113,7 +113,7 @@ export function pickHomeAnnouncement({
             id: createTeacherExerciseAnnouncementId(teacherExerciseHighlight.id),
             kind: 'teacher_exercise',
             badgeLabel: '先生',
-            title: 'せんせいから おすすめが とどいたよ',
+            title: 'せんせいの おすすめしゅもくが きたよ',
             detail: teacherExerciseHighlight.name,
             actionLabel: 'メニューへ',
         };

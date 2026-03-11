@@ -86,6 +86,60 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
     });
 
+    it('deepens teacher menu recommendations with class context', () => {
+        const announcement = {
+            id: 'teacher-menu:teacher-menu-1',
+            kind: 'teacher_menu' as const,
+            badgeLabel: '先生' as const,
+            title: 'せんせいの おすすめメニューが きたよ',
+            detail: '先生のおすすめメニュー',
+            actionLabel: 'メニューへ',
+        };
+
+        expect(getUserSpeech(120, 600, 2, 6, announcement, 1)).toEqual({
+            id: 'teacher-menu:teacher-menu-1',
+            category: 'event_notice',
+            accent: 'info',
+            lines: ['クラスで やったことの', 'つづきに いいかも'],
+            actionLabel: 'メニューへ',
+        });
+
+        expect(getUserSpeech(120, 600, 2, 6, announcement, 2)).toEqual({
+            id: 'teacher-menu:teacher-menu-1',
+            category: 'event_notice',
+            accent: 'info',
+            lines: ['メニューで', 'みてみる？'],
+            actionLabel: 'メニューへ',
+        });
+    });
+
+    it('deepens teacher exercise recommendations as a softer suggestion', () => {
+        const announcement = {
+            id: 'teacher-exercise:teacher-exercise-1',
+            kind: 'teacher_exercise' as const,
+            badgeLabel: '先生' as const,
+            title: 'せんせいの おすすめしゅもくが きたよ',
+            detail: '先生の新しい種目',
+            actionLabel: 'メニューへ',
+        };
+
+        expect(getUserSpeech(120, 600, 2, 6, announcement, 1)).toEqual({
+            id: 'teacher-exercise:teacher-exercise-1',
+            category: 'event_notice',
+            accent: 'info',
+            lines: ['せんせいが', 'これ どうかなって'],
+            actionLabel: 'メニューへ',
+        });
+
+        expect(getUserSpeech(120, 600, 2, 6, announcement, 2)).toEqual({
+            id: 'teacher-exercise:teacher-exercise-1',
+            category: 'event_notice',
+            accent: 'info',
+            lines: ['メニューで', 'みてみる？'],
+            actionLabel: 'メニューへ',
+        });
+    });
+
     it('keeps mechanic hints low-pressure while poke depth advances', () => {
         expect(getUserSpeech(0, 600, 1, 0, null)).toEqual({
             id: 'user:mechanic_hint',

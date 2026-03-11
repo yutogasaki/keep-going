@@ -109,7 +109,7 @@ describe('pickHomeAnnouncement', () => {
             id: 'teacher-menu:teacher-menu-1',
             kind: 'teacher_menu',
             badgeLabel: '先生',
-            title: 'せんせいから おすすめが とどいたよ',
+            title: 'せんせいの おすすめメニューが きたよ',
             detail: '先生のおすすめメニュー',
             actionLabel: 'メニューへ',
         });
@@ -134,7 +134,7 @@ describe('pickHomeAnnouncement', () => {
             id: 'teacher-exercise:teacher-exercise-1',
             kind: 'teacher_exercise',
             badgeLabel: '先生',
-            title: 'せんせいから おすすめが とどいたよ',
+            title: 'せんせいの おすすめしゅもくが きたよ',
             detail: '先生の新しい種目',
             actionLabel: 'メニューへ',
         });

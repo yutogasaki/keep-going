@@ -225,12 +225,24 @@ export function getUserSpeech(
             });
         }
 
+        if (announcement.kind === 'teacher_menu') {
+            return createSpeech({
+                id: announcement.id,
+                category: 'event_notice',
+                accent: 'info',
+                lines: depth === 1
+                    ? ['クラスで やったことの', 'つづきに いいかも']
+                    : ['メニューで', 'みてみる？'],
+                actionLabel: announcement.actionLabel,
+            });
+        }
+
         return createSpeech({
             id: announcement.id,
             category: 'event_notice',
             accent: 'info',
             lines: depth === 1
-                ? ['このまえのレッスンに', 'ぴったりかも']
+                ? ['せんせいが', 'これ どうかなって']
                 : ['メニューで', 'みてみる？'],
             actionLabel: announcement.actionLabel,
         });
