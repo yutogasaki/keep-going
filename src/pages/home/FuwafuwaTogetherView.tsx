@@ -74,36 +74,6 @@ export const FuwafuwaTogetherView: React.FC<FuwafuwaTogetherViewProps> = ({
                 <div
                     style={{
                         display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: SPACE.md,
-                        padding: `0 ${SPACE.xs}px`,
-                    }}
-                >
-                    <div
-                        style={{
-                            fontFamily: FONT.body,
-                            fontSize: FONT_SIZE.md,
-                            fontWeight: 700,
-                            color: COLOR.dark,
-                        }}
-                    >
-                        みんなのふわふわ
-                    </div>
-                    <div
-                        style={{
-                            fontFamily: FONT.body,
-                            fontSize: FONT_SIZE.sm,
-                            color: COLOR.muted,
-                        }}
-                    >
-                        タップでこの子を見る
-                    </div>
-                </div>
-
-                <div
-                    style={{
-                        display: 'flex',
                         gap: SPACE.md,
                         overflowX: 'auto',
                         padding: `4px ${SPACE.xs}px 2px`,
@@ -127,6 +97,7 @@ export const FuwafuwaTogetherView: React.FC<FuwafuwaTogetherViewProps> = ({
                                 key={user.id}
                                 type="button"
                                 onClick={() => onSelectUser(user.id)}
+                                aria-label={`${user.name}のふわふわを見る`}
                                 style={{
                                     minWidth: 164,
                                     maxWidth: 164,
