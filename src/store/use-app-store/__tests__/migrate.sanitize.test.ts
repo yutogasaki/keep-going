@@ -30,6 +30,18 @@ describe('persisted state sanitization', () => {
             notificationsEnabled: 'sometimes',
             hasSeenSessionControlsHint: 'done',
             dismissedHomeAnnouncementIds: ['challenge:challenge-1', null, 'challenge:challenge-1'],
+            homeVisitMemory: {
+                soloByUserId: {
+                    'user-1': '2026-03-07T10:00:00.000Z',
+                    ghost: '2026-03-07T10:00:00.000Z',
+                    'user-2': 'bad',
+                },
+                familyByUserSet: {
+                    'ghost|user-1': '2026-03-07T10:00:00.000Z',
+                    'user-1': '2026-03-07T10:00:00.000Z',
+                    'user-1|user-2': 'bad',
+                },
+            },
             debugFuwafuwaStage: 'adult',
             debugFuwafuwaType: undefined,
             debugActiveDays: 'five',
@@ -56,6 +68,14 @@ describe('persisted state sanitization', () => {
         expect(result.notificationsEnabled).toBe(false);
         expect(result.hasSeenSessionControlsHint).toBe(false);
         expect(result.dismissedHomeAnnouncementIds).toEqual(['challenge:challenge-1']);
+        expect(result.homeVisitMemory).toEqual({
+            soloByUserId: {
+                'user-1': '2026-03-07T10:00:00.000Z',
+            },
+            familyByUserSet: {
+                'user-1': '2026-03-07T10:00:00.000Z',
+            },
+        });
         expect(result.debugFuwafuwaStage).toBeNull();
         expect(result.debugFuwafuwaType).toBeNull();
         expect(result.debugActiveDays).toBeNull();

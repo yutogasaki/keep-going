@@ -16,6 +16,11 @@ export interface ChibifuwaRecord {
     earnedDate: string;
 }
 
+export interface HomeVisitMemory {
+    soloByUserId: Record<string, string>;
+    familyByUserSet: Record<string, string>;
+}
+
 export type FuwafuwaMilestoneKind = 'egg' | 'fairy' | 'adult';
 
 export interface FuwafuwaMilestoneEvent {
@@ -121,6 +126,9 @@ export interface AppState {
     setHasSeenSessionControlsHint: (seen: boolean) => void;
     dismissedHomeAnnouncementIds: string[];
     dismissHomeAnnouncement: (announcementId: string) => void;
+    homeVisitMemory: HomeVisitMemory;
+    markSoloHomeVisit: (userId: string, visitedAt: string) => void;
+    markFamilyHomeVisit: (userIds: string[], visitedAt: string) => void;
 
     debugFuwafuwaStage: number | null;
     debugFuwafuwaType: number | null;

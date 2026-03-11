@@ -248,4 +248,20 @@ describe('session resume state', () => {
             'teacher-menu:menu-1',
         ]);
     });
+
+    it('stores solo and family home visits in persisted memory', () => {
+        const store = makeStore();
+
+        store.getState().markSoloHomeVisit('user-1', '2026-03-07T10:00:00.000Z');
+        store.getState().markFamilyHomeVisit(['user-2', 'user-1'], '2026-03-07T11:00:00.000Z');
+
+        expect(store.getState().homeVisitMemory).toEqual({
+            soloByUserId: {
+                'user-1': '2026-03-07T10:00:00.000Z',
+            },
+            familyByUserSet: {
+                'user-1|user-2': '2026-03-07T11:00:00.000Z',
+            },
+        });
+    });
 });

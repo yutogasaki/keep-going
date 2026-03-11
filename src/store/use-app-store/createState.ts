@@ -1,5 +1,6 @@
 import type { StateCreator } from 'zustand';
 import { getTodayKey } from '../../lib/db';
+import { getFamilyVisitMemoryKey } from '../../pages/home/homeVisitMemory';
 import type { AppState, PastFuwafuwaRecord, SessionDraft, TabId } from './types';
 
 function hasSameUsers(a: string[], b: string[]): boolean {
@@ -58,6 +59,14 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
     deleteUser: (id) => set((state) => ({
         users: state.users.filter((user) => user.id !== id),
         sessionUserIds: state.sessionUserIds.filter((userId) => userId !== id),
+        homeVisitMemory: {
+            soloByUserId: Object.fromEntries(
+                Object.entries(state.homeVisitMemory.soloByUserId).filter(([userId]) => userId !== id),
+            ),
+            familyByUserSet: Object.fromEntries(
+                Object.entries(state.homeVisitMemory.familyByUserSet).filter(([key]) => !key.split('|').includes(id)),
+            ),
+        },
     })),
     consumeUserMagicEnergy: (id, seconds) => set((state) => ({
         users: state.users.map((user) => {
@@ -219,6 +228,49 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
 
         return {
             dismissedHomeAnnouncementIds: [...state.dismissedHomeAnnouncementIds, announcementId],
+        };
+    }),
+    homeVisitMemory: {
+        soloByUserId: {},
+        familyByUserSet: {},
+    },
+    markSoloHomeVisit: (userId, visitedAt) => set((state) => {
+        if (!userId || !visitedAt) {
+            return state;
+        }
+
+        if (state.homeVisitMemory.soloByUserId[userId] === visitedAt) {
+            return state;
+        }
+
+        return {
+            homeVisitMemory: {
+                ...state.homeVisitMemory,
+                soloByUserId: {
+                    ...state.homeVisitMemory.soloByUserId,
+                    [userId]: visitedAt,
+                },
+            },
+        };
+    }),
+    markFamilyHomeVisit: (userIds, visitedAt) => set((state) => {
+        const key = getFamilyVisitMemoryKey(userIds);
+        if (!key || !visitedAt) {
+            return state;
+        }
+
+        if (state.homeVisitMemory.familyByUserSet[key] === visitedAt) {
+            return state;
+        }
+
+        return {
+            homeVisitMemory: {
+                ...state.homeVisitMemory,
+                familyByUserSet: {
+                    ...state.homeVisitMemory.familyByUserSet,
+                    [key]: visitedAt,
+                },
+            },
         };
     }),
 

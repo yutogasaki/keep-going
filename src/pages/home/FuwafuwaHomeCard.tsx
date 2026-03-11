@@ -9,6 +9,7 @@ import { getFamilySpeech, getUserSpeech } from './fuwafuwaHomeCardCopy';
 import type { FamilyMilestoneLead } from './fuwafuwaHomeCardCopy';
 import type { HomeAnnouncement } from './homeAnnouncementUtils';
 import type { HomeAmbientCue } from './homeAmbientUtils';
+import type { HomeVisitRecency } from './homeVisitMemory';
 import type { PerUserMagic } from './types';
 import type { FuwafuwaMilestoneEvent } from '../../store/useAppStore';
 
@@ -26,6 +27,8 @@ interface FuwafuwaHomeCardProps {
     onSelectUser: (userId: string) => void;
     announcement: HomeAnnouncement | null;
     ambientCue: HomeAmbientCue | null;
+    familyVisitRecency: HomeVisitRecency;
+    selectedUserVisitRecency: HomeVisitRecency;
     onAnnouncementAction: () => void;
 }
 
@@ -43,6 +46,8 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     onSelectUser,
     announcement,
     ambientCue,
+    familyVisitRecency,
+    selectedUserVisitRecency,
     onAnnouncementAction,
 }) => {
     const [pokeDepth, setPokeDepth] = useState(0);
@@ -94,12 +99,32 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         };
     }, [activeUsers, milestoneEventsByUserId]);
     const familyBaseSpeech = useMemo(
-        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement, ambientCue, familyMilestoneLead, 0, speechVariantSeed),
-        [activeUsers.length, ambientCue, announcement, displaySeconds, familyMilestoneLead, speechVariantSeed, targetSeconds],
+        () => getFamilySpeech(
+            activeUsers.length,
+            displaySeconds,
+            targetSeconds,
+            announcement,
+            ambientCue,
+            familyMilestoneLead,
+            0,
+            speechVariantSeed,
+            familyVisitRecency,
+        ),
+        [activeUsers.length, ambientCue, announcement, displaySeconds, familyMilestoneLead, familyVisitRecency, speechVariantSeed, targetSeconds],
     );
     const familySpeech = useMemo(
-        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement, ambientCue, familyMilestoneLead, pokeDepth, speechVariantSeed),
-        [activeUsers.length, ambientCue, announcement, displaySeconds, familyMilestoneLead, pokeDepth, speechVariantSeed, targetSeconds],
+        () => getFamilySpeech(
+            activeUsers.length,
+            displaySeconds,
+            targetSeconds,
+            announcement,
+            ambientCue,
+            familyMilestoneLead,
+            pokeDepth,
+            speechVariantSeed,
+            familyVisitRecency,
+        ),
+        [activeUsers.length, ambientCue, announcement, displaySeconds, familyMilestoneLead, familyVisitRecency, pokeDepth, speechVariantSeed, targetSeconds],
     );
     const selectedUserBaseSpeech = useMemo(
         () => selectedUserStatus
@@ -114,6 +139,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 0,
                 selectedUserStatus.daysAlive,
                 speechVariantSeed,
+                selectedUserVisitRecency,
             )
             : {
                 id: 'user:none',
@@ -121,7 +147,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 accent: 'primary' as const,
                 lines: [],
             },
-        [ambientCue, announcement, recentMilestoneEvent, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, speechVariantSeed],
+        [ambientCue, announcement, recentMilestoneEvent, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
     );
     const selectedUserSpeech = useMemo(
         () => selectedUserStatus
@@ -136,6 +162,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 pokeDepth,
                 selectedUserStatus.daysAlive,
                 speechVariantSeed,
+                selectedUserVisitRecency,
             )
             : {
                 id: 'user:none',
@@ -143,7 +170,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 accent: 'primary' as const,
                 lines: [],
             },
-        [ambientCue, announcement, pokeDepth, recentMilestoneEvent, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, speechVariantSeed],
+        [ambientCue, announcement, pokeDepth, recentMilestoneEvent, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
     );
 
     useEffect(() => {

@@ -1,5 +1,6 @@
 import type { HomeAnnouncement } from './homeAnnouncementUtils';
 import type { HomeAmbientCue } from './homeAmbientUtils';
+import type { HomeVisitRecency } from './homeVisitMemory';
 import type { FuwafuwaMilestoneEvent } from '../../store/useAppStore';
 import { getMilestoneSpeechLines } from './milestoneCopy';
 
@@ -105,6 +106,7 @@ interface FamilySpeechContext {
     announcement: HomeAnnouncement | null;
     ambientCue: HomeAmbientCue | null;
     milestoneLead: FamilyMilestoneLead | null;
+    visitRecency: HomeVisitRecency;
     depth: number;
     variantSeed: number;
 }
@@ -118,6 +120,7 @@ interface UserSpeechContext {
     announcement: HomeAnnouncement | null;
     ambientCue: HomeAmbientCue | null;
     recentMilestoneEvent: FuwafuwaMilestoneEvent | null;
+    visitRecency: HomeVisitRecency;
     depth: number;
     variantSeed: number;
 }
@@ -271,6 +274,99 @@ function buildAmbientSpeech(ambientCue: HomeAmbientCue, depth: number, accent: F
     });
 }
 
+function buildFamilyRelationshipLines(
+    activeCount: number,
+    visitRecency: HomeVisitRecency,
+    depth: number,
+    variantSeed: number,
+): string[] {
+    const peopleLabel = activeCount === 2 ? 'ふたりで' : `${activeCount}にんで`;
+
+    if (depth > 0) {
+        return depth === 1
+            ? ['みんなで やると', 'たのもしいね']
+            : ['いっしょだと', 'たのしいね'];
+    }
+
+    if (visitRecency === 'recent') {
+        return pickVariant([
+            ['また すぐ あえたね', 'ふわふわ うれしいな'],
+            ['さっきも あえたね', 'また きてくれて うれしいな'],
+        ], variantSeed);
+    }
+
+    if (visitRecency === 'today') {
+        return pickVariant([
+            ['また みんなで きてくれたね', 'まほうエネルギー たまるかな？'],
+            ['また あいに きてくれて', 'ふわふわ うれしいな'],
+        ], variantSeed);
+    }
+
+    if (visitRecency === 'returning') {
+        return pickVariant([
+            ['まってたよ', 'みんなに また あえて うれしいな'],
+            ['ひさしぶりだね', 'ふわふわ うれしいな'],
+        ], variantSeed);
+    }
+
+    return pickVariant([
+        [`${peopleLabel} いると`, 'まほうエネルギー たまるかな？'],
+        ['みんなの まほうエネルギー', 'ふわふわ うれしいな'],
+    ], variantSeed);
+}
+
+function buildUserRelationshipLines(
+    stage: number,
+    visitRecency: HomeVisitRecency,
+    depth: number,
+    variantSeed: number,
+): string[] {
+    if (depth > 0) {
+        if (stage === 1) {
+            return depth === 1
+                ? ['ツンツン してくれて', 'うれしいな']
+                : ['また さわってくれて', 'ありがとう'];
+        }
+
+        return depth === 1
+            ? ['ふわふわ なんだか', 'ごきげんだよ']
+            : ['いっしょだと', 'たのしいね'];
+    }
+
+    if (visitRecency === 'recent') {
+        return pickVariant([
+            ['また すぐ あえたね', 'ふわふわ うれしいな'],
+            ['さっきも きてくれたね', 'また あえて うれしいな'],
+        ], variantSeed);
+    }
+
+    if (visitRecency === 'today') {
+        return pickVariant([
+            ['また きてくれたね', 'まほうエネルギー たまるかな？'],
+            ['また あいに きてくれて', 'ふわふわ うれしいな'],
+        ], variantSeed);
+    }
+
+    if (visitRecency === 'returning') {
+        return pickVariant([
+            ['まってたよ', 'また あえて うれしいな'],
+            ['ひさしぶりだね', 'ふわふわ うれしいな'],
+        ], variantSeed);
+    }
+
+    if (stage === 1) {
+        return pickVariant([
+            ['きょうも まってたよ', 'まほうエネルギー もらえるかな？'],
+            ['あえて うれしいな', 'まほうエネルギー ほしいな'],
+        ], variantSeed);
+    }
+
+    return pickVariant([
+        ['あえて うれしいな', 'まほうエネルギー ほしいな'],
+        ['きょうも きてくれたね', 'まほうエネルギー たまるかな？'],
+    ], variantSeed);
+}
+
 function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechContext): FuwafuwaSpeech {
     if (topic === 'action') {
         return createSpeech({
@@ -334,19 +430,16 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
     }
 
     if (topic === 'relationship') {
-        const peopleLabel = context.activeCount === 2 ? 'ふたりで' : `${context.activeCount}にんで`;
         return createSpeech({
             id: `family:idle:${context.activeCount}`,
             category: 'relationship',
             accent: 'info',
-            lines: context.depth === 0
-                ? pickVariant([
-                    [`${peopleLabel} いると`, 'まほうエネルギー たまるかな？'],
-                    ['みんなの まほうエネルギー', 'ふわふわ うれしいな'],
-                ], context.variantSeed)
-                : context.depth === 1
-                    ? ['みんなで やると', 'たのもしいね']
-                    : ['いっしょだと', 'たのしいね'],
+            lines: buildFamilyRelationshipLines(
+                context.activeCount,
+                context.visitRecency,
+                context.depth,
+                context.variantSeed,
+            ),
         });
     }
 
@@ -406,6 +499,7 @@ export function getFamilySpeech(
     milestoneLead: FamilyMilestoneLead | null = null,
     pokeDepth = 0,
     variantSeed = 0,
+    visitRecency: HomeVisitRecency = 'first',
 ): FuwafuwaSpeech {
     const context: FamilySpeechContext = {
         activeCount,
@@ -414,6 +508,7 @@ export function getFamilySpeech(
         announcement,
         ambientCue,
         milestoneLead,
+        visitRecency,
         depth: Math.max(0, Math.min(2, pokeDepth)),
         variantSeed,
     };
@@ -591,27 +686,12 @@ function buildUserRelationshipSpeech(context: UserSpeechContext): FuwafuwaSpeech
         id: context.stage === 1 ? 'user:relationship_waiting' : 'user:relationship_ready',
         category: 'relationship',
         accent: 'primary',
-        lines: context.stage === 1
-            ? (
-                context.depth === 0
-                    ? pickVariant([
-                        ['きょうも まってたよ', 'まほうエネルギー もらえるかな？'],
-                        ['あえて うれしいな', 'まほうエネルギー ほしいな'],
-                    ], context.variantSeed)
-                    : context.depth === 1
-                        ? ['ツンツン してくれて', 'うれしいな']
-                        : ['また さわってくれて', 'ありがとう']
-            )
-            : (
-                context.depth === 0
-                    ? pickVariant([
-                        ['あえて うれしいな', 'まほうエネルギー ほしいな'],
-                        ['きょうも きてくれたね', 'まほうエネルギー たまるかな？'],
-                    ], context.variantSeed)
-                    : context.depth === 1
-                        ? ['ふわふわ なんだか', 'ごきげんだよ']
-                        : ['いっしょだと', 'たのしいね']
-            ),
+        lines: buildUserRelationshipLines(
+            context.stage,
+            context.visitRecency,
+            context.depth,
+            context.variantSeed,
+        ),
     });
 }
 
@@ -684,6 +764,7 @@ export function getUserSpeech(
     pokeDepth = 0,
     daysAlive = 0,
     variantSeed = 0,
+    visitRecency: HomeVisitRecency = 'first',
 ): FuwafuwaSpeech {
     const context: UserSpeechContext = {
         percent: Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100),
@@ -694,6 +775,7 @@ export function getUserSpeech(
         announcement,
         ambientCue,
         recentMilestoneEvent,
+        visitRecency,
         depth: Math.max(0, Math.min(2, pokeDepth)),
         variantSeed,
     };

@@ -389,4 +389,22 @@ describe('fuwafuwaHomeCardCopy', () => {
             lines: ['あえて うれしいな', 'まほうエネルギー ほしいな'],
         });
     });
+
+    it('changes solo relationship speech when fuwafuwa remembers a returning visit', () => {
+        expect(getUserSpeech(0, 600, 2, 3, null, null, null, 0, 0, 0, 'returning')).toEqual({
+            id: 'user:relationship_ready',
+            category: 'relationship',
+            accent: 'primary',
+            lines: ['まってたよ', 'また あえて うれしいな'],
+        });
+    });
+
+    it('changes together relationship speech when everyone came back recently', () => {
+        expect(getFamilySpeech(2, 0, 600, null, null, null, 0, 0, 'recent')).toEqual({
+            id: 'family:idle:2',
+            category: 'relationship',
+            accent: 'info',
+            lines: ['また すぐ あえたね', 'ふわふわ うれしいな'],
+        });
+    });
 });

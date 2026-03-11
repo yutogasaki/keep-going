@@ -205,9 +205,21 @@ describe('modern migrations', () => {
         expect(result.dismissedHomeAnnouncementIds).toEqual(['challenge:challenge-1']);
     });
 
-    it('v19 is a no-op for already migrated state', () => {
-        const state = { users: [] } as any;
+    it('v20 initializes missing homeVisitMemory', () => {
+        const state = makeCurrentState();
+        delete state.homeVisitMemory;
+
         const result = migrateAppState(state, 19);
+
+        expect(result.homeVisitMemory).toEqual({
+            soloByUserId: {},
+            familyByUserSet: {},
+        });
+    });
+
+    it('v20 is a no-op for already migrated state', () => {
+        const state = { users: [] } as any;
+        const result = migrateAppState(state, 20);
 
         expect((result as any).ttsRate).toBeUndefined();
         expect((result as any).ttsPitch).toBeUndefined();

@@ -74,6 +74,10 @@ export function makeCurrentState(overrides: Record<string, any> = {}) {
         joinedChallengeIds: {},
         hasSeenSessionControlsHint: false,
         dismissedHomeAnnouncementIds: [],
+        homeVisitMemory: {
+            soloByUserId: {},
+            familyByUserSet: {},
+        },
         sessionDraft: null,
         ...overrides,
     };

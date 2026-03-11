@@ -2,6 +2,7 @@ import { getTodayKey } from '../../lib/db';
 import type {
     AppState,
     ChibifuwaRecord,
+    HomeVisitMemory,
     PastFuwafuwaRecord,
     SessionDraft,
     SessionMenuSource,
@@ -251,6 +252,55 @@ export function sanitizeJoinedChallengeIds(
     return result;
 }
 
+function sanitizeTimestampRecord(value: unknown): Record<string, string> {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return {};
+    }
+
+    const result: Record<string, string> = {};
+    for (const [key, timestamp] of Object.entries(value as Record<string, unknown>)) {
+        if (typeof key !== 'string' || key.length === 0 || typeof timestamp !== 'string') {
+            continue;
+        }
+
+        const timestampMs = new Date(timestamp).getTime();
+        if (!Number.isFinite(timestampMs)) {
+            continue;
+        }
+
+        result[key] = timestamp;
+    }
+
+    return result;
+}
+
+export function sanitizeHomeVisitMemory(
+    value: unknown,
+    validUserIds: Set<string>,
+): HomeVisitMemory {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return {
+            soloByUserId: {},
+            familyByUserSet: {},
+        };
+    }
+
+    const candidate = value as Record<string, unknown>;
+    const soloByUserId = Object.fromEntries(
+        Object.entries(sanitizeTimestampRecord(candidate.soloByUserId)).filter(([userId]) => validUserIds.has(userId)),
+    );
+    const familyByUserSet = Object.fromEntries(
+        Object.entries(sanitizeTimestampRecord(candidate.familyByUserSet)).filter(([key]) => (
+            key.split('|').every((userId) => validUserIds.has(userId))
+        )),
+    );
+
+    return {
+        soloByUserId,
+        familyByUserSet,
+    };
+}
+
 export function sanitizeSessionUserIds(value: unknown, validUserIds: string[]): string[] {
     const validSet = new Set(validUserIds);
     const filtered = sanitizeStringArray(value).filter((id) => validSet.has(id));
@@ -301,6 +351,7 @@ export function sanitizePersistedState(state: Record<string, unknown>): void {
     state.debugActiveDays = sanitizeNullableNumber(state.debugActiveDays);
     state.debugFuwafuwaScale = sanitizeNullableNumber(state.debugFuwafuwaScale);
     state.joinedChallengeIds = sanitizeJoinedChallengeIds(state.joinedChallengeIds, validUserIdSet);
+    state.homeVisitMemory = sanitizeHomeVisitMemory(state.homeVisitMemory, validUserIdSet);
     state.sessionUserIds = sanitizeSessionUserIds(state.sessionUserIds, validUserIds);
     state.sessionDraft = sanitizeSessionDraft(state.sessionDraft, validUserIdSet);
 }

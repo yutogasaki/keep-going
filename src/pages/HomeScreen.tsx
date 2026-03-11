@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 const lazyConfetti = () => import('canvas-confetti').then((m) => m.default);
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { PageHeader } from '../components/PageHeader';
@@ -23,6 +23,11 @@ import { HomeChallengesAndMenus } from './home/HomeChallengesAndMenus';
 import { TeacherExerciseDetailSheet } from './home/TeacherExerciseDetailSheet';
 import { TeacherMenuDetailSheet } from './home/TeacherMenuDetailSheet';
 import { pickHomeAnnouncement } from './home/homeAnnouncementUtils';
+import {
+    getFamilyVisitMemoryKey,
+    getHomeVisitRecency,
+    type HomeVisitRecency,
+} from './home/homeVisitMemory';
 import { useHomeChallenges } from './home/hooks/useHomeChallenges';
 import { useHomeSessions } from './home/hooks/useHomeSessions';
 import { useHomePublicDiscovery } from './home/hooks/useHomePublicDiscovery';
@@ -48,16 +53,23 @@ export const HomeScreen: React.FC = () => {
     const joinedChallengeIds = useAppStore((state) => state.joinedChallengeIds);
     const dismissedHomeAnnouncementIds = useAppStore((state) => state.dismissedHomeAnnouncementIds);
     const dismissHomeAnnouncement = useAppStore((state) => state.dismissHomeAnnouncement);
+    const homeVisitMemory = useAppStore((state) => state.homeVisitMemory);
+    const markSoloHomeVisit = useAppStore((state) => state.markSoloHomeVisit);
+    const markFamilyHomeVisit = useAppStore((state) => state.markFamilyHomeVisit);
     const currentTab = useAppStore((state) => state.currentTab);
 
     const [menuBrowserOpen, setMenuBrowserOpen] = useState(false);
     const [exerciseBrowserOpen, setExerciseBrowserOpen] = useState(false);
     const [pendingMilestoneEvents, setPendingMilestoneEvents] = useState<FuwafuwaMilestoneEvent[]>([]);
     const [recentMilestoneEvent, setRecentMilestoneEvent] = useState<FuwafuwaMilestoneEvent | null>(null);
+    const [selectedUserVisitRecency, setSelectedUserVisitRecency] = useState<HomeVisitRecency>('first');
+    const [familyVisitRecency, setFamilyVisitRecency] = useState<HomeVisitRecency>('first');
     const [selectedPublicMenu, setSelectedPublicMenu] = useState<PublicMenu | null>(null);
     const [selectedPublicExercise, setSelectedPublicExercise] = useState<PublicExercise | null>(null);
     const [selectedTeacherMenu, setSelectedTeacherMenu] = useState<TeacherMenu | null>(null);
     const [selectedTeacherExercise, setSelectedTeacherExercise] = useState<TeacherExercise | null>(null);
+    const lastSoloVisitKeyRef = useRef('');
+    const lastFamilyVisitKeyRef = useRef('');
 
     const { allSessions, activeUsers, targetSeconds, perUserMagic, displaySeconds } = useHomeSessions({
         users,
@@ -98,6 +110,10 @@ export const HomeScreen: React.FC = () => {
     const selectedUser = useMemo(
         () => activeUsers[0] ?? users.find((user) => user.id === sessionUserIds[0]) ?? null,
         [activeUsers, sessionUserIds, users],
+    );
+    const familyVisitKey = useMemo(
+        () => (isTogetherMode ? getFamilyVisitMemoryKey(currentUsers.map((user) => user.id)) : ''),
+        [currentUsers, isTogetherMode],
     );
     const activeMilestoneUser = useMemo(
         () => activeMilestoneModal
@@ -231,6 +247,43 @@ export const HomeScreen: React.FC = () => {
     }, [recentMilestoneEvent]);
 
     useEffect(() => {
+        if (isTogetherMode || !selectedUser) {
+            lastSoloVisitKeyRef.current = '';
+            setSelectedUserVisitRecency('first');
+            return;
+        }
+
+        const visitKey = selectedUser.id;
+        if (lastSoloVisitKeyRef.current === visitKey) {
+            return;
+        }
+
+        lastSoloVisitKeyRef.current = visitKey;
+        setSelectedUserVisitRecency(
+            getHomeVisitRecency(homeVisitMemory.soloByUserId[visitKey] ?? null),
+        );
+        markSoloHomeVisit(visitKey, new Date().toISOString());
+    }, [homeVisitMemory.soloByUserId, isTogetherMode, markSoloHomeVisit, selectedUser]);
+
+    useEffect(() => {
+        if (!isTogetherMode || familyVisitKey.length === 0) {
+            lastFamilyVisitKeyRef.current = '';
+            setFamilyVisitRecency('first');
+            return;
+        }
+
+        if (lastFamilyVisitKeyRef.current === familyVisitKey) {
+            return;
+        }
+
+        lastFamilyVisitKeyRef.current = familyVisitKey;
+        setFamilyVisitRecency(
+            getHomeVisitRecency(homeVisitMemory.familyByUserSet[familyVisitKey] ?? null),
+        );
+        markFamilyHomeVisit(currentUsers.map((user) => user.id), new Date().toISOString());
+    }, [currentUsers, familyVisitKey, homeVisitMemory.familyByUserSet, isTogetherMode, markFamilyHomeVisit]);
+
+    useEffect(() => {
         if (isTogetherMode || !selectedUser || activeMilestoneModal) {
             return;
         }
@@ -362,6 +415,8 @@ export const HomeScreen: React.FC = () => {
                     onSelectUser={(userId) => setSessionUserIds([userId])}
                     announcement={homeAnnouncement}
                     ambientCue={ambientCue}
+                    familyVisitRecency={familyVisitRecency}
+                    selectedUserVisitRecency={selectedUserVisitRecency}
                     onAnnouncementAction={() => {
                         if (!homeAnnouncement) {
                             return;
