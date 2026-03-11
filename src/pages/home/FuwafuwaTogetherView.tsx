@@ -6,6 +6,7 @@ import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../lib/styles';
 import type { UserProfileStore } from '../../store/useAppStore';
 import { FuwafuwaSpeechBubble } from './FuwafuwaSpeechBubble';
 import {
+    type FuwafuwaSpeech,
     getSoftProgress,
     getSoftProgressShort,
     getStageLabel,
@@ -15,9 +16,10 @@ import type { PerUserMagic } from './types';
 interface FuwafuwaTogetherViewProps {
     activeUsers: UserProfileStore[];
     displaySeconds: number;
-    familyMessage: string;
+    familySpeech: FuwafuwaSpeech;
     onSelectUser: (userId: string) => void;
     onTankReset: () => void;
+    onSpeechAction?: () => void;
     perUserMagicMap: Map<string, PerUserMagic>;
     sessionsByUserId: Map<string, SessionRecord[]>;
     targetSeconds: number;
@@ -26,9 +28,10 @@ interface FuwafuwaTogetherViewProps {
 export const FuwafuwaTogetherView: React.FC<FuwafuwaTogetherViewProps> = ({
     activeUsers,
     displaySeconds,
-    familyMessage,
+    familySpeech,
     onSelectUser,
     onTankReset,
+    onSpeechAction,
     perUserMagicMap,
     sessionsByUserId,
     targetSeconds,
@@ -64,9 +67,9 @@ export const FuwafuwaTogetherView: React.FC<FuwafuwaTogetherViewProps> = ({
                     currentSeconds={displaySeconds}
                     maxSeconds={targetSeconds}
                     onReset={onTankReset}
-                    label="みんなの まほうを あつめよう！"
+                    label="みんなの まほう"
                     fullLabel="みんなの まほうがいっぱい！✨"
-                    fullHint="タップしてみんなのふわふわに送る"
+                    fullHint="ぽんって してみよう"
                 />
                 <div
                     style={{
@@ -80,7 +83,12 @@ export const FuwafuwaTogetherView: React.FC<FuwafuwaTogetherViewProps> = ({
                     {getSoftProgress(familyProgressPercent)}
                 </div>
                 <div style={{ marginTop: SPACE.sm }}>
-                    <FuwafuwaSpeechBubble message={familyMessage} accent="info" />
+                    <FuwafuwaSpeechBubble
+                        lines={familySpeech.lines}
+                        accent={familySpeech.accent}
+                        actionLabel={familySpeech.actionLabel}
+                        onAction={onSpeechAction}
+                    />
                 </div>
             </div>
 

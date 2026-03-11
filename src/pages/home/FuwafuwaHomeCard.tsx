@@ -5,7 +5,8 @@ import { RADIUS, SPACE } from '../../lib/styles';
 import type { UserProfileStore } from '../../store/useAppStore';
 import { FuwafuwaSoloView } from './FuwafuwaSoloView';
 import { FuwafuwaTogetherView } from './FuwafuwaTogetherView';
-import { getFamilyMessage, getUserMessage } from './fuwafuwaHomeCardCopy';
+import { getFamilySpeech, getUserSpeech } from './fuwafuwaHomeCardCopy';
+import type { HomeAnnouncement } from './homeAnnouncementUtils';
 import type { PerUserMagic } from './types';
 
 interface FuwafuwaHomeCardProps {
@@ -18,6 +19,8 @@ interface FuwafuwaHomeCardProps {
     activeUsers: UserProfileStore[];
     allSessions: SessionRecord[];
     onSelectUser: (userId: string) => void;
+    announcement: HomeAnnouncement | null;
+    onAnnouncementAction: () => void;
 }
 
 export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
@@ -30,6 +33,8 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     activeUsers,
     allSessions,
     onSelectUser,
+    announcement,
+    onAnnouncementAction,
 }) => {
     const perUserMagicMap = useMemo(
         () => new Map(perUserMagic.map((userMagic) => [userMagic.userId, userMagic])),
@@ -51,20 +56,24 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         ? calculateFuwafuwaStatus(selectedUser.fuwafuwaBirthDate, selectedUserSessions)
         : null;
     const selectedUserMagic = selectedUser ? perUserMagicMap.get(selectedUser.id) : null;
-    const familyMessage = useMemo(
-        () => getFamilyMessage(activeUsers.length, displaySeconds, targetSeconds),
-        [activeUsers.length, displaySeconds, targetSeconds],
+    const familySpeech = useMemo(
+        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement),
+        [activeUsers.length, announcement, displaySeconds, targetSeconds],
     );
-    const selectedUserMessage = useMemo(
+    const selectedUserSpeech = useMemo(
         () => selectedUserStatus
-            ? getUserMessage(
+            ? getUserSpeech(
                 selectedUserMagic?.displaySeconds ?? displaySeconds,
                 selectedUserMagic?.targetSeconds ?? targetSeconds,
                 selectedUserStatus.stage,
                 selectedUserStatus.activeDays,
+                announcement,
             )
-            : '',
-        [displaySeconds, selectedUserMagic, selectedUserStatus, targetSeconds],
+            : {
+                accent: 'primary' as const,
+                lines: [],
+            },
+        [announcement, displaySeconds, selectedUserMagic, selectedUserStatus, targetSeconds],
     );
 
     return (
@@ -89,9 +98,10 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 <FuwafuwaTogetherView
                     activeUsers={activeUsers}
                     displaySeconds={displaySeconds}
-                    familyMessage={familyMessage}
+                    familySpeech={familySpeech}
                     onSelectUser={onSelectUser}
                     onTankReset={onTankReset}
+                    onSpeechAction={familySpeech.actionLabel ? onAnnouncementAction : undefined}
                     perUserMagicMap={perUserMagicMap}
                     sessionsByUserId={sessionsByUserId}
                     targetSeconds={targetSeconds}
@@ -101,8 +111,9 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                     allSessions={allSessions}
                     displaySeconds={displaySeconds}
                     onTankReset={onTankReset}
+                    onSpeechAction={selectedUserSpeech.actionLabel ? onAnnouncementAction : undefined}
                     selectedUser={selectedUser}
-                    selectedUserMessage={selectedUserMessage}
+                    selectedUserSpeech={selectedUserSpeech}
                     targetSeconds={targetSeconds}
                 />
             ) : null}

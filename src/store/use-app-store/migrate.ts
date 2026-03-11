@@ -2,7 +2,7 @@ import { getTodayKey } from '../../lib/db';
 import type { AppState } from './types';
 import { sanitizePersistedState, sanitizeSessionDraft } from './migrateHelpers';
 
-export const APP_STATE_VERSION = 17;
+export const APP_STATE_VERSION = 18;
 
 export type PersistedAppState = Pick<
     AppState,
@@ -16,6 +16,7 @@ export type PersistedAppState = Pick<
     | 'notificationsEnabled'
     | 'notificationTime'
     | 'hasSeenSessionControlsHint'
+    | 'dismissedHomeAnnouncementIds'
     | 'sessionDraft'
     | 'debugFuwafuwaStage'
     | 'debugFuwafuwaType'
@@ -35,6 +36,7 @@ export const PERSISTED_APP_STATE_KEYS = [
     'notificationsEnabled',
     'notificationTime',
     'hasSeenSessionControlsHint',
+    'dismissedHomeAnnouncementIds',
     'sessionDraft',
     'debugFuwafuwaStage',
     'debugFuwafuwaType',
@@ -206,6 +208,12 @@ export function migrateAppState(persistedState: any, version: number): AppState 
                     : 0,
             }));
         }
+    }
+
+    if (version < 18) {
+        state.dismissedHomeAnnouncementIds = Array.isArray(state.dismissedHomeAnnouncementIds)
+            ? state.dismissedHomeAnnouncementIds
+            : [];
     }
 
     sanitizePersistedState(state as Record<string, unknown>);

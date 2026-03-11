@@ -21,6 +21,7 @@ import { FuwafuwaHomeCard } from './home/FuwafuwaHomeCard';
 import { HomeChallengesAndMenus } from './home/HomeChallengesAndMenus';
 import { TeacherExerciseDetailSheet } from './home/TeacherExerciseDetailSheet';
 import { TeacherMenuDetailSheet } from './home/TeacherMenuDetailSheet';
+import { pickHomeAnnouncement } from './home/homeAnnouncementUtils';
 import { useHomeChallenges } from './home/hooks/useHomeChallenges';
 import { useHomeSessions } from './home/hooks/useHomeSessions';
 import { useHomeMilestoneWatcher } from './home/hooks/useHomeMilestoneWatcher';
@@ -39,6 +40,10 @@ export const HomeScreen: React.FC = () => {
     const setActiveMilestoneModal = useAppStore((state) => state.setActiveMilestoneModal);
     const consumeUserMagicEnergy = useAppStore((state) => state.consumeUserMagicEnergy);
     const startSessionWithExercises = useAppStore((state) => state.startSessionWithExercises);
+    const joinedChallengeIds = useAppStore((state) => state.joinedChallengeIds);
+    const dismissedHomeAnnouncementIds = useAppStore((state) => state.dismissedHomeAnnouncementIds);
+    const dismissHomeAnnouncement = useAppStore((state) => state.dismissHomeAnnouncement);
+    const currentTab = useAppStore((state) => state.currentTab);
 
     const [menuBrowserOpen, setMenuBrowserOpen] = useState(false);
     const [exerciseBrowserOpen, setExerciseBrowserOpen] = useState(false);
@@ -135,6 +140,30 @@ export const HomeScreen: React.FC = () => {
         users,
         sessionUserIds,
     });
+    const activeAnnouncementUserIds = useMemo(
+        () => (currentUsers.length > 0 ? currentUsers.map((user) => user.id) : sessionUserIds),
+        [currentUsers, sessionUserIds],
+    );
+    const homeAnnouncement = useMemo(
+        () => pickHomeAnnouncement({
+            activeUserIds: activeAnnouncementUserIds,
+            challenges: filteredChallenges,
+            joinedChallengeIds,
+            dismissedAnnouncementIds: dismissedHomeAnnouncementIds,
+            teacherMenuHighlights,
+            teacherExerciseHighlight,
+            isNewTeacherContent: teacherContent.isNewTeacherContent,
+        }),
+        [
+            activeAnnouncementUserIds,
+            dismissedHomeAnnouncementIds,
+            filteredChallenges,
+            joinedChallengeIds,
+            teacherContent.isNewTeacherContent,
+            teacherExerciseHighlight,
+            teacherMenuHighlights,
+        ],
+    );
 
     useHomeMilestoneWatcher({
         allSessions,
@@ -142,6 +171,16 @@ export const HomeScreen: React.FC = () => {
         updateUser,
         setActiveMilestoneModal,
     });
+
+    useEffect(() => {
+        if (
+            currentTab === 'menu'
+            && homeAnnouncement
+            && (homeAnnouncement.kind === 'teacher_menu' || homeAnnouncement.kind === 'teacher_exercise')
+        ) {
+            dismissHomeAnnouncement(homeAnnouncement.id);
+        }
+    }, [currentTab, dismissHomeAnnouncement, homeAnnouncement]);
 
     const handleTankReset = () => {
         if (displaySeconds < targetSeconds) {
@@ -228,6 +267,24 @@ export const HomeScreen: React.FC = () => {
                     activeUsers={activeUsers}
                     allSessions={allSessions}
                     onSelectUser={(userId) => setSessionUserIds([userId])}
+                    announcement={homeAnnouncement}
+                    onAnnouncementAction={() => {
+                        if (!homeAnnouncement) {
+                            return;
+                        }
+
+                        dismissHomeAnnouncement(homeAnnouncement.id);
+
+                        if (homeAnnouncement.kind === 'challenge') {
+                            document.getElementById('home-challenges-section')?.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start',
+                            });
+                            return;
+                        }
+
+                        setTab('menu');
+                    }}
                 />
 
                 <HomeChallengesAndMenus

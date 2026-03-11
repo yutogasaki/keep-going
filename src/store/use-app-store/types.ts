@@ -110,6 +110,8 @@ export interface AppState {
     setNotificationTime: (time: string) => void;
     hasSeenSessionControlsHint: boolean;
     setHasSeenSessionControlsHint: (seen: boolean) => void;
+    dismissedHomeAnnouncementIds: string[];
+    dismissHomeAnnouncement: (announcementId: string) => void;
 
     debugFuwafuwaStage: number | null;
     debugFuwafuwaType: number | null;

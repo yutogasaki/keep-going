@@ -15,9 +15,9 @@ export const MagicTank: React.FC<MagicTankProps> = ({
     currentSeconds,
     maxSeconds,
     onReset,
-    label = 'まほうエネルギーを あつめよう！',
+    label = 'まほうエネルギー',
     fullLabel = 'まほうがいっぱい！✨',
-    fullHint = 'タップしてふわふわに送る',
+    fullHint = 'ぽんって してみよう',
 }) => {
     // Fill percentage capped at 100%
     const fillPercentage = Math.min((currentSeconds / maxSeconds) * 100, 100);

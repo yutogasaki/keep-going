@@ -224,4 +224,17 @@ describe('session resume state', () => {
 
         expect(store.getState().users[0].challengeStars).toBe(5);
     });
+
+    it('dismissHomeAnnouncement stores unique ids only once', () => {
+        const store = makeStore();
+
+        store.getState().dismissHomeAnnouncement('challenge:challenge-1');
+        store.getState().dismissHomeAnnouncement('challenge:challenge-1');
+        store.getState().dismissHomeAnnouncement('teacher-menu:menu-1');
+
+        expect(store.getState().dismissedHomeAnnouncementIds).toEqual([
+            'challenge:challenge-1',
+            'teacher-menu:menu-1',
+        ]);
+    });
 });

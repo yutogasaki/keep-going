@@ -290,6 +290,7 @@ export function sanitizePersistedState(state: Record<string, unknown>): void {
     state.notificationsEnabled = sanitizeBooleanSetting(state.notificationsEnabled, false);
     state.notificationTime = sanitizeNotificationTime(state.notificationTime);
     state.hasSeenSessionControlsHint = sanitizeBooleanSetting(state.hasSeenSessionControlsHint, false);
+    state.dismissedHomeAnnouncementIds = sanitizeStringArray(state.dismissedHomeAnnouncementIds);
     state.debugFuwafuwaStage = sanitizeNullableNumber(state.debugFuwafuwaStage);
     state.debugFuwafuwaType = sanitizeNullableNumber(state.debugFuwafuwaType);
     state.debugActiveDays = sanitizeNullableNumber(state.debugActiveDays);

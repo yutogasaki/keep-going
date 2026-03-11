@@ -57,6 +57,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
         <>
             {filteredChallenges.length > 0 && (
                 <div
+                    id="home-challenges-section"
                     style={{
                         width: '100%',
                         padding: '0 16px',

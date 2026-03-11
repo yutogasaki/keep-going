@@ -1,3 +1,13 @@
+import type { HomeAnnouncement } from './homeAnnouncementUtils';
+
+export type FuwafuwaSpeechAccent = 'primary' | 'info';
+
+export interface FuwafuwaSpeech {
+    accent: FuwafuwaSpeechAccent;
+    lines: string[];
+    actionLabel?: string;
+}
+
 export function getStageLabel(stage: number) {
     if (stage === 1) return 'たまご';
     if (stage === 2) return 'ようせい';
@@ -22,6 +32,65 @@ export function getSoftProgressShort(percent: number) {
     return 'からっぽ';
 }
 
+function buildAnnouncementSpeech(announcement: HomeAnnouncement): FuwafuwaSpeech {
+    return {
+        accent: announcement.kind === 'challenge' ? 'primary' : 'info',
+        lines: [announcement.title, announcement.detail],
+        actionLabel: announcement.actionLabel,
+    };
+}
+
+function shouldShowMechanicHint(activeDays: number): boolean {
+    return activeDays <= 2 || activeDays % 5 === 0;
+}
+
+export function getFamilySpeech(
+    activeCount: number,
+    displaySeconds: number,
+    targetSeconds: number,
+    announcement: HomeAnnouncement | null,
+): FuwafuwaSpeech {
+    const percent = Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100);
+    const peopleLabel = activeCount === 2 ? 'ふたりで' : `${activeCount}にんで`;
+
+    if (percent >= 100) {
+        return {
+            accent: 'info',
+            lines: ['みんなの まほうが', 'いっぱいに なったよ', 'ぽんって してみよう？'],
+        };
+    }
+
+    if (announcement) {
+        return buildAnnouncementSpeech(announcement);
+    }
+
+    if (displaySeconds === 0) {
+        return {
+            accent: 'info',
+            lines: [`${peopleLabel} ちからを`, 'あわせよう！'],
+        };
+    }
+
+    if (percent >= 90) {
+        return {
+            accent: 'info',
+            lines: ['もうすこしで', 'まんたんだね！'],
+        };
+    }
+
+    if (percent >= 31) {
+        return {
+            accent: 'info',
+            lines: ['みんなの まほう', 'たまってきたよ'],
+        };
+    }
+
+    return {
+        accent: 'info',
+        lines: ['いいかんじ！', 'みんなで ためてるね'],
+    };
+}
+
 export function getFamilyMessage(activeCount: number, displaySeconds: number, targetSeconds: number) {
     const percent = Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100);
     const peopleLabel = activeCount === 2 ? 'ふたりで' : `${activeCount}にんで`;
@@ -41,27 +110,69 @@ export function getFamilyMessage(activeCount: number, displaySeconds: number, ta
     return 'みんなの まほう、たまってきたよ！';
 }
 
-export function getUserMessage(displaySeconds: number, targetSeconds: number, stage: number, activeDays: number) {
+export function getUserSpeech(
+    displaySeconds: number,
+    targetSeconds: number,
+    stage: number,
+    activeDays: number,
+    announcement: HomeAnnouncement | null,
+): FuwafuwaSpeech {
     const percent = Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100);
 
     if (percent >= 100) {
-        return 'わあ！ まほうが いっぱいだよ';
+        return {
+            accent: 'primary',
+            lines: ['わあ！ まほうが いっぱいだよ', 'ぽんって さわると', 'ふわふわに おくれるよ'],
+        };
+    }
+
+    if (announcement) {
+        return buildAnnouncementSpeech(announcement);
     }
 
     if (displaySeconds === 0) {
-        if (stage === 1) {
-            return 'きょうも まってたよ';
+        if (shouldShowMechanicHint(activeDays)) {
+            return {
+                accent: 'primary',
+                lines: ['まほうは ここに', stage === 1 ? 'たまっていくんだよ' : 'すこしずつ たまるんだよ'],
+            };
         }
-        return 'いっしょに まほうを あつめよう？';
+
+        return {
+            accent: 'primary',
+            lines: stage === 1
+                ? ['きょうも まってたよ', 'いっしょに やってみよう？']
+                : ['あえて うれしいな', 'いっしょに やってみよう？'],
+        };
     }
 
     if (stage === 2 && activeDays >= 6) {
-        return 'もうすぐ おおきくなれそう！';
+        return {
+            accent: 'primary',
+            lines: ['もうすぐ', 'おおきく なれそう！'],
+        };
     }
 
     if (percent >= 90) {
-        return 'もうすこしで まんたん！';
+        return {
+            accent: 'primary',
+            lines: ['もうすこしで', 'まんたん！'],
+        };
     }
 
-    return 'いいかんじ！ まほうが たまってきたよ';
+    if (percent >= 31) {
+        return {
+            accent: 'primary',
+            lines: ['いいかんじ！', 'まほうが たまってきたよ'],
+        };
+    }
+
+    return {
+        accent: 'primary',
+        lines: ['すこしずつ', 'たまってきたね'],
+    };
+}
+
+export function getUserMessage(displaySeconds: number, targetSeconds: number, stage: number, activeDays: number) {
+    return getUserSpeech(displaySeconds, targetSeconds, stage, activeDays, null).lines.join(' ');
 }

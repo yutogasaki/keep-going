@@ -41,6 +41,7 @@ export function makeV5State(overrides: Record<string, any> = {}) {
         ttsEnabled: true,
         bgmEnabled: true,
         hapticEnabled: true,
+        dismissedHomeAnnouncementIds: [],
         ...overrides,
     };
 }
@@ -72,6 +73,7 @@ export function makeCurrentState(overrides: Record<string, any> = {}) {
         hapticEnabled: true,
         joinedChallengeIds: {},
         hasSeenSessionControlsHint: false,
+        dismissedHomeAnnouncementIds: [],
         sessionDraft: null,
         ...overrides,
     };

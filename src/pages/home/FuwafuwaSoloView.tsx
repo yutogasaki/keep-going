@@ -4,14 +4,16 @@ import { MagicTank } from '../../components/MagicTank';
 import type { SessionRecord } from '../../lib/db';
 import { SPACE } from '../../lib/styles';
 import type { UserProfileStore } from '../../store/useAppStore';
+import type { FuwafuwaSpeech } from './fuwafuwaHomeCardCopy';
 import { FuwafuwaSpeechBubble } from './FuwafuwaSpeechBubble';
 
 interface FuwafuwaSoloViewProps {
     allSessions: SessionRecord[];
     displaySeconds: number;
     onTankReset: () => void;
+    onSpeechAction?: () => void;
     selectedUser: UserProfileStore;
-    selectedUserMessage: string;
+    selectedUserSpeech: FuwafuwaSpeech;
     targetSeconds: number;
 }
 
@@ -19,8 +21,9 @@ export const FuwafuwaSoloView: React.FC<FuwafuwaSoloViewProps> = ({
     allSessions,
     displaySeconds,
     onTankReset,
+    onSpeechAction,
     selectedUser,
-    selectedUserMessage,
+    selectedUserSpeech,
     targetSeconds,
 }) => (
     <>
@@ -29,10 +32,17 @@ export const FuwafuwaSoloView: React.FC<FuwafuwaSoloViewProps> = ({
                 currentSeconds={displaySeconds}
                 maxSeconds={targetSeconds}
                 onReset={onTankReset}
+                label="まほうエネルギー"
+                fullHint="ぽんって してみよう"
             />
         </div>
 
-        <FuwafuwaSpeechBubble message={selectedUserMessage} accent="primary" />
+        <FuwafuwaSpeechBubble
+            lines={selectedUserSpeech.lines}
+            accent={selectedUserSpeech.accent}
+            actionLabel={selectedUserSpeech.actionLabel}
+            onAction={onSpeechAction}
+        />
 
         <div
             style={{

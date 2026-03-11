@@ -1,21 +1,30 @@
 import React from 'react';
-import { COLOR, FONT, FONT_SIZE } from '../../lib/styles';
+import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../lib/styles';
+import type { FuwafuwaSpeechAccent } from './fuwafuwaHomeCardCopy';
 
 interface FuwafuwaSpeechBubbleProps {
-    message: string;
-    accent: 'primary' | 'info';
+    lines: string[];
+    accent: FuwafuwaSpeechAccent;
+    actionLabel?: string;
+    onAction?: () => void;
 }
 
-export const FuwafuwaSpeechBubble: React.FC<FuwafuwaSpeechBubbleProps> = ({ message, accent }) => {
+export const FuwafuwaSpeechBubble: React.FC<FuwafuwaSpeechBubbleProps> = ({
+    lines,
+    accent,
+    actionLabel,
+    onAction,
+}) => {
     const accentColor = accent === 'info' ? COLOR.info : COLOR.primary;
     const accentBackground = accent === 'info' ? 'rgba(9, 132, 227, 0.08)' : 'rgba(43, 186, 160, 0.08)';
     const accentBorder = accent === 'info' ? 'rgba(9, 132, 227, 0.15)' : 'rgba(43, 186, 160, 0.16)';
+    const visibleLines = lines.filter((line) => line.trim().length > 0);
 
     return (
         <div
             style={{
                 position: 'relative',
-                maxWidth: 300,
+                maxWidth: 320,
                 padding: '12px 16px',
                 borderRadius: 20,
                 background: accentBackground,
@@ -31,10 +40,36 @@ export const FuwafuwaSpeechBubble: React.FC<FuwafuwaSpeechBubbleProps> = ({ mess
                     fontWeight: 700,
                     lineHeight: 1.6,
                     color: accentColor,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 2,
                 }}
             >
-                {message}
+                {visibleLines.map((line, index) => (
+                    <span key={`${line}-${index}`}>{line}</span>
+                ))}
             </div>
+            {actionLabel && onAction ? (
+                <button
+                    type="button"
+                    onClick={onAction}
+                    style={{
+                        marginTop: SPACE.sm,
+                        border: 'none',
+                        background: 'rgba(255,255,255,0.68)',
+                        color: accentColor,
+                        fontFamily: FONT.body,
+                        fontSize: FONT_SIZE.sm,
+                        fontWeight: 700,
+                        padding: '6px 12px',
+                        borderRadius: RADIUS.full,
+                        cursor: 'pointer',
+                    }}
+                >
+                    {actionLabel}
+                </button>
+            ) : null}
             <div
                 style={{
                     position: 'absolute',

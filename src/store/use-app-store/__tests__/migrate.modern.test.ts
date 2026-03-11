@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    APP_STATE_VERSION,
     migrateAppState,
     partializeAppState,
     PERSISTED_APP_STATE_KEYS,
@@ -171,9 +170,28 @@ describe('modern migrations', () => {
         expect(result.users[0].challengeStars).toBe(7);
     });
 
-    it('v17 is a no-op for already migrated state', () => {
-        const state = { users: [] } as any;
+    it('v18 initializes missing dismissedHomeAnnouncementIds', () => {
+        const state = makeCurrentState();
+        delete state.dismissedHomeAnnouncementIds;
+
         const result = migrateAppState(state, 17);
+
+        expect(result.dismissedHomeAnnouncementIds).toEqual([]);
+    });
+
+    it('v18 preserves existing dismissedHomeAnnouncementIds', () => {
+        const state = makeCurrentState({
+            dismissedHomeAnnouncementIds: ['challenge:challenge-1'],
+        });
+
+        const result = migrateAppState(state, 17);
+
+        expect(result.dismissedHomeAnnouncementIds).toEqual(['challenge:challenge-1']);
+    });
+
+    it('v18 is a no-op for already migrated state', () => {
+        const state = { users: [] } as any;
+        const result = migrateAppState(state, 18);
 
         expect((result as any).ttsRate).toBeUndefined();
         expect((result as any).ttsPitch).toBeUndefined();

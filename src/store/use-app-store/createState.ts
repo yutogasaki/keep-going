@@ -219,6 +219,16 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
     setNotificationTime: (notificationTime) => set({ notificationTime }),
     hasSeenSessionControlsHint: false,
     setHasSeenSessionControlsHint: (hasSeenSessionControlsHint) => set({ hasSeenSessionControlsHint }),
+    dismissedHomeAnnouncementIds: [],
+    dismissHomeAnnouncement: (announcementId) => set((state) => {
+        if (!announcementId || state.dismissedHomeAnnouncementIds.includes(announcementId)) {
+            return state;
+        }
+
+        return {
+            dismissedHomeAnnouncementIds: [...state.dismissedHomeAnnouncementIds, announcementId],
+        };
+    }),
 
     debugFuwafuwaStage: null,
     debugFuwafuwaType: null,

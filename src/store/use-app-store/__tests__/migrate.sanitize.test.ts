@@ -29,6 +29,7 @@ describe('persisted state sanitization', () => {
             hapticEnabled: null,
             notificationsEnabled: 'sometimes',
             hasSeenSessionControlsHint: 'done',
+            dismissedHomeAnnouncementIds: ['challenge:challenge-1', null, 'challenge:challenge-1'],
             debugFuwafuwaStage: 'adult',
             debugFuwafuwaType: undefined,
             debugActiveDays: 'five',
@@ -54,6 +55,7 @@ describe('persisted state sanitization', () => {
         expect(result.hapticEnabled).toBe(true);
         expect(result.notificationsEnabled).toBe(false);
         expect(result.hasSeenSessionControlsHint).toBe(false);
+        expect(result.dismissedHomeAnnouncementIds).toEqual(['challenge:challenge-1']);
         expect(result.debugFuwafuwaStage).toBeNull();
         expect(result.debugFuwafuwaType).toBeNull();
         expect(result.debugActiveDays).toBeNull();
@@ -165,6 +167,7 @@ describe('persisted state sanitization', () => {
         expect(result.bgmEnabled).toBe(state.bgmEnabled);
         expect(result.hapticEnabled).toBe(state.hapticEnabled);
         expect(result.hasSeenSessionControlsHint).toBe(state.hasSeenSessionControlsHint);
+        expect(result.dismissedHomeAnnouncementIds).toEqual(state.dismissedHomeAnnouncementIds);
         expect(result.sessionDraft).toBe(state.sessionDraft);
     });
 });
