@@ -213,16 +213,18 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         [ambientCue, announcement, idleBeat, isMagicDeliveryActive, pokeDepth, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
     );
 
+    const isDailySpeechLike = (speech: { id: string; category: string }) => speech.id.startsWith('ambient:')
+        || speech.category === 'relationship'
+        || speech.category === 'mechanic_hint'
+        || (
+            speech.category === 'progress'
+            && !speech.id.endsWith('hatching_soon')
+            && !speech.id.endsWith('growth_soon')
+        );
+
     const activeSpeech = isTogetherMode ? familySpeech : selectedUserSpeech;
     const isDailySpeech = useMemo(
-        () => activeSpeech.id.startsWith('ambient:')
-            || activeSpeech.category === 'relationship'
-            || activeSpeech.category === 'mechanic_hint'
-            || (
-                activeSpeech.category === 'progress'
-                && !activeSpeech.id.endsWith('hatching_soon')
-                && !activeSpeech.id.endsWith('growth_soon')
-            ),
+        () => isDailySpeechLike(activeSpeech),
         [activeSpeech],
     );
 
@@ -230,6 +232,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         setSpeechVariantSeed((currentSeed) => currentSeed + 1);
 
         if (isDailySpeech) {
+            setPokeDepth(1);
             return;
         }
 
@@ -242,7 +245,14 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
 
     useEffect(() => {
         setPokeDepth(0);
-    }, [familyBaseSpeech.id, isTogetherMode, selectedUser?.id, selectedUserBaseSpeech.id]);
+    }, [isTogetherMode, selectedUser?.id]);
+
+    useEffect(() => {
+        const baseSpeech = isTogetherMode ? familyBaseSpeech : selectedUserBaseSpeech;
+        if (!isDailySpeechLike(baseSpeech)) {
+            setPokeDepth(0);
+        }
+    }, [familyBaseSpeech, isTogetherMode, selectedUserBaseSpeech]);
 
     useEffect(() => {
         setIdleBeat(0);
