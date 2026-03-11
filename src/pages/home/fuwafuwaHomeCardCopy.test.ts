@@ -38,7 +38,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:magic_full',
             category: 'action_hint',
             accent: 'primary',
-            lines: ['ぽんって すると', 'ふわふわに とどくよ'],
+            lines: ['ぽんって すると', 'すぐ ふわふわに とどくよ'],
         });
     });
 
@@ -58,7 +58,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:magic_delivery_active',
             category: 'action_hint',
             accent: 'primary',
-            lines: ['まほうエネルギーが', 'ふわふわに とどいてるよ'],
+            lines: ['まほうエネルギーが', 'いま ふわふわに とどいてるよ'],
         });
 
         expect(getFamilySpeech(2, 1200, 1200, {
@@ -77,7 +77,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:magic_delivery_active',
             category: 'action_hint',
             accent: 'info',
-            lines: ['みんなの まほうエネルギーが', 'ふわふわに とどいてるよ'],
+            lines: ['みんなの まほうエネルギーが', 'いま ふわふわに とどいてるよ'],
         });
     });
 
@@ -89,7 +89,26 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:afterglow:magic_delivery',
             category: 'relationship',
             accent: 'info',
-            lines: ['みんなの まほうエネルギー', 'ちゃんと とどいたよ'],
+            lines: ['みんなの まほうエネルギー', 'ちゃんと うけとったよ'],
+        });
+    });
+
+    it('deepens receive-focused delivery speech and afterglow', () => {
+        expect(getUserSpeech(600, 600, 2, 6, null, null, null, 2, 0, 0, 'first', null, true)).toEqual({
+            id: 'user:magic_delivery_active',
+            category: 'action_hint',
+            accent: 'primary',
+            lines: ['ちゃんと うけとってるよ', 'ありがとう'],
+        });
+
+        expect(getUserSpeech(0, 600, 2, 6, null, null, null, 1, 0, 0, 'first', {
+            kind: 'magic_delivery',
+            contextKey: 'solo:user-1',
+        })).toEqual({
+            id: 'user:afterglow:magic_delivery',
+            category: 'relationship',
+            accent: 'primary',
+            lines: ['ぽかぽかが まだ', 'のこってるよ'],
         });
     });
 

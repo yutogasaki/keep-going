@@ -229,10 +229,10 @@ function buildFamilyAfterglowSpeech(afterglow: HomeAfterglow, depth: number): Fu
         category: 'relationship',
         accent: 'info',
         lines: depth === 0
-            ? ['みんなの まほうエネルギー', 'ちゃんと とどいたよ']
+            ? ['みんなの まほうエネルギー', 'ちゃんと うけとったよ']
             : depth === 1
-                ? ['いっぱい とどいて', 'ふわふわ ぽかぽか']
-                : ['また とどいたら', 'ふわふわ うれしいな'],
+                ? ['ぽかぽかが まだ', 'のこってるよ']
+                : ['また とどいたら', 'ふわふわ もっと うれしいな'],
     });
 }
 
@@ -533,10 +533,10 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             category: 'action_hint',
             accent: 'info',
             lines: context.depth === 0
-                ? ['みんなの まほうエネルギーが', 'ふわふわに とどいてるよ']
+                ? ['みんなの まほうエネルギーが', 'いま ふわふわに とどいてるよ']
                 : context.depth === 1
-                    ? ['ぽかぽかして', 'ふわふわ うれしいな']
-                    : ['とどけてくれて', 'ありがとう'],
+                    ? ['ぽかぽかが ひろがって', 'ふわふわ うれしいな']
+                    : ['ちゃんと うけとってるよ', 'ありがとう'],
         });
     }
 
@@ -546,10 +546,10 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             category: 'action_hint',
             accent: 'info',
             lines: context.depth === 0
-                ? ['みんなの まほうエネルギーが', 'いっぱいに なったよ', 'ぽんって してくれたら うれしいな']
+                ? ['みんなの まほうエネルギーが', 'いっぱいに なったよ', 'とどけてくれたら うれしいな']
                 : context.depth === 1
-                    ? ['みんなの まほうエネルギー', 'ふわふわ うれしいな']
-                    : ['ぽんって すると', 'ふわふわに とどくよ'],
+                    ? ['ぽんって すると', 'すぐ ふわふわに とどくよ']
+                    : ['とどいたら', 'ふわふわ もっと よろこぶよ'],
         });
     }
 
@@ -812,10 +812,10 @@ function buildUserAfterglowSpeech(afterglow: HomeAfterglow, depth: number): Fuwa
         category: 'relationship',
         accent: 'primary',
         lines: depth === 0
-            ? ['まほうエネルギー', 'ちゃんと とどいたよ']
+            ? ['まほうエネルギー', 'ちゃんと うけとったよ']
             : depth === 1
-                ? ['いっぱい とどいて', 'ふわふわ ぽかぽか']
-                : ['また とどいたら', 'ふわふわ うれしいな'],
+                ? ['ぽかぽかが まだ', 'のこってるよ']
+                : ['また とどいたら', 'ふわふわ もっと うれしいな'],
     });
 }
 
@@ -963,10 +963,10 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
             category: 'action_hint',
             accent: 'primary',
             lines: context.depth === 0
-                ? ['まほうエネルギーが', 'ふわふわに とどいてるよ']
+                ? ['まほうエネルギーが', 'いま ふわふわに とどいてるよ']
                 : context.depth === 1
-                    ? ['ぽかぽかして', 'ふわふわ うれしいな']
-                    : ['とどけてくれて', 'ありがとう'],
+                    ? ['ぽかぽかが ひろがって', 'ふわふわ うれしいな']
+                    : ['ちゃんと うけとってるよ', 'ありがとう'],
         });
     }
 
@@ -978,8 +978,8 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
             lines: context.depth === 0
                 ? ['まほうエネルギーが', 'いっぱいだよ', 'とどけてくれたら うれしいな']
                 : context.depth === 1
-                    ? ['ぽんって すると', 'ふわふわに とどくよ']
-                    : ['やさしく ぽんって', 'とどけてくれたら うれしいな'],
+                    ? ['ぽんって すると', 'すぐ ふわふわに とどくよ']
+                    : ['とどいたら', 'ふわふわ もっと よろこぶよ'],
         });
     }
 
