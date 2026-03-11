@@ -222,7 +222,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:relationship_ready',
             category: 'relationship',
             accent: 'primary',
-            lines: ['きょうも きてくれたね', 'なにから はじめようか？'],
+            lines: ['きょうも きてくれたね', 'まほうエネルギー たまるかな？'],
         });
 
         expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 1, 0, 1)).toEqual({
@@ -288,7 +288,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:idle:2',
             category: 'relationship',
             accent: 'info',
-            lines: ['みんなで いっしょに', 'やってみよう？'],
+            lines: ['みんなで いっしょに', 'まほうエネルギー ためよう？'],
         });
 
         expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 1)).toEqual({
@@ -304,7 +304,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:idle:2',
             category: 'relationship',
             accent: 'info',
-            lines: ['みんなで いっしょに', 'やってみよう？'],
+            lines: ['みんなで いっしょに', 'まほうエネルギー ためよう？'],
         });
 
         expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 1, 1)).toEqual({
@@ -377,7 +377,16 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:idle:2',
             category: 'relationship',
             accent: 'info',
-            lines: ['ふたりで ちからを', 'あわせよう！'],
+            lines: ['ふたりで まほうエネルギー', 'あつめよう！'],
+        });
+    });
+
+    it('mentions magic energy in solo idle relationship variants too', () => {
+        expect(getUserSpeech(0, 600, 2, 3, null, null, null, 0, 0, 0)).toEqual({
+            id: 'user:relationship_ready',
+            category: 'relationship',
+            accent: 'primary',
+            lines: ['あえて うれしいな', 'まほうエネルギー ためよう？'],
         });
     });
 });
