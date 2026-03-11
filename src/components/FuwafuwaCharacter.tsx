@@ -131,10 +131,15 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
         }
 
         const reactionEmojis = getReactionEmojis(reactionStyle);
-        const newParticles = Array.from({ length: 3 }).map(() => ({
+        const particleCount = reactionStyle === 'celebrating'
+            ? 6
+            : reactionStyle === 'growing'
+                ? 5
+                : 4;
+        const newParticles = Array.from({ length: particleCount }).map(() => ({
             id: particleIdCounter.current++,
-            x: (Math.random() - 0.5) * 60,
-            y: (Math.random() - 0.5) * 60,
+            x: (Math.random() - 0.5) * 84,
+            y: (Math.random() - 0.5) * 84,
             emoji: reactionEmojis[Math.floor(Math.random() * reactionEmojis.length)],
         }));
         const newIds = new Set(newParticles.map((particle) => particle.id));
@@ -198,7 +203,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
         }
 
         if (reactionStyle === 'sharing') {
-            if (reactionRoll < 0.5) {
+            if (reactionRoll < 0.34) {
                 playReaction({
                     x: [0, -10, 10, -10, 10, 0],
                     y: [0, -6, 0],
@@ -207,21 +212,41 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
                 return;
             }
 
+            if (reactionRoll < 0.67) {
+                playReaction({
+                    rotate: [0, -18, 18, -10, 10, 0],
+                    y: [0, -12, 0],
+                    scale: [baseScale, baseScale * 1.05, baseScale],
+                    transition: { duration: 0.58, ease: 'easeInOut' },
+                });
+                return;
+            }
+
             playReaction({
-                rotate: [0, -8, 8, -4, 0],
-                y: [0, -10, 0],
-                scale: [baseScale, baseScale * 1.04, baseScale],
-                transition: { duration: 0.55, ease: 'easeInOut' },
+                y: [0, -14, 0],
+                rotate: [0, 360],
+                scale: [baseScale, baseScale * 1.05, baseScale],
+                transition: { duration: 0.66, ease: 'easeInOut' },
             });
             return;
         }
 
         if (reactionStyle === 'growing') {
-            if (reactionRoll < 0.5) {
+            if (reactionRoll < 0.34) {
                 playReaction({
                     y: [0, -18, 0, -8, 0],
                     scale: [baseScale, baseScale * 1.08, baseScale, baseScale * 1.03, baseScale],
                     transition: { duration: 0.55, ease: 'easeInOut' },
+                });
+                return;
+            }
+
+            if (reactionRoll < 0.67) {
+                playReaction({
+                    rotate: [0, -10, 10, -6, 0],
+                    y: [0, -12, 0],
+                    scale: [baseScale, baseScale * 1.06, baseScale],
+                    transition: { duration: 0.56, ease: 'easeInOut' },
                 });
                 return;
             }
@@ -236,7 +261,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
         }
 
         if (reactionStyle === 'guiding') {
-            if (reactionRoll < 0.5) {
+            if (reactionRoll < 0.34) {
                 playReaction({
                     rotate: [0, -5, 5, -2, 0],
                     scale: [baseScale, baseScale * 1.03, baseScale],
@@ -245,10 +270,21 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
                 return;
             }
 
+            if (reactionRoll < 0.67) {
+                playReaction({
+                    x: [0, -8, 8, -6, 0],
+                    y: [0, -10, 0],
+                    rotate: [0, 12, -12, 0],
+                    transition: { duration: 0.52, ease: 'easeInOut' },
+                });
+                return;
+            }
+
             playReaction({
-                x: [0, -6, 6, -4, 0],
-                rotate: [0, 10, -10, 0],
-                transition: { duration: 0.45, ease: 'easeInOut' },
+                y: [0, -12, 0],
+                rotate: [0, 360],
+                scale: [baseScale, baseScale * 1.04, baseScale],
+                transition: { duration: 0.64, ease: 'easeInOut' },
             });
             return;
         }

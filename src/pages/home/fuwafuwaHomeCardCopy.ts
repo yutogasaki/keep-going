@@ -485,7 +485,7 @@ function buildFamilyOmenSpeech(context: FamilySpeechContext): FuwafuwaSpeech {
                 ['もうすぐ', 'ふわふわに とどきそう'],
             ], context.variantSeed)
             : context.depth === 1
-                ? ['みんなの まほうエネルギーが', 'もうすこしで まんたん！']
+                ? ['みんなの まほうエネルギー', 'もうすぐ いっぱいだよ']
                 : ['もうすぐ いっぱいで', 'ふわふわ どきどき'],
     });
 }
@@ -533,7 +533,7 @@ function buildUserOmenSpeech(context: UserSpeechContext): FuwafuwaSpeech {
                 ['もうすぐ', 'ふわふわに とどきそう'],
             ], context.variantSeed)
             : context.depth === 1
-                ? ['まほうエネルギーが', 'もうすこしで まんたん！']
+                ? ['まほうエネルギー', 'もうすぐ いっぱいだよ']
                 : ['ふわふわ どきどき', 'してるよ'],
     });
 }
@@ -666,7 +666,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
                     ['なんだか ぽかぽか', 'してきたね'],
                 ], context.variantSeed)
                 : context.depth === 1
-                    ? ['いいかんじで', 'あたたまってきたね']
+                    ? ['まほうエネルギーが', 'じわっと たまってるね']
                     : ['ふわふわ なんだか', 'わくわくしてきた'],
         });
     }
@@ -681,7 +681,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
                 ['ちいさく ぽかぽか', 'してきたね'],
             ], context.variantSeed)
             : context.depth === 1
-                ? ['ちいさくても', 'ちゃんと とどいてるよ']
+                ? ['まほうエネルギーも', 'ちゃんと とどいてるよ']
                 : ['ゆっくりでも', 'ふわふわ うれしいな'],
     });
 }
@@ -929,7 +929,7 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
                     ['なんだか ぽかぽか', 'してきたよ'],
                 ], context.variantSeed)
                 : context.depth === 1
-                    ? ['いいかんじで', 'あたたまってきたよ']
+                    ? ['まほうエネルギーが', 'じわっと たまってるよ']
                     : ['ふわふわ なんだか', 'わくわくしてきた'],
         });
     }
@@ -944,7 +944,7 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
                 ['なんだか ぽかぽか', 'してきたよ'],
             ], context.variantSeed)
             : context.depth === 1
-                ? ['ちいさくても', 'ちゃんと とどいてるよ']
+                ? ['まほうエネルギーも', 'ちゃんと とどいてるよ']
                 : ['あせらなくても', 'ふわふわ うれしいな'],
     });
 }
@@ -1041,7 +1041,7 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
                 ['ここに まほうエネルギーが', 'たまっていくんだよ'],
             ], context.variantSeed)
             : context.depth === 1
-                ? ['たまると', 'ふわふわ うれしいな']
+                ? ['まほうエネルギーが', 'たまると うれしいな']
                 : ['すこしずつ', 'とどくと うれしいな'],
     });
 }

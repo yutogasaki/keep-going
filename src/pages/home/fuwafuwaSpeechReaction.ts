@@ -38,15 +38,15 @@ export function getSpeechReactionStyle(speech: FuwafuwaSpeech): FuwafuwaReaction
 export function getReactionEmojis(style: FuwafuwaReactionStyle): string[] {
     switch (style) {
     case 'celebrating':
-        return ['🌟', '✨', '💖', '🎉'];
+        return ['🌟', '✨', '💖', '🎉', '🫧', '🌈', '🎵', '💫'];
     case 'sharing':
-        return ['✨', '🫧', '🎵', '🌈'];
+        return ['✨', '🫧', '🎵', '🌈', '💖', '🌟', '💫', '🎶'];
     case 'growing':
-        return ['✨', '🌱', '🫧', '💚'];
+        return ['✨', '🌱', '🫧', '💚', '🌟', '💫', '🍀', '🌼'];
     case 'guiding':
-        return ['🫧', '✨', '🔆', '💡'];
+        return ['🫧', '✨', '🔆', '💡', '🌟', '💫', '🎵', '🌈'];
     case 'cozy':
     default:
-        return ['💖', '🫧', '✨', '🌙'];
+        return ['💖', '🫧', '✨', '🌙', '🌟', '💫', '🎵', '🤍'];
     }
 }

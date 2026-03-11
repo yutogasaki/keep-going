@@ -271,7 +271,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['たまると', 'ふわふわ うれしいな'],
+            lines: ['まほうエネルギーが', 'たまると うれしいな'],
         });
     });
 
@@ -303,7 +303,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:growing',
             category: 'progress',
             accent: 'primary',
-            lines: ['いいかんじで', 'あたたまってきたよ'],
+            lines: ['まほうエネルギーが', 'じわっと たまってるよ'],
         });
     });
 
@@ -319,7 +319,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['たまると', 'ふわふわ うれしいな'],
+            lines: ['まほうエネルギーが', 'たまると うれしいな'],
         });
 
         expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 2, 0, 1)).toEqual({
@@ -342,7 +342,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['たまると', 'ふわふわ うれしいな'],
+            lines: ['まほうエネルギーが', 'たまると うれしいな'],
         });
 
         expect(getUserSpeech(0, 600, 1, 0, null, null, { kind: 'public_menu_new' }, 2, 0, 1)).toEqual({
@@ -383,7 +383,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:growing',
             category: 'progress',
             accent: 'info',
-            lines: ['いいかんじで', 'あたたまってきたね'],
+            lines: ['まほうエネルギーが', 'じわっと たまってるね'],
         });
     });
 
@@ -415,7 +415,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:small_progress',
             category: 'progress',
             accent: 'info',
-            lines: ['ちいさくても', 'ちゃんと とどいてるよ'],
+            lines: ['まほうエネルギーも', 'ちゃんと とどいてるよ'],
         });
 
         expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 2, 1)).toEqual({
