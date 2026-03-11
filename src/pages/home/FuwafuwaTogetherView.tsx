@@ -1,4 +1,4 @@
-import React from 'react';
+import type { FC } from 'react';
 import { MagicTank } from '../../components/MagicTank';
 import type { SessionRecord } from '../../lib/db';
 import { calculateFuwafuwaStatus } from '../../lib/fuwafuwa';
@@ -15,6 +15,7 @@ import {
     getMilestoneEmoji,
 } from './milestoneCopy';
 import type { PerUserMagic } from './types';
+import { getSpeechReactionStyle } from './fuwafuwaSpeechReaction';
 
 interface FuwafuwaTogetherViewProps {
     activeUsers: UserProfileStore[];
@@ -30,7 +31,7 @@ interface FuwafuwaTogetherViewProps {
     targetSeconds: number;
 }
 
-export const FuwafuwaTogetherView: React.FC<FuwafuwaTogetherViewProps> = ({
+export const FuwafuwaTogetherView: FC<FuwafuwaTogetherViewProps> = ({
     activeUsers,
     displaySeconds,
     familySpeech,
@@ -43,6 +44,8 @@ export const FuwafuwaTogetherView: React.FC<FuwafuwaTogetherViewProps> = ({
     sessionsByUserId,
     targetSeconds,
 }) => {
+    const reactionStyle = getSpeechReactionStyle(familySpeech);
+
     return (
         <>
             <div
@@ -65,6 +68,7 @@ export const FuwafuwaTogetherView: React.FC<FuwafuwaTogetherViewProps> = ({
                     <FuwafuwaSpeechBubble
                         lines={familySpeech.lines}
                         accent={familySpeech.accent}
+                        reactionStyle={reactionStyle}
                         actionLabel={familySpeech.actionLabel}
                         onAction={onSpeechAction}
                         onTap={onFamilySpeechTap}

@@ -11,16 +11,22 @@ import { FuwafuwaTransitionModal } from './fuwafuwa/FuwafuwaTransitionModal';
 import { getAuraVisualState } from './fuwafuwa/getAuraVisualState';
 import { FuwafuwaNameModal } from './fuwafuwa/FuwafuwaNameModal';
 import type { DepartingInfo, EmotionParticle, RippleState, SayonaraModalState } from './fuwafuwa/types';
+import type { FuwafuwaReactionStyle } from '../pages/home/fuwafuwaSpeechReaction';
+import { getReactionEmojis } from '../pages/home/fuwafuwaSpeechReaction';
 
 interface Props {
     user: UserProfileStore;
     sessions: SessionRecord[];
     onInteract?: () => void;
+    reactionStyle?: FuwafuwaReactionStyle;
 }
 
-const EMOTION_EMOJIS = ['🎵', '✨', '💖', '🌟', '🫧'];
-
-export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions, onInteract }) => {
+export const FuwafuwaCharacter: React.FC<Props> = ({
+    user,
+    sessions,
+    onInteract,
+    reactionStyle = 'cozy',
+}) => {
     const updateUser = useAppStore((state) => state.updateUser);
     const resetUserFuwafuwa = useAppStore((state) => state.resetUserFuwafuwa);
     const { fuwafuwaBirthDate, fuwafuwaType, fuwafuwaName } = user;
@@ -123,11 +129,12 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions, onInteract 
             setRipple({ x, y, id: rippleIdCounter.current++ });
         }
 
+        const reactionEmojis = getReactionEmojis(reactionStyle);
         const newParticles = Array.from({ length: 3 }).map(() => ({
             id: particleIdCounter.current++,
             x: (Math.random() - 0.5) * 60,
             y: (Math.random() - 0.5) * 60,
-            emoji: EMOTION_EMOJIS[Math.floor(Math.random() * EMOTION_EMOJIS.length)],
+            emoji: reactionEmojis[Math.floor(Math.random() * reactionEmojis.length)],
         }));
         const newIds = new Set(newParticles.map((particle) => particle.id));
         setParticles((previous) => [...previous, ...newParticles]);
@@ -137,10 +144,9 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions, onInteract 
         }, 1500);
         particleTimers.current.push(timerId);
 
-        const random = Math.random();
         const baseScale = displayScale;
 
-        if (random < 0.25) {
+        if (reactionStyle === 'celebrating') {
             controls.start({
                 y: [0, -30, 0, -15, 0],
                 scale: [baseScale, baseScale * 1.1, baseScale, baseScale * 1.05, baseScale],
@@ -149,26 +155,36 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions, onInteract 
             return;
         }
 
-        if (random < 0.5) {
+        if (reactionStyle === 'sharing') {
             controls.start({
                 x: [0, -10, 10, -10, 10, 0],
+                y: [0, -6, 0],
                 transition: { duration: 0.4 },
             });
             return;
         }
 
-        if (random < 0.75) {
+        if (reactionStyle === 'growing') {
             controls.start({
-                rotate: [0, 360],
-                scale: [baseScale, baseScale * 1.2, baseScale],
-                transition: { duration: 0.6, ease: 'easeInOut' },
+                y: [0, -18, 0, -8, 0],
+                scale: [baseScale, baseScale * 1.08, baseScale, baseScale * 1.03, baseScale],
+                transition: { duration: 0.55, ease: 'easeInOut' },
+            });
+            return;
+        }
+
+        if (reactionStyle === 'guiding') {
+            controls.start({
+                rotate: [0, -5, 5, -2, 0],
+                scale: [baseScale, baseScale * 1.03, baseScale],
+                transition: { duration: 0.5, ease: 'easeInOut' },
             });
             return;
         }
 
         controls.start({
-            scaleX: [baseScale, baseScale * 0.8, baseScale * 1.1, baseScale],
-            scaleY: [baseScale, baseScale * 1.2, baseScale * 0.9, baseScale],
+            y: [0, -12, 0],
+            scale: [baseScale, baseScale * 1.05, baseScale],
             transition: { duration: 0.5 },
         });
     };
