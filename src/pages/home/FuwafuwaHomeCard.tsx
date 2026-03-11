@@ -16,6 +16,7 @@ import type { HomeAnnouncement } from './homeAnnouncementUtils';
 import type { HomeAmbientCue } from './homeAmbientUtils';
 import type { HomeVisitRecency } from './homeVisitMemory';
 import { shouldShowFuwafuwaSpeech } from './fuwafuwaSpeechPresence';
+import { isSameRenderedSpeech } from './fuwafuwaSpeechCompare';
 import type { PerUserMagic } from './types';
 import type { FuwafuwaMilestoneEvent } from '../../store/useAppStore';
 
@@ -228,13 +229,6 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         [activeSpeech],
     );
 
-    const isSameSpeech = (left: { id: string; lines: string[]; actionLabel?: string }, right: { id: string; lines: string[]; actionLabel?: string }) => (
-        left.id === right.id
-        && left.actionLabel === right.actionLabel
-        && left.lines.length === right.lines.length
-        && left.lines.every((line, index) => line === right.lines[index])
-    );
-
     const getDailySpeechForSeed = (seed: number) => {
         if (isTogetherMode) {
             return getFamilySpeech(
@@ -283,7 +277,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 let nextSpeech = getDailySpeechForSeed(nextSeed);
                 let guard = 0;
 
-                while (guard < 6 && isSameSpeech(nextSpeech, activeSpeech)) {
+                while (guard < 6 && isSameRenderedSpeech(nextSpeech, activeSpeech)) {
                     nextSeed += 1;
                     nextSpeech = getDailySpeechForSeed(nextSeed);
                     guard += 1;
