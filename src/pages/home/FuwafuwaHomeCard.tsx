@@ -228,14 +228,73 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         [activeSpeech],
     );
 
-    const advanceConversation = () => {
-        setSpeechVariantSeed((currentSeed) => currentSeed + 1);
+    const isSameSpeech = (left: { id: string; lines: string[]; actionLabel?: string }, right: { id: string; lines: string[]; actionLabel?: string }) => (
+        left.id === right.id
+        && left.actionLabel === right.actionLabel
+        && left.lines.length === right.lines.length
+        && left.lines.every((line, index) => line === right.lines[index])
+    );
 
+    const getDailySpeechForSeed = (seed: number) => {
+        if (isTogetherMode) {
+            return getFamilySpeech(
+                activeUsers.length,
+                displaySeconds,
+                targetSeconds,
+                announcement,
+                ambientCue,
+                familyMilestoneLead,
+                1,
+                seed,
+                familyVisitRecency,
+                familyAfterglow,
+                isMagicDeliveryActive,
+                idleBeat,
+            );
+        }
+
+        if (!selectedUserStatus) {
+            return activeSpeech;
+        }
+
+        return getUserSpeech(
+            selectedUserDisplaySeconds,
+            selectedUserTargetSeconds,
+            selectedUserStatus.stage,
+            selectedUserStatus.activeDays,
+            recentMilestoneEvent,
+            announcement,
+            ambientCue,
+            1,
+            selectedUserStatus.daysAlive,
+            seed,
+            selectedUserVisitRecency,
+            selectedUserAfterglow,
+            isMagicDeliveryActive,
+            idleBeat,
+        );
+    };
+
+    const advanceConversation = () => {
         if (isDailySpeech) {
             setPokeDepth(1);
+            setSpeechVariantSeed((currentSeed) => {
+                let nextSeed = currentSeed + 1;
+                let nextSpeech = getDailySpeechForSeed(nextSeed);
+                let guard = 0;
+
+                while (guard < 6 && isSameSpeech(nextSpeech, activeSpeech)) {
+                    nextSeed += 1;
+                    nextSpeech = getDailySpeechForSeed(nextSeed);
+                    guard += 1;
+                }
+
+                return nextSeed;
+            });
             return;
         }
 
+        setSpeechVariantSeed((currentSeed) => currentSeed + 1);
         setPokeDepth((currentDepth) => (currentDepth + 1) % 3);
     };
 
