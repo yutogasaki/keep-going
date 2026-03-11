@@ -20,6 +20,7 @@ interface FuwafuwaTogetherViewProps {
     activeUsers: UserProfileStore[];
     displaySeconds: number;
     familySpeech: FuwafuwaSpeech;
+    onFamilySpeechTap?: () => void;
     milestoneEventsByUserId: Map<string, FuwafuwaMilestoneEvent>;
     onSelectUser: (userId: string) => void;
     onTankReset: () => void;
@@ -33,6 +34,7 @@ export const FuwafuwaTogetherView: React.FC<FuwafuwaTogetherViewProps> = ({
     activeUsers,
     displaySeconds,
     familySpeech,
+    onFamilySpeechTap,
     milestoneEventsByUserId,
     onSelectUser,
     onTankReset,
@@ -65,6 +67,7 @@ export const FuwafuwaTogetherView: React.FC<FuwafuwaTogetherViewProps> = ({
                         accent={familySpeech.accent}
                         actionLabel={familySpeech.actionLabel}
                         onAction={onSpeechAction}
+                        onTap={onFamilySpeechTap}
                     />
                 </div>
             </div>

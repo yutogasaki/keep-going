@@ -226,6 +226,15 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
     });
 
+    it('deepens together-mode progress speech when the bubble is tapped', () => {
+        expect(getFamilySpeech(2, 300, 600, null, null, 1)).toEqual({
+            id: 'family:growing',
+            category: 'progress',
+            accent: 'info',
+            lines: ['ここに すこしずつ', 'たまるんだよ'],
+        });
+    });
+
     it('surfaces together-mode milestone ambience before generic progress copy', () => {
         expect(getFamilySpeech(2, 300, 600, null, {
             kind: 'egg',
@@ -237,6 +246,20 @@ describe('fuwafuwaHomeCardCopy', () => {
             category: 'event_notice',
             accent: 'info',
             lines: ['さくらの ところに', 'たまごが きたみたい'],
+        });
+    });
+
+    it('deepens together-mode milestone ambience when the bubble is tapped', () => {
+        expect(getFamilySpeech(2, 300, 600, null, {
+            kind: 'egg',
+            userId: 'user-1',
+            userName: 'さくら',
+            hasMultiple: false,
+        }, 1)).toEqual({
+            id: 'family:milestone:user-1:egg',
+            category: 'event_notice',
+            accent: 'info',
+            lines: ['どんな ふわふわか', 'たのしみだね'],
         });
     });
 

@@ -89,9 +89,13 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
             hasMultiple: pendingUsers.length > 1,
         };
     }, [activeUsers, milestoneEventsByUserId]);
-    const familySpeech = useMemo(
-        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement, familyMilestoneLead),
+    const familyBaseSpeech = useMemo(
+        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement, familyMilestoneLead, 0),
         [activeUsers.length, announcement, displaySeconds, familyMilestoneLead, targetSeconds],
+    );
+    const familySpeech = useMemo(
+        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement, familyMilestoneLead, pokeDepth),
+        [activeUsers.length, announcement, displaySeconds, familyMilestoneLead, pokeDepth, targetSeconds],
     );
     const selectedUserBaseSpeech = useMemo(
         () => selectedUserStatus
@@ -136,7 +140,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
 
     useEffect(() => {
         setPokeDepth(0);
-    }, [isTogetherMode, selectedUser?.id, selectedUserBaseSpeech.id]);
+    }, [familyBaseSpeech.id, isTogetherMode, selectedUser?.id, selectedUserBaseSpeech.id]);
 
     useEffect(() => {
         if (pokeResetTimerRef.current !== null) {
@@ -144,7 +148,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
             pokeResetTimerRef.current = null;
         }
 
-        if (pokeDepth === 0 || isTogetherMode || !selectedUser) {
+        if (pokeDepth === 0 || (!isTogetherMode && !selectedUser)) {
             return undefined;
         }
 
@@ -184,6 +188,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                     activeUsers={activeUsers}
                     displaySeconds={displaySeconds}
                     familySpeech={familySpeech}
+                    onFamilySpeechTap={() => setPokeDepth((currentDepth) => Math.min(2, currentDepth + 1))}
                     milestoneEventsByUserId={milestoneEventsByUserId}
                     onSelectUser={onSelectUser}
                     onTankReset={onTankReset}

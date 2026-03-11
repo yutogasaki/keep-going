@@ -7,6 +7,7 @@ interface FuwafuwaSpeechBubbleProps {
     accent: FuwafuwaSpeechAccent;
     actionLabel?: string;
     onAction?: () => void;
+    onTap?: () => void;
 }
 
 export const FuwafuwaSpeechBubble: React.FC<FuwafuwaSpeechBubbleProps> = ({
@@ -14,6 +15,7 @@ export const FuwafuwaSpeechBubble: React.FC<FuwafuwaSpeechBubbleProps> = ({
     accent,
     actionLabel,
     onAction,
+    onTap,
 }) => {
     const accentColor = accent === 'info' ? COLOR.info : COLOR.primary;
     const accentBackground = accent === 'info' ? 'rgba(9, 132, 227, 0.08)' : 'rgba(43, 186, 160, 0.08)';
@@ -22,6 +24,7 @@ export const FuwafuwaSpeechBubble: React.FC<FuwafuwaSpeechBubbleProps> = ({
 
     return (
         <div
+            onClick={onTap}
             style={{
                 position: 'relative',
                 maxWidth: 320,
@@ -31,6 +34,7 @@ export const FuwafuwaSpeechBubble: React.FC<FuwafuwaSpeechBubbleProps> = ({
                 border: `1px solid ${accentBorder}`,
                 boxShadow: '0 8px 20px rgba(0,0,0,0.04)',
                 textAlign: 'center',
+                cursor: onTap ? 'pointer' : 'default',
             }}
         >
             <div
@@ -53,7 +57,10 @@ export const FuwafuwaSpeechBubble: React.FC<FuwafuwaSpeechBubbleProps> = ({
             {actionLabel && onAction ? (
                 <button
                     type="button"
-                    onClick={onAction}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        onAction();
+                    }}
                     style={{
                         marginTop: SPACE.sm,
                         border: 'none',

@@ -102,6 +102,7 @@ interface FamilySpeechContext {
     displaySeconds: number;
     announcement: HomeAnnouncement | null;
     milestoneLead: FamilyMilestoneLead | null;
+    depth: number;
 }
 
 interface UserSpeechContext {
@@ -135,14 +136,18 @@ function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
     return 'progress';
 }
 
-function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead): FuwafuwaSpeech {
+function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead, depth: number): FuwafuwaSpeech {
     if (milestoneLead.hasMultiple) {
         if (milestoneLead.kind === 'egg') {
             return createSpeech({
                 id: `family:milestone:many:${milestoneLead.kind}`,
                 category: 'event_notice',
                 accent: 'info',
-                lines: ['みんなの ところで', 'たまごが きてるみたい'],
+                lines: depth === 0
+                    ? ['みんなの ところで', 'たまごが きてるみたい']
+                    : depth === 1
+                        ? ['どんな ふわふわか', 'たのしみだね']
+                        : ['あいに いくの', 'わくわくするね'],
             });
         }
 
@@ -151,7 +156,11 @@ function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead): Fuwafuw
                 id: `family:milestone:many:${milestoneLead.kind}`,
                 category: 'event_notice',
                 accent: 'info',
-                lines: ['みんなの ところで', 'うまれた ふわふわが いるみたい'],
+                lines: depth === 0
+                    ? ['みんなの ところで', 'うまれた ふわふわが いるみたい']
+                    : depth === 1
+                        ? ['うまれたばかりで', 'どきどきしてるかも']
+                        : ['みにいくの', 'たのしみだね'],
             });
         }
 
@@ -159,7 +168,11 @@ function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead): Fuwafuw
             id: `family:milestone:many:${milestoneLead.kind}`,
             category: 'event_notice',
             accent: 'info',
-            lines: ['みんなの ところで', 'おおきく なった ふわふわが いるみたい'],
+            lines: depth === 0
+                ? ['みんなの ところで', 'おおきく なった ふわふわが いるみたい']
+                : depth === 1
+                    ? ['ぐんと そだった', 'ふわふわが いるみたい']
+                    : ['みにいくの', 'たのしみだね'],
         });
     }
 
@@ -168,7 +181,11 @@ function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead): Fuwafuw
             id: `family:milestone:${milestoneLead.userId}:${milestoneLead.kind}`,
             category: 'event_notice',
             accent: 'info',
-            lines: [`${milestoneLead.userName}の ところに`, 'たまごが きたみたい'],
+            lines: depth === 0
+                ? [`${milestoneLead.userName}の ところに`, 'たまごが きたみたい']
+                : depth === 1
+                    ? ['どんな ふわふわか', 'たのしみだね']
+                    : ['あいに いくの', 'わくわくするね'],
         });
     }
 
@@ -177,7 +194,11 @@ function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead): Fuwafuw
             id: `family:milestone:${milestoneLead.userId}:${milestoneLead.kind}`,
             category: 'event_notice',
             accent: 'info',
-            lines: [`${milestoneLead.userName}の ふわふわ`, 'うまれたみたい！'],
+            lines: depth === 0
+                ? [`${milestoneLead.userName}の ふわふわ`, 'うまれたみたい！']
+                : depth === 1
+                    ? ['うまれたばかりで', 'どきどきしてるかも']
+                    : ['みにいくの', 'たのしみだね'],
         });
     }
 
@@ -185,7 +206,11 @@ function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead): Fuwafuw
         id: `family:milestone:${milestoneLead.userId}:${milestoneLead.kind}`,
         category: 'event_notice',
         accent: 'info',
-        lines: [`${milestoneLead.userName}の ふわふわ`, 'おおきく なったみたい'],
+        lines: depth === 0
+            ? [`${milestoneLead.userName}の ふわふわ`, 'おおきく なったみたい']
+            : depth === 1
+                ? ['ぐんと そだった', 'みたいだね']
+                : ['みにいくの', 'たのしみだね'],
     });
 }
 
@@ -195,16 +220,56 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             id: 'family:magic_full',
             category: 'action_hint',
             accent: 'info',
-            lines: ['みんなの まほうエネルギーが', 'いっぱいに なったよ', 'ぽんって してみよう？'],
+            lines: context.depth === 0
+                ? ['みんなの まほうエネルギーが', 'いっぱいに なったよ', 'ぽんって してみよう？']
+                : context.depth === 1
+                    ? ['みんなで あつめた', 'まほうエネルギーだよ']
+                    : ['ぽんって すると', 'ふわふわに とどくよ'],
         });
     }
 
     if (topic === 'announcement') {
-        return buildAnnouncementSpeech(context.announcement!);
+        if (context.depth === 0) {
+            return buildAnnouncementSpeech(context.announcement!);
+        }
+
+        if (context.announcement?.kind === 'challenge') {
+            return createSpeech({
+                id: context.announcement.id,
+                category: 'event_notice',
+                accent: 'primary',
+                lines: context.depth === 1
+                    ? ['みんなで やると', 'たのしいかも']
+                    : ['ちょっとだけ', 'のぞいてみる？'],
+                actionLabel: context.announcement.actionLabel,
+            });
+        }
+
+        if (context.announcement?.kind === 'teacher_menu') {
+            return createSpeech({
+                id: context.announcement.id,
+                category: 'event_notice',
+                accent: 'info',
+                lines: context.depth === 1
+                    ? ['せんせいが', 'みんなに おすすめしてるよ']
+                    : ['メニューで', 'みてみる？'],
+                actionLabel: context.announcement.actionLabel,
+            });
+        }
+
+        return createSpeech({
+            id: context.announcement!.id,
+            category: 'event_notice',
+            accent: 'info',
+            lines: context.depth === 1
+                ? ['せんせいが', 'これ どうかなって']
+                : ['メニューで', 'みてみる？'],
+            actionLabel: context.announcement!.actionLabel,
+        });
     }
 
     if (topic === 'milestone') {
-        return buildFamilyMilestoneSpeech(context.milestoneLead!);
+        return buildFamilyMilestoneSpeech(context.milestoneLead!, context.depth);
     }
 
     if (topic === 'relationship') {
@@ -213,7 +278,11 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             id: `family:idle:${context.activeCount}`,
             category: 'relationship',
             accent: 'info',
-            lines: [`${peopleLabel} ちからを`, 'あわせよう！'],
+            lines: context.depth === 0
+                ? [`${peopleLabel} ちからを`, 'あわせよう！']
+                : context.depth === 1
+                    ? ['みんなで やると', 'たのもしいね']
+                    : ['いっしょだと', 'たのしいね'],
         });
     }
 
@@ -222,7 +291,11 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             id: 'family:almost_full',
             category: 'progress',
             accent: 'info',
-            lines: ['みんなの まほうエネルギーが', 'もうすこしで まんたん！'],
+            lines: context.depth === 0
+                ? ['みんなの まほうエネルギーが', 'もうすこしで まんたん！']
+                : context.depth === 1
+                    ? ['ここに すこしずつ', 'たまってきたね']
+                    : ['このまま いけば', 'すぐ たまりそう'],
         });
     }
 
@@ -231,7 +304,11 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             id: 'family:growing',
             category: 'progress',
             accent: 'info',
-            lines: ['みんなの まほうエネルギーが', 'たまってきたよ'],
+            lines: context.depth === 0
+                ? ['みんなの まほうエネルギーが', 'たまってきたよ']
+                : context.depth === 1
+                    ? ['ここに すこしずつ', 'たまるんだよ']
+                    : ['みんなで あつめるの', 'たのしいね'],
         });
     }
 
@@ -239,7 +316,11 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
         id: 'family:small_progress',
         category: 'progress',
         accent: 'info',
-        lines: ['まほうエネルギーを', 'みんなで ためてるね'],
+        lines: context.depth === 0
+            ? ['まほうエネルギーを', 'みんなで ためてるね']
+            : context.depth === 1
+                ? ['いまも ちゃんと', 'たまってるよ']
+                : ['ゆっくりでも', 'だいじょうぶ'],
     });
 }
 
@@ -249,6 +330,7 @@ export function getFamilySpeech(
     targetSeconds: number,
     announcement: HomeAnnouncement | null,
     milestoneLead: FamilyMilestoneLead | null = null,
+    pokeDepth = 0,
 ): FuwafuwaSpeech {
     const context: FamilySpeechContext = {
         activeCount,
@@ -256,6 +338,7 @@ export function getFamilySpeech(
         displaySeconds,
         announcement,
         milestoneLead,
+        depth: Math.max(0, Math.min(2, pokeDepth)),
     };
 
     return buildFamilySpeech(pickFamilyTopic(context), context);
