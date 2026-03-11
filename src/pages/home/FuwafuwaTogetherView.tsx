@@ -6,6 +6,7 @@ import type { FuwafuwaMilestoneEvent } from '../../store/useAppStore';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../lib/styles';
 import type { UserProfileStore } from '../../store/useAppStore';
 import { FuwafuwaSpeechBubble } from './FuwafuwaSpeechBubble';
+import { FuwafuwaSilentCue } from './FuwafuwaSilentCue';
 import {
     type FuwafuwaSpeech,
     getStageLabel,
@@ -21,6 +22,7 @@ interface FuwafuwaTogetherViewProps {
     activeUsers: UserProfileStore[];
     displaySeconds: number;
     familySpeech: FuwafuwaSpeech;
+    showSpeechBubble: boolean;
     onFamilySpeechTap?: () => void;
     milestoneEventsByUserId: Map<string, FuwafuwaMilestoneEvent>;
     onSelectUser: (userId: string) => void;
@@ -35,6 +37,7 @@ export const FuwafuwaTogetherView: FC<FuwafuwaTogetherViewProps> = ({
     activeUsers,
     displaySeconds,
     familySpeech,
+    showSpeechBubble,
     onFamilySpeechTap,
     milestoneEventsByUserId,
     onSelectUser,
@@ -65,14 +68,18 @@ export const FuwafuwaTogetherView: FC<FuwafuwaTogetherViewProps> = ({
                     ariaLabel="みんなの まほうタンク"
                 />
                 <div style={{ marginTop: SPACE.sm }}>
-                    <FuwafuwaSpeechBubble
-                        lines={familySpeech.lines}
-                        accent={familySpeech.accent}
-                        reactionStyle={reactionStyle}
-                        actionLabel={familySpeech.actionLabel}
-                        onAction={onSpeechAction}
-                        onTap={onFamilySpeechTap}
-                    />
+                    {showSpeechBubble ? (
+                        <FuwafuwaSpeechBubble
+                            lines={familySpeech.lines}
+                            accent={familySpeech.accent}
+                            reactionStyle={reactionStyle}
+                            actionLabel={familySpeech.actionLabel}
+                            onAction={onSpeechAction}
+                            onTap={onFamilySpeechTap}
+                        />
+                    ) : (
+                        <FuwafuwaSilentCue onTap={onFamilySpeechTap} />
+                    )}
                 </div>
             </div>
 

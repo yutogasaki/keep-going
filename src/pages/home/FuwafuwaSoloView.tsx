@@ -5,6 +5,7 @@ import { SPACE } from '../../lib/styles';
 import type { UserProfileStore } from '../../store/useAppStore';
 import type { FuwafuwaSpeech } from './fuwafuwaHomeCardCopy';
 import { FuwafuwaSpeechBubble } from './FuwafuwaSpeechBubble';
+import { FuwafuwaSilentCue } from './FuwafuwaSilentCue';
 import { getSpeechReactionStyle } from './fuwafuwaSpeechReaction';
 
 interface FuwafuwaSoloViewProps {
@@ -15,6 +16,7 @@ interface FuwafuwaSoloViewProps {
     onSpeechAction?: () => void;
     selectedUser: UserProfileStore;
     selectedUserSpeech: FuwafuwaSpeech;
+    showSpeechBubble: boolean;
     targetSeconds: number;
 }
 
@@ -26,6 +28,7 @@ export function FuwafuwaSoloView({
     onSpeechAction,
     selectedUser,
     selectedUserSpeech,
+    showSpeechBubble,
     targetSeconds,
 }: FuwafuwaSoloViewProps) {
     const reactionStyle = getSpeechReactionStyle(selectedUserSpeech);
@@ -41,13 +44,17 @@ export function FuwafuwaSoloView({
                 />
             </div>
 
-            <FuwafuwaSpeechBubble
-                lines={selectedUserSpeech.lines}
-                accent={selectedUserSpeech.accent}
-                reactionStyle={reactionStyle}
-                actionLabel={selectedUserSpeech.actionLabel}
-                onAction={onSpeechAction}
-            />
+            {showSpeechBubble ? (
+                <FuwafuwaSpeechBubble
+                    lines={selectedUserSpeech.lines}
+                    accent={selectedUserSpeech.accent}
+                    reactionStyle={reactionStyle}
+                    actionLabel={selectedUserSpeech.actionLabel}
+                    onAction={onSpeechAction}
+                />
+            ) : (
+                <FuwafuwaSilentCue onTap={onCharacterTap} />
+            )}
 
             <div
                 style={{

@@ -15,6 +15,7 @@ import {
 import type { HomeAnnouncement } from './homeAnnouncementUtils';
 import type { HomeAmbientCue } from './homeAmbientUtils';
 import type { HomeVisitRecency } from './homeVisitMemory';
+import { shouldShowFuwafuwaSpeech } from './fuwafuwaSpeechPresence';
 import type { PerUserMagic } from './types';
 import type { FuwafuwaMilestoneEvent } from '../../store/useAppStore';
 
@@ -231,6 +232,23 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         };
     }, [isTogetherMode, pokeDepth, selectedUser]);
 
+    const shouldShowFamilySpeech = useMemo(
+        () => shouldShowFuwafuwaSpeech({
+            speech: familySpeech,
+            visitRecency: familyVisitRecency,
+            pokeDepth,
+        }),
+        [familySpeech, familyVisitRecency, pokeDepth],
+    );
+    const shouldShowSelectedUserSpeech = useMemo(
+        () => shouldShowFuwafuwaSpeech({
+            speech: selectedUserSpeech,
+            visitRecency: selectedUserVisitRecency,
+            pokeDepth,
+        }),
+        [pokeDepth, selectedUserSpeech, selectedUserVisitRecency],
+    );
+
     return (
         <div
             style={{
@@ -254,6 +272,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                     activeUsers={activeUsers}
                     displaySeconds={displaySeconds}
                     familySpeech={familySpeech}
+                    showSpeechBubble={shouldShowFamilySpeech}
                     onFamilySpeechTap={() => setPokeDepth((currentDepth) => Math.min(2, currentDepth + 1))}
                     milestoneEventsByUserId={milestoneEventsByUserId}
                     onSelectUser={onSelectUser}
@@ -272,6 +291,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                     onSpeechAction={selectedUserSpeech.actionLabel ? onAnnouncementAction : undefined}
                     selectedUser={selectedUser}
                     selectedUserSpeech={selectedUserSpeech}
+                    showSpeechBubble={shouldShowSelectedUserSpeech}
                     targetSeconds={targetSeconds}
                 />
             ) : null}
