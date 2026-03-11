@@ -265,26 +265,26 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
 
         expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 1)).toEqual({
-            id: 'user:growing',
+            id: 'user:mood',
             category: 'progress',
             accent: 'primary',
-            lines: ['いいかんじ！', 'ふわふわ ごきげんだよ'],
+            lines: ['ふわふわ なんだか', 'ごきげんだよ'],
         });
     });
 
     it('uses progress depth to explain how magic energy builds up', () => {
         expect(getUserSpeech(300, 600, 2, 4, null, null, null)).toEqual({
-            id: 'user:growing',
+            id: 'user:mood',
             category: 'progress',
             accent: 'primary',
-            lines: ['まほうエネルギーが', 'たまってきたよ'],
+            lines: ['なんだか ぽかぽか', 'してきたよ'],
         });
 
         expect(getUserSpeech(300, 600, 2, 4, null, null, null, 1)).toEqual({
-            id: 'user:growing',
+            id: 'user:mood',
             category: 'progress',
             accent: 'primary',
-            lines: ['ここに すこしずつ', 'まほうエネルギー たまってるよ'],
+            lines: ['きょうは なんだか', 'いいかんじ'],
         });
     });
 
@@ -297,10 +297,10 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
 
         expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 1, 0, 1)).toEqual({
-            id: 'user:small_progress',
-            category: 'progress',
+            id: 'user:relationship_ready',
+            category: 'relationship',
             accent: 'primary',
-            lines: ['ここに ちょっとずつ', 'まほうエネルギーが たまるんだよ'],
+            lines: ['ふわふわ なんだか', 'ごきげんだよ'],
         });
 
         expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 2, 0, 1)).toEqual({
@@ -338,19 +338,19 @@ describe('fuwafuwaHomeCardCopy', () => {
 
     it('returns together-mode speech with info accent', () => {
         expect(getFamilySpeech(2, 300, 600, null, null)).toEqual({
-            id: 'family:growing',
+            id: 'family:mood:2',
             category: 'progress',
             accent: 'info',
-            lines: ['みんなの まほうエネルギーが', 'たまってきたよ'],
+            lines: ['なんだか ぽかぽか', 'してきたね'],
         });
     });
 
     it('deepens together-mode progress speech when the bubble is tapped', () => {
         expect(getFamilySpeech(2, 300, 600, null, null, null, 1)).toEqual({
-            id: 'family:growing',
+            id: 'family:mood:2',
             category: 'progress',
             accent: 'info',
-            lines: ['ここに すこしずつ', 'まほうエネルギー たまってるよ'],
+            lines: ['みんなが いると', 'いいかんじだね'],
         });
     });
 
@@ -363,10 +363,10 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
 
         expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 1)).toEqual({
-            id: 'family:growing',
+            id: 'family:mood:2',
             category: 'progress',
             accent: 'info',
-            lines: ['いいかんじ！', 'ふわふわ ごきげんだよ'],
+            lines: ['ふわふわ なんだか', 'ごきげんだよ'],
         });
     });
 
@@ -379,10 +379,10 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
 
         expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 1, 1)).toEqual({
-            id: 'family:small_progress',
-            category: 'progress',
+            id: 'family:idle:2',
+            category: 'relationship',
             accent: 'info',
-            lines: ['ここにも まほうエネルギーが', 'ちゃんと たまってるよ'],
+            lines: ['みんなで いると', 'たのもしいね'],
         });
 
         expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 2, 1)).toEqual({
@@ -481,10 +481,10 @@ describe('fuwafuwaHomeCardCopy', () => {
 
     it('rotates low-priority solo speech over time without poking', () => {
         expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 0, 'first', null, false, 1)).toEqual({
-            id: 'user:relationship_ready',
-            category: 'relationship',
+            id: 'user:growing',
+            category: 'progress',
             accent: 'primary',
-            lines: ['あえて うれしいな', 'ふわふわ ごきげんだよ'],
+            lines: ['まほうエネルギーが', 'たまってきたよ'],
         });
 
         expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 0, 'first', null, false, 2)).toEqual({
@@ -497,10 +497,10 @@ describe('fuwafuwaHomeCardCopy', () => {
 
     it('rotates low-priority family speech over time without poking', () => {
         expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 0, 'first', null, false, 1)).toEqual({
-            id: 'family:idle:2',
-            category: 'relationship',
+            id: 'family:growing',
+            category: 'progress',
             accent: 'info',
-            lines: ['ふたりで いると', 'なんだか たのしいね'],
+            lines: ['みんなの まほうエネルギーが', 'たまってきたよ'],
         });
 
         expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 2)).toEqual({
