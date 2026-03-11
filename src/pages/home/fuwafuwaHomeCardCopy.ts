@@ -18,6 +18,13 @@ export interface FuwafuwaSpeech {
     actionLabel?: string;
 }
 
+export interface FamilyMilestoneLead {
+    kind: FuwafuwaMilestoneEvent['kind'];
+    userId: string;
+    userName: string;
+    hasMultiple: boolean;
+}
+
 export function getStageLabel(stage: number) {
     if (stage === 1) return 'たまご';
     if (stage === 2) return 'ようせい';
@@ -102,6 +109,64 @@ function getFamilyEventSpeech(announcement: HomeAnnouncement | null): FuwafuwaSp
     return buildAnnouncementSpeech(announcement);
 }
 
+function getFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead | null): FuwafuwaSpeech | null {
+    if (!milestoneLead) {
+        return null;
+    }
+
+    if (milestoneLead.hasMultiple) {
+        if (milestoneLead.kind === 'egg') {
+            return createSpeech({
+                id: `family:milestone:many:${milestoneLead.kind}`,
+                category: 'event_notice',
+                accent: 'info',
+                lines: ['みんなの ところで', 'たまごが きてるみたい'],
+            });
+        }
+
+        if (milestoneLead.kind === 'fairy') {
+            return createSpeech({
+                id: `family:milestone:many:${milestoneLead.kind}`,
+                category: 'event_notice',
+                accent: 'info',
+                lines: ['みんなの ところで', 'うまれた ふわふわが いるみたい'],
+            });
+        }
+
+        return createSpeech({
+            id: `family:milestone:many:${milestoneLead.kind}`,
+            category: 'event_notice',
+            accent: 'info',
+            lines: ['みんなの ところで', 'おおきく なった ふわふわが いるみたい'],
+        });
+    }
+
+    if (milestoneLead.kind === 'egg') {
+        return createSpeech({
+            id: `family:milestone:${milestoneLead.userId}:${milestoneLead.kind}`,
+            category: 'event_notice',
+            accent: 'info',
+            lines: [`${milestoneLead.userName}の ところに`, 'たまごが きたみたい'],
+        });
+    }
+
+    if (milestoneLead.kind === 'fairy') {
+        return createSpeech({
+            id: `family:milestone:${milestoneLead.userId}:${milestoneLead.kind}`,
+            category: 'event_notice',
+            accent: 'info',
+            lines: [`${milestoneLead.userName}の ふわふわ`, 'うまれたみたい！'],
+        });
+    }
+
+    return createSpeech({
+        id: `family:milestone:${milestoneLead.userId}:${milestoneLead.kind}`,
+        category: 'event_notice',
+        accent: 'info',
+        lines: [`${milestoneLead.userName}の ふわふわ`, 'おおきく なったみたい'],
+    });
+}
+
 function getFamilyRelationshipSpeech(activeCount: number, displaySeconds: number): FuwafuwaSpeech | null {
     if (displaySeconds !== 0) {
         return null;
@@ -148,11 +213,13 @@ export function getFamilySpeech(
     displaySeconds: number,
     targetSeconds: number,
     announcement: HomeAnnouncement | null,
+    milestoneLead: FamilyMilestoneLead | null = null,
 ): FuwafuwaSpeech {
     const percent = Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100);
     return pickFirstSpeech(
         getFamilyActionSpeech(percent),
         getFamilyEventSpeech(announcement),
+        getFamilyMilestoneSpeech(milestoneLead),
         getFamilyRelationshipSpeech(activeCount, displaySeconds),
         getFamilyProgressSpeech(percent),
     );

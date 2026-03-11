@@ -210,6 +210,42 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
     });
 
+    it('surfaces together-mode milestone ambience before generic progress copy', () => {
+        expect(getFamilySpeech(2, 300, 600, null, {
+            kind: 'egg',
+            userId: 'user-1',
+            userName: 'さくら',
+            hasMultiple: false,
+        })).toEqual({
+            id: 'family:milestone:user-1:egg',
+            category: 'event_notice',
+            accent: 'info',
+            lines: ['さくらの ところに', 'たまごが きたみたい'],
+        });
+    });
+
+    it('keeps explicit home announcements above together-mode milestone ambience', () => {
+        expect(getFamilySpeech(2, 300, 600, {
+            id: 'challenge:challenge-1',
+            kind: 'challenge',
+            badgeLabel: 'チャレンジ',
+            title: 'あたらしいチャレンジが きたよ',
+            detail: '前後開脚チャレンジ',
+            actionLabel: 'みてみる',
+        }, {
+            kind: 'egg',
+            userId: 'user-1',
+            userName: 'さくら',
+            hasMultiple: false,
+        })).toEqual({
+            id: 'challenge:challenge-1',
+            category: 'event_notice',
+            accent: 'primary',
+            lines: ['あたらしいチャレンジが きたよ', '前後開脚チャレンジ'],
+            actionLabel: 'みてみる',
+        });
+    });
+
     it('keeps together-mode idle copy in the relationship category', () => {
         expect(getFamilySpeech(2, 0, 600, null)).toEqual({
             id: 'family:idle:2',

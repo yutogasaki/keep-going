@@ -6,6 +6,7 @@ import type { UserProfileStore } from '../../store/useAppStore';
 import { FuwafuwaSoloView } from './FuwafuwaSoloView';
 import { FuwafuwaTogetherView } from './FuwafuwaTogetherView';
 import { getFamilySpeech, getUserSpeech } from './fuwafuwaHomeCardCopy';
+import type { FamilyMilestoneLead } from './fuwafuwaHomeCardCopy';
 import type { HomeAnnouncement } from './homeAnnouncementUtils';
 import type { PerUserMagic } from './types';
 import type { FuwafuwaMilestoneEvent } from '../../store/useAppStore';
@@ -65,9 +66,32 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     const selectedUserMagic = selectedUser ? perUserMagicMap.get(selectedUser.id) : null;
     const selectedUserDisplaySeconds = selectedUserMagic?.displaySeconds ?? displaySeconds;
     const selectedUserTargetSeconds = selectedUserMagic?.targetSeconds ?? targetSeconds;
+    const familyMilestoneLead = useMemo<FamilyMilestoneLead | null>(() => {
+        const pendingUsers = activeUsers.flatMap((user) => {
+            const event = milestoneEventsByUserId.get(user.id);
+            if (!event) {
+                return [];
+            }
+
+            return [{
+                kind: event.kind,
+                userId: event.userId,
+                userName: user.name,
+            }];
+        });
+
+        if (pendingUsers.length === 0) {
+            return null;
+        }
+
+        return {
+            ...pendingUsers[0],
+            hasMultiple: pendingUsers.length > 1,
+        };
+    }, [activeUsers, milestoneEventsByUserId]);
     const familySpeech = useMemo(
-        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement),
-        [activeUsers.length, announcement, displaySeconds, targetSeconds],
+        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement, familyMilestoneLead),
+        [activeUsers.length, announcement, displaySeconds, familyMilestoneLead, targetSeconds],
     );
     const selectedUserBaseSpeech = useMemo(
         () => selectedUserStatus
