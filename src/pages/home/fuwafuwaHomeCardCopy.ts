@@ -1,9 +1,16 @@
 import type { HomeAnnouncement } from './homeAnnouncementUtils';
 
 export type FuwafuwaSpeechAccent = 'primary' | 'info';
+export type FuwafuwaSpeechCategory =
+    | 'action_hint'
+    | 'event_notice'
+    | 'progress'
+    | 'relationship'
+    | 'mechanic_hint';
 
 export interface FuwafuwaSpeech {
     id: string;
+    category: FuwafuwaSpeechCategory;
     accent: FuwafuwaSpeechAccent;
     lines: string[];
     actionLabel?: string;
@@ -33,17 +40,105 @@ export function getSoftProgressShort(percent: number) {
     return 'からっぽ';
 }
 
-function buildAnnouncementSpeech(announcement: HomeAnnouncement): FuwafuwaSpeech {
+function createSpeech({
+    id,
+    category,
+    accent,
+    lines,
+    actionLabel,
+}: FuwafuwaSpeech): FuwafuwaSpeech {
     return {
+        id,
+        category,
+        accent,
+        lines,
+        actionLabel,
+    };
+}
+
+function pickFirstSpeech(...candidates: Array<FuwafuwaSpeech | null>): FuwafuwaSpeech {
+    const speech = candidates.find((candidate) => candidate !== null);
+    if (!speech) {
+        throw new Error('Fuwafuwa speech candidates must include at least one message.');
+    }
+
+    return speech;
+}
+
+function buildAnnouncementSpeech(announcement: HomeAnnouncement): FuwafuwaSpeech {
+    return createSpeech({
         id: announcement.id,
+        category: 'event_notice',
         accent: announcement.kind === 'challenge' ? 'primary' : 'info',
         lines: [announcement.title, announcement.detail],
         actionLabel: announcement.actionLabel,
-    };
+    });
 }
 
 function shouldShowMechanicHint(activeDays: number): boolean {
     return activeDays <= 2 || activeDays % 5 === 0;
+}
+
+function getFamilyActionSpeech(percent: number): FuwafuwaSpeech | null {
+    if (percent < 100) {
+        return null;
+    }
+
+    return createSpeech({
+        id: 'family:magic_full',
+        category: 'action_hint',
+        accent: 'info',
+        lines: ['みんなの まほうが', 'いっぱいに なったよ', 'ぽんって してみよう？'],
+    });
+}
+
+function getFamilyEventSpeech(announcement: HomeAnnouncement | null): FuwafuwaSpeech | null {
+    if (!announcement) {
+        return null;
+    }
+
+    return buildAnnouncementSpeech(announcement);
+}
+
+function getFamilyRelationshipSpeech(activeCount: number, displaySeconds: number): FuwafuwaSpeech | null {
+    if (displaySeconds !== 0) {
+        return null;
+    }
+
+    const peopleLabel = activeCount === 2 ? 'ふたりで' : `${activeCount}にんで`;
+    return createSpeech({
+        id: `family:idle:${activeCount}`,
+        category: 'relationship',
+        accent: 'info',
+        lines: [`${peopleLabel} ちからを`, 'あわせよう！'],
+    });
+}
+
+function getFamilyProgressSpeech(percent: number): FuwafuwaSpeech {
+    if (percent >= 90) {
+        return createSpeech({
+            id: 'family:almost_full',
+            category: 'progress',
+            accent: 'info',
+            lines: ['もうすこしで', 'まんたんだね！'],
+        });
+    }
+
+    if (percent >= 31) {
+        return createSpeech({
+            id: 'family:growing',
+            category: 'progress',
+            accent: 'info',
+            lines: ['みんなの まほう', 'たまってきたよ'],
+        });
+    }
+
+    return createSpeech({
+        id: 'family:small_progress',
+        category: 'progress',
+        accent: 'info',
+        lines: ['いいかんじ！', 'みんなで ためてるね'],
+    });
 }
 
 export function getFamilySpeech(
@@ -53,49 +148,12 @@ export function getFamilySpeech(
     announcement: HomeAnnouncement | null,
 ): FuwafuwaSpeech {
     const percent = Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100);
-    const peopleLabel = activeCount === 2 ? 'ふたりで' : `${activeCount}にんで`;
-
-    if (percent >= 100) {
-        return {
-            id: 'family:magic_full',
-            accent: 'info',
-            lines: ['みんなの まほうが', 'いっぱいに なったよ', 'ぽんって してみよう？'],
-        };
-    }
-
-    if (announcement) {
-        return buildAnnouncementSpeech(announcement);
-    }
-
-    if (displaySeconds === 0) {
-        return {
-            id: `family:idle:${activeCount}`,
-            accent: 'info',
-            lines: [`${peopleLabel} ちからを`, 'あわせよう！'],
-        };
-    }
-
-    if (percent >= 90) {
-        return {
-            id: 'family:almost_full',
-            accent: 'info',
-            lines: ['もうすこしで', 'まんたんだね！'],
-        };
-    }
-
-    if (percent >= 31) {
-        return {
-            id: 'family:growing',
-            accent: 'info',
-            lines: ['みんなの まほう', 'たまってきたよ'],
-        };
-    }
-
-    return {
-        id: 'family:small_progress',
-        accent: 'info',
-        lines: ['いいかんじ！', 'みんなで ためてるね'],
-    };
+    return pickFirstSpeech(
+        getFamilyActionSpeech(percent),
+        getFamilyEventSpeech(announcement),
+        getFamilyRelationshipSpeech(activeCount, displaySeconds),
+        getFamilyProgressSpeech(percent),
+    );
 }
 
 export function getFamilyMessage(activeCount: number, displaySeconds: number, targetSeconds: number) {
@@ -129,71 +187,132 @@ export function getUserSpeech(
     const percent = Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100);
     const depth = Math.max(0, Math.min(2, pokeDepth));
 
-    if (percent >= 100) {
-        return {
+    const getActionSpeech = (): FuwafuwaSpeech | null => {
+        if (percent < 100) {
+            return null;
+        }
+
+        return createSpeech({
             id: 'user:magic_full',
+            category: 'action_hint',
             accent: 'primary',
             lines: depth === 0
                 ? ['わあ！ まほうが いっぱいだよ', 'ぽんって してみよう']
                 : depth === 1
                     ? ['ぽんって さわると', 'ふわふわに おくれるよ']
                     : ['やさしく ぽんって', 'してみよう？'],
-        };
-    }
+        });
+    };
 
-    if (announcement) {
+    const getEventSpeech = (): FuwafuwaSpeech | null => {
+        if (!announcement) {
+            return null;
+        }
+
         if (depth === 0) {
             return buildAnnouncementSpeech(announcement);
         }
 
         if (announcement.kind === 'challenge') {
-            return {
+            return createSpeech({
                 id: announcement.id,
+                category: 'event_notice',
                 accent: 'primary',
                 lines: depth === 1
                     ? ['きょうのきみに', 'あいそうだよ']
                     : ['ちょっとだけ', 'のぞいてみる？'],
                 actionLabel: announcement.actionLabel,
-            };
+            });
         }
 
-        return {
+        return createSpeech({
             id: announcement.id,
+            category: 'event_notice',
             accent: 'info',
             lines: depth === 1
                 ? ['このまえのレッスンに', 'ぴったりかも']
                 : ['メニューで', 'みてみる？'],
             actionLabel: announcement.actionLabel,
-        };
-    }
+        });
+    };
 
-    if (stage === 1 && daysAlive === 3) {
-        return {
+    const getProgressSpeech = (): FuwafuwaSpeech | null => {
+        if (stage === 1 && daysAlive === 3) {
+            return createSpeech({
             id: 'user:hatching_soon',
+                category: 'progress',
             accent: 'primary',
             lines: depth === 0
                 ? ['もうすぐ', 'うまれそう！']
                 : depth === 1
                     ? ['たまごの なかで', 'うごいてるかも']
                     : ['あえるの', 'たのしみだね'],
-        };
-    }
-
-    if (displaySeconds === 0) {
-        if (shouldShowMechanicHint(activeDays)) {
-            return {
-                id: 'user:mechanic_hint',
-                accent: 'primary',
-                lines: depth === 0
-                    ? ['まほうは ここに', stage === 1 ? 'たまっていくんだよ' : 'すこしずつ たまるんだよ']
-                    : depth === 1
-                        ? ['いっぱいになると', 'いいこと あるよ']
-                        : ['すこしずつ', 'ためてみよう'],
-            };
+            });
         }
 
-        return {
+        if (displaySeconds === 0) {
+            return null;
+        }
+
+        if (stage === 2 && activeDays >= 6) {
+            return createSpeech({
+            id: 'user:growth_soon',
+                category: 'progress',
+            accent: 'primary',
+            lines: depth === 0
+                ? ['もうすぐ', 'おおきく なれそう！']
+                : depth === 1
+                    ? ['ちょっとずつ', 'へんかしてるよ']
+                    : ['みててね', 'たのしみだね'],
+            });
+        }
+
+        if (percent >= 90) {
+            return createSpeech({
+            id: 'user:almost_full',
+                category: 'progress',
+            accent: 'primary',
+            lines: depth === 0
+                ? ['もうすこしで', 'まんたん！']
+                : depth === 1
+                    ? ['あと ほんのちょっとで', 'いっぱいだよ']
+                    : ['このまま いけば', 'すぐ たまるよ'],
+            });
+        }
+
+        if (percent >= 31) {
+            return createSpeech({
+            id: 'user:growing',
+                category: 'progress',
+            accent: 'primary',
+            lines: depth === 0
+                ? ['いいかんじ！', 'まほうが たまってきたよ']
+                : depth === 1
+                    ? ['このまま すこしずつ', 'ためていこう']
+                    : ['ふわふわ', 'なんだか うれしいな'],
+            });
+        }
+
+        return createSpeech({
+        id: 'user:small_progress',
+            category: 'progress',
+        accent: 'primary',
+        lines: depth === 0
+            ? ['すこしずつ', 'たまってきたね']
+            : depth === 1
+                ? ['このペースも', 'いいかんじだよ']
+                : ['あせらなくて', 'だいじょうぶ'],
+        });
+    };
+
+    const getRelationshipSpeech = (): FuwafuwaSpeech | null => {
+        if (displaySeconds !== 0 || shouldShowMechanicHint(activeDays)) {
+            return null;
+        }
+
+        return createSpeech({
             id: stage === 1 ? 'user:relationship_waiting' : 'user:relationship_ready',
+            category: 'relationship',
             accent: 'primary',
             lines: stage === 1
                 ? (
@@ -210,54 +329,33 @@ export function getUserSpeech(
                             ? ['ふわふわ なんだか', 'ごきげんだよ']
                             : ['いっしょだと', 'たのしいね']
                 ),
-        };
-    }
-
-    if (stage === 2 && activeDays >= 6) {
-        return {
-            id: 'user:growth_soon',
-            accent: 'primary',
-            lines: depth === 0
-                ? ['もうすぐ', 'おおきく なれそう！']
-                : depth === 1
-                    ? ['ちょっとずつ', 'へんかしてるよ']
-                    : ['みててね', 'たのしみだね'],
-        };
-    }
-
-    if (percent >= 90) {
-        return {
-            id: 'user:almost_full',
-            accent: 'primary',
-            lines: depth === 0
-                ? ['もうすこしで', 'まんたん！']
-                : depth === 1
-                    ? ['あと ほんのちょっとで', 'いっぱいだよ']
-                    : ['このまま いけば', 'すぐ たまるよ'],
-        };
-    }
-
-    if (percent >= 31) {
-        return {
-            id: 'user:growing',
-            accent: 'primary',
-            lines: depth === 0
-                ? ['いいかんじ！', 'まほうが たまってきたよ']
-                : depth === 1
-                    ? ['このまま すこしずつ', 'ためていこう']
-                    : ['ふわふわ', 'なんだか うれしいな'],
-        };
-    }
-
-    return {
-        id: 'user:small_progress',
-        accent: 'primary',
-        lines: depth === 0
-            ? ['すこしずつ', 'たまってきたね']
-            : depth === 1
-                ? ['このペースも', 'いいかんじだよ']
-                : ['あせらなくて', 'だいじょうぶ'],
+        });
     };
+
+    const getMechanicSpeech = (): FuwafuwaSpeech | null => {
+        if (displaySeconds !== 0 || !shouldShowMechanicHint(activeDays)) {
+            return null;
+        }
+
+        return createSpeech({
+            id: 'user:mechanic_hint',
+            category: 'mechanic_hint',
+            accent: 'primary',
+            lines: depth === 0
+                ? ['まほうは ここに', stage === 1 ? 'たまっていくんだよ' : 'すこしずつ たまるんだよ']
+                : depth === 1
+                    ? ['いっぱいになると', 'いいこと あるよ']
+                    : ['すこしずつ', 'ためてみよう'],
+        });
+    };
+
+    return pickFirstSpeech(
+        getActionSpeech(),
+        getEventSpeech(),
+        getProgressSpeech(),
+        getRelationshipSpeech(),
+        getMechanicSpeech(),
+    );
 }
 
 export function getUserMessage(displaySeconds: number, targetSeconds: number, stage: number, activeDays: number) {

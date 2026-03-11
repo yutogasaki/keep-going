@@ -77,6 +77,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
             )
             : {
                 id: 'user:none',
+                category: 'relationship' as const,
                 accent: 'primary' as const,
                 lines: [],
             },
@@ -95,6 +96,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
             )
             : {
                 id: 'user:none',
+                category: 'relationship' as const,
                 accent: 'primary' as const,
                 lines: [],
             },

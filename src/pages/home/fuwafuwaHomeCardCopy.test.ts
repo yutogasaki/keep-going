@@ -30,11 +30,13 @@ describe('fuwafuwaHomeCardCopy', () => {
     it('prioritizes full-magic action hints for solo speech', () => {
         expect(getUserSpeech(600, 600, 2, 6, null)).toEqual({
             id: 'user:magic_full',
+            category: 'action_hint',
             accent: 'primary',
             lines: ['わあ！ まほうが いっぱいだよ', 'ぽんって してみよう'],
         });
         expect(getUserSpeech(600, 600, 2, 6, null, 1)).toEqual({
             id: 'user:magic_full',
+            category: 'action_hint',
             accent: 'primary',
             lines: ['ぽんって さわると', 'ふわふわに おくれるよ'],
         });
@@ -50,6 +52,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             actionLabel: 'みてみる',
         })).toEqual({
             id: 'challenge:challenge-1',
+            category: 'event_notice',
             accent: 'primary',
             lines: ['あたらしいチャレンジが きたよ', '前後開脚チャレンジ'],
             actionLabel: 'みてみる',
@@ -68,6 +71,7 @@ describe('fuwafuwaHomeCardCopy', () => {
 
         expect(getUserSpeech(120, 600, 2, 6, announcement, 1)).toEqual({
             id: 'challenge:challenge-1',
+            category: 'event_notice',
             accent: 'primary',
             lines: ['きょうのきみに', 'あいそうだよ'],
             actionLabel: 'みてみる',
@@ -75,6 +79,7 @@ describe('fuwafuwaHomeCardCopy', () => {
 
         expect(getUserSpeech(120, 600, 2, 6, announcement, 2)).toEqual({
             id: 'challenge:challenge-1',
+            category: 'event_notice',
             accent: 'primary',
             lines: ['ちょっとだけ', 'のぞいてみる？'],
             actionLabel: 'みてみる',
@@ -84,12 +89,14 @@ describe('fuwafuwaHomeCardCopy', () => {
     it('keeps mechanic hints low-pressure while poke depth advances', () => {
         expect(getUserSpeech(0, 600, 1, 0, null)).toEqual({
             id: 'user:mechanic_hint',
+            category: 'mechanic_hint',
             accent: 'primary',
             lines: ['まほうは ここに', 'たまっていくんだよ'],
         });
 
         expect(getUserSpeech(0, 600, 1, 0, null, 1)).toEqual({
             id: 'user:mechanic_hint',
+            category: 'mechanic_hint',
             accent: 'primary',
             lines: ['いっぱいになると', 'いいこと あるよ'],
         });
@@ -98,12 +105,14 @@ describe('fuwafuwaHomeCardCopy', () => {
     it('moves hatching-soon copy into the speech bubble', () => {
         expect(getUserSpeech(0, 600, 1, 0, null, 0, 3)).toEqual({
             id: 'user:hatching_soon',
+            category: 'progress',
             accent: 'primary',
             lines: ['もうすぐ', 'うまれそう！'],
         });
 
         expect(getUserSpeech(0, 600, 1, 0, null, 1, 3)).toEqual({
             id: 'user:hatching_soon',
+            category: 'progress',
             accent: 'primary',
             lines: ['たまごの なかで', 'うごいてるかも'],
         });
@@ -112,8 +121,18 @@ describe('fuwafuwaHomeCardCopy', () => {
     it('returns together-mode speech with info accent', () => {
         expect(getFamilySpeech(2, 300, 600, null)).toEqual({
             id: 'family:growing',
+            category: 'progress',
             accent: 'info',
             lines: ['みんなの まほう', 'たまってきたよ'],
+        });
+    });
+
+    it('keeps together-mode idle copy in the relationship category', () => {
+        expect(getFamilySpeech(2, 0, 600, null)).toEqual({
+            id: 'family:idle:2',
+            category: 'relationship',
+            accent: 'info',
+            lines: ['ふたりで ちからを', 'あわせよう！'],
         });
     });
 });
