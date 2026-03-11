@@ -12,6 +12,7 @@ import {
 import { StretchSessionOverlayLayer } from './stretch-session/StretchSessionOverlayLayer';
 import { useSessionControlsHint } from './stretch-session/useSessionControlsHint';
 import { useSessionPersistence } from './stretch-session/useSessionPersistence';
+import { useSessionWakeLock } from './stretch-session/useSessionWakeLock';
 
 export const StretchSession: React.FC = () => {
     const completeSession = useAppStore((state) => state.completeSession);
@@ -108,6 +109,10 @@ export const StretchSession: React.FC = () => {
         skippedIds,
         startedAt,
         totalRunningTime,
+    });
+
+    useSessionWakeLock({
+        enabled: !isLoading && sessionExercises.length > 0 && !isCompleted,
     });
 
     const toggleMute = () => {
