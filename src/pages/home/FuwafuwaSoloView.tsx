@@ -10,6 +10,7 @@ import { FuwafuwaSpeechBubble } from './FuwafuwaSpeechBubble';
 interface FuwafuwaSoloViewProps {
     allSessions: SessionRecord[];
     displaySeconds: number;
+    onCharacterTap?: () => void;
     onTankReset: () => void;
     onSpeechAction?: () => void;
     selectedUser: UserProfileStore;
@@ -20,6 +21,7 @@ interface FuwafuwaSoloViewProps {
 export const FuwafuwaSoloView: React.FC<FuwafuwaSoloViewProps> = ({
     allSessions,
     displaySeconds,
+    onCharacterTap,
     onTankReset,
     onSpeechAction,
     selectedUser,
@@ -52,7 +54,7 @@ export const FuwafuwaSoloView: React.FC<FuwafuwaSoloViewProps> = ({
                 justifyContent: 'center',
             }}
         >
-            <FuwafuwaCharacter user={selectedUser} sessions={allSessions} />
+            <FuwafuwaCharacter user={selectedUser} sessions={allSessions} onInteract={onCharacterTap} />
         </div>
     </>
 );

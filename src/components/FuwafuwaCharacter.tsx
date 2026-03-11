@@ -15,11 +15,12 @@ import type { DepartingInfo, EmotionParticle, RippleState, SayonaraModalState } 
 interface Props {
     user: UserProfileStore;
     sessions: SessionRecord[];
+    onInteract?: () => void;
 }
 
 const EMOTION_EMOJIS = ['🎵', '✨', '💖', '🌟', '🫧'];
 
-export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
+export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions, onInteract }) => {
     const updateUser = useAppStore((state) => state.updateUser);
     const resetUserFuwafuwa = useAppStore((state) => state.resetUserFuwafuwa);
     const { fuwafuwaBirthDate, fuwafuwaType, fuwafuwaName } = user;
@@ -112,6 +113,8 @@ export const FuwafuwaCharacter: React.FC<Props> = ({ user, sessions }) => {
             handleSayonaraConfirm();
             return;
         }
+
+        onInteract?.();
 
         if (containerRef.current) {
             const rect = containerRef.current.getBoundingClientRect();

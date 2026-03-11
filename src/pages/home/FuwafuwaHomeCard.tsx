@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { SessionRecord } from '../../lib/db';
 import { calculateFuwafuwaStatus } from '../../lib/fuwafuwa';
 import { RADIUS, SPACE } from '../../lib/styles';
@@ -36,6 +36,8 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     announcement,
     onAnnouncementAction,
 }) => {
+    const [pokeDepth, setPokeDepth] = useState(0);
+    const pokeResetTimerRef = useRef<number | null>(null);
     const perUserMagicMap = useMemo(
         () => new Map(perUserMagic.map((userMagic) => [userMagic.userId, userMagic])),
         [perUserMagic],
@@ -56,25 +58,72 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         ? calculateFuwafuwaStatus(selectedUser.fuwafuwaBirthDate, selectedUserSessions)
         : null;
     const selectedUserMagic = selectedUser ? perUserMagicMap.get(selectedUser.id) : null;
+    const selectedUserDisplaySeconds = selectedUserMagic?.displaySeconds ?? displaySeconds;
+    const selectedUserTargetSeconds = selectedUserMagic?.targetSeconds ?? targetSeconds;
     const familySpeech = useMemo(
         () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement),
         [activeUsers.length, announcement, displaySeconds, targetSeconds],
     );
-    const selectedUserSpeech = useMemo(
+    const selectedUserBaseSpeech = useMemo(
         () => selectedUserStatus
             ? getUserSpeech(
-                selectedUserMagic?.displaySeconds ?? displaySeconds,
-                selectedUserMagic?.targetSeconds ?? targetSeconds,
+                selectedUserDisplaySeconds,
+                selectedUserTargetSeconds,
                 selectedUserStatus.stage,
                 selectedUserStatus.activeDays,
                 announcement,
             )
             : {
+                id: 'user:none',
                 accent: 'primary' as const,
                 lines: [],
             },
-        [announcement, displaySeconds, selectedUserMagic, selectedUserStatus, targetSeconds],
+        [announcement, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds],
     );
+    const selectedUserSpeech = useMemo(
+        () => selectedUserStatus
+            ? getUserSpeech(
+                selectedUserDisplaySeconds,
+                selectedUserTargetSeconds,
+                selectedUserStatus.stage,
+                selectedUserStatus.activeDays,
+                announcement,
+                pokeDepth,
+            )
+            : {
+                id: 'user:none',
+                accent: 'primary' as const,
+                lines: [],
+            },
+        [announcement, pokeDepth, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds],
+    );
+
+    useEffect(() => {
+        setPokeDepth(0);
+    }, [isTogetherMode, selectedUser?.id, selectedUserBaseSpeech.id]);
+
+    useEffect(() => {
+        if (pokeResetTimerRef.current !== null) {
+            window.clearTimeout(pokeResetTimerRef.current);
+            pokeResetTimerRef.current = null;
+        }
+
+        if (pokeDepth === 0 || isTogetherMode || !selectedUser) {
+            return undefined;
+        }
+
+        pokeResetTimerRef.current = window.setTimeout(() => {
+            setPokeDepth(0);
+            pokeResetTimerRef.current = null;
+        }, 6000);
+
+        return () => {
+            if (pokeResetTimerRef.current !== null) {
+                window.clearTimeout(pokeResetTimerRef.current);
+                pokeResetTimerRef.current = null;
+            }
+        };
+    }, [isTogetherMode, pokeDepth, selectedUser]);
 
     return (
         <div
@@ -110,6 +159,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 <FuwafuwaSoloView
                     allSessions={allSessions}
                     displaySeconds={displaySeconds}
+                    onCharacterTap={() => setPokeDepth((currentDepth) => Math.min(2, currentDepth + 1))}
                     onTankReset={onTankReset}
                     onSpeechAction={selectedUserSpeech.actionLabel ? onAnnouncementAction : undefined}
                     selectedUser={selectedUser}
