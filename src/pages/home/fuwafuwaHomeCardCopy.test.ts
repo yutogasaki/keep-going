@@ -23,7 +23,7 @@ describe('fuwafuwaHomeCardCopy', () => {
 
     it('keeps lightweight fallback strings for legacy usage', () => {
         expect(getFamilyMessage(3, 0, 600)).toBe('3にんで ちからを あわせよう！');
-        expect(getUserMessage(0, 600, 1, 0)).toBe('まほうエネルギーは ここに たまるんだよ');
+        expect(getUserMessage(0, 600, 1, 0)).toBe('きょうも まってたよ あえて うれしいな');
         expect(getUserMessage(590, 600, 2, 6)).toBe('もうすぐ おおきく なれそう！');
     });
 
@@ -242,10 +242,10 @@ describe('fuwafuwaHomeCardCopy', () => {
 
     it('keeps mechanic hints low-pressure while poke depth advances', () => {
         expect(getUserSpeech(0, 600, 1, 0, null, null, null)).toEqual({
-            id: 'user:mechanic_hint',
-            category: 'mechanic_hint',
+            id: 'user:relationship_waiting',
+            category: 'relationship',
             accent: 'primary',
-            lines: ['まほうエネルギーは', 'ここに たまるんだよ'],
+            lines: ['きょうも まってたよ', 'あえて うれしいな'],
         });
 
         expect(getUserSpeech(0, 600, 1, 0, null, null, null, 1)).toEqual({
@@ -258,10 +258,10 @@ describe('fuwafuwaHomeCardCopy', () => {
 
     it('rotates low-priority solo speech variants with a seed', () => {
         expect(getUserSpeech(0, 600, 1, 0, null, null, null, 0, 0, 1)).toEqual({
-            id: 'user:mechanic_hint',
-            category: 'mechanic_hint',
+            id: 'user:relationship_waiting',
+            category: 'relationship',
             accent: 'primary',
-            lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
+            lines: ['なんだか そわそわしてたんだ', 'また あえたね'],
         });
 
         expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 1)).toEqual({
@@ -281,10 +281,10 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
 
         expect(getUserSpeech(300, 600, 2, 4, null, null, null, 1)).toEqual({
-            id: 'user:mood',
+            id: 'user:growing',
             category: 'progress',
             accent: 'primary',
-            lines: ['きょうは なんだか', 'いいかんじ'],
+            lines: ['いいかんじで', 'あたたまってきたよ'],
         });
     });
 
@@ -311,12 +311,26 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
     });
 
-    it('keeps mechanic hints above ambient discovery for early users', () => {
+    it('keeps early users on greeting, then mechanic, before ambient discovery', () => {
         expect(getUserSpeech(0, 600, 1, 0, null, null, { kind: 'public_menu_new' }, 0, 0, 1)).toEqual({
+            id: 'user:relationship_waiting',
+            category: 'relationship',
+            accent: 'primary',
+            lines: ['なんだか そわそわしてたんだ', 'また あえたね'],
+        });
+
+        expect(getUserSpeech(0, 600, 1, 0, null, null, { kind: 'public_menu_new' }, 1, 0, 1)).toEqual({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
+            lines: ['たまると', 'ふわふわ うれしいな'],
+        });
+
+        expect(getUserSpeech(0, 600, 1, 0, null, null, { kind: 'public_menu_new' }, 2, 0, 1)).toEqual({
+            id: 'ambient:public_menu_new',
+            category: 'event_notice',
+            accent: 'info',
+            lines: ['みんなの メニューに', 'あたらしいのが あるみたい'],
         });
     });
 

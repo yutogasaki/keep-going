@@ -755,6 +755,14 @@ function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
     }
 
     if (context.displaySeconds > 0) {
+        if (context.depth >= 2 && context.ambientCue) {
+            return 'ambient';
+        }
+
+        if (context.depth >= 1) {
+            return 'progress';
+        }
+
         if (shouldShowMechanicHint(context.activeDays)) {
             return pickIdleCycle(['mood', 'progress', 'greeting', 'mechanic'], context.idleBeat);
         }
@@ -768,8 +776,16 @@ function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
     }
 
     if (shouldShowMechanicHint(context.activeDays)) {
+        if (context.depth >= 2 && context.ambientCue) {
+            return 'ambient';
+        }
+
+        if (context.depth >= 1) {
+            return 'mechanic';
+        }
+
         return pickIdleCycle(
-            ['mechanic', 'greeting', 'mood'],
+            ['greeting', 'mood', 'mechanic'],
             context.idleBeat,
         );
     }
