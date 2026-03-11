@@ -40,6 +40,7 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
     const mainGroups = presets.filter(
         (group) => group.origin !== 'teacher' || group.displayMode === 'standard_inline'
     );
+    const standardExpanded = sectionState.standard ?? true;
     const hasTeacherHighlights = teacherGroups.some(
         (group) => group.recommended || isNewTeacherContent?.(group.id),
     );
@@ -119,6 +120,8 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
                 teacherMenuIds={teacherMenuIds}
                 isNewTeacherContent={isNewTeacherContent}
                 emptyMessage={mainGroups.length === 0 && teacherGroups.length === 0 ? 'いま使えるメニューはまだありません。' : null}
+                expanded={standardExpanded}
+                onToggle={() => onToggleSection('standard', !standardExpanded)}
             />
 
             <TeacherGroupsSection
