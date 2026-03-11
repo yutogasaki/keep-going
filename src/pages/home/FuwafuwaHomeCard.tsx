@@ -8,6 +8,7 @@ import { FuwafuwaTogetherView } from './FuwafuwaTogetherView';
 import { getFamilySpeech, getUserSpeech } from './fuwafuwaHomeCardCopy';
 import type { FamilyMilestoneLead } from './fuwafuwaHomeCardCopy';
 import type { HomeAnnouncement } from './homeAnnouncementUtils';
+import type { HomeAmbientCue } from './homeAmbientUtils';
 import type { PerUserMagic } from './types';
 import type { FuwafuwaMilestoneEvent } from '../../store/useAppStore';
 
@@ -24,6 +25,7 @@ interface FuwafuwaHomeCardProps {
     recentMilestoneEvent: FuwafuwaMilestoneEvent | null;
     onSelectUser: (userId: string) => void;
     announcement: HomeAnnouncement | null;
+    ambientCue: HomeAmbientCue | null;
     onAnnouncementAction: () => void;
 }
 
@@ -40,6 +42,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     recentMilestoneEvent,
     onSelectUser,
     announcement,
+    ambientCue,
     onAnnouncementAction,
 }) => {
     const [pokeDepth, setPokeDepth] = useState(0);
@@ -91,12 +94,12 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         };
     }, [activeUsers, milestoneEventsByUserId]);
     const familyBaseSpeech = useMemo(
-        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement, familyMilestoneLead, 0, speechVariantSeed),
-        [activeUsers.length, announcement, displaySeconds, familyMilestoneLead, speechVariantSeed, targetSeconds],
+        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement, ambientCue, familyMilestoneLead, 0, speechVariantSeed),
+        [activeUsers.length, ambientCue, announcement, displaySeconds, familyMilestoneLead, speechVariantSeed, targetSeconds],
     );
     const familySpeech = useMemo(
-        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement, familyMilestoneLead, pokeDepth, speechVariantSeed),
-        [activeUsers.length, announcement, displaySeconds, familyMilestoneLead, pokeDepth, speechVariantSeed, targetSeconds],
+        () => getFamilySpeech(activeUsers.length, displaySeconds, targetSeconds, announcement, ambientCue, familyMilestoneLead, pokeDepth, speechVariantSeed),
+        [activeUsers.length, ambientCue, announcement, displaySeconds, familyMilestoneLead, pokeDepth, speechVariantSeed, targetSeconds],
     );
     const selectedUserBaseSpeech = useMemo(
         () => selectedUserStatus
@@ -107,6 +110,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 selectedUserStatus.activeDays,
                 recentMilestoneEvent,
                 announcement,
+                ambientCue,
                 0,
                 selectedUserStatus.daysAlive,
                 speechVariantSeed,
@@ -117,7 +121,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 accent: 'primary' as const,
                 lines: [],
             },
-        [announcement, recentMilestoneEvent, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, speechVariantSeed],
+        [ambientCue, announcement, recentMilestoneEvent, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, speechVariantSeed],
     );
     const selectedUserSpeech = useMemo(
         () => selectedUserStatus
@@ -128,6 +132,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 selectedUserStatus.activeDays,
                 recentMilestoneEvent,
                 announcement,
+                ambientCue,
                 pokeDepth,
                 selectedUserStatus.daysAlive,
                 speechVariantSeed,
@@ -138,7 +143,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 accent: 'primary' as const,
                 lines: [],
             },
-        [announcement, pokeDepth, recentMilestoneEvent, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, speechVariantSeed],
+        [ambientCue, announcement, pokeDepth, recentMilestoneEvent, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, speechVariantSeed],
     );
 
     useEffect(() => {

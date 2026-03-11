@@ -25,6 +25,7 @@ import { TeacherMenuDetailSheet } from './home/TeacherMenuDetailSheet';
 import { pickHomeAnnouncement } from './home/homeAnnouncementUtils';
 import { useHomeChallenges } from './home/hooks/useHomeChallenges';
 import { useHomeSessions } from './home/hooks/useHomeSessions';
+import { useHomePublicDiscovery } from './home/hooks/useHomePublicDiscovery';
 import {
     getMilestoneStage,
     useHomeMilestoneWatcher,
@@ -62,6 +63,11 @@ export const HomeScreen: React.FC = () => {
         users,
         sessionUserIds,
     });
+    const {
+        recommendedMenus,
+        recommendedExercises,
+        ambientCue,
+    } = useHomePublicDiscovery();
 
     useEffect(() => {
         if (users.length === 0) {
@@ -355,6 +361,7 @@ export const HomeScreen: React.FC = () => {
                     recentMilestoneEvent={selectedUser && recentMilestoneEvent?.userId === selectedUser.id ? recentMilestoneEvent : null}
                     onSelectUser={(userId) => setSessionUserIds([userId])}
                     announcement={homeAnnouncement}
+                    ambientCue={ambientCue}
                     onAnnouncementAction={() => {
                         if (!homeAnnouncement) {
                             return;
@@ -378,6 +385,8 @@ export const HomeScreen: React.FC = () => {
                     filteredChallenges={filteredChallenges}
                     pastChallenges={pastChallenges}
                     completions={completions}
+                    recommendedMenus={recommendedMenus}
+                    recommendedExercises={recommendedExercises}
                     teacherExercises={teacherExercises}
                     teacherMenuHighlights={teacherMenuHighlights}
                     teacherExerciseHighlight={teacherExerciseHighlight}

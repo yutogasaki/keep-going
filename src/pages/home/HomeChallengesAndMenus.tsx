@@ -14,6 +14,8 @@ interface HomeChallengesAndMenusProps {
     filteredChallenges: Challenge[];
     pastChallenges: Challenge[];
     completions: ChallengeCompletion[];
+    recommendedMenus: PublicMenu[];
+    recommendedExercises: PublicExercise[];
     teacherExercises: TeacherExercise[];
     teacherMenuHighlights: TeacherMenu[];
     teacherExerciseHighlight: TeacherExercise | null;
@@ -36,6 +38,8 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
     filteredChallenges,
     pastChallenges,
     completions,
+    recommendedMenus,
+    recommendedExercises,
     teacherExercises,
     teacherMenuHighlights,
     teacherExerciseHighlight,
@@ -167,6 +171,8 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                 }}
             >
                 <PopularMenusRow
+                    menus={recommendedMenus}
+                    exercises={recommendedExercises}
                     onOpenMenuBrowser={onOpenMenuBrowser}
                     onOpenExerciseBrowser={onOpenExerciseBrowser}
                     onMenuTap={onMenuTap}

@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { ChevronRight, Clock, Download, Sparkles } from 'lucide-react';
-import { fetchRecommendedExercises, type PublicExercise } from '../lib/publicExercises';
-import { fetchRecommendedMenus, type PublicMenu } from '../lib/publicMenus';
+import type { PublicExercise } from '../lib/publicExercises';
+import type { PublicMenu } from '../lib/publicMenus';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../lib/styles';
 import {
     buildFeaturedExerciseCopy,
@@ -11,6 +11,8 @@ import {
 } from '../pages/home/homeMenuUtils';
 
 interface PopularMenusRowProps {
+    menus: PublicMenu[];
+    exercises: PublicExercise[];
     onOpenMenuBrowser: () => void;
     onOpenExerciseBrowser: () => void;
     onMenuTap: (menu: PublicMenu) => void;
@@ -18,24 +20,13 @@ interface PopularMenusRowProps {
 }
 
 export const PopularMenusRow: React.FC<PopularMenusRowProps> = ({
+    menus,
+    exercises,
     onOpenMenuBrowser,
     onOpenExerciseBrowser,
     onMenuTap,
     onExerciseTap,
 }) => {
-    const [menus, setMenus] = useState<PublicMenu[]>([]);
-    const [exercises, setExercises] = useState<PublicExercise[]>([]);
-
-    useEffect(() => {
-        Promise.all([
-            fetchRecommendedMenus(),
-            fetchRecommendedExercises(),
-        ]).then(([nextMenus, nextExercises]) => {
-            setMenus(nextMenus);
-            setExercises(nextExercises);
-        }).catch(console.warn);
-    }, []);
-
     const featuredMenus = useMemo(
         () => menus.slice(0, 3),
         [menus],

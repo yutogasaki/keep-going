@@ -1,4 +1,5 @@
 import type { HomeAnnouncement } from './homeAnnouncementUtils';
+import type { HomeAmbientCue } from './homeAmbientUtils';
 import type { FuwafuwaMilestoneEvent } from '../../store/useAppStore';
 import { getMilestoneSpeechLines } from './milestoneCopy';
 
@@ -31,6 +32,7 @@ type FuwafuwaSpeechTopic =
     | 'announcement'
     | 'growth'
     | 'progress'
+    | 'ambient'
     | 'relationship'
     | 'mechanic';
 
@@ -101,6 +103,7 @@ interface FamilySpeechContext {
     percent: number;
     displaySeconds: number;
     announcement: HomeAnnouncement | null;
+    ambientCue: HomeAmbientCue | null;
     milestoneLead: FamilyMilestoneLead | null;
     depth: number;
     variantSeed: number;
@@ -113,6 +116,7 @@ interface UserSpeechContext {
     activeDays: number;
     daysAlive: number;
     announcement: HomeAnnouncement | null;
+    ambientCue: HomeAmbientCue | null;
     recentMilestoneEvent: FuwafuwaMilestoneEvent | null;
     depth: number;
     variantSeed: number;
@@ -133,6 +137,10 @@ function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
 
     if (context.milestoneLead) {
         return 'milestone';
+    }
+
+    if (context.displaySeconds === 0 && context.ambientCue) {
+        return 'ambient';
     }
 
     if (context.displaySeconds === 0) {
@@ -220,6 +228,45 @@ function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead, depth: n
     });
 }
 
+function buildAmbientSpeech(ambientCue: HomeAmbientCue, depth: number, accent: FuwafuwaSpeechAccent): FuwafuwaSpeech {
+    if (ambientCue.kind === 'public_menu_new') {
+        return createSpeech({
+            id: 'ambient:public_menu_new',
+            category: 'event_notice',
+            accent,
+            lines: depth === 0
+                ? ['みんなの メニューに', 'あたらしいのが あるみたい']
+                : depth === 1
+                    ? ['だれかの くふう', 'みつかるかも']
+                    : ['のぞいてみるのも', 'たのしいかも'],
+        });
+    }
+
+    if (ambientCue.kind === 'public_menu_custom') {
+        return createSpeech({
+            id: 'ambient:public_menu_custom',
+            category: 'event_notice',
+            accent,
+            lines: depth === 0
+                ? ['みんなの メニューで', 'あたらしい種目も みつかるかも']
+                : depth === 1
+                    ? ['だれかの くふうが', 'はいってるみたい']
+                    : ['みにいくのも', 'たのしいかも'],
+        });
+    }
+
+    return createSpeech({
+        id: 'ambient:public_exercise',
+        category: 'event_notice',
+        accent,
+        lines: depth === 0
+            ? ['みんなの ところで', 'おもしろい種目が みつかるかも']
+            : depth === 1
+                ? ['ちょっと のぞくと', 'たのしいかも']
+                : ['あたらしいこと', 'みつかるかもね'],
+    });
+}
+
 function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechContext): FuwafuwaSpeech {
     if (topic === 'action') {
         return createSpeech({
@@ -276,6 +323,10 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
 
     if (topic === 'milestone') {
         return buildFamilyMilestoneSpeech(context.milestoneLead!, context.depth);
+    }
+
+    if (topic === 'ambient') {
+        return buildAmbientSpeech(context.ambientCue!, context.depth, 'info');
     }
 
     if (topic === 'relationship') {
@@ -347,6 +398,7 @@ export function getFamilySpeech(
     displaySeconds: number,
     targetSeconds: number,
     announcement: HomeAnnouncement | null,
+    ambientCue: HomeAmbientCue | null,
     milestoneLead: FamilyMilestoneLead | null = null,
     pokeDepth = 0,
     variantSeed = 0,
@@ -356,6 +408,7 @@ export function getFamilySpeech(
         percent: Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100),
         displaySeconds,
         announcement,
+        ambientCue,
         milestoneLead,
         depth: Math.max(0, Math.min(2, pokeDepth)),
         variantSeed,
@@ -402,6 +455,10 @@ function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
 
     if (context.displaySeconds > 0) {
         return 'progress';
+    }
+
+    if (context.ambientCue && !shouldShowMechanicHint(context.activeDays) && context.variantSeed % 2 === 1) {
+        return 'ambient';
     }
 
     if (!shouldShowMechanicHint(context.activeDays)) {
@@ -589,6 +646,10 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
         return buildUserProgressSpeech(context);
     }
 
+    if (topic === 'ambient') {
+        return buildAmbientSpeech(context.ambientCue!, context.depth, 'info');
+    }
+
     if (topic === 'relationship') {
         return buildUserRelationshipSpeech(context);
     }
@@ -615,6 +676,7 @@ export function getUserSpeech(
     activeDays: number,
     recentMilestoneEvent: FuwafuwaMilestoneEvent | null,
     announcement: HomeAnnouncement | null,
+    ambientCue: HomeAmbientCue | null,
     pokeDepth = 0,
     daysAlive = 0,
     variantSeed = 0,
@@ -626,6 +688,7 @@ export function getUserSpeech(
         activeDays,
         daysAlive,
         announcement,
+        ambientCue,
         recentMilestoneEvent,
         depth: Math.max(0, Math.min(2, pokeDepth)),
         variantSeed,
@@ -635,5 +698,5 @@ export function getUserSpeech(
 }
 
 export function getUserMessage(displaySeconds: number, targetSeconds: number, stage: number, activeDays: number) {
-    return getUserSpeech(displaySeconds, targetSeconds, stage, activeDays, null, null).lines.join(' ');
+    return getUserSpeech(displaySeconds, targetSeconds, stage, activeDays, null, null, null).lines.join(' ');
 }
