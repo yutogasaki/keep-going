@@ -341,8 +341,8 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             accent: 'info',
             lines: context.depth === 0
                 ? pickVariant([
-                    [`${peopleLabel} まほうエネルギー`, 'あつめよう！'],
-                    ['みんなで いっしょに', 'まほうエネルギー ためよう？'],
+                    [`${peopleLabel} いると`, 'まほうエネルギー たまるかな？'],
+                    ['みんなの まほうエネルギー', 'ふわふわ うれしいな'],
                 ], context.variantSeed)
                 : context.depth === 1
                     ? ['みんなで やると', 'たのもしいね']
@@ -595,8 +595,8 @@ function buildUserRelationshipSpeech(context: UserSpeechContext): FuwafuwaSpeech
             ? (
                 context.depth === 0
                     ? pickVariant([
-                        ['きょうも まってたよ', 'まほうエネルギー あつめよう？'],
-                        ['あえて うれしいな', 'まほうエネルギー ためてみる？'],
+                        ['きょうも まってたよ', 'まほうエネルギー もらえるかな？'],
+                        ['あえて うれしいな', 'まほうエネルギー ほしいな'],
                     ], context.variantSeed)
                     : context.depth === 1
                         ? ['ツンツン してくれて', 'うれしいな']
@@ -605,7 +605,7 @@ function buildUserRelationshipSpeech(context: UserSpeechContext): FuwafuwaSpeech
             : (
                 context.depth === 0
                     ? pickVariant([
-                        ['あえて うれしいな', 'まほうエネルギー ためよう？'],
+                        ['あえて うれしいな', 'まほうエネルギー ほしいな'],
                         ['きょうも きてくれたね', 'まほうエネルギー たまるかな？'],
                     ], context.variantSeed)
                     : context.depth === 1

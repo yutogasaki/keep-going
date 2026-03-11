@@ -288,7 +288,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:idle:2',
             category: 'relationship',
             accent: 'info',
-            lines: ['みんなで いっしょに', 'まほうエネルギー ためよう？'],
+            lines: ['みんなの まほうエネルギー', 'ふわふわ うれしいな'],
         });
 
         expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 1)).toEqual({
@@ -304,7 +304,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:idle:2',
             category: 'relationship',
             accent: 'info',
-            lines: ['みんなで いっしょに', 'まほうエネルギー ためよう？'],
+            lines: ['みんなの まほうエネルギー', 'ふわふわ うれしいな'],
         });
 
         expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 1, 1)).toEqual({
@@ -377,7 +377,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:idle:2',
             category: 'relationship',
             accent: 'info',
-            lines: ['ふたりで まほうエネルギー', 'あつめよう！'],
+            lines: ['ふたりで いると', 'まほうエネルギー たまるかな？'],
         });
     });
 
@@ -386,7 +386,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:relationship_ready',
             category: 'relationship',
             accent: 'primary',
-            lines: ['あえて うれしいな', 'まほうエネルギー ためよう？'],
+            lines: ['あえて うれしいな', 'まほうエネルギー ほしいな'],
         });
     });
 });
