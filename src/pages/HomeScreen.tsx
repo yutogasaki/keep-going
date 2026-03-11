@@ -98,6 +98,12 @@ export const HomeScreen: React.FC = () => {
             : null,
         [activeMilestoneModal, users],
     );
+    const pendingMilestoneEventsByUserId = useMemo(
+        () => new Map(
+            pendingMilestoneEvents.map((event) => [event.userId, event]),
+        ),
+        [pendingMilestoneEvents],
+    );
     const teacherContent = useTeacherContent({
         classLevel: currentClassLevel,
         onLoadError: noop,
@@ -325,6 +331,7 @@ export const HomeScreen: React.FC = () => {
                     selectedUser={selectedUser}
                     activeUsers={activeUsers}
                     allSessions={allSessions}
+                    milestoneEventsByUserId={pendingMilestoneEventsByUserId}
                     onSelectUser={(userId) => setSessionUserIds([userId])}
                     announcement={homeAnnouncement}
                     onAnnouncementAction={() => {

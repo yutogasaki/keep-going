@@ -2,6 +2,7 @@ import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { btnPrimary, COLOR, FONT, FONT_SIZE, RADIUS, SPACE, Z } from '../../lib/styles';
 import type { FuwafuwaMilestoneEvent, UserProfileStore } from '../../store/useAppStore';
+import { getMilestoneEmoji, getMilestoneTitle } from './milestoneCopy';
 
 interface HomeMilestoneModalProps {
     activeMilestoneModal: FuwafuwaMilestoneEvent | null;
@@ -101,11 +102,10 @@ export const HomeMilestoneModal: React.FC<HomeMilestoneModalProps> = ({
                         />
                     </div>
                     <span style={{ fontSize: 40 }}>
-                        {activeMilestoneModal.kind === 'egg' ? '🥚' : activeMilestoneModal.kind === 'fairy' ? '🧚' : '🌟'}
+                        {getMilestoneEmoji(activeMilestoneModal.kind)}
                     </span>
                     <h2 style={{ fontFamily: FONT.body, fontSize: FONT_SIZE['3xl'], margin: 0, color: COLOR.dark }}>
-                        {activeMilestoneModal.kind === 'egg' ? 'たまごが やってきた！' :
-                            activeMilestoneModal.kind === 'fairy' ? 'たまごが かえった！' : 'おおきく そだったね！'}
+                        {getMilestoneTitle(activeMilestoneModal.kind)}
                     </h2>
                     <p style={{ fontFamily: FONT.body, fontSize: FONT_SIZE.md, color: COLOR.muted, lineHeight: 1.7, margin: 0 }}>
                         {activeMilestoneModal.kind === 'egg'

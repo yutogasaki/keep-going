@@ -8,6 +8,7 @@ import { FuwafuwaTogetherView } from './FuwafuwaTogetherView';
 import { getFamilySpeech, getUserSpeech } from './fuwafuwaHomeCardCopy';
 import type { HomeAnnouncement } from './homeAnnouncementUtils';
 import type { PerUserMagic } from './types';
+import type { FuwafuwaMilestoneEvent } from '../../store/useAppStore';
 
 interface FuwafuwaHomeCardProps {
     isTogetherMode: boolean;
@@ -18,6 +19,7 @@ interface FuwafuwaHomeCardProps {
     selectedUser: UserProfileStore | null;
     activeUsers: UserProfileStore[];
     allSessions: SessionRecord[];
+    milestoneEventsByUserId: Map<string, FuwafuwaMilestoneEvent>;
     onSelectUser: (userId: string) => void;
     announcement: HomeAnnouncement | null;
     onAnnouncementAction: () => void;
@@ -32,6 +34,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     selectedUser,
     activeUsers,
     allSessions,
+    milestoneEventsByUserId,
     onSelectUser,
     announcement,
     onAnnouncementAction,
@@ -153,6 +156,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                     activeUsers={activeUsers}
                     displaySeconds={displaySeconds}
                     familySpeech={familySpeech}
+                    milestoneEventsByUserId={milestoneEventsByUserId}
                     onSelectUser={onSelectUser}
                     onTankReset={onTankReset}
                     onSpeechAction={familySpeech.actionLabel ? onAnnouncementAction : undefined}
