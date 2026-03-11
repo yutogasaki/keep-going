@@ -139,12 +139,16 @@ function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
         return 'milestone';
     }
 
-    if (context.displaySeconds === 0 && context.ambientCue) {
-        return 'ambient';
-    }
-
     if (context.displaySeconds === 0) {
-        return 'relationship';
+        if (context.ambientCue && context.depth >= 2) {
+            return 'ambient';
+        }
+
+        if (context.depth === 0) {
+            return 'relationship';
+        }
+
+        return 'progress';
     }
 
     return 'progress';
@@ -326,7 +330,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
     }
 
     if (topic === 'ambient') {
-        return buildAmbientSpeech(context.ambientCue!, context.depth, 'info');
+        return buildAmbientSpeech(context.ambientCue!, Math.max(0, context.depth - 2), 'info');
     }
 
     if (topic === 'relationship') {
@@ -388,8 +392,8 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
                 ['すこしずつ', 'みんなで ためていこう'],
             ], context.variantSeed)
             : context.depth === 1
-                ? ['いまも ちゃんと', 'たまってるよ']
-                : ['ゆっくりでも', 'だいじょうぶ'],
+                ? ['ここにも まほうエネルギーが', 'ちゃんと たまってるよ']
+                : ['ゆっくりでも', 'まほうエネルギーは たまるよ'],
     });
 }
 
@@ -457,12 +461,12 @@ function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
         return 'progress';
     }
 
-    if (context.ambientCue && !shouldShowMechanicHint(context.activeDays) && context.variantSeed % 2 === 1) {
+    if (context.ambientCue && !shouldShowMechanicHint(context.activeDays) && context.depth >= 2) {
         return 'ambient';
     }
 
     if (!shouldShowMechanicHint(context.activeDays)) {
-        return 'relationship';
+        return context.depth === 0 ? 'relationship' : 'progress';
     }
 
     return 'mechanic';
@@ -577,8 +581,8 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
                 ['すこしずつ', 'まほうエネルギーが ふえてるよ'],
             ], context.variantSeed)
             : context.depth === 1
-                ? ['ここに ちょっとずつ', 'たまるんだよ']
-                : ['あせらなくて', 'だいじょうぶ'],
+                ? ['ここに ちょっとずつ', 'まほうエネルギーが たまるんだよ']
+                : ['あせらなくても', 'まほうエネルギーは たまるよ'],
     });
 }
 
@@ -647,7 +651,7 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
     }
 
     if (topic === 'ambient') {
-        return buildAmbientSpeech(context.ambientCue!, context.depth, 'info');
+        return buildAmbientSpeech(context.ambientCue!, Math.max(0, context.depth - 2), 'info');
     }
 
     if (topic === 'relationship') {

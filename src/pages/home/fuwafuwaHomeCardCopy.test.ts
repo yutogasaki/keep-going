@@ -217,8 +217,22 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
     });
 
-    it('can surface ambient public discovery when idle', () => {
+    it('keeps solo idle speech on magic energy before ambient public discovery', () => {
         expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 1)).toEqual({
+            id: 'user:relationship_ready',
+            category: 'relationship',
+            accent: 'primary',
+            lines: ['きょうも きてくれたね', 'なにから はじめようか？'],
+        });
+
+        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 1, 0, 1)).toEqual({
+            id: 'user:small_progress',
+            category: 'progress',
+            accent: 'primary',
+            lines: ['ここに ちょっとずつ', 'まほうエネルギーが たまるんだよ'],
+        });
+
+        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 2, 0, 1)).toEqual({
             id: 'ambient:public_menu_new',
             category: 'event_notice',
             accent: 'info',
@@ -285,8 +299,22 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
     });
 
-    it('can surface ambient public discovery in together-mode idle speech', () => {
+    it('keeps together-mode idle speech on magic energy before ambient public discovery', () => {
         expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 1)).toEqual({
+            id: 'family:idle:2',
+            category: 'relationship',
+            accent: 'info',
+            lines: ['みんなで いっしょに', 'やってみよう？'],
+        });
+
+        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 1, 1)).toEqual({
+            id: 'family:small_progress',
+            category: 'progress',
+            accent: 'info',
+            lines: ['ここにも まほうエネルギーが', 'ちゃんと たまってるよ'],
+        });
+
+        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 2, 1)).toEqual({
             id: 'ambient:public_menu_custom',
             category: 'event_notice',
             accent: 'info',
