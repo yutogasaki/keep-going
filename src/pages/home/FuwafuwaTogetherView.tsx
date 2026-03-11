@@ -7,8 +7,6 @@ import type { UserProfileStore } from '../../store/useAppStore';
 import { FuwafuwaSpeechBubble } from './FuwafuwaSpeechBubble';
 import {
     type FuwafuwaSpeech,
-    getSoftProgress,
-    getSoftProgressShort,
     getStageLabel,
 } from './fuwafuwaHomeCardCopy';
 import type { PerUserMagic } from './types';
@@ -36,8 +34,6 @@ export const FuwafuwaTogetherView: React.FC<FuwafuwaTogetherViewProps> = ({
     sessionsByUserId,
     targetSeconds,
 }) => {
-    const familyProgressPercent = Math.min(100, Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100));
-
     return (
         <>
             <div
@@ -50,38 +46,12 @@ export const FuwafuwaTogetherView: React.FC<FuwafuwaTogetherViewProps> = ({
                     padding: `0 ${SPACE.xl}px`,
                 }}
             >
-                <div
-                    style={{
-                        fontFamily: FONT.body,
-                        fontSize: FONT_SIZE.sm,
-                        fontWeight: 700,
-                        color: COLOR.info,
-                        background: 'rgba(9, 132, 227, 0.1)',
-                        padding: '6px 12px',
-                        borderRadius: RADIUS.full,
-                    }}
-                >
-                    みんなの まほうタンク
-                </div>
                 <MagicTank
                     currentSeconds={displaySeconds}
                     maxSeconds={targetSeconds}
                     onReset={onTankReset}
-                    label="みんなの まほう"
-                    fullLabel="みんなの まほうがいっぱい！✨"
-                    fullHint="ぽんって してみよう"
+                    ariaLabel="みんなの まほうタンク"
                 />
-                <div
-                    style={{
-                        fontFamily: FONT.heading,
-                        fontSize: FONT_SIZE.lg,
-                        fontWeight: 800,
-                        color: familyProgressPercent >= 100 ? COLOR.gold : COLOR.dark,
-                        marginTop: -2,
-                    }}
-                >
-                    {getSoftProgress(familyProgressPercent)}
-                </div>
                 <div style={{ marginTop: SPACE.sm }}>
                     <FuwafuwaSpeechBubble
                         lines={familySpeech.lines}
@@ -234,7 +204,7 @@ export const FuwafuwaTogetherView: React.FC<FuwafuwaTogetherViewProps> = ({
                                                 color: COLOR.text,
                                             }}
                                         >
-                                            {status.activeDays}日 がんばった
+                                            {status.activeDays}日
                                         </div>
                                     </div>
                                 </div>
@@ -264,12 +234,11 @@ export const FuwafuwaTogetherView: React.FC<FuwafuwaTogetherViewProps> = ({
                                         style={{
                                             fontFamily: FONT.body,
                                             fontSize: FONT_SIZE.xs,
-                                            color: progressPercent >= 100 ? COLOR.gold : COLOR.text,
-                                            fontWeight: 600,
-                                            textAlign: 'center',
+                                            color: COLOR.muted,
+                                            textAlign: 'right',
                                         }}
                                     >
-                                        {getSoftProgressShort(progressPercent)}
+                                        {Math.round(progressPercent)}%
                                     </div>
                                 </div>
                             </button>

@@ -34,8 +34,7 @@ export const FuwafuwaSoloView: React.FC<FuwafuwaSoloViewProps> = ({
                 currentSeconds={displaySeconds}
                 maxSeconds={targetSeconds}
                 onReset={onTankReset}
-                label="まほうエネルギー"
-                fullHint="ぽんって してみよう"
+                ariaLabel="まほうタンク"
             />
         </div>
 

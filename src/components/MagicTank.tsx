@@ -6,18 +6,14 @@ interface MagicTankProps {
     currentSeconds: number;
     maxSeconds: number;
     onReset?: () => void; // Optional callback for when the tank is full and tapped
-    label?: string;
-    fullLabel?: string;
-    fullHint?: string;
+    ariaLabel?: string;
 }
 
 export const MagicTank: React.FC<MagicTankProps> = ({
     currentSeconds,
     maxSeconds,
     onReset,
-    label = 'まほうエネルギー',
-    fullLabel = 'まほうがいっぱい！✨',
-    fullHint = 'ぽんって してみよう',
+    ariaLabel = 'まほうタンク',
 }) => {
     // Fill percentage capped at 100%
     const fillPercentage = Math.min((currentSeconds / maxSeconds) * 100, 100);
@@ -28,11 +24,21 @@ export const MagicTank: React.FC<MagicTankProps> = ({
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: 12,
             marginTop: 16,
         }}>
             <div
                 onClick={isFull && onReset ? onReset : undefined}
+                onKeyDown={isFull && onReset
+                    ? (event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            onReset();
+                        }
+                    }
+                    : undefined}
+                role={isFull && onReset ? 'button' : 'img'}
+                aria-label={isFull && onReset ? `${ariaLabel}。タップでふわふわにおくる` : ariaLabel}
+                tabIndex={isFull && onReset ? 0 : -1}
                 style={{
                     position: 'relative',
                     width: 60,
@@ -120,36 +126,6 @@ export const MagicTank: React.FC<MagicTankProps> = ({
                     </motion.div>
                 )}
             </div>
-
-            {/* Status text */}
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                style={{
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    color: isFull ? '#F39C12' : '#2BBAA0',
-                    textAlign: 'center',
-                    background: 'var(--glass-bg)',
-                    padding: '4px 16px',
-                    borderRadius: 20,
-                    boxShadow: 'var(--shadow-xs)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: 4
-                }}
-            >
-                {isFull ? (
-                    <>
-                        <span>{fullLabel}</span>
-                        {onReset && <span style={{ fontSize: 10, color: '#E67E22', opacity: 0.8 }}>{fullHint}</span>}
-                    </>
-                ) : (
-                    label
-                )}
-            </motion.div>
         </div>
     );
 };
