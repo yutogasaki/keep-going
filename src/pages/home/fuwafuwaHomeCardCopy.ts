@@ -146,18 +146,17 @@ function buildTopicPool(
 function pickDailyTopic(
     baseTopics: readonly FuwafuwaSpeechTopic[],
     ambientCue: HomeAmbientCue | null,
-    beat: number,
-    step: number,
+    topicSeed: number,
 ): FuwafuwaSpeechTopic {
     const topics = buildTopicPool(baseTopics, ambientCue);
-    return topics[(Math.abs(beat) + Math.max(0, step)) % topics.length];
+    return topics[Math.abs(topicSeed) % topics.length];
 }
 
 function buildDailyFamilyContext(context: FamilySpeechContext): FamilySpeechContext {
     return {
         ...context,
         depth: 0,
-        variantSeed: context.variantSeed + context.idleBeat,
+        variantSeed: context.variantSeed + (context.idleBeat * 2),
     };
 }
 
@@ -165,8 +164,12 @@ function buildDailyUserContext(context: UserSpeechContext): UserSpeechContext {
     return {
         ...context,
         depth: 0,
-        variantSeed: context.variantSeed + context.idleBeat,
+        variantSeed: context.variantSeed + (context.idleBeat * 2),
     };
+}
+
+function getDailyTopicSeed(context: { variantSeed: number; idleBeat: number }) {
+    return context.variantSeed + context.idleBeat;
 }
 
 function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
@@ -191,14 +194,14 @@ function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
     }
 
     if (context.percent >= 90) {
-        return pickDailyTopic(['omen', 'progress', 'mechanic', 'mood'], context.ambientCue, context.idleBeat, context.depth);
+        return pickDailyTopic(['omen', 'mechanic', 'progress', 'mood'], context.ambientCue, getDailyTopicSeed(context));
     }
 
     if (context.displaySeconds === 0) {
-        return pickDailyTopic(['greeting', 'progress', 'mechanic', 'mood'], context.ambientCue, context.idleBeat, context.depth);
+        return pickDailyTopic(['greeting', 'mechanic', 'mood', 'progress'], context.ambientCue, getDailyTopicSeed(context));
     }
 
-    return pickDailyTopic(['mood', 'progress', 'mechanic', 'greeting'], context.ambientCue, context.idleBeat, context.depth);
+    return pickDailyTopic(['mood', 'mechanic', 'progress', 'greeting'], context.ambientCue, getDailyTopicSeed(context));
 }
 
 function buildAfterglowAnnouncementSpeech(
@@ -325,17 +328,17 @@ function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead, depth: n
     });
 }
 
-function buildAmbientSpeech(ambientCue: HomeAmbientCue, depth: number, accent: FuwafuwaSpeechAccent): FuwafuwaSpeech {
+function buildAmbientSpeech(ambientCue: HomeAmbientCue, seed: number, accent: FuwafuwaSpeechAccent): FuwafuwaSpeech {
     if (ambientCue.kind === 'public_menu_new') {
         return createSpeech({
             id: 'ambient:public_menu_new',
             category: 'event_notice',
             accent,
-            lines: depth === 0
-                ? ['みんなの メニューに', 'あたらしいのが あるみたい']
-                : depth === 1
-                    ? ['ふわふわも ちょっと', 'きになってるんだ']
-                    : ['のぞきに いけたら', 'たのしそうだね'],
+            lines: pickVariant([
+                ['みんなの メニューに', 'あたらしいのが あるみたい'],
+                ['ふわふわも ちょっと', 'きになってるんだ'],
+                ['のぞきに いけたら', 'たのしそうだね'],
+            ], seed),
         });
     }
 
@@ -344,11 +347,11 @@ function buildAmbientSpeech(ambientCue: HomeAmbientCue, depth: number, accent: F
             id: 'ambient:public_menu_custom',
             category: 'event_notice',
             accent,
-            lines: depth === 0
-                ? ['みんなの メニューで', 'あたらしい種目も みつかるかも']
-                : depth === 1
-                    ? ['だれかの くふうが', 'はいってるみたい']
-                    : ['ふわふわも', 'みにいきたいな'],
+            lines: pickVariant([
+                ['みんなの メニューで', 'あたらしい種目も みつかるかも'],
+                ['だれかの くふうが', 'はいってるみたい'],
+                ['ふわふわも', 'みにいきたいな'],
+            ], seed),
         });
     }
 
@@ -356,27 +359,20 @@ function buildAmbientSpeech(ambientCue: HomeAmbientCue, depth: number, accent: F
         id: 'ambient:public_exercise',
         category: 'event_notice',
         accent,
-        lines: depth === 0
-            ? ['みんなの ところで', 'おもしろい種目が みつかるかも']
-            : depth === 1
-                ? ['ふわふわも なんだか', 'きになってるよ']
-                : ['のぞきに いくと', 'たのしいかも'],
+        lines: pickVariant([
+            ['みんなの ところで', 'おもしろい種目が みつかるかも'],
+            ['ふわふわも なんだか', 'きになってるよ'],
+            ['のぞきに いくと', 'たのしいかも'],
+        ], seed),
     });
 }
 
 function buildFamilyRelationshipLines(
     activeCount: number,
     visitRecency: HomeVisitRecency,
-    depth: number,
     variantSeed: number,
 ): string[] {
     const peopleLabel = activeCount === 2 ? 'ふたりで' : `${activeCount}にんで`;
-
-    if (depth > 0) {
-        return depth === 1
-            ? ['みんなで いると', 'たのもしいね']
-            : ['いっしょだと', 'うれしいね'];
-    }
 
     if (visitRecency === 'recent') {
         return pickVariant([
@@ -408,21 +404,8 @@ function buildFamilyRelationshipLines(
 function buildUserRelationshipLines(
     stage: number,
     visitRecency: HomeVisitRecency,
-    depth: number,
     variantSeed: number,
 ): string[] {
-    if (depth > 0) {
-        if (stage === 1) {
-            return depth === 1
-                ? ['ツンツン してくれて', 'うれしいな']
-                : ['また さわってくれて', 'ありがとう'];
-        }
-
-        return depth === 1
-            ? ['ふわふわ なんだか', 'ごきげんだよ']
-            : ['いっしょだと', 'うれしいね'];
-    }
-
     if (visitRecency === 'recent') {
         return pickVariant([
             ['また すぐ あえたね', 'ふわふわ うれしいな'],
@@ -462,14 +445,11 @@ function buildFamilyMoodSpeech(context: FamilySpeechContext): FuwafuwaSpeech {
         id: `family:mood:${context.activeCount}`,
         category: 'progress',
         accent: 'info',
-        lines: context.depth === 0
-            ? pickVariant([
-                ['なんだか ぽかぽか', 'してきたね'],
-                ['ふわふわ なんだか', 'ごきげんだよ'],
-            ], context.variantSeed)
-            : context.depth === 1
-                ? ['みんなが いると', 'いいかんじだね']
-                : ['また みんなで', 'あいに きてね'],
+        lines: pickVariant([
+            ['なんだか ぽかぽか', 'してきたね'],
+            ['ふわふわ なんだか', 'ごきげんだよ'],
+            ['みんなが いると', 'いいかんじだね'],
+        ], context.variantSeed),
     });
 }
 
@@ -478,14 +458,11 @@ function buildFamilyOmenSpeech(context: FamilySpeechContext): FuwafuwaSpeech {
         id: 'family:omen',
         category: 'progress',
         accent: 'info',
-        lines: context.depth === 0
-            ? pickVariant([
-                ['あと すこしで', 'いいこと ありそう'],
-                ['もうすぐ', 'ふわふわに とどきそう'],
-            ], context.variantSeed)
-            : context.depth === 1
-                ? ['みんなの まほうエネルギー', 'もうすぐ いっぱいだよ']
-                : ['もうすぐ いっぱいで', 'ふわふわ どきどき'],
+        lines: pickVariant([
+            ['あと すこしで', 'いいこと ありそう'],
+            ['もうすぐ', 'ふわふわに とどきそう'],
+            ['みんなの まほうエネルギー', 'もうすぐ いっぱいだよ'],
+        ], context.variantSeed),
     });
 }
 
@@ -508,14 +485,11 @@ function buildUserMoodSpeech(context: UserSpeechContext): FuwafuwaSpeech {
             id: 'user:mood_waiting',
             category: 'progress',
             accent: 'primary',
-            lines: context.depth === 0
-                ? pickVariant([
-                    ['たまごの なかで', 'そわそわしてるかも'],
-                    ['なんだか ちいさく', 'ぽかぽかしてるよ'],
-                ], context.variantSeed)
-                : context.depth === 1
-                    ? ['きみが きてくれて', 'うれしくなったみたい']
-                    : ['また あえるの', 'たのしみだな'],
+            lines: pickVariant([
+                ['たまごの なかで', 'そわそわしてるかも'],
+                ['なんだか ちいさく', 'ぽかぽかしてるよ'],
+                ['きみが きてくれて', 'うれしくなったみたい'],
+            ], context.variantSeed),
         });
     }
 
@@ -523,14 +497,11 @@ function buildUserMoodSpeech(context: UserSpeechContext): FuwafuwaSpeech {
         id: 'user:mood',
         category: 'progress',
         accent: 'primary',
-        lines: context.depth === 0
-            ? pickVariant([
-                ['なんだか ぽかぽか', 'してきたよ'],
-                ['ふわふわ なんだか', 'ごきげんだよ'],
-            ], context.variantSeed)
-            : context.depth === 1
-                ? ['きょうは なんだか', 'いいかんじ']
-                : ['また あえると', 'うれしいな'],
+        lines: pickVariant([
+            ['なんだか ぽかぽか', 'してきたよ'],
+            ['ふわふわ なんだか', 'ごきげんだよ'],
+            ['きょうは なんだか', 'いいかんじ'],
+        ], context.variantSeed),
     });
 }
 
@@ -539,14 +510,11 @@ function buildUserOmenSpeech(context: UserSpeechContext): FuwafuwaSpeech {
         id: 'user:omen',
         category: 'progress',
         accent: 'primary',
-        lines: context.depth === 0
-            ? pickVariant([
-                ['あと すこしで', 'いいこと ありそう'],
-                ['もうすぐ', 'ふわふわに とどきそう'],
-            ], context.variantSeed)
-            : context.depth === 1
-                ? ['まほうエネルギー', 'もうすぐ いっぱいだよ']
-                : ['ふわふわ どきどき', 'してるよ'],
+        lines: pickVariant([
+            ['あと すこしで', 'いいこと ありそう'],
+            ['もうすぐ', 'ふわふわに とどきそう'],
+            ['まほうエネルギー', 'もうすぐ いっぱいだよ'],
+        ], context.variantSeed),
     });
 }
 
@@ -628,7 +596,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
     }
 
     if (topic === 'ambient') {
-        return buildAmbientSpeech(context.ambientCue!, 0, 'info');
+        return buildAmbientSpeech(context.ambientCue!, dailyContext.variantSeed, 'info');
     }
 
     if (topic === 'greeting') {
@@ -639,7 +607,6 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             lines: buildFamilyRelationshipLines(
                 dailyContext.activeCount,
                 dailyContext.visitRecency,
-                dailyContext.depth,
                 dailyContext.variantSeed,
             ),
         });
@@ -662,15 +629,11 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             id: 'family:almost_full',
             category: 'progress',
             accent: 'info',
-            lines: dailyContext.depth === 0
-                ? pickVariant([
-                    ['みんなの まほうエネルギーが', 'もうすこしで まんたん！'],
-                    ['あと すこしで', 'いいこと ありそう'],
-                    ['みんなの まほうエネルギー', 'もうすぐ いっぱいだよ'],
-                ], dailyContext.variantSeed)
-                : dailyContext.depth === 1
-                    ? ['あと ほんのちょっとで', 'いっぱいに なりそう']
-                    : ['もうすぐ いっぱいで', 'ふわふわ どきどき'],
+            lines: pickVariant([
+                ['みんなの まほうエネルギーが', 'もうすこしで まんたん！'],
+                ['あと すこしで', 'いいこと ありそう'],
+                ['みんなの まほうエネルギー', 'もうすぐ いっぱいだよ'],
+            ], dailyContext.variantSeed),
         });
     }
 
@@ -679,15 +642,12 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             id: 'family:growing',
             category: 'progress',
             accent: 'info',
-            lines: dailyContext.depth === 0
-                ? pickVariant([
-                    ['みんなの まほうエネルギーが', 'たまってきたよ'],
-                    ['まほうエネルギーが', 'みんなで ふえてるね'],
-                    ['なんだか ぽかぽか', 'してきたね'],
-                ], dailyContext.variantSeed)
-                : dailyContext.depth === 1
-                    ? ['まほうエネルギーが', 'じわっと たまってるね']
-                    : ['ふわふわ なんだか', 'わくわくしてきた'],
+            lines: pickVariant([
+                ['みんなの まほうエネルギーが', 'たまってきたよ'],
+                ['まほうエネルギーが', 'みんなで ふえてるね'],
+                ['なんだか ぽかぽか', 'してきたね'],
+                ['まほうエネルギーが', 'じわっと たまってるね'],
+            ], dailyContext.variantSeed),
         });
     }
 
@@ -695,15 +655,12 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
         id: 'family:small_progress',
         category: 'progress',
         accent: 'info',
-        lines: dailyContext.depth === 0
-            ? pickVariant([
-                ['まほうエネルギーが', 'みんなで ふえてるね'],
-                ['みんなの まほうエネルギー', 'すこしずつ とどいてるよ'],
-                ['ちいさく ぽかぽか', 'してきたね'],
-            ], dailyContext.variantSeed)
-            : dailyContext.depth === 1
-                ? ['まほうエネルギーも', 'ちゃんと とどいてるよ']
-                : ['ゆっくりでも', 'ふわふわ うれしいな'],
+        lines: pickVariant([
+            ['まほうエネルギーが', 'みんなで ふえてるね'],
+            ['みんなの まほうエネルギー', 'すこしずつ とどいてるよ'],
+            ['ちいさく ぽかぽか', 'してきたね'],
+            ['まほうエネルギーも', 'ちゃんと とどいてるよ'],
+        ], dailyContext.variantSeed),
     });
 }
 
@@ -785,23 +742,21 @@ function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
 
     if (context.percent >= 90 && context.displaySeconds > 0) {
         return pickDailyTopic(
-            ['omen', 'progress', 'mechanic', 'mood'],
+            ['omen', 'mechanic', 'progress', 'mood'],
             context.ambientCue,
-            context.idleBeat,
-            context.depth,
+            getDailyTopicSeed(context),
         );
     }
 
     if (context.displaySeconds > 0) {
         return pickDailyTopic(
-            ['mood', 'progress', 'mechanic'],
+            ['mood', 'mechanic', 'progress'],
             context.ambientCue,
-            context.idleBeat,
-            context.depth,
+            getDailyTopicSeed(context),
         );
     }
 
-    return pickDailyTopic(['greeting', 'mechanic', 'mood'], context.ambientCue, context.idleBeat, context.depth);
+    return pickDailyTopic(['greeting', 'mechanic', 'mood'], context.ambientCue, getDailyTopicSeed(context));
 }
 
 function buildUserAfterglowSpeech(afterglow: HomeAfterglow, depth: number): FuwafuwaSpeech {
@@ -893,14 +848,11 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
             id: 'user:almost_full',
             category: 'progress',
             accent: 'primary',
-            lines: context.depth === 0
-                ? pickVariant([
-                    ['まほうエネルギーが', 'もうすこしで まんたん！'],
-                    ['あと すこしで', 'ふわふわに とどきそう'],
-                ], context.variantSeed)
-                : context.depth === 1
-                    ? ['あと ほんのちょっとで', 'いっぱいに なりそう']
-                    : ['もうすぐ いっぱいで', 'ふわふわ どきどき'],
+            lines: pickVariant([
+                ['まほうエネルギーが', 'もうすこしで まんたん！'],
+                ['あと すこしで', 'ふわふわに とどきそう'],
+                ['まほうエネルギー', 'もうすぐ いっぱいだよ'],
+            ], context.variantSeed),
         });
     }
 
@@ -909,15 +861,12 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
             id: 'user:growing',
             category: 'progress',
             accent: 'primary',
-            lines: context.depth === 0
-                ? pickVariant([
-                    ['まほうエネルギーが', 'たまってきたよ'],
-                    ['まほうエネルギーが', 'じわっと ふえてるよ'],
-                    ['なんだか ぽかぽか', 'してきたよ'],
-                ], context.variantSeed)
-                : context.depth === 1
-                    ? ['まほうエネルギーが', 'じわっと たまってるよ']
-                    : ['ふわふわ なんだか', 'わくわくしてきた'],
+            lines: pickVariant([
+                ['まほうエネルギーが', 'たまってきたよ'],
+                ['まほうエネルギーが', 'じわっと ふえてるよ'],
+                ['なんだか ぽかぽか', 'してきたよ'],
+                ['まほうエネルギーが', 'じわっと たまってるよ'],
+            ], context.variantSeed),
         });
     }
 
@@ -925,15 +874,12 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
         id: 'user:small_progress',
         category: 'progress',
         accent: 'primary',
-        lines: context.depth === 0
-            ? pickVariant([
-                ['まほうエネルギーが', 'すこし たまってきたよ'],
-                ['まほうエネルギーも', 'ちゃんと とどいてるよ'],
-                ['なんだか ぽかぽか', 'してきたよ'],
-            ], context.variantSeed)
-            : context.depth === 1
-                ? ['まほうエネルギーも', 'ちゃんと とどいてるよ']
-                : ['あせらなくても', 'ふわふわ うれしいな'],
+        lines: pickVariant([
+            ['まほうエネルギーが', 'すこし たまってきたよ'],
+            ['まほうエネルギーも', 'ちゃんと とどいてるよ'],
+            ['なんだか ぽかぽか', 'してきたよ'],
+            ['あせらなくても', 'ふわふわ うれしいな'],
+        ], context.variantSeed),
     });
 }
 
@@ -945,7 +891,6 @@ function buildUserRelationshipSpeech(context: UserSpeechContext): FuwafuwaSpeech
         lines: buildUserRelationshipLines(
             context.stage,
             context.visitRecency,
-            context.depth,
             context.variantSeed,
         ),
     });
@@ -1006,7 +951,7 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
     }
 
     if (topic === 'ambient') {
-        return buildAmbientSpeech(context.ambientCue!, 0, 'info');
+        return buildAmbientSpeech(context.ambientCue!, dailyContext.variantSeed, 'info');
     }
 
     if (topic === 'greeting') {
@@ -1025,15 +970,12 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
         id: 'user:mechanic_hint',
         category: 'mechanic_hint',
         accent: 'primary',
-        lines: dailyContext.depth === 0
-            ? pickVariant([
-                ['まほうエネルギーは', 'ここに たまるんだよ'],
-                ['ここに まほうエネルギーが', 'たまっていくんだよ'],
-                ['まほうエネルギー ここで', 'ふえていくんだよ'],
-            ], dailyContext.variantSeed)
-            : dailyContext.depth === 1
-                ? ['まほうエネルギーが', 'たまると うれしいな']
-                : ['すこしずつ', 'とどくと うれしいな'],
+        lines: pickVariant([
+            ['まほうエネルギーは', 'ここに たまるんだよ'],
+            ['ここに まほうエネルギーが', 'たまっていくんだよ'],
+            ['まほうエネルギー ここで', 'ふえていくんだよ'],
+            ['まほうエネルギーが', 'たまると うれしいな'],
+        ], dailyContext.variantSeed),
     });
 }
 

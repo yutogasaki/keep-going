@@ -27,6 +27,13 @@ describe('fuwafuwaSpeechReaction', () => {
 
     it('keeps progress, relationship, and mechanic speech distinct', () => {
         expect(getSpeechReactionStyle({
+            id: 'user:mood',
+            category: 'progress',
+            accent: 'primary',
+            lines: ['なんだか ぽかぽか', 'してきたよ'],
+        })).toBe('cozy');
+
+        expect(getSpeechReactionStyle({
             id: 'user:growing',
             category: 'progress',
             accent: 'primary',

@@ -259,7 +259,7 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
     });
 
-    it('moves idle solo speech into magic conversation when poked', () => {
+    it('moves idle solo speech into magic conversation when the daily seed advances', () => {
         expect(getUserSpeech(0, 600, 1, 0, null, null, null)).toEqual({
             id: 'user:relationship_waiting',
             category: 'relationship',
@@ -267,31 +267,31 @@ describe('fuwafuwaHomeCardCopy', () => {
             lines: ['きょうも まってたよ', 'あえて うれしいな'],
         });
 
-        expect(getUserSpeech(0, 600, 1, 0, null, null, null, 1)).toEqual({
+        expect(getUserSpeech(0, 600, 1, 0, null, null, null, 0, 0, 1)).toEqual({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['まほうエネルギーは', 'ここに たまるんだよ'],
+            lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
         });
     });
 
     it('rotates low-priority solo speech variants with a seed', () => {
         expect(getUserSpeech(0, 600, 1, 0, null, null, null, 0, 0, 1)).toEqual({
-            id: 'user:relationship_waiting',
-            category: 'relationship',
+            id: 'user:mechanic_hint',
+            category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['なんだか そわそわしてたんだ', 'また あえたね'],
+            lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
         });
 
         expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 1)).toEqual({
-            id: 'user:mood',
-            category: 'progress',
+            id: 'user:mechanic_hint',
+            category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['ふわふわ なんだか', 'ごきげんだよ'],
+            lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
         });
     });
 
-    it('moves progress speech to the next daily topic when poked', () => {
+    it('moves progress speech into magic and then progress as the daily seed advances', () => {
         expect(getUserSpeech(300, 600, 2, 4, null, null, null)).toEqual({
             id: 'user:mood',
             category: 'progress',
@@ -299,57 +299,50 @@ describe('fuwafuwaHomeCardCopy', () => {
             lines: ['なんだか ぽかぽか', 'してきたよ'],
         });
 
-        expect(getUserSpeech(300, 600, 2, 4, null, null, null, 1)).toEqual({
+        expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 1)).toEqual({
+            id: 'user:mechanic_hint',
+            category: 'mechanic_hint',
+            accent: 'primary',
+            lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
+        });
+
+        expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 2)).toEqual({
             id: 'user:growing',
             category: 'progress',
             accent: 'primary',
-            lines: ['まほうエネルギーが', 'たまってきたよ'],
+            lines: ['なんだか ぽかぽか', 'してきたよ'],
         });
     });
 
-    it('keeps solo idle speech on magic energy before ambient public discovery', () => {
+    it('keeps solo ambient discovery on magic before mood and ambient', () => {
         expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 1)).toEqual({
-            id: 'user:relationship_ready',
-            category: 'relationship',
-            accent: 'primary',
-            lines: ['きょうも きてくれたね', 'また あえて うれしいな'],
-        });
-
-        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 1, 0, 1)).toEqual({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
             lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
         });
 
-        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 2, 0, 1)).toEqual({
+        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 2)).toEqual({
             id: 'user:mood',
             category: 'progress',
             accent: 'primary',
-            lines: ['ふわふわ なんだか', 'ごきげんだよ'],
+            lines: ['きょうは なんだか', 'いいかんじ'],
         });
     });
 
-    it('keeps early users on greeting, then mechanic, before ambient discovery', () => {
+    it('keeps early users on mechanic before waiting mood discovery', () => {
         expect(getUserSpeech(0, 600, 1, 0, null, null, { kind: 'public_menu_new' }, 0, 0, 1)).toEqual({
-            id: 'user:relationship_waiting',
-            category: 'relationship',
-            accent: 'primary',
-            lines: ['なんだか そわそわしてたんだ', 'また あえたね'],
-        });
-
-        expect(getUserSpeech(0, 600, 1, 0, null, null, { kind: 'public_menu_new' }, 1, 0, 1)).toEqual({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
             lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
         });
 
-        expect(getUserSpeech(0, 600, 1, 0, null, null, { kind: 'public_menu_new' }, 2, 0, 1)).toEqual({
+        expect(getUserSpeech(0, 600, 1, 0, null, null, { kind: 'public_menu_new' }, 0, 0, 2)).toEqual({
             id: 'user:mood_waiting',
             category: 'progress',
             accent: 'primary',
-            lines: ['なんだか ちいさく', 'ぽかぽかしてるよ'],
+            lines: ['きみが きてくれて', 'うれしくなったみたい'],
         });
     });
 
@@ -378,51 +371,44 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
     });
 
-    it('moves together-mode progress speech to the next daily topic when the bubble is tapped', () => {
-        expect(getFamilySpeech(2, 300, 600, null, null, null, 1)).toEqual({
-            id: 'family:growing',
-            category: 'progress',
+    it('moves together-mode progress speech into magic when the daily seed advances', () => {
+        expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 1)).toEqual({
+            id: 'family:mechanic_hint',
+            category: 'mechanic_hint',
             accent: 'info',
-            lines: ['みんなの まほうエネルギーが', 'たまってきたよ'],
+            lines: ['ここでも まほうエネルギーが', 'ふえていくんだよ'],
         });
     });
 
     it('rotates low-priority together-mode speech variants with a seed', () => {
         expect(getFamilySpeech(2, 0, 600, null, null, null, 0, 1)).toEqual({
-            id: 'family:idle:2',
-            category: 'relationship',
-            accent: 'info',
-            lines: ['みんなが いると', 'ふわふわ うれしいな'],
-        });
-
-        expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 1)).toEqual({
-            id: 'family:mood:2',
-            category: 'progress',
-            accent: 'info',
-            lines: ['ふわふわ なんだか', 'ごきげんだよ'],
-        });
-    });
-
-    it('keeps together-mode idle speech on magic energy before ambient public discovery', () => {
-        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 1)).toEqual({
-            id: 'family:idle:2',
-            category: 'relationship',
-            accent: 'info',
-            lines: ['みんなが いると', 'ふわふわ うれしいな'],
-        });
-
-        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 1, 1)).toEqual({
-            id: 'family:small_progress',
-            category: 'progress',
-            accent: 'info',
-            lines: ['みんなの まほうエネルギー', 'すこしずつ とどいてるよ'],
-        });
-
-        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 2, 1)).toEqual({
             id: 'family:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'info',
             lines: ['ここでも まほうエネルギーが', 'ふえていくんだよ'],
+        });
+
+        expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 1)).toEqual({
+            id: 'family:mechanic_hint',
+            category: 'mechanic_hint',
+            accent: 'info',
+            lines: ['ここでも まほうエネルギーが', 'ふえていくんだよ'],
+        });
+    });
+
+    it('keeps together-mode idle speech on magic energy before mood and ambient discovery', () => {
+        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 1)).toEqual({
+            id: 'family:mechanic_hint',
+            category: 'mechanic_hint',
+            accent: 'info',
+            lines: ['ここでも まほうエネルギーが', 'ふえていくんだよ'],
+        });
+
+        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 2)).toEqual({
+            id: 'family:mood:2',
+            category: 'progress',
+            accent: 'info',
+            lines: ['みんなが いると', 'いいかんじだね'],
         });
     });
 
@@ -514,17 +500,17 @@ describe('fuwafuwaHomeCardCopy', () => {
 
     it('rotates low-priority solo speech over time without poking', () => {
         expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 0, 'first', null, false, 1)).toEqual({
-            id: 'user:growing',
-            category: 'progress',
+            id: 'user:mechanic_hint',
+            category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['まほうエネルギーが', 'じわっと ふえてるよ'],
+            lines: ['まほうエネルギー ここで', 'ふえていくんだよ'],
         });
 
         expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 0, 'first', null, false, 1)).toEqual({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
+            lines: ['まほうエネルギー ここで', 'ふえていくんだよ'],
         });
 
         expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 0, 'first', null, false, 3)).toEqual({
@@ -537,31 +523,31 @@ describe('fuwafuwaHomeCardCopy', () => {
 
     it('rotates low-priority family speech over time without poking', () => {
         expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 0, 'first', null, false, 1)).toEqual({
-            id: 'family:growing',
-            category: 'progress',
-            accent: 'info',
-            lines: ['まほうエネルギーが', 'みんなで ふえてるね'],
-        });
-
-        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 1)).toEqual({
-            id: 'family:small_progress',
-            category: 'progress',
-            accent: 'info',
-            lines: ['みんなの まほうエネルギー', 'すこしずつ とどいてるよ'],
-        });
-
-        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 2)).toEqual({
             id: 'family:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'info',
             lines: ['まほうエネルギーが', 'たまると うれしいな'],
         });
 
+        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 1)).toEqual({
+            id: 'family:mechanic_hint',
+            category: 'mechanic_hint',
+            accent: 'info',
+            lines: ['まほうエネルギーが', 'たまると うれしいな'],
+        });
+
+        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 2)).toEqual({
+            id: 'family:mood:2',
+            category: 'progress',
+            accent: 'info',
+            lines: ['ふわふわ なんだか', 'ごきげんだよ'],
+        });
+
         expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 4)).toEqual({
             id: 'ambient:public_menu_custom',
             category: 'event_notice',
             accent: 'info',
-            lines: ['みんなの メニューで', 'あたらしい種目も みつかるかも'],
+            lines: ['ふわふわも', 'みにいきたいな'],
         });
     });
 });

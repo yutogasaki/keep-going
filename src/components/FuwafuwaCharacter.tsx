@@ -22,6 +22,179 @@ interface Props {
     reactionStyle?: FuwafuwaReactionStyle;
 }
 
+type ReactionVariantMap = Record<FuwafuwaReactionStyle, AnimationDefinition[]>;
+
+function pickWeightedIndex(weights: readonly number[], lastIndex: number | null): number {
+    const adjusted = weights.map((weight, index) => {
+        if (lastIndex === null || index !== lastIndex || weights.length === 1) {
+            return weight;
+        }
+
+        return Math.max(1, Math.floor(weight / 2));
+    });
+
+    const total = adjusted.reduce((sum, weight) => sum + weight, 0);
+    let roll = Math.random() * total;
+
+    for (let index = 0; index < adjusted.length; index += 1) {
+        roll -= adjusted[index];
+        if (roll < 0) {
+            return index;
+        }
+    }
+
+    return adjusted.length - 1;
+}
+
+function pickParticleBatch(
+    palette: readonly string[],
+    count: number,
+    lastEmoji: string | null,
+): { emojis: string[]; lastEmoji: string | null } {
+    const emojis: string[] = [];
+    let previousEmoji = lastEmoji;
+
+    for (let index = 0; index < count; index += 1) {
+        const pool = palette.filter((emoji) => emoji !== previousEmoji);
+        const nextEmoji = (pool.length > 0 ? pool : palette)[Math.floor(Math.random() * (pool.length > 0 ? pool.length : palette.length))];
+        emojis.push(nextEmoji);
+        previousEmoji = nextEmoji;
+    }
+
+    return {
+        emojis,
+        lastEmoji: previousEmoji,
+    };
+}
+
+function getReactionVariants(baseScale: number): ReactionVariantMap {
+    return {
+        cozy: [
+            {
+                y: [0, -12, 0],
+                scale: [baseScale, baseScale * 1.05, baseScale],
+                transition: { duration: 0.48, ease: 'easeInOut' },
+            },
+            {
+                rotate: [0, -10, 10, -6, 0],
+                y: [0, -8, 0],
+                transition: { duration: 0.52, ease: 'easeInOut' },
+            },
+            {
+                x: [0, -8, 8, -6, 0],
+                y: [0, -10, 0],
+                scale: [baseScale, baseScale * 1.03, baseScale],
+                transition: { duration: 0.56, ease: 'easeInOut' },
+            },
+            {
+                y: [0, -16, 0],
+                rotate: [0, 360],
+                scale: [baseScale, baseScale * 1.04, baseScale],
+                transition: { duration: 0.72, ease: 'easeInOut' },
+            },
+        ],
+        growing: [
+            {
+                y: [0, -18, 0, -8, 0],
+                scale: [baseScale, baseScale * 1.08, baseScale, baseScale * 1.03, baseScale],
+                transition: { duration: 0.56, ease: 'easeInOut' },
+            },
+            {
+                rotate: [0, -12, 12, -6, 0],
+                y: [0, -12, 0],
+                scale: [baseScale, baseScale * 1.05, baseScale],
+                transition: { duration: 0.56, ease: 'easeInOut' },
+            },
+            {
+                x: [0, -10, 10, -6, 0],
+                y: [0, -14, 0],
+                transition: { duration: 0.58, ease: 'easeInOut' },
+            },
+            {
+                y: [0, -20, 0],
+                rotate: [0, 360],
+                scale: [baseScale, baseScale * 1.07, baseScale],
+                transition: { duration: 0.74, ease: 'easeInOut' },
+            },
+        ],
+        sharing: [
+            {
+                x: [0, -10, 10, -10, 10, 0],
+                y: [0, -6, 0],
+                transition: { duration: 0.42, ease: 'easeInOut' },
+            },
+            {
+                rotate: [0, -18, 18, -10, 10, 0],
+                y: [0, -12, 0],
+                scale: [baseScale, baseScale * 1.05, baseScale],
+                transition: { duration: 0.58, ease: 'easeInOut' },
+            },
+            {
+                y: [0, -14, 0],
+                x: [0, 8, -8, 0],
+                scale: [baseScale, baseScale * 1.04, baseScale],
+                transition: { duration: 0.6, ease: 'easeInOut' },
+            },
+            {
+                y: [0, -14, 0],
+                rotate: [0, 360],
+                scale: [baseScale, baseScale * 1.05, baseScale],
+                transition: { duration: 0.72, ease: 'easeInOut' },
+            },
+        ],
+        celebrating: [
+            {
+                y: [0, -30, 0, -15, 0],
+                scale: [baseScale, baseScale * 1.1, baseScale, baseScale * 1.05, baseScale],
+                rotate: [0, -8, 8, 0],
+                transition: { duration: 0.6, type: 'spring', bounce: 0.5 },
+            },
+            {
+                y: [0, -18, 0],
+                rotate: [0, 360],
+                scale: [baseScale, baseScale * 1.06, baseScale],
+                transition: { duration: 0.72, ease: 'easeInOut' },
+            },
+            {
+                rotate: [0, -12, 12, -10, 10, 0],
+                scale: [baseScale, baseScale * 1.1, baseScale * 0.96, baseScale],
+                transition: { duration: 0.68, ease: 'easeInOut' },
+            },
+            {
+                y: [0, -22, 0, -10, 0],
+                rotate: [0, 220, 360],
+                scale: [baseScale, baseScale * 1.12, baseScale, baseScale * 1.05, baseScale],
+                transition: { duration: 0.74, ease: 'easeInOut' },
+            },
+        ],
+        guiding: [
+            {
+                rotate: [0, -5, 5, -2, 0],
+                scale: [baseScale, baseScale * 1.03, baseScale],
+                transition: { duration: 0.5, ease: 'easeInOut' },
+            },
+            {
+                x: [0, -8, 8, -6, 0],
+                y: [0, -10, 0],
+                rotate: [0, 12, -12, 0],
+                transition: { duration: 0.54, ease: 'easeInOut' },
+            },
+            {
+                y: [0, -12, 0],
+                x: [0, 10, -10, 0],
+                scale: [baseScale, baseScale * 1.04, baseScale],
+                transition: { duration: 0.58, ease: 'easeInOut' },
+            },
+            {
+                y: [0, -12, 0],
+                rotate: [0, 360],
+                scale: [baseScale, baseScale * 1.04, baseScale],
+                transition: { duration: 0.68, ease: 'easeInOut' },
+            },
+        ],
+    };
+}
+
 export const FuwafuwaCharacter: React.FC<Props> = ({
     user,
     sessions,
@@ -44,6 +217,14 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
     const particleIdCounter = useRef(0);
     const rippleIdCounter = useRef(0);
     const particleTimers = useRef<number[]>([]);
+    const lastReactionVariantRef = useRef<Record<FuwafuwaReactionStyle, number | null>>({
+        cozy: null,
+        growing: null,
+        sharing: null,
+        celebrating: null,
+        guiding: null,
+    });
+    const lastParticleEmojiRef = useRef<string | null>(null);
 
     const debugOverrides = useAppStore(useShallow((state) => ({
         stage: state.debugFuwafuwaStage,
@@ -132,15 +313,15 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
 
         const reactionEmojis = getReactionEmojis(reactionStyle);
         const particleCount = reactionStyle === 'celebrating'
-            ? 6
-            : reactionStyle === 'growing'
-                ? 5
-                : 4;
-        const newParticles = Array.from({ length: particleCount }).map(() => ({
+            ? 7
+            : 5;
+        const particleBatch = pickParticleBatch(reactionEmojis, particleCount, lastParticleEmojiRef.current);
+        lastParticleEmojiRef.current = particleBatch.lastEmoji;
+        const newParticles = Array.from({ length: particleCount }).map((_, index) => ({
             id: particleIdCounter.current++,
             x: (Math.random() - 0.5) * 84,
             y: (Math.random() - 0.5) * 84,
-            emoji: reactionEmojis[Math.floor(Math.random() * reactionEmojis.length)],
+            emoji: particleBatch.emojis[index],
         }));
         const newIds = new Set(newParticles.map((particle) => particle.id));
         setParticles((previous) => [...previous, ...newParticles]);
@@ -171,148 +352,20 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
             void controls.start(animation).then(restartIdle);
         };
 
-        const reactionRoll = Math.random();
-
-        if (reactionStyle === 'celebrating') {
-            if (reactionRoll < 0.34) {
-                playReaction({
-                    y: [0, -30, 0, -15, 0],
-                    scale: [baseScale, baseScale * 1.1, baseScale, baseScale * 1.05, baseScale],
-                    rotate: [0, -8, 8, 0],
-                    transition: { duration: 0.6, type: 'spring', bounce: 0.5 },
-                });
-                return;
-            }
-
-            if (reactionRoll < 0.67) {
-                playReaction({
-                    y: [0, -18, 0],
-                    rotate: [0, 360],
-                    scale: [baseScale, baseScale * 1.06, baseScale],
-                    transition: { duration: 0.72, ease: 'easeInOut' },
-                });
-                return;
-            }
-
-            playReaction({
-                rotate: [0, -12, 12, -10, 10, 0],
-                scale: [baseScale, baseScale * 1.1, baseScale * 0.96, baseScale],
-                transition: { duration: 0.68, ease: 'easeInOut' },
-            });
-            return;
-        }
-
-        if (reactionStyle === 'sharing') {
-            if (reactionRoll < 0.4) {
-                playReaction({
-                    x: [0, -10, 10, -10, 10, 0],
-                    y: [0, -6, 0],
-                    transition: { duration: 0.4 },
-                });
-                return;
-            }
-
-            if (reactionRoll < 0.8) {
-                playReaction({
-                    rotate: [0, -18, 18, -10, 10, 0],
-                    y: [0, -12, 0],
-                    scale: [baseScale, baseScale * 1.05, baseScale],
-                    transition: { duration: 0.58, ease: 'easeInOut' },
-                });
-                return;
-            }
-
-            playReaction({
-                y: [0, -12, 0],
-                rotate: [0, 360],
-                scale: [baseScale, baseScale * 1.05, baseScale],
-                transition: { duration: 0.7, ease: 'easeInOut' },
-            });
-            return;
-        }
-
-        if (reactionStyle === 'growing') {
-            if (reactionRoll < 0.4) {
-                playReaction({
-                    y: [0, -18, 0, -8, 0],
-                    scale: [baseScale, baseScale * 1.08, baseScale, baseScale * 1.03, baseScale],
-                    transition: { duration: 0.55, ease: 'easeInOut' },
-                });
-                return;
-            }
-
-            if (reactionRoll < 0.8) {
-                playReaction({
-                    rotate: [0, -10, 10, -6, 0],
-                    y: [0, -12, 0],
-                    scale: [baseScale, baseScale * 1.06, baseScale],
-                    transition: { duration: 0.56, ease: 'easeInOut' },
-                });
-                return;
-            }
-
-            playReaction({
-                y: [0, -20, 0],
-                rotate: [0, 360],
-                scale: [baseScale, baseScale * 1.07, baseScale],
-                transition: { duration: 0.72, ease: 'easeInOut' },
-            });
-            return;
-        }
-
-        if (reactionStyle === 'guiding') {
-            if (reactionRoll < 0.4) {
-                playReaction({
-                    rotate: [0, -5, 5, -2, 0],
-                    scale: [baseScale, baseScale * 1.03, baseScale],
-                    transition: { duration: 0.5, ease: 'easeInOut' },
-                });
-                return;
-            }
-
-            if (reactionRoll < 0.8) {
-                playReaction({
-                    x: [0, -8, 8, -6, 0],
-                    y: [0, -10, 0],
-                    rotate: [0, 12, -12, 0],
-                    transition: { duration: 0.52, ease: 'easeInOut' },
-                });
-                return;
-            }
-
-            playReaction({
-                y: [0, -12, 0],
-                rotate: [0, 360],
-                scale: [baseScale, baseScale * 1.04, baseScale],
-                transition: { duration: 0.68, ease: 'easeInOut' },
-            });
-            return;
-        }
-
-        if (reactionRoll < 0.4) {
-            playReaction({
-                y: [0, -12, 0],
-                scale: [baseScale, baseScale * 1.05, baseScale],
-                transition: { duration: 0.5 },
-            });
-            return;
-        }
-
-        if (reactionRoll < 0.8) {
-            playReaction({
-                rotate: [0, -10, 10, -6, 0],
-                y: [0, -8, 0],
-                transition: { duration: 0.55, ease: 'easeInOut' },
-            });
-            return;
-        }
-
-        playReaction({
-            y: [0, -14, 0],
-            rotate: [0, -14, 14, -8, 0],
-            scale: [baseScale, baseScale * 1.03, baseScale],
-            transition: { duration: 0.62, ease: 'easeInOut' },
-        });
+        const reactionVariants = getReactionVariants(baseScale);
+        const reactionWeights: Record<FuwafuwaReactionStyle, readonly number[]> = {
+            cozy: [35, 30, 20, 15],
+            growing: [35, 30, 20, 15],
+            sharing: [35, 30, 20, 15],
+            celebrating: [30, 25, 25, 20],
+            guiding: [35, 30, 20, 15],
+        };
+        const nextVariantIndex = pickWeightedIndex(
+            reactionWeights[reactionStyle],
+            lastReactionVariantRef.current[reactionStyle],
+        );
+        lastReactionVariantRef.current[reactionStyle] = nextVariantIndex;
+        playReaction(reactionVariants[reactionStyle][nextVariantIndex]);
     };
 
     const handleEditName = () => {

@@ -20,6 +20,18 @@ export function getSpeechReactionStyle(speech: FuwafuwaSpeech): FuwafuwaReaction
         return 'celebrating';
     }
 
+    if (speech.id.includes(':mood')) {
+        return 'cozy';
+    }
+
+    if (speech.id.includes(':omen')) {
+        return 'sharing';
+    }
+
+    if (speech.id.startsWith('ambient:')) {
+        return 'sharing';
+    }
+
     if (speech.category === 'event_notice') {
         return speech.accent === 'primary' ? 'sharing' : 'guiding';
     }
