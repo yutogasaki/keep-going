@@ -268,7 +268,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:growing',
             category: 'progress',
             accent: 'primary',
-            lines: ['いいかんじ！', 'まほうエネルギー ふえてきたよ'],
+            lines: ['いいかんじ！', 'ふわふわ ごきげんだよ'],
         });
     });
 
@@ -293,7 +293,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:relationship_ready',
             category: 'relationship',
             accent: 'primary',
-            lines: ['きょうも きてくれたね', 'まほうエネルギー たまるかな？'],
+            lines: ['きょうも きてくれたね', 'また あえて うれしいな'],
         });
 
         expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 1, 0, 1)).toEqual({
@@ -359,14 +359,14 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:idle:2',
             category: 'relationship',
             accent: 'info',
-            lines: ['みんなの まほうエネルギー', 'ふわふわ うれしいな'],
+            lines: ['みんなが いると', 'ふわふわ うれしいな'],
         });
 
         expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 1)).toEqual({
             id: 'family:growing',
             category: 'progress',
             accent: 'info',
-            lines: ['いいかんじ！', 'まほうエネルギー ふえてきたよ'],
+            lines: ['いいかんじ！', 'ふわふわ ごきげんだよ'],
         });
     });
 
@@ -375,7 +375,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:idle:2',
             category: 'relationship',
             accent: 'info',
-            lines: ['みんなの まほうエネルギー', 'ふわふわ うれしいな'],
+            lines: ['みんなが いると', 'ふわふわ うれしいな'],
         });
 
         expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 1, 1)).toEqual({
@@ -448,7 +448,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:idle:2',
             category: 'relationship',
             accent: 'info',
-            lines: ['ふたりで いると', 'まほうエネルギー たまるかな？'],
+            lines: ['ふたりで いると', 'なんだか たのしいね'],
         });
     });
 
@@ -457,7 +457,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:relationship_ready',
             category: 'relationship',
             accent: 'primary',
-            lines: ['あえて うれしいな', 'まほうエネルギー ほしいな'],
+            lines: ['あえて うれしいな', 'ふわふわ ごきげんだよ'],
         });
     });
 
@@ -476,6 +476,38 @@ describe('fuwafuwaHomeCardCopy', () => {
             category: 'relationship',
             accent: 'info',
             lines: ['また すぐ あえたね', 'ふわふわ うれしいな'],
+        });
+    });
+
+    it('rotates low-priority solo speech over time without poking', () => {
+        expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 0, 'first', null, false, 1)).toEqual({
+            id: 'user:relationship_ready',
+            category: 'relationship',
+            accent: 'primary',
+            lines: ['あえて うれしいな', 'ふわふわ ごきげんだよ'],
+        });
+
+        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 0, 'first', null, false, 2)).toEqual({
+            id: 'ambient:public_menu_new',
+            category: 'event_notice',
+            accent: 'info',
+            lines: ['みんなの メニューに', 'あたらしいのが あるみたい'],
+        });
+    });
+
+    it('rotates low-priority family speech over time without poking', () => {
+        expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 0, 'first', null, false, 1)).toEqual({
+            id: 'family:idle:2',
+            category: 'relationship',
+            accent: 'info',
+            lines: ['ふたりで いると', 'なんだか たのしいね'],
+        });
+
+        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 2)).toEqual({
+            id: 'ambient:public_menu_custom',
+            category: 'event_notice',
+            accent: 'info',
+            lines: ['みんなの メニューで', 'あたらしい種目も みつかるかも'],
         });
     });
 });

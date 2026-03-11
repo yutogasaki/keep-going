@@ -114,6 +114,7 @@ interface FamilySpeechContext {
     visitRecency: HomeVisitRecency;
     depth: number;
     variantSeed: number;
+    idleBeat: number;
 }
 
 interface UserSpeechContext {
@@ -130,10 +131,15 @@ interface UserSpeechContext {
     visitRecency: HomeVisitRecency;
     depth: number;
     variantSeed: number;
+    idleBeat: number;
 }
 
 function pickVariant<T>(variants: readonly T[], seed: number): T {
     return variants[Math.abs(seed) % variants.length];
+}
+
+function pickIdleCycle<T>(items: readonly T[], beat: number): T {
+    return items[Math.abs(beat) % items.length];
 }
 
 function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
@@ -158,18 +164,28 @@ function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
     }
 
     if (context.displaySeconds === 0) {
-        if (context.ambientCue && context.depth >= 2) {
-            return 'ambient';
+        if (context.depth > 0) {
+            if (context.ambientCue && context.depth >= 2) {
+                return 'ambient';
+            }
+
+            return 'progress';
         }
 
-        if (context.depth === 0) {
-            return 'relationship';
-        }
-
-        return 'progress';
+        return pickIdleCycle(
+            context.ambientCue
+                ? ['relationship', 'progress', 'ambient', 'relationship']
+                : ['relationship', 'progress', 'relationship'],
+            context.idleBeat,
+        );
     }
 
-    return 'progress';
+    return pickIdleCycle(
+        context.ambientCue
+            ? ['progress', 'relationship', 'ambient', 'progress']
+            : ['progress', 'relationship', 'progress'],
+        context.idleBeat,
+    );
 }
 
 function buildAfterglowAnnouncementSpeech(
@@ -358,7 +374,7 @@ function buildFamilyRelationshipLines(
 
     if (visitRecency === 'today') {
         return pickVariant([
-            ['また みんなで きてくれたね', 'まほうエネルギー たまるかな？'],
+            ['また みんなで きてくれたね', 'ふわふわ うれしいな'],
             ['また あいに きてくれて', 'ふわふわ うれしいな'],
         ], variantSeed);
     }
@@ -371,8 +387,8 @@ function buildFamilyRelationshipLines(
     }
 
     return pickVariant([
-        [`${peopleLabel} いると`, 'まほうエネルギー たまるかな？'],
-        ['みんなの まほうエネルギー', 'ふわふわ うれしいな'],
+        [`${peopleLabel} いると`, 'なんだか たのしいね'],
+        ['みんなが いると', 'ふわふわ うれしいな'],
     ], variantSeed);
 }
 
@@ -403,7 +419,7 @@ function buildUserRelationshipLines(
 
     if (visitRecency === 'today') {
         return pickVariant([
-            ['また きてくれたね', 'まほうエネルギー たまるかな？'],
+            ['また きてくれたね', 'ふわふわ うれしいな'],
             ['また あいに きてくれて', 'ふわふわ うれしいな'],
         ], variantSeed);
     }
@@ -417,14 +433,14 @@ function buildUserRelationshipLines(
 
     if (stage === 1) {
         return pickVariant([
-            ['きょうも まってたよ', 'まほうエネルギー もらえるかな？'],
-            ['あえて うれしいな', 'まほうエネルギー ほしいな'],
+            ['きょうも まってたよ', 'あえて うれしいな'],
+            ['なんだか そわそわしてたんだ', 'また あえたね'],
         ], variantSeed);
     }
 
     return pickVariant([
-        ['あえて うれしいな', 'まほうエネルギー ほしいな'],
-        ['きょうも きてくれたね', 'まほうエネルギー たまるかな？'],
+        ['あえて うれしいな', 'ふわふわ ごきげんだよ'],
+        ['きょうも きてくれたね', 'また あえて うれしいな'],
     ], variantSeed);
 }
 
@@ -545,7 +561,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             lines: context.depth === 0
                 ? pickVariant([
                     ['みんなの まほうエネルギーが', 'たまってきたよ'],
-                    ['いいかんじ！', 'まほうエネルギー ふえてきたよ'],
+                    ['いいかんじ！', 'ふわふわ ごきげんだよ'],
                 ], context.variantSeed)
                 : context.depth === 1
                     ? ['ここに すこしずつ', 'まほうエネルギー たまってるよ']
@@ -560,7 +576,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
         lines: context.depth === 0
             ? pickVariant([
                 ['まほうエネルギーが', 'みんなで ふえてるね'],
-                ['すこしずつ', 'まほうエネルギー ふえてるよ'],
+                ['なんだか ぽかぽか', 'してきたね'],
             ], context.variantSeed)
             : context.depth === 1
                 ? ['ここにも まほうエネルギーが', 'ちゃんと たまってるよ']
@@ -580,6 +596,7 @@ export function getFamilySpeech(
     visitRecency: HomeVisitRecency = 'first',
     recentAfterglow: HomeAfterglow | null = null,
     isMagicDeliveryActive = false,
+    idleBeat = 0,
 ): FuwafuwaSpeech {
     const context: FamilySpeechContext = {
         activeCount,
@@ -593,6 +610,7 @@ export function getFamilySpeech(
         visitRecency,
         depth: Math.max(0, Math.min(2, pokeDepth)),
         variantSeed,
+        idleBeat,
     };
 
     return buildFamilySpeech(pickFamilyTopic(context), context);
@@ -643,18 +661,40 @@ function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
     }
 
     if (context.displaySeconds > 0) {
-        return 'progress';
+        if (context.depth > 0) {
+            return 'progress';
+        }
+
+        if (shouldShowMechanicHint(context.activeDays)) {
+            return pickIdleCycle(['progress', 'relationship', 'mechanic'], context.idleBeat);
+        }
+
+        return pickIdleCycle(
+            context.ambientCue
+                ? ['progress', 'relationship', 'ambient', 'progress']
+                : ['progress', 'relationship', 'progress'],
+            context.idleBeat,
+        );
     }
 
-    if (context.ambientCue && !shouldShowMechanicHint(context.activeDays) && context.depth >= 2) {
-        return 'ambient';
+    if (context.depth > 0) {
+        if (context.ambientCue && !shouldShowMechanicHint(context.activeDays) && context.depth >= 2) {
+            return 'ambient';
+        }
+
+        return shouldShowMechanicHint(context.activeDays) ? 'mechanic' : 'progress';
     }
 
     if (!shouldShowMechanicHint(context.activeDays)) {
-        return context.depth === 0 ? 'relationship' : 'progress';
+        return pickIdleCycle(
+            context.ambientCue
+                ? ['relationship', 'progress', 'ambient', 'relationship']
+                : ['relationship', 'progress', 'relationship'],
+            context.idleBeat,
+        );
     }
 
-    return 'mechanic';
+    return pickIdleCycle(['mechanic', 'relationship', 'mechanic'], context.idleBeat);
 }
 
 function buildUserAfterglowSpeech(afterglow: HomeAfterglow, depth: number): FuwafuwaSpeech {
@@ -765,7 +805,7 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
             lines: context.depth === 0
                 ? pickVariant([
                     ['まほうエネルギーが', 'たまってきたよ'],
-                    ['いいかんじ！', 'まほうエネルギー ふえてきたよ'],
+                    ['いいかんじ！', 'ふわふわ ごきげんだよ'],
                 ], context.variantSeed)
                 : context.depth === 1
                     ? ['ここに すこしずつ', 'まほうエネルギー たまってるよ']
@@ -780,7 +820,7 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
         lines: context.depth === 0
             ? pickVariant([
                 ['まほうエネルギーが', 'すこし たまってきたよ'],
-                ['すこしずつ', 'まほうエネルギーが ふえてるよ'],
+                ['なんだか ぽかぽか', 'してきたよ'],
             ], context.variantSeed)
             : context.depth === 1
                 ? ['ここに ちょっとずつ', 'まほうエネルギーが たまるんだよ']
@@ -891,6 +931,7 @@ export function getUserSpeech(
     visitRecency: HomeVisitRecency = 'first',
     recentAfterglow: HomeAfterglow | null = null,
     isMagicDeliveryActive = false,
+    idleBeat = 0,
 ): FuwafuwaSpeech {
     const context: UserSpeechContext = {
         percent: Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100),
@@ -906,6 +947,7 @@ export function getUserSpeech(
         visitRecency,
         depth: Math.max(0, Math.min(2, pokeDepth)),
         variantSeed,
+        idleBeat,
     };
 
     return buildUserSpeech(pickUserTopic(context), context);

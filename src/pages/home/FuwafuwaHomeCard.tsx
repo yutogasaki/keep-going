@@ -61,8 +61,10 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     onAnnouncementAction,
 }) => {
     const [pokeDepth, setPokeDepth] = useState(0);
+    const [idleBeat, setIdleBeat] = useState(0);
     const [speechVariantSeed, setSpeechVariantSeed] = useState(0);
     const pokeResetTimerRef = useRef<number | null>(null);
+    const idleBeatTimerRef = useRef<number | null>(null);
     const perUserMagicMap = useMemo(
         () => new Map(perUserMagic.map((userMagic) => [userMagic.userId, userMagic])),
         [perUserMagic],
@@ -137,8 +139,9 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
             familyVisitRecency,
             familyAfterglow,
             isMagicDeliveryActive,
+            idleBeat,
         ),
-        [activeUsers.length, ambientCue, announcement, displaySeconds, familyAfterglow, familyMilestoneLead, familyVisitRecency, isMagicDeliveryActive, speechVariantSeed, targetSeconds],
+        [activeUsers.length, ambientCue, announcement, displaySeconds, familyAfterglow, familyMilestoneLead, familyVisitRecency, idleBeat, isMagicDeliveryActive, speechVariantSeed, targetSeconds],
     );
     const familySpeech = useMemo(
         () => getFamilySpeech(
@@ -153,8 +156,9 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
             familyVisitRecency,
             familyAfterglow,
             isMagicDeliveryActive,
+            idleBeat,
         ),
-        [activeUsers.length, ambientCue, announcement, displaySeconds, familyAfterglow, familyMilestoneLead, familyVisitRecency, isMagicDeliveryActive, pokeDepth, speechVariantSeed, targetSeconds],
+        [activeUsers.length, ambientCue, announcement, displaySeconds, familyAfterglow, familyMilestoneLead, familyVisitRecency, idleBeat, isMagicDeliveryActive, pokeDepth, speechVariantSeed, targetSeconds],
     );
     const selectedUserBaseSpeech = useMemo(
         () => selectedUserStatus
@@ -172,6 +176,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 selectedUserVisitRecency,
                 selectedUserAfterglow,
                 isMagicDeliveryActive,
+                idleBeat,
             )
             : {
                 id: 'user:none',
@@ -179,7 +184,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 accent: 'primary' as const,
                 lines: [],
             },
-        [ambientCue, announcement, isMagicDeliveryActive, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
+        [ambientCue, announcement, idleBeat, isMagicDeliveryActive, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
     );
     const selectedUserSpeech = useMemo(
         () => selectedUserStatus
@@ -197,6 +202,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 selectedUserVisitRecency,
                 selectedUserAfterglow,
                 isMagicDeliveryActive,
+                idleBeat,
             )
             : {
                 id: 'user:none',
@@ -204,7 +210,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 accent: 'primary' as const,
                 lines: [],
             },
-        [ambientCue, announcement, isMagicDeliveryActive, pokeDepth, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
+        [ambientCue, announcement, idleBeat, isMagicDeliveryActive, pokeDepth, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
     );
 
     useEffect(() => {
@@ -214,6 +220,20 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     useEffect(() => {
         setPokeDepth(0);
     }, [familyBaseSpeech.id, isTogetherMode, selectedUser?.id, selectedUserBaseSpeech.id]);
+
+    useEffect(() => {
+        setIdleBeat(0);
+    }, [
+        activeUsers.length,
+        announcement?.id,
+        familyAfterglow?.kind,
+        familyMilestoneLead?.kind,
+        isMagicDeliveryActive,
+        isTogetherMode,
+        recentMilestoneEvent?.kind,
+        selectedUser?.id,
+        selectedUserAfterglow?.kind,
+    ]);
 
     useEffect(() => {
         if (pokeResetTimerRef.current !== null) {
@@ -237,6 +257,43 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
             }
         };
     }, [isTogetherMode, pokeDepth, selectedUser]);
+
+    const idleSpeechForCycle = isTogetherMode ? familyBaseSpeech : selectedUserBaseSpeech;
+
+    useEffect(() => {
+        if (idleBeatTimerRef.current !== null) {
+            window.clearTimeout(idleBeatTimerRef.current);
+            idleBeatTimerRef.current = null;
+        }
+
+        const isAutoRotatingSpeech = pokeDepth === 0
+            && !idleSpeechForCycle.actionLabel
+            && (
+                idleSpeechForCycle.id.startsWith('ambient:')
+                || idleSpeechForCycle.category === 'relationship'
+                || idleSpeechForCycle.category === 'progress'
+                || idleSpeechForCycle.category === 'mechanic_hint'
+            )
+            && !idleSpeechForCycle.id.includes(':afterglow:')
+            && !idleSpeechForCycle.id.includes(':milestone:');
+
+        if (!isAutoRotatingSpeech) {
+            return undefined;
+        }
+
+        idleBeatTimerRef.current = window.setTimeout(() => {
+            setIdleBeat((currentBeat) => currentBeat + 1);
+            setSpeechVariantSeed((currentSeed) => currentSeed + 1);
+            idleBeatTimerRef.current = null;
+        }, 8000);
+
+        return () => {
+            if (idleBeatTimerRef.current !== null) {
+                window.clearTimeout(idleBeatTimerRef.current);
+                idleBeatTimerRef.current = null;
+            }
+        };
+    }, [idleSpeechForCycle.actionLabel, idleSpeechForCycle.category, idleSpeechForCycle.id, pokeDepth, isTogetherMode]);
 
     const shouldShowFamilySpeech = useMemo(
         () => shouldShowFuwafuwaSpeech({
