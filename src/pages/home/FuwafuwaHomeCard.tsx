@@ -213,6 +213,11 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         [ambientCue, announcement, idleBeat, isMagicDeliveryActive, pokeDepth, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
     );
 
+    const advanceConversation = () => {
+        setPokeDepth((currentDepth) => Math.min(2, currentDepth + 1));
+        setSpeechVariantSeed((currentSeed) => currentSeed + 1);
+    };
+
     useEffect(() => {
         setSpeechVariantSeed((currentSeed) => currentSeed + 1);
     }, [isTogetherMode, selectedUser?.id]);
@@ -337,7 +342,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                     familySpeech={familySpeech}
                     isMagicDeliveryActive={isMagicDeliveryActive}
                     showSpeechBubble={shouldShowFamilySpeech}
-                    onFamilySpeechTap={() => setPokeDepth((currentDepth) => Math.min(2, currentDepth + 1))}
+                    onFamilySpeechTap={advanceConversation}
                     milestoneEventsByUserId={milestoneEventsByUserId}
                     onSelectUser={onSelectUser}
                     onTankReset={onTankReset}
@@ -351,7 +356,8 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                     allSessions={allSessions}
                     displaySeconds={displaySeconds}
                     isMagicDeliveryActive={isMagicDeliveryActive}
-                    onCharacterTap={() => setPokeDepth((currentDepth) => Math.min(2, currentDepth + 1))}
+                    onCharacterTap={advanceConversation}
+                    onSpeechTap={advanceConversation}
                     onTankReset={onTankReset}
                     onSpeechAction={selectedUserSpeech.actionLabel ? onAnnouncementAction : undefined}
                     selectedUser={selectedUser}

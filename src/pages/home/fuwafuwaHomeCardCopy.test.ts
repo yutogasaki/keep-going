@@ -259,7 +259,7 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
     });
 
-    it('keeps mechanic hints low-pressure while poke depth advances', () => {
+    it('moves idle solo speech into magic conversation when poked', () => {
         expect(getUserSpeech(0, 600, 1, 0, null, null, null)).toEqual({
             id: 'user:relationship_waiting',
             category: 'relationship',
@@ -271,7 +271,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['まほうエネルギーが', 'たまると うれしいな'],
+            lines: ['まほうエネルギーは', 'ここに たまるんだよ'],
         });
     });
 
@@ -291,7 +291,7 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
     });
 
-    it('uses progress depth to explain how magic energy builds up', () => {
+    it('moves progress speech to the next daily topic when poked', () => {
         expect(getUserSpeech(300, 600, 2, 4, null, null, null)).toEqual({
             id: 'user:mood',
             category: 'progress',
@@ -303,7 +303,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:growing',
             category: 'progress',
             accent: 'primary',
-            lines: ['まほうエネルギーが', 'じわっと たまってるよ'],
+            lines: ['まほうエネルギーが', 'たまってきたよ'],
         });
     });
 
@@ -319,14 +319,14 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['まほうエネルギーが', 'たまると うれしいな'],
+            lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
         });
 
         expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 2, 0, 1)).toEqual({
-            id: 'ambient:public_menu_new',
-            category: 'event_notice',
-            accent: 'info',
-            lines: ['みんなの メニューに', 'あたらしいのが あるみたい'],
+            id: 'user:mood',
+            category: 'progress',
+            accent: 'primary',
+            lines: ['ふわふわ なんだか', 'ごきげんだよ'],
         });
     });
 
@@ -342,14 +342,14 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['まほうエネルギーが', 'たまると うれしいな'],
+            lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
         });
 
         expect(getUserSpeech(0, 600, 1, 0, null, null, { kind: 'public_menu_new' }, 2, 0, 1)).toEqual({
-            id: 'ambient:public_menu_new',
-            category: 'event_notice',
-            accent: 'info',
-            lines: ['みんなの メニューに', 'あたらしいのが あるみたい'],
+            id: 'user:mood_waiting',
+            category: 'progress',
+            accent: 'primary',
+            lines: ['なんだか ちいさく', 'ぽかぽかしてるよ'],
         });
     });
 
@@ -378,12 +378,12 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
     });
 
-    it('deepens together-mode progress speech when the bubble is tapped', () => {
+    it('moves together-mode progress speech to the next daily topic when the bubble is tapped', () => {
         expect(getFamilySpeech(2, 300, 600, null, null, null, 1)).toEqual({
             id: 'family:growing',
             category: 'progress',
             accent: 'info',
-            lines: ['まほうエネルギーが', 'じわっと たまってるね'],
+            lines: ['みんなの まほうエネルギーが', 'たまってきたよ'],
         });
     });
 
@@ -415,14 +415,14 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:small_progress',
             category: 'progress',
             accent: 'info',
-            lines: ['まほうエネルギーも', 'ちゃんと とどいてるよ'],
+            lines: ['みんなの まほうエネルギー', 'すこしずつ とどいてるよ'],
         });
 
         expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 2, 1)).toEqual({
-            id: 'ambient:public_menu_custom',
-            category: 'event_notice',
+            id: 'family:mechanic_hint',
+            category: 'mechanic_hint',
             accent: 'info',
-            lines: ['みんなの メニューで', 'あたらしい種目も みつかるかも'],
+            lines: ['ここでも まほうエネルギーが', 'ふえていくんだよ'],
         });
     });
 
@@ -517,14 +517,14 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:growing',
             category: 'progress',
             accent: 'primary',
-            lines: ['まほうエネルギーが', 'たまってきたよ'],
+            lines: ['まほうエネルギーが', 'じわっと ふえてるよ'],
         });
 
         expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 0, 'first', null, false, 1)).toEqual({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['まほうエネルギーは', 'ここに たまるんだよ'],
+            lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
         });
 
         expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 0, 'first', null, false, 3)).toEqual({
@@ -540,17 +540,24 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:growing',
             category: 'progress',
             accent: 'info',
-            lines: ['みんなの まほうエネルギーが', 'たまってきたよ'],
+            lines: ['まほうエネルギーが', 'みんなで ふえてるね'],
         });
 
         expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 1)).toEqual({
             id: 'family:small_progress',
             category: 'progress',
             accent: 'info',
-            lines: ['まほうエネルギーが', 'みんなで ふえてるね'],
+            lines: ['みんなの まほうエネルギー', 'すこしずつ とどいてるよ'],
         });
 
-        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 3)).toEqual({
+        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 2)).toEqual({
+            id: 'family:mechanic_hint',
+            category: 'mechanic_hint',
+            accent: 'info',
+            lines: ['まほうエネルギーが', 'たまると うれしいな'],
+        });
+
+        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 4)).toEqual({
             id: 'ambient:public_menu_custom',
             category: 'event_notice',
             accent: 'info',

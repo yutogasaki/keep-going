@@ -13,6 +13,7 @@ interface FuwafuwaSoloViewProps {
     displaySeconds: number;
     isMagicDeliveryActive: boolean;
     onCharacterTap?: () => void;
+    onSpeechTap?: () => void;
     onTankReset: () => void;
     onSpeechAction?: () => void;
     selectedUser: UserProfileStore;
@@ -26,6 +27,7 @@ export function FuwafuwaSoloView({
     displaySeconds,
     isMagicDeliveryActive,
     onCharacterTap,
+    onSpeechTap,
     onTankReset,
     onSpeechAction,
     selectedUser,
@@ -54,6 +56,7 @@ export function FuwafuwaSoloView({
                     reactionStyle={reactionStyle}
                     actionLabel={selectedUserSpeech.actionLabel}
                     onAction={onSpeechAction}
+                    onTap={onSpeechTap}
                 />
             ) : (
                 <FuwafuwaSilentCue onTap={onCharacterTap} />

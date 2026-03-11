@@ -203,7 +203,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
         }
 
         if (reactionStyle === 'sharing') {
-            if (reactionRoll < 0.34) {
+            if (reactionRoll < 0.4) {
                 playReaction({
                     x: [0, -10, 10, -10, 10, 0],
                     y: [0, -6, 0],
@@ -212,7 +212,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
                 return;
             }
 
-            if (reactionRoll < 0.67) {
+            if (reactionRoll < 0.8) {
                 playReaction({
                     rotate: [0, -18, 18, -10, 10, 0],
                     y: [0, -12, 0],
@@ -223,16 +223,16 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
             }
 
             playReaction({
-                rotate: [0, -10, 10, -8, 8, 0],
-                y: [0, -10, 0],
+                y: [0, -12, 0],
+                rotate: [0, 360],
                 scale: [baseScale, baseScale * 1.05, baseScale],
-                transition: { duration: 0.62, ease: 'easeInOut' },
+                transition: { duration: 0.7, ease: 'easeInOut' },
             });
             return;
         }
 
         if (reactionStyle === 'growing') {
-            if (reactionRoll < 0.34) {
+            if (reactionRoll < 0.4) {
                 playReaction({
                     y: [0, -18, 0, -8, 0],
                     scale: [baseScale, baseScale * 1.08, baseScale, baseScale * 1.03, baseScale],
@@ -241,7 +241,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
                 return;
             }
 
-            if (reactionRoll < 0.67) {
+            if (reactionRoll < 0.8) {
                 playReaction({
                     rotate: [0, -10, 10, -6, 0],
                     y: [0, -12, 0],
@@ -253,15 +253,15 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
 
             playReaction({
                 y: [0, -20, 0],
-                rotate: [0, -12, 12, -8, 8, 0],
+                rotate: [0, 360],
                 scale: [baseScale, baseScale * 1.07, baseScale],
-                transition: { duration: 0.66, ease: 'easeInOut' },
+                transition: { duration: 0.72, ease: 'easeInOut' },
             });
             return;
         }
 
         if (reactionStyle === 'guiding') {
-            if (reactionRoll < 0.34) {
+            if (reactionRoll < 0.4) {
                 playReaction({
                     rotate: [0, -5, 5, -2, 0],
                     scale: [baseScale, baseScale * 1.03, baseScale],
@@ -270,7 +270,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
                 return;
             }
 
-            if (reactionRoll < 0.67) {
+            if (reactionRoll < 0.8) {
                 playReaction({
                     x: [0, -8, 8, -6, 0],
                     y: [0, -10, 0],
@@ -281,16 +281,15 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
             }
 
             playReaction({
-                x: [0, -8, 8, -6, 0],
-                y: [0, -10, 0],
-                rotate: [0, 14, -14, 8, 0],
+                y: [0, -12, 0],
+                rotate: [0, 360],
                 scale: [baseScale, baseScale * 1.04, baseScale],
-                transition: { duration: 0.58, ease: 'easeInOut' },
+                transition: { duration: 0.68, ease: 'easeInOut' },
             });
             return;
         }
 
-        if (reactionRoll < 0.34) {
+        if (reactionRoll < 0.4) {
             playReaction({
                 y: [0, -12, 0],
                 scale: [baseScale, baseScale * 1.05, baseScale],
@@ -299,7 +298,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
             return;
         }
 
-        if (reactionRoll < 0.67) {
+        if (reactionRoll < 0.8) {
             playReaction({
                 rotate: [0, -10, 10, -6, 0],
                 y: [0, -8, 0],

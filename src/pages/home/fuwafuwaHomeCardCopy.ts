@@ -92,10 +92,6 @@ function buildAnnouncementSpeech(announcement: HomeAnnouncement): FuwafuwaSpeech
     });
 }
 
-function shouldShowMechanicHint(activeDays: number): boolean {
-    return activeDays <= 2 || activeDays % 5 === 0;
-}
-
 function isHatchingSoon(stage: number, daysAlive: number): boolean {
     return stage === 1 && daysAlive === 3;
 }
@@ -140,8 +136,37 @@ function pickVariant<T>(variants: readonly T[], seed: number): T {
     return variants[Math.abs(seed) % variants.length];
 }
 
-function pickIdleCycle<T>(items: readonly T[], beat: number): T {
-    return items[Math.abs(beat) % items.length];
+function buildTopicPool(
+    baseTopics: readonly FuwafuwaSpeechTopic[],
+    ambientCue: HomeAmbientCue | null,
+): FuwafuwaSpeechTopic[] {
+    return ambientCue ? [...baseTopics, 'ambient'] : [...baseTopics];
+}
+
+function pickDailyTopic(
+    baseTopics: readonly FuwafuwaSpeechTopic[],
+    ambientCue: HomeAmbientCue | null,
+    beat: number,
+    step: number,
+): FuwafuwaSpeechTopic {
+    const topics = buildTopicPool(baseTopics, ambientCue);
+    return topics[(Math.abs(beat) + Math.max(0, step)) % topics.length];
+}
+
+function buildDailyFamilyContext(context: FamilySpeechContext): FamilySpeechContext {
+    return {
+        ...context,
+        depth: 0,
+        variantSeed: context.variantSeed + context.idleBeat,
+    };
+}
+
+function buildDailyUserContext(context: UserSpeechContext): UserSpeechContext {
+    return {
+        ...context,
+        depth: 0,
+        variantSeed: context.variantSeed + context.idleBeat,
+    };
 }
 
 function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
@@ -166,40 +191,14 @@ function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
     }
 
     if (context.percent >= 90) {
-        return pickIdleCycle(['omen', 'progress', 'mood'], context.idleBeat);
+        return pickDailyTopic(['omen', 'progress', 'mechanic', 'mood'], context.ambientCue, context.idleBeat, context.depth);
     }
 
     if (context.displaySeconds === 0) {
-        if (context.depth >= 2 && context.ambientCue) {
-            return 'ambient';
-        }
-
-        if (context.depth >= 1) {
-            return 'progress';
-        }
-
-        return pickIdleCycle(
-            context.ambientCue
-                ? ['greeting', 'progress', 'mood', 'ambient', 'greeting']
-                : ['greeting', 'progress', 'mood', 'greeting'],
-            context.idleBeat,
-        );
+        return pickDailyTopic(['greeting', 'progress', 'mechanic', 'mood'], context.ambientCue, context.idleBeat, context.depth);
     }
 
-    if (context.depth >= 2 && context.ambientCue) {
-        return 'ambient';
-    }
-
-    if (context.depth >= 1) {
-        return 'progress';
-    }
-
-    return pickIdleCycle(
-        context.ambientCue
-            ? ['mood', 'progress', 'greeting', 'ambient']
-            : ['mood', 'progress', 'greeting'],
-        context.idleBeat,
-    );
+    return pickDailyTopic(['mood', 'progress', 'mechanic', 'greeting'], context.ambientCue, context.idleBeat, context.depth);
 }
 
 function buildAfterglowAnnouncementSpeech(
@@ -490,6 +489,19 @@ function buildFamilyOmenSpeech(context: FamilySpeechContext): FuwafuwaSpeech {
     });
 }
 
+function buildFamilyMechanicSpeech(context: FamilySpeechContext): FuwafuwaSpeech {
+    return createSpeech({
+        id: 'family:mechanic_hint',
+        category: 'mechanic_hint',
+        accent: 'info',
+        lines: pickVariant([
+            ['みんなの まほうエネルギー', 'ここに たまっていくんだよ'],
+            ['ここでも まほうエネルギーが', 'ふえていくんだよ'],
+            ['まほうエネルギーが', 'たまると うれしいな'],
+        ], context.variantSeed),
+    });
+}
+
 function buildUserMoodSpeech(context: UserSpeechContext): FuwafuwaSpeech {
     if (context.stage === 1 && context.displaySeconds === 0) {
         return createSpeech({
@@ -539,6 +551,8 @@ function buildUserOmenSpeech(context: UserSpeechContext): FuwafuwaSpeech {
 }
 
 function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechContext): FuwafuwaSpeech {
+    const dailyContext = buildDailyFamilyContext(context);
+
     if (topic === 'delivery') {
         return createSpeech({
             id: 'family:magic_delivery_active',
@@ -614,29 +628,33 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
     }
 
     if (topic === 'ambient') {
-        return buildAmbientSpeech(context.ambientCue!, Math.max(0, context.depth - 2), 'info');
+        return buildAmbientSpeech(context.ambientCue!, 0, 'info');
     }
 
     if (topic === 'greeting') {
         return createSpeech({
-            id: `family:idle:${context.activeCount}`,
+            id: `family:idle:${dailyContext.activeCount}`,
             category: 'relationship',
             accent: 'info',
             lines: buildFamilyRelationshipLines(
-                context.activeCount,
-                context.visitRecency,
-                context.depth,
-                context.variantSeed,
+                dailyContext.activeCount,
+                dailyContext.visitRecency,
+                dailyContext.depth,
+                dailyContext.variantSeed,
             ),
         });
     }
 
     if (topic === 'mood') {
-        return buildFamilyMoodSpeech(context);
+        return buildFamilyMoodSpeech(dailyContext);
     }
 
     if (topic === 'omen') {
-        return buildFamilyOmenSpeech(context);
+        return buildFamilyOmenSpeech(dailyContext);
+    }
+
+    if (topic === 'mechanic') {
+        return buildFamilyMechanicSpeech(dailyContext);
     }
 
     if (context.percent >= 90) {
@@ -644,12 +662,13 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             id: 'family:almost_full',
             category: 'progress',
             accent: 'info',
-            lines: context.depth === 0
+            lines: dailyContext.depth === 0
                 ? pickVariant([
                     ['みんなの まほうエネルギーが', 'もうすこしで まんたん！'],
                     ['あと すこしで', 'いいこと ありそう'],
-                ], context.variantSeed)
-                : context.depth === 1
+                    ['みんなの まほうエネルギー', 'もうすぐ いっぱいだよ'],
+                ], dailyContext.variantSeed)
+                : dailyContext.depth === 1
                     ? ['あと ほんのちょっとで', 'いっぱいに なりそう']
                     : ['もうすぐ いっぱいで', 'ふわふわ どきどき'],
         });
@@ -660,12 +679,13 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             id: 'family:growing',
             category: 'progress',
             accent: 'info',
-            lines: context.depth === 0
+            lines: dailyContext.depth === 0
                 ? pickVariant([
                     ['みんなの まほうエネルギーが', 'たまってきたよ'],
+                    ['まほうエネルギーが', 'みんなで ふえてるね'],
                     ['なんだか ぽかぽか', 'してきたね'],
-                ], context.variantSeed)
-                : context.depth === 1
+                ], dailyContext.variantSeed)
+                : dailyContext.depth === 1
                     ? ['まほうエネルギーが', 'じわっと たまってるね']
                     : ['ふわふわ なんだか', 'わくわくしてきた'],
         });
@@ -675,12 +695,13 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
         id: 'family:small_progress',
         category: 'progress',
         accent: 'info',
-        lines: context.depth === 0
+        lines: dailyContext.depth === 0
             ? pickVariant([
                 ['まほうエネルギーが', 'みんなで ふえてるね'],
+                ['みんなの まほうエネルギー', 'すこしずつ とどいてるよ'],
                 ['ちいさく ぽかぽか', 'してきたね'],
-            ], context.variantSeed)
-            : context.depth === 1
+            ], dailyContext.variantSeed)
+            : dailyContext.depth === 1
                 ? ['まほうエネルギーも', 'ちゃんと とどいてるよ']
                 : ['ゆっくりでも', 'ふわふわ うれしいな'],
     });
@@ -763,59 +784,24 @@ function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
     }
 
     if (context.percent >= 90 && context.displaySeconds > 0) {
-        return pickIdleCycle(['omen', 'progress', 'mood'], context.idleBeat);
+        return pickDailyTopic(
+            ['omen', 'progress', 'mechanic', 'mood'],
+            context.ambientCue,
+            context.idleBeat,
+            context.depth,
+        );
     }
 
     if (context.displaySeconds > 0) {
-        if (context.depth >= 2 && context.ambientCue) {
-            return 'ambient';
-        }
-
-        if (context.depth >= 1) {
-            return 'progress';
-        }
-
-        if (shouldShowMechanicHint(context.activeDays)) {
-        return pickIdleCycle(['mood', 'progress', 'greeting', 'mechanic'], context.idleBeat);
-        }
-
-        return pickIdleCycle(
-            context.ambientCue
-                ? ['mood', 'progress', 'mechanic', 'ambient']
-                : ['mood', 'progress', 'mechanic'],
+        return pickDailyTopic(
+            ['mood', 'progress', 'mechanic'],
+            context.ambientCue,
             context.idleBeat,
+            context.depth,
         );
     }
 
-    if (shouldShowMechanicHint(context.activeDays)) {
-        if (context.depth >= 2 && context.ambientCue) {
-            return 'ambient';
-        }
-
-        if (context.depth >= 1) {
-            return 'mechanic';
-        }
-
-        return pickIdleCycle(
-            ['greeting', 'mechanic', 'mood'],
-            context.idleBeat,
-        );
-    }
-
-    if (context.depth >= 2 && context.ambientCue) {
-        return 'ambient';
-    }
-
-    if (context.depth >= 1) {
-        return 'mechanic';
-    }
-
-    return pickIdleCycle(
-        context.ambientCue
-            ? ['greeting', 'mechanic', 'mood', 'ambient', 'greeting']
-            : ['greeting', 'mechanic', 'mood', 'greeting'],
-        context.idleBeat,
-    );
+    return pickDailyTopic(['greeting', 'mechanic', 'mood'], context.ambientCue, context.idleBeat, context.depth);
 }
 
 function buildUserAfterglowSpeech(afterglow: HomeAfterglow, depth: number): FuwafuwaSpeech {
@@ -926,6 +912,7 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
             lines: context.depth === 0
                 ? pickVariant([
                     ['まほうエネルギーが', 'たまってきたよ'],
+                    ['まほうエネルギーが', 'じわっと ふえてるよ'],
                     ['なんだか ぽかぽか', 'してきたよ'],
                 ], context.variantSeed)
                 : context.depth === 1
@@ -941,6 +928,7 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
         lines: context.depth === 0
             ? pickVariant([
                 ['まほうエネルギーが', 'すこし たまってきたよ'],
+                ['まほうエネルギーも', 'ちゃんと とどいてるよ'],
                 ['なんだか ぽかぽか', 'してきたよ'],
             ], context.variantSeed)
             : context.depth === 1
@@ -964,6 +952,8 @@ function buildUserRelationshipSpeech(context: UserSpeechContext): FuwafuwaSpeech
 }
 
 function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext): FuwafuwaSpeech {
+    const dailyContext = buildDailyUserContext(context);
+
     if (topic === 'milestone') {
         return createSpeech({
             id: `user:milestone:${context.recentMilestoneEvent!.userId}:${context.recentMilestoneEvent!.kind}`,
@@ -1012,35 +1002,36 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
     }
 
     if (topic === 'progress') {
-        return buildUserProgressSpeech(context);
+        return buildUserProgressSpeech(dailyContext);
     }
 
     if (topic === 'ambient') {
-        return buildAmbientSpeech(context.ambientCue!, Math.max(0, context.depth - 2), 'info');
+        return buildAmbientSpeech(context.ambientCue!, 0, 'info');
     }
 
     if (topic === 'greeting') {
-        return buildUserRelationshipSpeech(context);
+        return buildUserRelationshipSpeech(dailyContext);
     }
 
     if (topic === 'mood') {
-        return buildUserMoodSpeech(context);
+        return buildUserMoodSpeech(dailyContext);
     }
 
     if (topic === 'omen') {
-        return buildUserOmenSpeech(context);
+        return buildUserOmenSpeech(dailyContext);
     }
 
     return createSpeech({
         id: 'user:mechanic_hint',
         category: 'mechanic_hint',
         accent: 'primary',
-        lines: context.depth === 0
+        lines: dailyContext.depth === 0
             ? pickVariant([
                 ['まほうエネルギーは', 'ここに たまるんだよ'],
                 ['ここに まほうエネルギーが', 'たまっていくんだよ'],
-            ], context.variantSeed)
-            : context.depth === 1
+                ['まほうエネルギー ここで', 'ふえていくんだよ'],
+            ], dailyContext.variantSeed)
+            : dailyContext.depth === 1
                 ? ['まほうエネルギーが', 'たまると うれしいな']
                 : ['すこしずつ', 'とどくと うれしいな'],
     });
