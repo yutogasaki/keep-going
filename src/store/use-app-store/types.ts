@@ -49,6 +49,7 @@ export type TabId = 'home' | 'record' | 'menu' | 'settings';
 export type SessionKind = 'auto' | 'fixed' | 'hybrid' | 'teacher-preview';
 
 export interface SessionDraft {
+    kind: 'auto';
     date: string;
     exerciseIds: string[];
     userIds: string[];

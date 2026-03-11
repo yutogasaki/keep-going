@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
 import { getTodayKey, saveSession, type SessionRecord } from '../../lib/db';
 import type { Exercise } from '../../data/exercises';
-import type { SessionDraft, TabId } from '../../store/use-app-store/types';
+import type { SessionDraft, SessionKind, TabId } from '../../store/use-app-store/types';
 
 interface UseSessionPersistenceParams {
     autoCompleteSaveRef: MutableRefObject<() => Promise<void> | void>;
@@ -11,6 +11,7 @@ interface UseSessionPersistenceParams {
     isCompleted: boolean;
     isLoading: boolean;
     isTeacherPreview: boolean;
+    sessionKind: SessionKind | null;
     sessionDraftSetter: (draft: SessionDraft | null) => void;
     sessionExerciseIds: string[] | null;
     sessionExercises: Exercise[];
@@ -32,6 +33,7 @@ export function useSessionPersistence({
     isCompleted,
     isLoading,
     isTeacherPreview,
+    sessionKind,
     sessionDraftSetter,
     sessionExerciseIds,
     sessionExercises,
@@ -47,11 +49,12 @@ export function useSessionPersistence({
     const hasSavedRef = useRef(false);
 
     useEffect(() => {
-        if (isTeacherPreview || isLoading || sessionExercises.length === 0) {
+        if (isTeacherPreview || isLoading || sessionExercises.length === 0 || sessionKind !== 'auto') {
             return;
         }
 
         sessionDraftSetter({
+            kind: 'auto',
             date: getTodayKey(),
             exerciseIds: sessionExercises.map((exercise) => exercise.id),
             userIds: [...sessionUserIds],
@@ -63,6 +66,7 @@ export function useSessionPersistence({
     }, [
         isLoading,
         isTeacherPreview,
+        sessionKind,
         sessionDraftSetter,
         sessionExercises,
         sessionSourceMenuId,

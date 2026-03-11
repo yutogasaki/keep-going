@@ -24,6 +24,7 @@ function getResumableSessionDraft(
     sessionUserIds: string[],
 ): SessionDraft | null {
     if (!sessionDraft) return null;
+    if (sessionDraft.kind !== 'auto') return null;
     if (sessionDraft.date !== getTodayKey()) return null;
     if (sessionDraft.exerciseIds.length === 0) return null;
     if (!hasSameUsers(sessionDraft.userIds, sessionUserIds)) return null;
@@ -140,22 +141,13 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
             isTeacherPreview: false,
         };
     }),
-    startSessionWithExercises: (ids, options) => set((state) => ({
+    startSessionWithExercises: (ids, options) => set(() => ({
         isInSession: true,
         sessionExerciseIds: ids,
         sessionSourceMenuId: options?.sourceMenuId ?? null,
         sessionSourceMenuSource: options?.sourceMenuSource ?? null,
         sessionSourceMenuName: options?.sourceMenuName ?? null,
         sessionReturnTab: options?.returnTab ?? 'home',
-        sessionDraft: {
-            date: getTodayKey(),
-            exerciseIds: ids,
-            userIds: [...state.sessionUserIds],
-            returnTab: options?.returnTab ?? 'home',
-            sourceMenuId: options?.sourceMenuId ?? null,
-            sourceMenuSource: options?.sourceMenuSource ?? null,
-            sourceMenuName: options?.sourceMenuName ?? null,
-        },
         sessionKind: 'fixed' as const,
         isTeacherPreview: false,
     })),

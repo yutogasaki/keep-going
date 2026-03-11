@@ -101,6 +101,7 @@ describe('persisted state sanitization', () => {
                 ghost: ['challenge-2'],
             },
             sessionDraft: {
+                kind: 'auto',
                 date: '2026-03-07',
                 exerciseIds: ['S01'],
                 userIds: ['ghost', 'user-1'],
@@ -149,6 +150,7 @@ describe('persisted state sanitization', () => {
             'user-1': ['challenge-1'],
         });
         expect(result.sessionDraft).toEqual({
+            kind: 'auto',
             date: '2026-03-07',
             exerciseIds: ['S01'],
             userIds: ['user-1'],

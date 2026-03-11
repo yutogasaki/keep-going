@@ -80,7 +80,7 @@ describe('modern migrations', () => {
         expect(result.sessionDraft).toBeNull();
     });
 
-    it('v14 keeps valid existing session drafts', () => {
+    it('v19 drops legacy session drafts without an auto kind', () => {
         const state = makeCurrentState({
             sessionDraft: {
                 date: '2026-03-07',
@@ -90,7 +90,22 @@ describe('modern migrations', () => {
             },
         });
 
-        const result = migrateAppState(state, 13);
+        const result = migrateAppState(state, 18);
+        expect(result.sessionDraft).toBeNull();
+    });
+
+    it('keeps valid auto session drafts in the current shape', () => {
+        const state = makeCurrentState({
+            sessionDraft: {
+                kind: 'auto' as const,
+                date: '2026-03-07',
+                exerciseIds: ['S01'],
+                userIds: ['user-1'],
+                returnTab: 'home',
+            },
+        });
+
+        const result = migrateAppState(state, 19);
         expect(result.sessionDraft).toEqual(state.sessionDraft);
     });
 
@@ -98,6 +113,7 @@ describe('modern migrations', () => {
         const state = makeCurrentState({
             sessionUserIds: ['user-1', 'user-2'],
             sessionDraft: {
+                kind: 'auto' as const,
                 date: '2026-03-07',
                 exerciseIds: ['S01', 'S02'],
                 userIds: ['user-1', 'user-2'],
@@ -189,9 +205,9 @@ describe('modern migrations', () => {
         expect(result.dismissedHomeAnnouncementIds).toEqual(['challenge:challenge-1']);
     });
 
-    it('v18 is a no-op for already migrated state', () => {
+    it('v19 is a no-op for already migrated state', () => {
         const state = { users: [] } as any;
-        const result = migrateAppState(state, 18);
+        const result = migrateAppState(state, 19);
 
         expect((result as any).ttsRate).toBeUndefined();
         expect((result as any).ttsPitch).toBeUndefined();

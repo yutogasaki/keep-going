@@ -28,6 +28,7 @@ describe('session resume state', () => {
             currentTab: 'record',
             sessionUserIds: ['user-1'],
             sessionDraft: {
+                kind: 'auto',
                 date: '2026-03-07',
                 exerciseIds: ['S01', 'S02'],
                 userIds: ['user-1'],
@@ -51,6 +52,7 @@ describe('session resume state', () => {
             currentTab: 'record',
             sessionUserIds: ['user-1'],
             sessionDraft: {
+                kind: 'auto',
                 date: '2026-03-06',
                 exerciseIds: ['S01', 'S02'],
                 userIds: ['user-1'],
@@ -74,6 +76,7 @@ describe('session resume state', () => {
             currentTab: 'menu',
             sessionUserIds: ['user-2'],
             sessionDraft: {
+                kind: 'auto',
                 date: '2026-03-07',
                 exerciseIds: ['S01'],
                 userIds: ['user-1'],
@@ -89,7 +92,7 @@ describe('session resume state', () => {
         expect(store.getState().sessionKind).toBe('auto');
     });
 
-    it('startSessionWithExercises prepares a home return draft', () => {
+    it('startSessionWithExercises keeps fixed sessions out of the resumable draft slot', () => {
         const store = makeStore();
 
         store.setState({
@@ -103,15 +106,28 @@ describe('session resume state', () => {
         expect(store.getState().sessionExerciseIds).toEqual(['S03', 'S04']);
         expect(store.getState().sessionReturnTab).toBe('home');
         expect(store.getState().sessionKind).toBe('fixed');
-        expect(store.getState().sessionDraft).toEqual({
+        expect(store.getState().sessionDraft).toBeNull();
+    });
+
+    it('startSessionWithExercises preserves an unfinished auto draft', () => {
+        const store = makeStore();
+        const autoDraft = {
+            kind: 'auto' as const,
             date: '2026-03-07',
-            exerciseIds: ['S03', 'S04'],
-            userIds: ['user-1', 'user-2'],
-            returnTab: 'home',
-            sourceMenuId: null,
-            sourceMenuSource: null,
-            sourceMenuName: null,
+            exerciseIds: ['S01', 'S02'],
+            userIds: ['user-1'],
+            returnTab: 'home' as const,
+        };
+
+        store.setState({
+            currentTab: 'menu',
+            sessionUserIds: ['user-1'],
+            sessionDraft: autoDraft,
         });
+
+        store.getState().startSessionWithExercises(['S03']);
+
+        expect(store.getState().sessionDraft).toEqual(autoDraft);
     });
 
     it('startSessionWithExercises stores menu metadata for menu challenges', () => {
@@ -130,15 +146,7 @@ describe('session resume state', () => {
         expect(store.getState().sessionSourceMenuId).toBe('preset-basic');
         expect(store.getState().sessionSourceMenuSource).toBe('preset');
         expect(store.getState().sessionSourceMenuName).toBe('基本ストレッチ');
-        expect(store.getState().sessionDraft).toEqual({
-            date: '2026-03-07',
-            exerciseIds: ['S01', 'S02'],
-            userIds: ['user-1'],
-            returnTab: 'home',
-            sourceMenuId: 'preset-basic',
-            sourceMenuSource: 'preset',
-            sourceMenuName: '基本ストレッチ',
-        });
+        expect(store.getState().sessionDraft).toBeNull();
     });
 
     it('completeSession clears the draft after an auto session finishes', () => {
@@ -152,6 +160,7 @@ describe('session resume state', () => {
             sessionReturnTab: 'home',
             sessionKind: 'auto',
             sessionDraft: {
+                kind: 'auto',
                 date: '2026-03-07',
                 exerciseIds: ['S01', 'S02'],
                 userIds: ['user-1'],
@@ -168,8 +177,15 @@ describe('session resume state', () => {
         expect(store.getState().sessionKind).toBeNull();
     });
 
-    it('completeSession returns to the configured tab without clearing a fixed-session draft', () => {
+    it('completeSession keeps an unfinished auto draft when a fixed session finishes', () => {
         const store = makeStore();
+        const autoDraft = {
+            kind: 'auto' as const,
+            date: '2026-03-07',
+            exerciseIds: ['S02', 'S03'],
+            userIds: ['user-1'],
+            returnTab: 'home' as const,
+        };
 
         store.setState({
             currentTab: 'menu',
@@ -178,12 +194,7 @@ describe('session resume state', () => {
             sessionExerciseIds: ['S01'],
             sessionReturnTab: 'home',
             sessionKind: 'fixed',
-            sessionDraft: {
-                date: '2026-03-07',
-                exerciseIds: ['S01'],
-                userIds: ['user-1'],
-                returnTab: 'home',
-            },
+            sessionDraft: autoDraft,
         });
 
         store.getState().completeSession();
@@ -193,7 +204,7 @@ describe('session resume state', () => {
         expect(store.getState().sessionSourceMenuId).toBeNull();
         expect(store.getState().currentTab).toBe('home');
         expect(store.getState().previousTab).toBe('menu');
-        expect(store.getState().sessionDraft).not.toBeNull();
+        expect(store.getState().sessionDraft).toEqual(autoDraft);
         expect(store.getState().sessionKind).toBeNull();
     });
 

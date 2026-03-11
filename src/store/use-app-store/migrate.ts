@@ -2,7 +2,7 @@ import { getTodayKey } from '../../lib/db';
 import type { AppState } from './types';
 import { sanitizePersistedState, sanitizeSessionDraft } from './migrateHelpers';
 
-export const APP_STATE_VERSION = 18;
+export const APP_STATE_VERSION = 19;
 
 export type PersistedAppState = Pick<
     AppState,

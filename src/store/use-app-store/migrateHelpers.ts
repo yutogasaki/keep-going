@@ -176,6 +176,10 @@ export function sanitizeSessionDraft(draft: unknown, validUserIdSet?: Set<string
     }
 
     const candidate = draft as Record<string, unknown>;
+    if (candidate.kind !== 'auto') {
+        return null;
+    }
+
     if (typeof candidate.date !== 'string') {
         return null;
     }
@@ -194,6 +198,7 @@ export function sanitizeSessionDraft(draft: unknown, validUserIdSet?: Set<string
     const sourceMenuName = sanitizeOptionalString(candidate.sourceMenuName);
 
     return {
+        kind: 'auto',
         date: candidate.date,
         exerciseIds,
         userIds,
