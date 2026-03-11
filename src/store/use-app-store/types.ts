@@ -16,6 +16,14 @@ export interface ChibifuwaRecord {
     earnedDate: string;
 }
 
+export type FuwafuwaMilestoneKind = 'egg' | 'fairy' | 'adult';
+
+export interface FuwafuwaMilestoneEvent {
+    kind: FuwafuwaMilestoneKind;
+    userId: string;
+    source: 'system' | 'debug';
+}
+
 export type SessionMenuSource = 'preset' | 'teacher' | 'custom' | 'public';
 
 export interface UserProfileStore {
@@ -122,8 +130,8 @@ export interface AppState {
     setDebugActiveDays: (days: number | null) => void;
     setDebugFuwafuwaScale: (scale: number | null) => void;
 
-    activeMilestoneModal: 'egg' | 'fairy' | 'adult' | null;
-    setActiveMilestoneModal: (modal: 'egg' | 'fairy' | 'adult' | null) => void;
+    activeMilestoneModal: FuwafuwaMilestoneEvent | null;
+    setActiveMilestoneModal: (modal: FuwafuwaMilestoneEvent | null) => void;
 
     joinedChallengeIds: Record<string, string[]>;
     joinChallenge: (userId: string, challengeId: string) => void;

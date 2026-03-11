@@ -1,57 +1,77 @@
 import { useEffect } from 'react';
 import type { SessionRecord } from '../../../lib/db';
 import { calculateFuwafuwaStatus } from '../../../lib/fuwafuwa';
-import type { UserProfileStore } from '../../../store/useAppStore';
+import type { FuwafuwaMilestoneEvent, UserProfileStore } from '../../../store/useAppStore';
 
 interface UseHomeMilestoneWatcherParams {
     allSessions: SessionRecord[];
+    hasKnownMilestoneEvent: (event: FuwafuwaMilestoneEvent) => boolean;
+    queueMilestoneEvent: (event: FuwafuwaMilestoneEvent) => void;
     users: UserProfileStore[];
-    updateUser: (id: string, updates: Partial<UserProfileStore>) => void;
-    setActiveMilestoneModal: (modal: 'egg' | 'fairy' | 'adult' | null) => void;
+}
+
+export function getMilestoneKindForStage(stage: number): FuwafuwaMilestoneEvent['kind'] | null {
+    if (stage === 1) return 'egg';
+    if (stage === 2) return 'fairy';
+    if (stage === 3) return 'adult';
+    return null;
+}
+
+export function getMilestoneStage(kind: FuwafuwaMilestoneEvent['kind']): number {
+    if (kind === 'egg') return 1;
+    if (kind === 'fairy') return 2;
+    return 3;
+}
+
+export function collectPendingMilestoneEvents({
+    allSessions,
+    hasKnownMilestoneEvent,
+    users,
+}: Pick<UseHomeMilestoneWatcherParams, 'allSessions' | 'hasKnownMilestoneEvent' | 'users'>): FuwafuwaMilestoneEvent[] {
+    return users.flatMap((user) => {
+        if (!user.fuwafuwaBirthDate) {
+            return [];
+        }
+
+        const userSessions = allSessions.filter(
+            (session) => !session.userIds || session.userIds.length === 0 || session.userIds.includes(user.id),
+        );
+        const status = calculateFuwafuwaStatus(user.fuwafuwaBirthDate, userSessions);
+        if (status.isSayonara || (user.notifiedFuwafuwaStages || []).includes(status.stage)) {
+            return [];
+        }
+
+        const kind = getMilestoneKindForStage(status.stage);
+        if (!kind) {
+            return [];
+        }
+
+        const event: FuwafuwaMilestoneEvent = {
+            kind,
+            userId: user.id,
+            source: 'system',
+        };
+
+        return hasKnownMilestoneEvent(event) ? [] : [event];
+    });
 }
 
 export function useHomeMilestoneWatcher({
     allSessions,
+    hasKnownMilestoneEvent,
+    queueMilestoneEvent,
     users,
-    updateUser,
-    setActiveMilestoneModal,
 }: UseHomeMilestoneWatcherParams) {
     useEffect(() => {
         if (allSessions.length === 0 || users.length === 0) {
             return;
         }
 
-        // Show one milestone modal at a time: find the first user with an
-        // un-notified stage. Only mark *that* user as notified so subsequent
-        // renders pick up the next user's milestone.
-        for (const user of users) {
-            if (!user.fuwafuwaBirthDate) {
-                continue;
-            }
-
-            // Filter sessions to only include ones this user participated in.
-            // Sessions with empty userIds are attributed to all users.
-            const userSessions = allSessions.filter(
-                (s) => !s.userIds || s.userIds.length === 0 || s.userIds.includes(user.id),
-            );
-
-            const status = calculateFuwafuwaStatus(user.fuwafuwaBirthDate, userSessions);
-            const currentStage = status.stage;
-
-            if (!status.isSayonara && !(user.notifiedFuwafuwaStages || []).includes(currentStage)) {
-                updateUser(user.id, { notifiedFuwafuwaStages: [...(user.notifiedFuwafuwaStages || []), currentStage] });
-
-                const modal: 'egg' | 'fairy' | 'adult' | null =
-                    currentStage === 1 ? 'egg'
-                        : currentStage === 2 ? 'fairy'
-                            : currentStage === 3 ? 'adult'
-                                : null;
-                if (modal) {
-                    setActiveMilestoneModal(modal);
-                }
-                // Only process one milestone per render cycle
-                return;
-            }
-        }
-    }, [allSessions, users, updateUser, setActiveMilestoneModal]);
+        const nextEvents = collectPendingMilestoneEvents({
+            allSessions,
+            hasKnownMilestoneEvent,
+            users,
+        });
+        nextEvents.forEach(queueMilestoneEvent);
+    }, [allSessions, hasKnownMilestoneEvent, queueMilestoneEvent, users]);
 }

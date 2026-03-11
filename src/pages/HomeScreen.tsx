@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 const lazyConfetti = () => import('canvas-confetti').then((m) => m.default);
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { PageHeader } from '../components/PageHeader';
@@ -14,6 +14,7 @@ import type { TeacherExercise, TeacherMenu } from '../lib/teacherContent';
 import { audio } from '../lib/audio';
 import { pickTeacherContentHighlights } from '../lib/teacherExerciseMetadata';
 import { useAppStore } from '../store/useAppStore';
+import type { FuwafuwaMilestoneEvent } from '../store/useAppStore';
 import { useTeacherContent } from '../hooks/useTeacherContent';
 import { HomeMilestoneModal } from './home/HomeMilestoneModal';
 import { HomeAnimatedBackground } from './home/HomeAnimatedBackground';
@@ -24,7 +25,10 @@ import { TeacherMenuDetailSheet } from './home/TeacherMenuDetailSheet';
 import { pickHomeAnnouncement } from './home/homeAnnouncementUtils';
 import { useHomeChallenges } from './home/hooks/useHomeChallenges';
 import { useHomeSessions } from './home/hooks/useHomeSessions';
-import { useHomeMilestoneWatcher } from './home/hooks/useHomeMilestoneWatcher';
+import {
+    getMilestoneStage,
+    useHomeMilestoneWatcher,
+} from './home/hooks/useHomeMilestoneWatcher';
 import { pickTeacherExerciseDiscovery } from './home/homeMenuUtils';
 import { getMinClassLevel } from './menu/menuPageUtils';
 
@@ -47,6 +51,7 @@ export const HomeScreen: React.FC = () => {
 
     const [menuBrowserOpen, setMenuBrowserOpen] = useState(false);
     const [exerciseBrowserOpen, setExerciseBrowserOpen] = useState(false);
+    const [pendingMilestoneEvents, setPendingMilestoneEvents] = useState<FuwafuwaMilestoneEvent[]>([]);
     const [selectedPublicMenu, setSelectedPublicMenu] = useState<PublicMenu | null>(null);
     const [selectedPublicExercise, setSelectedPublicExercise] = useState<PublicExercise | null>(null);
     const [selectedTeacherMenu, setSelectedTeacherMenu] = useState<TeacherMenu | null>(null);
@@ -86,6 +91,12 @@ export const HomeScreen: React.FC = () => {
     const selectedUser = useMemo(
         () => activeUsers[0] ?? users.find((user) => user.id === sessionUserIds[0]) ?? null,
         [activeUsers, sessionUserIds, users],
+    );
+    const activeMilestoneUser = useMemo(
+        () => activeMilestoneModal
+            ? users.find((user) => user.id === activeMilestoneModal.userId) ?? null
+            : null,
+        [activeMilestoneModal, users],
     );
     const teacherContent = useTeacherContent({
         classLevel: currentClassLevel,
@@ -165,12 +176,59 @@ export const HomeScreen: React.FC = () => {
         ],
     );
 
+    const queueMilestoneEvent = useCallback((event: FuwafuwaMilestoneEvent) => {
+        setPendingMilestoneEvents((current) => (
+            current.some((item) => item.userId === event.userId && item.kind === event.kind)
+                ? current
+                : [...current, event]
+        ));
+    }, []);
+
+    const hasKnownMilestoneEvent = useCallback((event: FuwafuwaMilestoneEvent) => (
+        pendingMilestoneEvents.some((item) => item.userId === event.userId && item.kind === event.kind)
+        || (activeMilestoneModal?.userId === event.userId && activeMilestoneModal.kind === event.kind)
+    ), [activeMilestoneModal, pendingMilestoneEvents]);
+
     useHomeMilestoneWatcher({
         allSessions,
+        hasKnownMilestoneEvent,
+        queueMilestoneEvent,
         users,
-        updateUser,
-        setActiveMilestoneModal,
     });
+
+    useEffect(() => {
+        const validUserIds = new Set(users.map((user) => user.id));
+        setPendingMilestoneEvents((current) => current.filter((event) => validUserIds.has(event.userId)));
+    }, [users]);
+
+    useEffect(() => {
+        if (isTogetherMode || !selectedUser || activeMilestoneModal) {
+            return;
+        }
+
+        const nextEvent = pendingMilestoneEvents.find((event) => event.userId === selectedUser.id);
+        if (!nextEvent) {
+            return;
+        }
+
+        setPendingMilestoneEvents((current) => current.filter(
+            (event) => !(event.userId === nextEvent.userId && event.kind === nextEvent.kind),
+        ));
+        setActiveMilestoneModal(nextEvent);
+    }, [activeMilestoneModal, isTogetherMode, pendingMilestoneEvents, selectedUser, setActiveMilestoneModal]);
+
+    const handleMilestoneModalClose = useCallback(() => {
+        if (activeMilestoneModal?.source === 'system' && activeMilestoneUser) {
+            const stage = getMilestoneStage(activeMilestoneModal.kind);
+            if (!(activeMilestoneUser.notifiedFuwafuwaStages || []).includes(stage)) {
+                updateUser(activeMilestoneUser.id, {
+                    notifiedFuwafuwaStages: [...(activeMilestoneUser.notifiedFuwafuwaStages || []), stage],
+                });
+            }
+        }
+
+        setActiveMilestoneModal(null);
+    }, [activeMilestoneModal, activeMilestoneUser, setActiveMilestoneModal, updateUser]);
 
     useEffect(() => {
         if (
@@ -237,7 +295,8 @@ export const HomeScreen: React.FC = () => {
 
             <HomeMilestoneModal
                 activeMilestoneModal={activeMilestoneModal}
-                onClose={() => setActiveMilestoneModal(null)}
+                user={activeMilestoneUser}
+                onClose={handleMilestoneModalClose}
             />
 
             <HomeAnimatedBackground />

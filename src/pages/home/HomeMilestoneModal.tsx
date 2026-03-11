@@ -1,83 +1,132 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-
-type MilestoneModalState = 'egg' | 'fairy' | 'adult' | null;
+import { btnPrimary, COLOR, FONT, FONT_SIZE, RADIUS, SPACE, Z } from '../../lib/styles';
+import type { FuwafuwaMilestoneEvent, UserProfileStore } from '../../store/useAppStore';
 
 interface HomeMilestoneModalProps {
-    activeMilestoneModal: MilestoneModalState;
+    activeMilestoneModal: FuwafuwaMilestoneEvent | null;
+    user: UserProfileStore | null;
     onClose: () => void;
+}
+
+function getMilestoneStage(kind: FuwafuwaMilestoneEvent['kind']): number {
+    if (kind === 'egg') return 1;
+    if (kind === 'fairy') return 2;
+    return 3;
+}
+
+function getPartnerLabel(user: UserProfileStore): string {
+    if (user.fuwafuwaName) {
+        return `${user.name}の ${user.fuwafuwaName}`;
+    }
+
+    return `${user.name}の ふわふわ`;
 }
 
 export const HomeMilestoneModal: React.FC<HomeMilestoneModalProps> = ({
     activeMilestoneModal,
+    user,
     onClose,
 }) => {
+    if (!activeMilestoneModal || !user) {
+        return null;
+    }
+
+    const stage = getMilestoneStage(activeMilestoneModal.kind);
+    const imagePath = `/ikimono/${user.fuwafuwaType}-${stage}.webp`;
+    const partnerLabel = getPartnerLabel(user);
+
     return (
         <AnimatePresence>
-            {activeMilestoneModal && (
-                <div
+            <div
+                style={{
+                    position: 'fixed',
+                    inset: 0,
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: Z.modal,
+                    padding: SPACE['2xl'],
+                }}
+            >
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                     style={{
-                        position: 'fixed',
-                        inset: 0,
-                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        width: '100%',
+                        maxWidth: 320,
+                        textAlign: 'center',
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
-                        justifyContent: 'center',
-                        zIndex: 100,
-                        padding: 24,
+                        gap: SPACE.lg,
+                        padding: SPACE['3xl'],
+                        background: COLOR.white,
+                        borderRadius: RADIUS['3xl'],
+                        boxShadow: '0 16px 48px rgba(0,0,0,0.1)',
                     }}
                 >
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: -20 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                    <div
                         style={{
-                            width: '100%',
-                            maxWidth: 320,
-                            textAlign: 'center',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: 16,
-                            padding: 32,
-                            background: 'white',
-                            borderRadius: 24,
-                            boxShadow: '0 16px 48px rgba(0,0,0,0.1)',
+                            padding: '6px 12px',
+                            borderRadius: RADIUS.full,
+                            background: 'rgba(43, 186, 160, 0.12)',
+                            color: COLOR.primary,
+                            fontFamily: FONT.body,
+                            fontSize: FONT_SIZE.sm,
+                            fontWeight: 700,
+                            lineHeight: 1,
                         }}
                     >
-                        <span style={{ fontSize: 64 }}>
-                            {activeMilestoneModal === 'egg' ? '🥚' : activeMilestoneModal === 'fairy' ? '🧚' : '🌟'}
-                        </span>
-                        <h2 style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 24, margin: 0, color: '#2D3436' }}>
-                            {activeMilestoneModal === 'egg' ? 'たまごが やってきた！' :
-                                activeMilestoneModal === 'fairy' ? 'たまごが かえった！' : 'おおきく そだったね！'}
-                        </h2>
-                        <p style={{ fontFamily: "'Noto Sans JP', sans-serif", fontSize: 14, color: '#8395A7', lineHeight: 1.6, margin: 0 }}>
-                            {activeMilestoneModal === 'egg' ? 'これから、あなたと一緒に頑張るパートナーだよ。大切に育ててね！' :
-                                activeMilestoneModal === 'fairy' ? '毎日の頑張りで、妖精の姿になったよ！これからもよろしくね！' : '毎日の頑張りで、立派な大人の姿に成長したよ！ここまで続けてこれてすごいね！'}
-                        </p>
-                        <button
-                            onClick={onClose}
-                            style={{
-                                marginTop: 16,
-                                width: '100%',
-                                padding: '14px',
-                                borderRadius: 99,
-                                border: 'none',
-                                background: '#2BBAA0',
-                                color: 'white',
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 16,
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                            }}
-                        >
-                            わかった！
-                        </button>
-                    </motion.div>
-                </div>
-            )}
+                        {partnerLabel}
+                    </div>
+                    <div
+                        style={{
+                            width: 112,
+                            height: 112,
+                            borderRadius: RADIUS.circle,
+                            overflow: 'hidden',
+                            border: '4px solid rgba(255,255,255,0.95)',
+                            boxShadow: '0 16px 36px rgba(43, 186, 160, 0.18)',
+                            background: COLOR.white,
+                        }}
+                    >
+                        <img
+                            src={imagePath}
+                            alt={partnerLabel}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        />
+                    </div>
+                    <span style={{ fontSize: 40 }}>
+                        {activeMilestoneModal.kind === 'egg' ? '🥚' : activeMilestoneModal.kind === 'fairy' ? '🧚' : '🌟'}
+                    </span>
+                    <h2 style={{ fontFamily: FONT.body, fontSize: FONT_SIZE['3xl'], margin: 0, color: COLOR.dark }}>
+                        {activeMilestoneModal.kind === 'egg' ? 'たまごが やってきた！' :
+                            activeMilestoneModal.kind === 'fairy' ? 'たまごが かえった！' : 'おおきく そだったね！'}
+                    </h2>
+                    <p style={{ fontFamily: FONT.body, fontSize: FONT_SIZE.md, color: COLOR.muted, lineHeight: 1.7, margin: 0 }}>
+                        {activeMilestoneModal.kind === 'egg'
+                            ? `${partnerLabel}だよ。これから いっしょに そだてていこう！`
+                            : activeMilestoneModal.kind === 'fairy'
+                                ? `${partnerLabel}が うまれたよ。まいにちの がんばりが ちゃんと とどいてるね！`
+                                : `${partnerLabel}が りっぱに そだったよ。ここまで つづけてきたの、すごいね！`}
+                    </p>
+                    <button
+                        onClick={onClose}
+                        style={{
+                            ...btnPrimary,
+                            marginTop: SPACE.lg,
+                            width: '100%',
+                            borderRadius: RADIUS.full,
+                        }}
+                    >
+                        わかった！
+                    </button>
+                </motion.div>
+            </div>
         </AnimatePresence>
     );
 };

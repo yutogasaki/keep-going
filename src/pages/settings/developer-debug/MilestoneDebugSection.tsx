@@ -11,10 +11,21 @@ const buttonStyle: React.CSSProperties = {
 
 export const MilestoneDebugSection: React.FC = () => {
     const setActiveMilestoneModal = useAppStore((state) => state.setActiveMilestoneModal);
+    const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const setTab = useAppStore((state) => state.setTab);
+    const users = useAppStore((state) => state.users);
 
     const showMilestone = (milestone: 'egg' | 'fairy' | 'adult') => {
-        setActiveMilestoneModal(milestone);
+        const targetUserId = sessionUserIds[0] ?? users[0]?.id;
+        if (!targetUserId) {
+            return;
+        }
+
+        setActiveMilestoneModal({
+            kind: milestone,
+            userId: targetUserId,
+            source: 'debug',
+        });
         setTab('home');
     };
 

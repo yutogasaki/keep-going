@@ -7,6 +7,8 @@ import type { AppState } from './use-app-store/types';
 
 export type {
     AppState,
+    FuwafuwaMilestoneEvent,
+    FuwafuwaMilestoneKind,
     TabId,
     UserProfileStore,
     PastFuwafuwaRecord,
