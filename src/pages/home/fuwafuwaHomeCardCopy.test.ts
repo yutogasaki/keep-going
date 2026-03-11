@@ -520,7 +520,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             lines: ['まほうエネルギーが', 'たまってきたよ'],
         });
 
-        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 0, 'first', null, false, 2)).toEqual({
+        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 0, 'first', null, false, 1)).toEqual({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
@@ -543,7 +543,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             lines: ['みんなの まほうエネルギーが', 'たまってきたよ'],
         });
 
-        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 2)).toEqual({
+        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 1)).toEqual({
             id: 'family:small_progress',
             category: 'progress',
             accent: 'info',

@@ -180,8 +180,8 @@ function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
 
         return pickIdleCycle(
             context.ambientCue
-                ? ['greeting', 'mood', 'progress', 'ambient', 'greeting']
-                : ['greeting', 'mood', 'progress', 'greeting'],
+                ? ['greeting', 'progress', 'mood', 'ambient', 'greeting']
+                : ['greeting', 'progress', 'mood', 'greeting'],
             context.idleBeat,
         );
     }
@@ -776,13 +776,13 @@ function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
         }
 
         if (shouldShowMechanicHint(context.activeDays)) {
-            return pickIdleCycle(['mood', 'progress', 'greeting', 'mechanic'], context.idleBeat);
+        return pickIdleCycle(['mood', 'progress', 'greeting', 'mechanic'], context.idleBeat);
         }
 
         return pickIdleCycle(
             context.ambientCue
-                ? ['mood', 'progress', 'greeting', 'ambient']
-                : ['mood', 'progress', 'greeting'],
+                ? ['mood', 'progress', 'mechanic', 'ambient']
+                : ['mood', 'progress', 'mechanic'],
             context.idleBeat,
         );
     }
@@ -797,7 +797,7 @@ function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
         }
 
         return pickIdleCycle(
-            ['greeting', 'mood', 'mechanic'],
+            ['greeting', 'mechanic', 'mood'],
             context.idleBeat,
         );
     }
@@ -812,8 +812,8 @@ function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
 
     return pickIdleCycle(
         context.ambientCue
-            ? ['greeting', 'mood', 'mechanic', 'ambient', 'greeting']
-            : ['greeting', 'mood', 'mechanic', 'greeting'],
+            ? ['greeting', 'mechanic', 'mood', 'ambient', 'greeting']
+            : ['greeting', 'mechanic', 'mood', 'greeting'],
         context.idleBeat,
     );
 }

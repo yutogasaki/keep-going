@@ -50,7 +50,10 @@ describe('fuwafuwaSpeechReaction', () => {
 
     it('returns style-specific particle sets', () => {
         expect(getReactionEmojis('cozy')).toContain('💖');
+        expect(getReactionEmojis('cozy')).toContain('🎵');
         expect(getReactionEmojis('growing')).toContain('🌱');
+        expect(getReactionEmojis('growing')).toContain('💖');
         expect(getReactionEmojis('guiding')).toContain('💡');
+        expect(getReactionEmojis('guiding')).toContain('🎵');
     });
 });

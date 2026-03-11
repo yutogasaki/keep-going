@@ -223,10 +223,10 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
             }
 
             playReaction({
-                y: [0, -14, 0],
-                rotate: [0, 360],
+                rotate: [0, -10, 10, -8, 8, 0],
+                y: [0, -10, 0],
                 scale: [baseScale, baseScale * 1.05, baseScale],
-                transition: { duration: 0.66, ease: 'easeInOut' },
+                transition: { duration: 0.62, ease: 'easeInOut' },
             });
             return;
         }
@@ -253,9 +253,9 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
 
             playReaction({
                 y: [0, -20, 0],
-                rotate: [0, 360],
+                rotate: [0, -12, 12, -8, 8, 0],
                 scale: [baseScale, baseScale * 1.07, baseScale],
-                transition: { duration: 0.7, ease: 'easeInOut' },
+                transition: { duration: 0.66, ease: 'easeInOut' },
             });
             return;
         }
@@ -281,10 +281,11 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
             }
 
             playReaction({
-                y: [0, -12, 0],
-                rotate: [0, 360],
+                x: [0, -8, 8, -6, 0],
+                y: [0, -10, 0],
+                rotate: [0, 14, -14, 8, 0],
                 scale: [baseScale, baseScale * 1.04, baseScale],
-                transition: { duration: 0.64, ease: 'easeInOut' },
+                transition: { duration: 0.58, ease: 'easeInOut' },
             });
             return;
         }
@@ -309,9 +310,9 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
 
         playReaction({
             y: [0, -14, 0],
-            rotate: [0, 360],
+            rotate: [0, -14, 14, -8, 0],
             scale: [baseScale, baseScale * 1.03, baseScale],
-            transition: { duration: 0.66, ease: 'easeInOut' },
+            transition: { duration: 0.62, ease: 'easeInOut' },
         });
     };
 
