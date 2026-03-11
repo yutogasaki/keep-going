@@ -23,7 +23,7 @@ describe('fuwafuwaHomeCardCopy', () => {
 
     it('keeps lightweight fallback strings for legacy usage', () => {
         expect(getFamilyMessage(3, 0, 600)).toBe('3にんで ちからを あわせよう！');
-        expect(getUserMessage(0, 600, 1, 0)).toBe('まほうは ここに たまっていくんだよ');
+        expect(getUserMessage(0, 600, 1, 0)).toBe('まほうエネルギーは ここに たまるんだよ');
         expect(getUserMessage(590, 600, 2, 6)).toBe('もうすぐ おおきく なれそう！');
     });
 
@@ -32,13 +32,13 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:magic_full',
             category: 'action_hint',
             accent: 'primary',
-            lines: ['わあ！ まほうが いっぱいだよ', 'ぽんって してみよう'],
+            lines: ['まほうエネルギーが', 'いっぱいだよ'],
         });
         expect(getUserSpeech(600, 600, 2, 6, null, null, 1)).toEqual({
             id: 'user:magic_full',
             category: 'action_hint',
             accent: 'primary',
-            lines: ['ぽんって さわると', 'ふわふわに おくれるよ'],
+            lines: ['ぽんって すると', 'ふわふわに おくれるよ'],
         });
     });
 
@@ -174,14 +174,30 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['まほうは ここに', 'たまっていくんだよ'],
+            lines: ['まほうエネルギーは', 'ここに たまるんだよ'],
         });
 
         expect(getUserSpeech(0, 600, 1, 0, null, null, 1)).toEqual({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['いっぱいになると', 'いいこと あるよ'],
+            lines: ['たまると', 'いいこと あるよ'],
+        });
+    });
+
+    it('uses progress depth to explain how magic energy builds up', () => {
+        expect(getUserSpeech(300, 600, 2, 4, null, null)).toEqual({
+            id: 'user:growing',
+            category: 'progress',
+            accent: 'primary',
+            lines: ['まほうエネルギーが', 'たまってきたよ'],
+        });
+
+        expect(getUserSpeech(300, 600, 2, 4, null, null, 1)).toEqual({
+            id: 'user:growing',
+            category: 'progress',
+            accent: 'primary',
+            lines: ['ここに すこしずつ', 'たまるんだよ'],
         });
     });
 
@@ -206,7 +222,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:growing',
             category: 'progress',
             accent: 'info',
-            lines: ['みんなの まほう', 'たまってきたよ'],
+            lines: ['みんなの まほうエネルギーが', 'たまってきたよ'],
         });
     });
 
