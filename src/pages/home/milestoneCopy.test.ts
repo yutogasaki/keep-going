@@ -3,6 +3,7 @@ import {
     getMilestoneAmbientBadge,
     getMilestoneAriaLabel,
     getMilestoneEmoji,
+    getMilestoneSpeechLines,
     getMilestoneTitle,
 } from './milestoneCopy';
 
@@ -25,5 +26,18 @@ describe('milestoneCopy', () => {
         expect(getMilestoneEmoji('adult')).toBe('🌟');
         expect(getMilestoneAmbientBadge('adult')).toBe('そだった');
         expect(getMilestoneAriaLabel('adult')).toBe('おおきく そだった');
+    });
+
+    it('returns milestone speech lines for modal handoff', () => {
+        expect(getMilestoneSpeechLines('egg', 0)).toEqual(['あたらしい たまごが', 'きたよ']);
+        expect(getMilestoneSpeechLines('egg', 1)).toEqual(['これから いっしょに', 'そだっていくよ']);
+        expect(getMilestoneSpeechLines('egg', 2)).toEqual(['また あいに', 'きてね']);
+
+        expect(getMilestoneSpeechLines('fairy', 0)).toEqual(['ついに', 'うまれたよ！']);
+        expect(getMilestoneSpeechLines('fairy', 2)).toEqual(['これからも', 'いっしょだよ']);
+
+        expect(getMilestoneSpeechLines('adult', 0)).toEqual(['りっぱに', 'そだったよ！']);
+        expect(getMilestoneSpeechLines('adult', 1)).toEqual(['ここまで つづけてきたの', 'すごいね']);
+        expect(getMilestoneSpeechLines('adult', 2)).toEqual(['これからも', 'よろしくね']);
     });
 });

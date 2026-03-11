@@ -1,4 +1,6 @@
 import type { HomeAnnouncement } from './homeAnnouncementUtils';
+import type { FuwafuwaMilestoneEvent } from '../../store/useAppStore';
+import { getMilestoneSpeechLines } from './milestoneCopy';
 
 export type FuwafuwaSpeechAccent = 'primary' | 'info';
 export type FuwafuwaSpeechCategory =
@@ -180,12 +182,26 @@ export function getUserSpeech(
     targetSeconds: number,
     stage: number,
     activeDays: number,
+    recentMilestoneEvent: FuwafuwaMilestoneEvent | null,
     announcement: HomeAnnouncement | null,
     pokeDepth = 0,
     daysAlive = 0,
 ): FuwafuwaSpeech {
     const percent = Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100);
     const depth = Math.max(0, Math.min(2, pokeDepth));
+
+    const getMilestoneSpeech = (): FuwafuwaSpeech | null => {
+        if (!recentMilestoneEvent) {
+            return null;
+        }
+
+        return createSpeech({
+            id: `user:milestone:${recentMilestoneEvent.userId}:${recentMilestoneEvent.kind}`,
+            category: 'event_notice',
+            accent: 'primary',
+            lines: getMilestoneSpeechLines(recentMilestoneEvent.kind, depth),
+        });
+    };
 
     const getActionSpeech = (): FuwafuwaSpeech | null => {
         if (percent < 100) {
@@ -362,6 +378,7 @@ export function getUserSpeech(
     };
 
     return pickFirstSpeech(
+        getMilestoneSpeech(),
         getActionSpeech(),
         getEventSpeech(),
         getProgressSpeech(),
@@ -371,5 +388,5 @@ export function getUserSpeech(
 }
 
 export function getUserMessage(displaySeconds: number, targetSeconds: number, stage: number, activeDays: number) {
-    return getUserSpeech(displaySeconds, targetSeconds, stage, activeDays, null).lines.join(' ');
+    return getUserSpeech(displaySeconds, targetSeconds, stage, activeDays, null, null).lines.join(' ');
 }

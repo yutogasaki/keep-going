@@ -25,3 +25,35 @@ export function getMilestoneAriaLabel(kind: MilestoneKind): string {
     if (kind === 'fairy') return 'たまごが かえった';
     return 'おおきく そだった';
 }
+
+export function getMilestoneSpeechLines(kind: MilestoneKind, depth: number): string[] {
+    const normalizedDepth = Math.max(0, Math.min(2, depth));
+
+    if (kind === 'egg') {
+        if (normalizedDepth === 0) {
+            return ['あたらしい たまごが', 'きたよ'];
+        }
+        if (normalizedDepth === 1) {
+            return ['これから いっしょに', 'そだっていくよ'];
+        }
+        return ['また あいに', 'きてね'];
+    }
+
+    if (kind === 'fairy') {
+        if (normalizedDepth === 0) {
+            return ['ついに', 'うまれたよ！'];
+        }
+        if (normalizedDepth === 1) {
+            return ['まいにちの がんばり', 'ちゃんと とどいてたよ'];
+        }
+        return ['これからも', 'いっしょだよ'];
+    }
+
+    if (normalizedDepth === 0) {
+        return ['りっぱに', 'そだったよ！'];
+    }
+    if (normalizedDepth === 1) {
+        return ['ここまで つづけてきたの', 'すごいね'];
+    }
+    return ['これからも', 'よろしくね'];
+}

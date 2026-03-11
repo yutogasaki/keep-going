@@ -20,6 +20,7 @@ interface FuwafuwaHomeCardProps {
     activeUsers: UserProfileStore[];
     allSessions: SessionRecord[];
     milestoneEventsByUserId: Map<string, FuwafuwaMilestoneEvent>;
+    recentMilestoneEvent: FuwafuwaMilestoneEvent | null;
     onSelectUser: (userId: string) => void;
     announcement: HomeAnnouncement | null;
     onAnnouncementAction: () => void;
@@ -35,6 +36,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     activeUsers,
     allSessions,
     milestoneEventsByUserId,
+    recentMilestoneEvent,
     onSelectUser,
     announcement,
     onAnnouncementAction,
@@ -74,6 +76,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 selectedUserTargetSeconds,
                 selectedUserStatus.stage,
                 selectedUserStatus.activeDays,
+                recentMilestoneEvent,
                 announcement,
                 0,
                 selectedUserStatus.daysAlive,
@@ -84,7 +87,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 accent: 'primary' as const,
                 lines: [],
             },
-        [announcement, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds],
+        [announcement, recentMilestoneEvent, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds],
     );
     const selectedUserSpeech = useMemo(
         () => selectedUserStatus
@@ -93,6 +96,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 selectedUserTargetSeconds,
                 selectedUserStatus.stage,
                 selectedUserStatus.activeDays,
+                recentMilestoneEvent,
                 announcement,
                 pokeDepth,
                 selectedUserStatus.daysAlive,
@@ -103,7 +107,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 accent: 'primary' as const,
                 lines: [],
             },
-        [announcement, pokeDepth, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds],
+        [announcement, pokeDepth, recentMilestoneEvent, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds],
     );
 
     useEffect(() => {

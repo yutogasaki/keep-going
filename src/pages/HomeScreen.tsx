@@ -52,6 +52,7 @@ export const HomeScreen: React.FC = () => {
     const [menuBrowserOpen, setMenuBrowserOpen] = useState(false);
     const [exerciseBrowserOpen, setExerciseBrowserOpen] = useState(false);
     const [pendingMilestoneEvents, setPendingMilestoneEvents] = useState<FuwafuwaMilestoneEvent[]>([]);
+    const [recentMilestoneEvent, setRecentMilestoneEvent] = useState<FuwafuwaMilestoneEvent | null>(null);
     const [selectedPublicMenu, setSelectedPublicMenu] = useState<PublicMenu | null>(null);
     const [selectedPublicExercise, setSelectedPublicExercise] = useState<PublicExercise | null>(null);
     const [selectedTeacherMenu, setSelectedTeacherMenu] = useState<TeacherMenu | null>(null);
@@ -208,6 +209,22 @@ export const HomeScreen: React.FC = () => {
     }, [users]);
 
     useEffect(() => {
+        if (!recentMilestoneEvent) {
+            return;
+        }
+
+        const timerId = window.setTimeout(() => {
+            setRecentMilestoneEvent((current) => (
+                current?.userId === recentMilestoneEvent.userId && current.kind === recentMilestoneEvent.kind
+                    ? null
+                    : current
+            ));
+        }, 12000);
+
+        return () => window.clearTimeout(timerId);
+    }, [recentMilestoneEvent]);
+
+    useEffect(() => {
         if (isTogetherMode || !selectedUser || activeMilestoneModal) {
             return;
         }
@@ -233,6 +250,9 @@ export const HomeScreen: React.FC = () => {
             }
         }
 
+        if (activeMilestoneModal) {
+            setRecentMilestoneEvent(activeMilestoneModal);
+        }
         setActiveMilestoneModal(null);
     }, [activeMilestoneModal, activeMilestoneUser, setActiveMilestoneModal, updateUser]);
 
@@ -332,6 +352,7 @@ export const HomeScreen: React.FC = () => {
                     activeUsers={activeUsers}
                     allSessions={allSessions}
                     milestoneEventsByUserId={pendingMilestoneEventsByUserId}
+                    recentMilestoneEvent={selectedUser && recentMilestoneEvent?.userId === selectedUser.id ? recentMilestoneEvent : null}
                     onSelectUser={(userId) => setSessionUserIds([userId])}
                     announcement={homeAnnouncement}
                     onAnnouncementAction={() => {
