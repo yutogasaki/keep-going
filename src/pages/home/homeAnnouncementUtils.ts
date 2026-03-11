@@ -82,7 +82,7 @@ export function pickHomeAnnouncement({
             id: createChallengeAnnouncementId(challenge.id),
             kind: 'challenge',
             badgeLabel: 'チャレンジ',
-            title: 'あたらしいチャレンジが きたよ',
+            title: 'あたらしいチャレンジ みつけたよ',
             detail: challenge.title,
             actionLabel: 'みてみる',
         };
@@ -98,7 +98,7 @@ export function pickHomeAnnouncement({
             id: createTeacherMenuAnnouncementId(teacherMenu.id),
             kind: 'teacher_menu',
             badgeLabel: '先生',
-            title: 'せんせいの おすすめメニューが きたよ',
+            title: 'せんせいから おすすめが とどいたよ',
             detail: teacherMenu.name,
             actionLabel: 'メニューへ',
         };
@@ -113,7 +113,7 @@ export function pickHomeAnnouncement({
             id: createTeacherExerciseAnnouncementId(teacherExerciseHighlight.id),
             kind: 'teacher_exercise',
             badgeLabel: '先生',
-            title: 'せんせいの おすすめしゅもくが きたよ',
+            title: 'せんせいが これ どうかなって',
             detail: teacherExerciseHighlight.name,
             actionLabel: 'メニューへ',
         };

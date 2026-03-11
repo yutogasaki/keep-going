@@ -31,13 +31,13 @@ describe('milestoneCopy', () => {
     it('returns milestone speech lines for modal handoff', () => {
         expect(getMilestoneSpeechLines('egg', 0)).toEqual(['あたらしい たまごが', 'きたよ']);
         expect(getMilestoneSpeechLines('egg', 1)).toEqual(['これから いっしょに', 'そだっていくよ']);
-        expect(getMilestoneSpeechLines('egg', 2)).toEqual(['また あいに', 'きてね']);
+        expect(getMilestoneSpeechLines('egg', 2)).toEqual(['また あいに', 'きてくれたら うれしいな']);
 
         expect(getMilestoneSpeechLines('fairy', 0)).toEqual(['ついに', 'うまれたよ！']);
-        expect(getMilestoneSpeechLines('fairy', 2)).toEqual(['これからも', 'いっしょだよ']);
+        expect(getMilestoneSpeechLines('fairy', 2)).toEqual(['これからも', 'いっしょに いたいな']);
 
         expect(getMilestoneSpeechLines('adult', 0)).toEqual(['りっぱに', 'そだったよ！']);
         expect(getMilestoneSpeechLines('adult', 1)).toEqual(['ここまで つづけてきたの', 'すごいね']);
-        expect(getMilestoneSpeechLines('adult', 2)).toEqual(['これからも', 'よろしくね']);
+        expect(getMilestoneSpeechLines('adult', 2)).toEqual(['これからも', 'いっしょに いたいな']);
     });
 });

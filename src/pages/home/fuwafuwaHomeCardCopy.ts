@@ -241,8 +241,8 @@ function buildAmbientSpeech(ambientCue: HomeAmbientCue, depth: number, accent: F
             lines: depth === 0
                 ? ['みんなの メニューに', 'あたらしいのが あるみたい']
                 : depth === 1
-                    ? ['だれかの くふう', 'みつかるかも']
-                    : ['のぞいてみるのも', 'たのしいかも'],
+                    ? ['ふわふわも ちょっと', 'きになってるんだ']
+                    : ['のぞきに いけたら', 'たのしそうだね'],
         });
     }
 
@@ -255,7 +255,7 @@ function buildAmbientSpeech(ambientCue: HomeAmbientCue, depth: number, accent: F
                 ? ['みんなの メニューで', 'あたらしい種目も みつかるかも']
                 : depth === 1
                     ? ['だれかの くふうが', 'はいってるみたい']
-                    : ['みにいくのも', 'たのしいかも'],
+                    : ['ふわふわも', 'みにいきたいな'],
         });
     }
 
@@ -266,8 +266,8 @@ function buildAmbientSpeech(ambientCue: HomeAmbientCue, depth: number, accent: F
         lines: depth === 0
             ? ['みんなの ところで', 'おもしろい種目が みつかるかも']
             : depth === 1
-                ? ['ちょっと のぞくと', 'たのしいかも']
-                : ['あたらしいこと', 'みつかるかもね'],
+                ? ['ふわふわも なんだか', 'きになってるよ']
+                : ['のぞきに いくと', 'たのしいかも'],
     });
 }
 
@@ -278,9 +278,9 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             category: 'action_hint',
             accent: 'info',
             lines: context.depth === 0
-                ? ['みんなの まほうエネルギーが', 'いっぱいに なったよ', 'ぽんって してみよう？']
+                ? ['みんなの まほうエネルギーが', 'いっぱいに なったよ', 'ぽんって してくれたら うれしいな']
                 : context.depth === 1
-                    ? ['みんなで あつめた', 'まほうエネルギーだよ']
+                    ? ['みんなの まほうエネルギー', 'ふわふわ うれしいな']
                     : ['ぽんって すると', 'ふわふわに とどくよ'],
         });
     }
@@ -296,7 +296,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
                 category: 'event_notice',
                 accent: 'primary',
                 lines: context.depth === 1
-                    ? ['みんなで やると', 'たのしいかも']
+                    ? ['みんなで やると', 'ふわふわ うれしいな']
                     : ['ちょっとだけ', 'のぞいてみる？'],
                 actionLabel: context.announcement.actionLabel,
             });
@@ -308,7 +308,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
                 category: 'event_notice',
                 accent: 'info',
                 lines: context.depth === 1
-                    ? ['せんせいが', 'みんなに おすすめしてるよ']
+                    ? ['せんせいが', 'これ いいよって']
                     : ['メニューで', 'みてみる？'],
                 actionLabel: context.announcement.actionLabel,
             });
@@ -358,11 +358,11 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             lines: context.depth === 0
                 ? pickVariant([
                     ['みんなの まほうエネルギーが', 'もうすこしで まんたん！'],
-                    ['いいかんじ！', 'みんなで もうすこしだよ'],
+                    ['いいかんじ！', 'ふわふわ どきどきしてる'],
                 ], context.variantSeed)
                 : context.depth === 1
-                    ? ['ここに すこしずつ', 'たまってきたね']
-                    : ['このまま いけば', 'すぐ たまりそう'],
+                    ? ['ここに すこしずつ', 'まほうエネルギー たまってるね']
+                    : ['もうすぐ いっぱいで', 'ふわふわ どきどき'],
         });
     }
 
@@ -374,11 +374,11 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             lines: context.depth === 0
                 ? pickVariant([
                     ['みんなの まほうエネルギーが', 'たまってきたよ'],
-                    ['いいかんじ！', 'まほうエネルギーが ふえてきたよ'],
+                    ['いいかんじ！', 'まほうエネルギー ふえてきたよ'],
                 ], context.variantSeed)
                 : context.depth === 1
-                    ? ['ここに すこしずつ', 'たまるんだよ']
-                    : ['みんなで あつめるの', 'たのしいね'],
+                    ? ['ここに すこしずつ', 'まほうエネルギー たまってるよ']
+                    : ['ふわふわ なんだか', 'わくわくしてきた'],
         });
     }
 
@@ -388,8 +388,8 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
         accent: 'info',
         lines: context.depth === 0
             ? pickVariant([
-                ['まほうエネルギーを', 'みんなで ためてるね'],
-                ['すこしずつ', 'みんなで ためていこう'],
+                ['まほうエネルギーが', 'みんなで ふえてるね'],
+                ['すこしずつ', 'まほうエネルギー ふえてるよ'],
             ], context.variantSeed)
             : context.depth === 1
                 ? ['ここにも まほうエネルギーが', 'ちゃんと たまってるよ']
@@ -495,7 +495,7 @@ function buildUserAnnouncementSpeech(context: UserSpeechContext): FuwafuwaSpeech
             category: 'event_notice',
             accent: 'info',
             lines: context.depth === 1
-                ? ['クラスで やったことの', 'つづきに いいかも']
+                ? ['せんせいが', 'これ いいよって']
                 : ['メニューで', 'みてみる？'],
             actionLabel: context.announcement.actionLabel,
         });
@@ -521,8 +521,8 @@ function buildUserGrowthSpeech(context: UserSpeechContext): FuwafuwaSpeech {
             lines: context.depth === 0
                 ? ['もうすぐ', 'うまれそう！']
                 : context.depth === 1
-                    ? ['たまごの なかで', 'うごいてるかも']
-                    : ['あえるの', 'たのしみだね'],
+                    ? ['たまごの なかで', 'そわそわしてるかも']
+                    : ['あえるの', 'たのしみだな'],
         });
     }
 
@@ -547,11 +547,11 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
             lines: context.depth === 0
                 ? pickVariant([
                     ['まほうエネルギーが', 'もうすこしで まんたん！'],
-                    ['いいかんじ！', 'あと すこしで まんたん！'],
+                    ['いいかんじ！', 'ふわふわ どきどきしてる'],
                 ], context.variantSeed)
                 : context.depth === 1
-                    ? ['あと ほんのちょっとで', 'いっぱいだよ']
-                    : ['このまま いけば', 'すぐ たまるよ'],
+                    ? ['あと ほんのちょっとで', 'いっぱいに なりそう']
+                    : ['もうすぐ いっぱいで', 'ふわふわ どきどき'],
         });
     }
 
@@ -563,11 +563,11 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
             lines: context.depth === 0
                 ? pickVariant([
                     ['まほうエネルギーが', 'たまってきたよ'],
-                    ['いいかんじ！', 'まほうエネルギーが ふえてきたよ'],
+                    ['いいかんじ！', 'まほうエネルギー ふえてきたよ'],
                 ], context.variantSeed)
                 : context.depth === 1
-                    ? ['ここに すこしずつ', 'たまるんだよ']
-                    : ['このまま', 'ためてみよう'],
+                    ? ['ここに すこしずつ', 'まほうエネルギー たまってるよ']
+                    : ['ふわふわ なんだか', 'わくわくしてきた'],
         });
     }
 
@@ -634,7 +634,7 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
                 ? ['まほうエネルギーが', 'いっぱいだよ']
                 : context.depth === 1
                     ? ['ぽんって すると', 'ふわふわに おくれるよ']
-                    : ['やさしく ぽんって', 'してみよう'],
+                    : ['やさしく ぽんって', 'してくれたら うれしいな'],
         });
     }
 
@@ -668,8 +668,8 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
                 ['ここに まほうエネルギーが', 'たまっていくんだよ'],
             ], context.variantSeed)
             : context.depth === 1
-                ? ['たまると', 'いいこと あるよ']
-                : ['すこしずつ', 'あつめてみよう'],
+                ? ['たまると', 'ふわふわ うれしいな']
+                : ['すこしずつ', 'とどくと うれしいな'],
     });
 }
 

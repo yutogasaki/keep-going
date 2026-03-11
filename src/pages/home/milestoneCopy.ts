@@ -36,7 +36,7 @@ export function getMilestoneSpeechLines(kind: MilestoneKind, depth: number): str
         if (normalizedDepth === 1) {
             return ['これから いっしょに', 'そだっていくよ'];
         }
-        return ['また あいに', 'きてね'];
+        return ['また あいに', 'きてくれたら うれしいな'];
     }
 
     if (kind === 'fairy') {
@@ -46,7 +46,7 @@ export function getMilestoneSpeechLines(kind: MilestoneKind, depth: number): str
         if (normalizedDepth === 1) {
             return ['まいにちの がんばり', 'ちゃんと とどいてたよ'];
         }
-        return ['これからも', 'いっしょだよ'];
+        return ['これからも', 'いっしょに いたいな'];
     }
 
     if (normalizedDepth === 0) {
@@ -55,5 +55,5 @@ export function getMilestoneSpeechLines(kind: MilestoneKind, depth: number): str
     if (normalizedDepth === 1) {
         return ['ここまで つづけてきたの', 'すごいね'];
     }
-    return ['これからも', 'よろしくね'];
+    return ['これからも', 'いっしょに いたいな'];
 }

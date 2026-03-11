@@ -53,7 +53,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'challenge:challenge-1',
             kind: 'challenge',
             badgeLabel: 'チャレンジ',
-            title: 'あたらしいチャレンジが きたよ',
+            title: 'あたらしいチャレンジ みつけたよ',
             detail: '前後開脚チャレンジ',
             actionLabel: 'みてみる',
         }, null)).toEqual({
@@ -76,14 +76,14 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'challenge:challenge-1',
             kind: 'challenge',
             badgeLabel: 'チャレンジ',
-            title: 'あたらしいチャレンジが きたよ',
+            title: 'あたらしいチャレンジ みつけたよ',
             detail: '前後開脚チャレンジ',
             actionLabel: 'みてみる',
         }, null)).toEqual({
             id: 'challenge:challenge-1',
             category: 'event_notice',
             accent: 'primary',
-            lines: ['あたらしいチャレンジが きたよ', '前後開脚チャレンジ'],
+            lines: ['あたらしいチャレンジ みつけたよ', '前後開脚チャレンジ'],
             actionLabel: 'みてみる',
         });
     });
@@ -93,7 +93,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'challenge:challenge-1',
             kind: 'challenge' as const,
             badgeLabel: 'チャレンジ' as const,
-            title: 'あたらしいチャレンジが きたよ',
+            title: 'あたらしいチャレンジ みつけたよ',
             detail: '前後開脚チャレンジ',
             actionLabel: 'みてみる',
         };
@@ -120,7 +120,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'teacher-menu:teacher-menu-1',
             kind: 'teacher_menu' as const,
             badgeLabel: '先生' as const,
-            title: 'せんせいの おすすめメニューが きたよ',
+            title: 'せんせいから おすすめが とどいたよ',
             detail: '先生のおすすめメニュー',
             actionLabel: 'メニューへ',
         };
@@ -129,7 +129,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'teacher-menu:teacher-menu-1',
             category: 'event_notice',
             accent: 'info',
-            lines: ['クラスで やったことの', 'つづきに いいかも'],
+            lines: ['せんせいが', 'これ いいよって'],
             actionLabel: 'メニューへ',
         });
 
@@ -147,7 +147,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'teacher-exercise:teacher-exercise-1',
             kind: 'teacher_exercise' as const,
             badgeLabel: '先生' as const,
-            title: 'せんせいの おすすめしゅもくが きたよ',
+            title: 'せんせいが これ どうかなって',
             detail: '先生の新しい種目',
             actionLabel: 'メニューへ',
         };
@@ -181,7 +181,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'primary',
-            lines: ['たまると', 'いいこと あるよ'],
+            lines: ['たまると', 'ふわふわ うれしいな'],
         });
     });
 
@@ -197,7 +197,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:growing',
             category: 'progress',
             accent: 'primary',
-            lines: ['いいかんじ！', 'まほうエネルギーが ふえてきたよ'],
+            lines: ['いいかんじ！', 'まほうエネルギー ふえてきたよ'],
         });
     });
 
@@ -213,7 +213,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:growing',
             category: 'progress',
             accent: 'primary',
-            lines: ['ここに すこしずつ', 'たまるんだよ'],
+            lines: ['ここに すこしずつ', 'まほうエネルギー たまってるよ'],
         });
     });
 
@@ -261,7 +261,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:hatching_soon',
             category: 'progress',
             accent: 'primary',
-            lines: ['たまごの なかで', 'うごいてるかも'],
+            lines: ['たまごの なかで', 'そわそわしてるかも'],
         });
     });
 
@@ -279,7 +279,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:growing',
             category: 'progress',
             accent: 'info',
-            lines: ['ここに すこしずつ', 'たまるんだよ'],
+            lines: ['ここに すこしずつ', 'まほうエネルギー たまってるよ'],
         });
     });
 
@@ -295,7 +295,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'family:growing',
             category: 'progress',
             accent: 'info',
-            lines: ['いいかんじ！', 'まほうエネルギーが ふえてきたよ'],
+            lines: ['いいかんじ！', 'まほうエネルギー ふえてきたよ'],
         });
     });
 
@@ -355,7 +355,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'challenge:challenge-1',
             kind: 'challenge',
             badgeLabel: 'チャレンジ',
-            title: 'あたらしいチャレンジが きたよ',
+            title: 'あたらしいチャレンジ みつけたよ',
             detail: '前後開脚チャレンジ',
             actionLabel: 'みてみる',
         }, null, {
@@ -367,7 +367,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'challenge:challenge-1',
             category: 'event_notice',
             accent: 'primary',
-            lines: ['あたらしいチャレンジが きたよ', '前後開脚チャレンジ'],
+            lines: ['あたらしいチャレンジ みつけたよ', '前後開脚チャレンジ'],
             actionLabel: 'みてみる',
         });
     });

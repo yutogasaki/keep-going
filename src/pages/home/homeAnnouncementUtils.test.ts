@@ -87,7 +87,7 @@ describe('pickHomeAnnouncement', () => {
             id: 'challenge:challenge-1',
             kind: 'challenge',
             badgeLabel: 'チャレンジ',
-            title: 'あたらしいチャレンジが きたよ',
+            title: 'あたらしいチャレンジ みつけたよ',
             detail: '前後開脚チャレンジ',
             actionLabel: 'みてみる',
         });
@@ -109,7 +109,7 @@ describe('pickHomeAnnouncement', () => {
             id: 'teacher-menu:teacher-menu-1',
             kind: 'teacher_menu',
             badgeLabel: '先生',
-            title: 'せんせいの おすすめメニューが きたよ',
+            title: 'せんせいから おすすめが とどいたよ',
             detail: '先生のおすすめメニュー',
             actionLabel: 'メニューへ',
         });
@@ -134,7 +134,7 @@ describe('pickHomeAnnouncement', () => {
             id: 'teacher-exercise:teacher-exercise-1',
             kind: 'teacher_exercise',
             badgeLabel: '先生',
-            title: 'せんせいの おすすめしゅもくが きたよ',
+            title: 'せんせいが これ どうかなって',
             detail: '先生の新しい種目',
             actionLabel: 'メニューへ',
         });
