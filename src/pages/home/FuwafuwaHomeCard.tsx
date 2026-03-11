@@ -24,6 +24,7 @@ interface FuwafuwaHomeCardProps {
     perUserMagic: PerUserMagic[];
     displaySeconds: number;
     targetSeconds: number;
+    isMagicDeliveryActive: boolean;
     onTankReset: () => void;
     selectedUser: UserProfileStore | null;
     activeUsers: UserProfileStore[];
@@ -44,6 +45,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     perUserMagic,
     displaySeconds,
     targetSeconds,
+    isMagicDeliveryActive,
     onTankReset,
     selectedUser,
     activeUsers,
@@ -134,8 +136,9 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
             speechVariantSeed,
             familyVisitRecency,
             familyAfterglow,
+            isMagicDeliveryActive,
         ),
-        [activeUsers.length, ambientCue, announcement, displaySeconds, familyAfterglow, familyMilestoneLead, familyVisitRecency, speechVariantSeed, targetSeconds],
+        [activeUsers.length, ambientCue, announcement, displaySeconds, familyAfterglow, familyMilestoneLead, familyVisitRecency, isMagicDeliveryActive, speechVariantSeed, targetSeconds],
     );
     const familySpeech = useMemo(
         () => getFamilySpeech(
@@ -149,8 +152,9 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
             speechVariantSeed,
             familyVisitRecency,
             familyAfterglow,
+            isMagicDeliveryActive,
         ),
-        [activeUsers.length, ambientCue, announcement, displaySeconds, familyAfterglow, familyMilestoneLead, familyVisitRecency, pokeDepth, speechVariantSeed, targetSeconds],
+        [activeUsers.length, ambientCue, announcement, displaySeconds, familyAfterglow, familyMilestoneLead, familyVisitRecency, isMagicDeliveryActive, pokeDepth, speechVariantSeed, targetSeconds],
     );
     const selectedUserBaseSpeech = useMemo(
         () => selectedUserStatus
@@ -167,6 +171,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 speechVariantSeed,
                 selectedUserVisitRecency,
                 selectedUserAfterglow,
+                isMagicDeliveryActive,
             )
             : {
                 id: 'user:none',
@@ -174,7 +179,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 accent: 'primary' as const,
                 lines: [],
             },
-        [ambientCue, announcement, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
+        [ambientCue, announcement, isMagicDeliveryActive, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
     );
     const selectedUserSpeech = useMemo(
         () => selectedUserStatus
@@ -191,6 +196,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 speechVariantSeed,
                 selectedUserVisitRecency,
                 selectedUserAfterglow,
+                isMagicDeliveryActive,
             )
             : {
                 id: 'user:none',
@@ -198,7 +204,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 accent: 'primary' as const,
                 lines: [],
             },
-        [ambientCue, announcement, pokeDepth, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
+        [ambientCue, announcement, isMagicDeliveryActive, pokeDepth, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
     );
 
     useEffect(() => {
@@ -272,6 +278,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                     activeUsers={activeUsers}
                     displaySeconds={displaySeconds}
                     familySpeech={familySpeech}
+                    isMagicDeliveryActive={isMagicDeliveryActive}
                     showSpeechBubble={shouldShowFamilySpeech}
                     onFamilySpeechTap={() => setPokeDepth((currentDepth) => Math.min(2, currentDepth + 1))}
                     milestoneEventsByUserId={milestoneEventsByUserId}
@@ -286,6 +293,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 <FuwafuwaSoloView
                     allSessions={allSessions}
                     displaySeconds={displaySeconds}
+                    isMagicDeliveryActive={isMagicDeliveryActive}
                     onCharacterTap={() => setPokeDepth((currentDepth) => Math.min(2, currentDepth + 1))}
                     onTankReset={onTankReset}
                     onSpeechAction={selectedUserSpeech.actionLabel ? onAnnouncementAction : undefined}

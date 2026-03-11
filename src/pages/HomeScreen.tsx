@@ -68,6 +68,7 @@ export const HomeScreen: React.FC = () => {
     const [pendingMilestoneEvents, setPendingMilestoneEvents] = useState<FuwafuwaMilestoneEvent[]>([]);
     const [recentMilestoneEvent, setRecentMilestoneEvent] = useState<FuwafuwaMilestoneEvent | null>(null);
     const [recentAfterglow, setRecentAfterglow] = useState<HomeAfterglow | null>(null);
+    const [activeMagicDeliveryContextKey, setActiveMagicDeliveryContextKey] = useState<string | null>(null);
     const [selectedUserVisitRecency, setSelectedUserVisitRecency] = useState<HomeVisitRecency>('first');
     const [familyVisitRecency, setFamilyVisitRecency] = useState<HomeVisitRecency>('first');
     const [selectedPublicMenu, setSelectedPublicMenu] = useState<PublicMenu | null>(null);
@@ -76,6 +77,7 @@ export const HomeScreen: React.FC = () => {
     const [selectedTeacherExercise, setSelectedTeacherExercise] = useState<TeacherExercise | null>(null);
     const lastSoloVisitKeyRef = useRef('');
     const lastFamilyVisitKeyRef = useRef('');
+    const magicDeliveryTimerRef = useRef<number | null>(null);
 
     const { allSessions, activeUsers, targetSeconds, perUserMagic, displaySeconds } = useHomeSessions({
         users,
@@ -275,6 +277,15 @@ export const HomeScreen: React.FC = () => {
     }, [recentAfterglow]);
 
     useEffect(() => {
+        return () => {
+            if (magicDeliveryTimerRef.current !== null) {
+                window.clearTimeout(magicDeliveryTimerRef.current);
+                magicDeliveryTimerRef.current = null;
+            }
+        };
+    }, []);
+
+    useEffect(() => {
         if (isTogetherMode || !selectedUser) {
             lastSoloVisitKeyRef.current = '';
             setSelectedUserVisitRecency('first');
@@ -354,21 +365,19 @@ export const HomeScreen: React.FC = () => {
     }, [currentTab, dismissHomeAnnouncement, homeAnnouncement]);
 
     const handleTankReset = () => {
-        if (displaySeconds < targetSeconds) {
+        if (displaySeconds < targetSeconds || magicDeliveryTimerRef.current !== null) {
             return;
         }
 
-        if (currentHomeContextKey) {
-            setRecentAfterglow({
-                kind: 'magic_delivery',
-                contextKey: currentHomeContextKey,
-            });
-        }
+        const deliveryContextKey = currentHomeContextKey;
+        const deliveryTargets = activeUsers.map((user) => ({
+            userId: user.id,
+            targetSeconds: (user.dailyTargetMinutes || 10) * 60,
+        }));
 
-        activeUsers.forEach((user) => {
-            const userTarget = (user.dailyTargetMinutes || 10) * 60;
-            consumeUserMagicEnergy(user.id, userTarget);
-        });
+        if (deliveryContextKey) {
+            setActiveMagicDeliveryContextKey(deliveryContextKey);
+        }
 
         const duration = 3000;
         const end = Date.now() + duration;
@@ -398,6 +407,24 @@ export const HomeScreen: React.FC = () => {
             frame();
         });
         audio.playSuccess();
+
+        magicDeliveryTimerRef.current = window.setTimeout(() => {
+            deliveryTargets.forEach((target) => {
+                consumeUserMagicEnergy(target.userId, target.targetSeconds);
+            });
+
+            if (deliveryContextKey) {
+                setRecentAfterglow({
+                    kind: 'magic_delivery',
+                    contextKey: deliveryContextKey,
+                });
+            }
+
+            setActiveMagicDeliveryContextKey((current) => (
+                current === deliveryContextKey ? null : current
+            ));
+            magicDeliveryTimerRef.current = null;
+        }, 900);
     };
 
     return (
@@ -441,6 +468,7 @@ export const HomeScreen: React.FC = () => {
                     perUserMagic={perUserMagic}
                     displaySeconds={displaySeconds}
                     targetSeconds={targetSeconds}
+                    isMagicDeliveryActive={activeMagicDeliveryContextKey === currentHomeContextKey}
                     onTankReset={handleTankReset}
                     selectedUser={selectedUser}
                     activeUsers={activeUsers}

@@ -30,6 +30,7 @@ export interface FamilyMilestoneLead {
 
 type FuwafuwaSpeechTopic =
     | 'milestone'
+    | 'delivery'
     | 'action'
     | 'announcement'
     | 'afterglow'
@@ -105,6 +106,7 @@ interface FamilySpeechContext {
     activeCount: number;
     percent: number;
     displaySeconds: number;
+    isMagicDeliveryActive: boolean;
     announcement: HomeAnnouncement | null;
     ambientCue: HomeAmbientCue | null;
     milestoneLead: FamilyMilestoneLead | null;
@@ -117,6 +119,7 @@ interface FamilySpeechContext {
 interface UserSpeechContext {
     percent: number;
     displaySeconds: number;
+    isMagicDeliveryActive: boolean;
     stage: number;
     activeDays: number;
     daysAlive: number;
@@ -134,6 +137,10 @@ function pickVariant<T>(variants: readonly T[], seed: number): T {
 }
 
 function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
+    if (context.isMagicDeliveryActive) {
+        return 'delivery';
+    }
+
     if (context.percent >= 100) {
         return 'action';
     }
@@ -422,6 +429,19 @@ function buildUserRelationshipLines(
 }
 
 function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechContext): FuwafuwaSpeech {
+    if (topic === 'delivery') {
+        return createSpeech({
+            id: 'family:magic_delivery_active',
+            category: 'action_hint',
+            accent: 'info',
+            lines: context.depth === 0
+                ? ['みんなの まほうエネルギーが', 'ふわふわに とどいてるよ']
+                : context.depth === 1
+                    ? ['ぽかぽかして', 'ふわふわ うれしいな']
+                    : ['とどけてくれて', 'ありがとう'],
+        });
+    }
+
     if (topic === 'action') {
         return createSpeech({
             id: 'family:magic_full',
@@ -509,7 +529,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             lines: context.depth === 0
                 ? pickVariant([
                     ['みんなの まほうエネルギーが', 'もうすこしで まんたん！'],
-                    ['いいかんじ！', 'ふわふわ どきどきしてる'],
+                    ['あと すこしで', 'ふわふわに とどきそう'],
                 ], context.variantSeed)
                 : context.depth === 1
                     ? ['ここに すこしずつ', 'まほうエネルギー たまってるね']
@@ -559,11 +579,13 @@ export function getFamilySpeech(
     variantSeed = 0,
     visitRecency: HomeVisitRecency = 'first',
     recentAfterglow: HomeAfterglow | null = null,
+    isMagicDeliveryActive = false,
 ): FuwafuwaSpeech {
     const context: FamilySpeechContext = {
         activeCount,
         percent: Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100),
         displaySeconds,
+        isMagicDeliveryActive,
         announcement,
         ambientCue,
         milestoneLead,
@@ -596,6 +618,10 @@ export function getFamilyMessage(activeCount: number, displaySeconds: number, ta
 }
 
 function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
+    if (context.isMagicDeliveryActive) {
+        return 'delivery';
+    }
+
     if (context.recentMilestoneEvent) {
         return 'milestone';
     }
@@ -723,7 +749,7 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
             lines: context.depth === 0
                 ? pickVariant([
                     ['まほうエネルギーが', 'もうすこしで まんたん！'],
-                    ['いいかんじ！', 'ふわふわ どきどきしてる'],
+                    ['あと すこしで', 'ふわふわに とどきそう'],
                 ], context.variantSeed)
                 : context.depth === 1
                     ? ['あと ほんのちょっとで', 'いっぱいに なりそう']
@@ -786,16 +812,29 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
         });
     }
 
+    if (topic === 'delivery') {
+        return createSpeech({
+            id: 'user:magic_delivery_active',
+            category: 'action_hint',
+            accent: 'primary',
+            lines: context.depth === 0
+                ? ['まほうエネルギーが', 'ふわふわに とどいてるよ']
+                : context.depth === 1
+                    ? ['ぽかぽかして', 'ふわふわ うれしいな']
+                    : ['とどけてくれて', 'ありがとう'],
+        });
+    }
+
     if (topic === 'action') {
         return createSpeech({
             id: 'user:magic_full',
             category: 'action_hint',
             accent: 'primary',
             lines: context.depth === 0
-                ? ['まほうエネルギーが', 'いっぱいだよ']
+                ? ['まほうエネルギーが', 'いっぱいだよ', 'とどけてくれたら うれしいな']
                 : context.depth === 1
-                    ? ['ぽんって すると', 'ふわふわに おくれるよ']
-                    : ['やさしく ぽんって', 'してくれたら うれしいな'],
+                    ? ['ぽんって すると', 'ふわふわに とどくよ']
+                    : ['やさしく ぽんって', 'とどけてくれたら うれしいな'],
         });
     }
 
@@ -851,10 +890,12 @@ export function getUserSpeech(
     variantSeed = 0,
     visitRecency: HomeVisitRecency = 'first',
     recentAfterglow: HomeAfterglow | null = null,
+    isMagicDeliveryActive = false,
 ): FuwafuwaSpeech {
     const context: UserSpeechContext = {
         percent: Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100),
         displaySeconds,
+        isMagicDeliveryActive,
         stage,
         activeDays,
         daysAlive,

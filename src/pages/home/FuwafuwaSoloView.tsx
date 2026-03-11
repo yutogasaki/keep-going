@@ -11,6 +11,7 @@ import { getSpeechReactionStyle } from './fuwafuwaSpeechReaction';
 interface FuwafuwaSoloViewProps {
     allSessions: SessionRecord[];
     displaySeconds: number;
+    isMagicDeliveryActive: boolean;
     onCharacterTap?: () => void;
     onTankReset: () => void;
     onSpeechAction?: () => void;
@@ -23,6 +24,7 @@ interface FuwafuwaSoloViewProps {
 export function FuwafuwaSoloView({
     allSessions,
     displaySeconds,
+    isMagicDeliveryActive,
     onCharacterTap,
     onTankReset,
     onSpeechAction,
@@ -41,6 +43,7 @@ export function FuwafuwaSoloView({
                     maxSeconds={targetSeconds}
                     onReset={onTankReset}
                     ariaLabel="まほうタンク"
+                    isSending={isMagicDeliveryActive}
                 />
             </div>
 

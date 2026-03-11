@@ -22,6 +22,7 @@ interface FuwafuwaTogetherViewProps {
     activeUsers: UserProfileStore[];
     displaySeconds: number;
     familySpeech: FuwafuwaSpeech;
+    isMagicDeliveryActive: boolean;
     showSpeechBubble: boolean;
     onFamilySpeechTap?: () => void;
     milestoneEventsByUserId: Map<string, FuwafuwaMilestoneEvent>;
@@ -37,6 +38,7 @@ export const FuwafuwaTogetherView: FC<FuwafuwaTogetherViewProps> = ({
     activeUsers,
     displaySeconds,
     familySpeech,
+    isMagicDeliveryActive,
     showSpeechBubble,
     onFamilySpeechTap,
     milestoneEventsByUserId,
@@ -66,6 +68,7 @@ export const FuwafuwaTogetherView: FC<FuwafuwaTogetherViewProps> = ({
                     maxSeconds={targetSeconds}
                     onReset={onTankReset}
                     ariaLabel="みんなの まほうタンク"
+                    isSending={isMagicDeliveryActive}
                 />
                 <div style={{ marginTop: SPACE.sm }}>
                     {showSpeechBubble ? (

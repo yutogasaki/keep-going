@@ -32,13 +32,52 @@ describe('fuwafuwaHomeCardCopy', () => {
             id: 'user:magic_full',
             category: 'action_hint',
             accent: 'primary',
-            lines: ['まほうエネルギーが', 'いっぱいだよ'],
+            lines: ['まほうエネルギーが', 'いっぱいだよ', 'とどけてくれたら うれしいな'],
         });
         expect(getUserSpeech(600, 600, 2, 6, null, null, null, 1)).toEqual({
             id: 'user:magic_full',
             category: 'action_hint',
             accent: 'primary',
-            lines: ['ぽんって すると', 'ふわふわに おくれるよ'],
+            lines: ['ぽんって すると', 'ふわふわに とどくよ'],
+        });
+    });
+
+    it('shows delivery speech above other home topics while magic is being sent', () => {
+        expect(getUserSpeech(600, 600, 2, 6, {
+            kind: 'fairy' as const,
+            userId: 'user-1',
+            source: 'system' as const,
+        }, {
+            id: 'challenge:challenge-1',
+            kind: 'challenge',
+            badgeLabel: 'チャレンジ',
+            title: 'あたらしいチャレンジ みつけたよ',
+            detail: '前後開脚チャレンジ',
+            actionLabel: 'みてみる',
+        }, null, 0, 0, 0, 'first', null, true)).toEqual({
+            id: 'user:magic_delivery_active',
+            category: 'action_hint',
+            accent: 'primary',
+            lines: ['まほうエネルギーが', 'ふわふわに とどいてるよ'],
+        });
+
+        expect(getFamilySpeech(2, 1200, 1200, {
+            id: 'challenge:challenge-1',
+            kind: 'challenge',
+            badgeLabel: 'チャレンジ',
+            title: 'あたらしいチャレンジ みつけたよ',
+            detail: '前後開脚チャレンジ',
+            actionLabel: 'みてみる',
+        }, null, {
+            kind: 'egg',
+            userId: 'user-1',
+            userName: 'さくら',
+            hasMultiple: false,
+        }, 0, 0, 'first', null, true)).toEqual({
+            id: 'family:magic_delivery_active',
+            category: 'action_hint',
+            accent: 'info',
+            lines: ['みんなの まほうエネルギーが', 'ふわふわに とどいてるよ'],
         });
     });
 
