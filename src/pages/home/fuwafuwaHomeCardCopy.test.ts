@@ -42,6 +42,18 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
     });
 
+    it('keeps magic-delivery afterglow above family idle speech after reset', () => {
+        expect(getFamilySpeech(2, 0, 600, null, null, null, 0, 0, 'first', {
+            kind: 'magic_delivery',
+            contextKey: 'family:user-1|user-2',
+        })).toEqual({
+            id: 'family:afterglow:magic_delivery',
+            category: 'relationship',
+            accent: 'info',
+            lines: ['みんなの まほうエネルギー', 'ちゃんと とどいたよ'],
+        });
+    });
+
     it('keeps milestone follow-up speech above regular home topics', () => {
         const milestoneEvent = {
             kind: 'fairy' as const,
@@ -85,6 +97,26 @@ describe('fuwafuwaHomeCardCopy', () => {
             accent: 'primary',
             lines: ['あたらしいチャレンジ みつけたよ', '前後開脚チャレンジ'],
             actionLabel: 'みてみる',
+        });
+    });
+
+    it('keeps announcement afterglow above regular idle copy once the card is gone', () => {
+        expect(getUserSpeech(0, 600, 2, 3, null, null, null, 0, 0, 0, 'first', {
+            kind: 'announcement',
+            contextKey: 'solo:user-1',
+            announcement: {
+                id: 'challenge:challenge-1',
+                kind: 'challenge',
+                badgeLabel: 'チャレンジ',
+                title: 'あたらしいチャレンジ みつけたよ',
+                detail: '前後開脚チャレンジ',
+                actionLabel: 'みてみる',
+            },
+        })).toEqual({
+            id: 'afterglow:challenge:challenge-1',
+            category: 'event_notice',
+            accent: 'primary',
+            lines: ['みつけてくれて', 'ふわふわ うれしいな'],
         });
     });
 

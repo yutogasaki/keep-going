@@ -16,6 +16,13 @@ describe('fuwafuwaSpeechReaction', () => {
             accent: 'primary',
             lines: ['まほうエネルギーが', 'いっぱいだよ'],
         })).toBe('celebrating');
+
+        expect(getSpeechReactionStyle({
+            id: 'user:afterglow:magic_delivery',
+            category: 'relationship',
+            accent: 'primary',
+            lines: ['まほうエネルギー', 'ちゃんと とどいたよ'],
+        })).toBe('celebrating');
     });
 
     it('keeps progress, relationship, and mechanic speech distinct', () => {

@@ -12,6 +12,10 @@ export function getSpeechReactionStyle(speech: FuwafuwaSpeech): FuwafuwaReaction
         return 'celebrating';
     }
 
+    if (speech.id.includes(':afterglow:magic')) {
+        return 'celebrating';
+    }
+
     if (speech.category === 'action_hint') {
         return 'celebrating';
     }
@@ -46,4 +50,3 @@ export function getReactionEmojis(style: FuwafuwaReactionStyle): string[] {
         return ['💖', '🫧', '✨', '🌙'];
     }
 }
-

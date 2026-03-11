@@ -22,6 +22,11 @@ import { FuwafuwaHomeCard } from './home/FuwafuwaHomeCard';
 import { HomeChallengesAndMenus } from './home/HomeChallengesAndMenus';
 import { TeacherExerciseDetailSheet } from './home/TeacherExerciseDetailSheet';
 import { TeacherMenuDetailSheet } from './home/TeacherMenuDetailSheet';
+import {
+    getFamilyHomeContextKey,
+    getSoloHomeContextKey,
+    type HomeAfterglow,
+} from './home/homeAfterglow';
 import { pickHomeAnnouncement } from './home/homeAnnouncementUtils';
 import {
     getFamilyVisitMemoryKey,
@@ -62,6 +67,7 @@ export const HomeScreen: React.FC = () => {
     const [exerciseBrowserOpen, setExerciseBrowserOpen] = useState(false);
     const [pendingMilestoneEvents, setPendingMilestoneEvents] = useState<FuwafuwaMilestoneEvent[]>([]);
     const [recentMilestoneEvent, setRecentMilestoneEvent] = useState<FuwafuwaMilestoneEvent | null>(null);
+    const [recentAfterglow, setRecentAfterglow] = useState<HomeAfterglow | null>(null);
     const [selectedUserVisitRecency, setSelectedUserVisitRecency] = useState<HomeVisitRecency>('first');
     const [familyVisitRecency, setFamilyVisitRecency] = useState<HomeVisitRecency>('first');
     const [selectedPublicMenu, setSelectedPublicMenu] = useState<PublicMenu | null>(null);
@@ -114,6 +120,12 @@ export const HomeScreen: React.FC = () => {
     const familyVisitKey = useMemo(
         () => (isTogetherMode ? getFamilyVisitMemoryKey(currentUsers.map((user) => user.id)) : ''),
         [currentUsers, isTogetherMode],
+    );
+    const currentHomeContextKey = useMemo(
+        () => (isTogetherMode
+            ? getFamilyHomeContextKey(currentUsers.map((user) => user.id))
+            : getSoloHomeContextKey(selectedUser?.id ?? sessionUserIds[0] ?? '')),
+        [currentUsers, isTogetherMode, selectedUser?.id, sessionUserIds],
     );
     const activeMilestoneUser = useMemo(
         () => activeMilestoneModal
@@ -247,6 +259,22 @@ export const HomeScreen: React.FC = () => {
     }, [recentMilestoneEvent]);
 
     useEffect(() => {
+        if (!recentAfterglow) {
+            return;
+        }
+
+        const timerId = window.setTimeout(() => {
+            setRecentAfterglow((current) => (
+                current?.kind === recentAfterglow.kind && current.contextKey === recentAfterglow.contextKey
+                    ? null
+                    : current
+            ));
+        }, 10000);
+
+        return () => window.clearTimeout(timerId);
+    }, [recentAfterglow]);
+
+    useEffect(() => {
         if (isTogetherMode || !selectedUser) {
             lastSoloVisitKeyRef.current = '';
             setSelectedUserVisitRecency('first');
@@ -328,6 +356,13 @@ export const HomeScreen: React.FC = () => {
     const handleTankReset = () => {
         if (displaySeconds < targetSeconds) {
             return;
+        }
+
+        if (currentHomeContextKey) {
+            setRecentAfterglow({
+                kind: 'magic_delivery',
+                contextKey: currentHomeContextKey,
+            });
         }
 
         activeUsers.forEach((user) => {
@@ -412,6 +447,7 @@ export const HomeScreen: React.FC = () => {
                     allSessions={allSessions}
                     milestoneEventsByUserId={pendingMilestoneEventsByUserId}
                     recentMilestoneEvent={selectedUser && recentMilestoneEvent?.userId === selectedUser.id ? recentMilestoneEvent : null}
+                    recentAfterglow={recentAfterglow}
                     onSelectUser={(userId) => setSessionUserIds([userId])}
                     announcement={homeAnnouncement}
                     ambientCue={ambientCue}
@@ -420,6 +456,14 @@ export const HomeScreen: React.FC = () => {
                     onAnnouncementAction={() => {
                         if (!homeAnnouncement) {
                             return;
+                        }
+
+                        if (currentHomeContextKey) {
+                            setRecentAfterglow({
+                                kind: 'announcement',
+                                contextKey: currentHomeContextKey,
+                                announcement: homeAnnouncement,
+                            });
                         }
 
                         dismissHomeAnnouncement(homeAnnouncement.id);

@@ -1,3 +1,4 @@
+import type { HomeAfterglow } from './homeAfterglow';
 import type { HomeAnnouncement } from './homeAnnouncementUtils';
 import type { HomeAmbientCue } from './homeAmbientUtils';
 import type { HomeVisitRecency } from './homeVisitMemory';
@@ -31,6 +32,7 @@ type FuwafuwaSpeechTopic =
     | 'milestone'
     | 'action'
     | 'announcement'
+    | 'afterglow'
     | 'growth'
     | 'progress'
     | 'ambient'
@@ -106,6 +108,7 @@ interface FamilySpeechContext {
     announcement: HomeAnnouncement | null;
     ambientCue: HomeAmbientCue | null;
     milestoneLead: FamilyMilestoneLead | null;
+    recentAfterglow: HomeAfterglow | null;
     visitRecency: HomeVisitRecency;
     depth: number;
     variantSeed: number;
@@ -120,6 +123,7 @@ interface UserSpeechContext {
     announcement: HomeAnnouncement | null;
     ambientCue: HomeAmbientCue | null;
     recentMilestoneEvent: FuwafuwaMilestoneEvent | null;
+    recentAfterglow: HomeAfterglow | null;
     visitRecency: HomeVisitRecency;
     depth: number;
     variantSeed: number;
@@ -142,6 +146,10 @@ function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
         return 'milestone';
     }
 
+    if (context.recentAfterglow) {
+        return 'afterglow';
+    }
+
     if (context.displaySeconds === 0) {
         if (context.ambientCue && context.depth >= 2) {
             return 'ambient';
@@ -155,6 +163,52 @@ function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
     }
 
     return 'progress';
+}
+
+function buildAfterglowAnnouncementSpeech(
+    announcement: HomeAnnouncement,
+    depth: number,
+): FuwafuwaSpeech {
+    if (announcement.kind === 'challenge') {
+        return createSpeech({
+            id: `afterglow:${announcement.id}`,
+            category: 'event_notice',
+            accent: 'primary',
+            lines: depth === 0
+                ? ['みつけてくれて', 'ふわふわ うれしいな']
+                : depth === 1
+                    ? ['また みにいけたら', 'たのしそうだね']
+                    : ['きになったときに', 'のぞいてみてね'],
+        });
+    }
+
+    return createSpeech({
+        id: `afterglow:${announcement.id}`,
+        category: 'event_notice',
+        accent: 'info',
+        lines: depth === 0
+            ? ['おすすめ みてくれて', 'ふわふわ うれしいな']
+            : depth === 1
+                ? ['せんせいも', 'よろこぶかも']
+                : ['また みにいけたら', 'いいね'],
+    });
+}
+
+function buildFamilyAfterglowSpeech(afterglow: HomeAfterglow, depth: number): FuwafuwaSpeech {
+    if (afterglow.kind === 'announcement') {
+        return buildAfterglowAnnouncementSpeech(afterglow.announcement, depth);
+    }
+
+    return createSpeech({
+        id: 'family:afterglow:magic_delivery',
+        category: 'relationship',
+        accent: 'info',
+        lines: depth === 0
+            ? ['みんなの まほうエネルギー', 'ちゃんと とどいたよ']
+            : depth === 1
+                ? ['いっぱい とどいて', 'ふわふわ ぽかぽか']
+                : ['また とどいたら', 'ふわふわ うれしいな'],
+    });
 }
 
 function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead, depth: number): FuwafuwaSpeech {
@@ -421,6 +475,10 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
         });
     }
 
+    if (topic === 'afterglow') {
+        return buildFamilyAfterglowSpeech(context.recentAfterglow!, context.depth);
+    }
+
     if (topic === 'milestone') {
         return buildFamilyMilestoneSpeech(context.milestoneLead!, context.depth);
     }
@@ -500,6 +558,7 @@ export function getFamilySpeech(
     pokeDepth = 0,
     variantSeed = 0,
     visitRecency: HomeVisitRecency = 'first',
+    recentAfterglow: HomeAfterglow | null = null,
 ): FuwafuwaSpeech {
     const context: FamilySpeechContext = {
         activeCount,
@@ -508,6 +567,7 @@ export function getFamilySpeech(
         announcement,
         ambientCue,
         milestoneLead,
+        recentAfterglow,
         visitRecency,
         depth: Math.max(0, Math.min(2, pokeDepth)),
         variantSeed,
@@ -548,6 +608,10 @@ function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
         return 'announcement';
     }
 
+    if (context.recentAfterglow) {
+        return 'afterglow';
+    }
+
     if (isHatchingSoon(context.stage, context.daysAlive) || isGrowthSoon(context.stage, context.activeDays)) {
         return 'growth';
     }
@@ -565,6 +629,23 @@ function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
     }
 
     return 'mechanic';
+}
+
+function buildUserAfterglowSpeech(afterglow: HomeAfterglow, depth: number): FuwafuwaSpeech {
+    if (afterglow.kind === 'announcement') {
+        return buildAfterglowAnnouncementSpeech(afterglow.announcement, depth);
+    }
+
+    return createSpeech({
+        id: 'user:afterglow:magic_delivery',
+        category: 'relationship',
+        accent: 'primary',
+        lines: depth === 0
+            ? ['まほうエネルギー', 'ちゃんと とどいたよ']
+            : depth === 1
+                ? ['いっぱい とどいて', 'ふわふわ ぽかぽか']
+                : ['また とどいたら', 'ふわふわ うれしいな'],
+    });
 }
 
 function buildUserAnnouncementSpeech(context: UserSpeechContext): FuwafuwaSpeech {
@@ -722,6 +803,10 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
         return buildUserAnnouncementSpeech(context);
     }
 
+    if (topic === 'afterglow') {
+        return buildUserAfterglowSpeech(context.recentAfterglow!, context.depth);
+    }
+
     if (topic === 'growth') {
         return buildUserGrowthSpeech(context);
     }
@@ -765,6 +850,7 @@ export function getUserSpeech(
     daysAlive = 0,
     variantSeed = 0,
     visitRecency: HomeVisitRecency = 'first',
+    recentAfterglow: HomeAfterglow | null = null,
 ): FuwafuwaSpeech {
     const context: UserSpeechContext = {
         percent: Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100),
@@ -775,6 +861,7 @@ export function getUserSpeech(
         announcement,
         ambientCue,
         recentMilestoneEvent,
+        recentAfterglow,
         visitRecency,
         depth: Math.max(0, Math.min(2, pokeDepth)),
         variantSeed,
