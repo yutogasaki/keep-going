@@ -124,6 +124,7 @@ export function getUserSpeech(
     activeDays: number,
     announcement: HomeAnnouncement | null,
     pokeDepth = 0,
+    daysAlive = 0,
 ): FuwafuwaSpeech {
     const percent = Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100);
     const depth = Math.max(0, Math.min(2, pokeDepth));
@@ -163,6 +164,18 @@ export function getUserSpeech(
                 ? ['このまえのレッスンに', 'ぴったりかも']
                 : ['メニューで', 'みてみる？'],
             actionLabel: announcement.actionLabel,
+        };
+    }
+
+    if (stage === 1 && daysAlive === 3) {
+        return {
+            id: 'user:hatching_soon',
+            accent: 'primary',
+            lines: depth === 0
+                ? ['もうすぐ', 'うまれそう！']
+                : depth === 1
+                    ? ['たまごの なかで', 'うごいてるかも']
+                    : ['あえるの', 'たのしみだね'],
         };
     }
 

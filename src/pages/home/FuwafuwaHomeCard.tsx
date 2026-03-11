@@ -72,6 +72,8 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 selectedUserStatus.stage,
                 selectedUserStatus.activeDays,
                 announcement,
+                0,
+                selectedUserStatus.daysAlive,
             )
             : {
                 id: 'user:none',
@@ -89,6 +91,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 selectedUserStatus.activeDays,
                 announcement,
                 pokeDepth,
+                selectedUserStatus.daysAlive,
             )
             : {
                 id: 'user:none',

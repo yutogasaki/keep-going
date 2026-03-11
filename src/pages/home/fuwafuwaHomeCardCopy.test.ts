@@ -95,6 +95,20 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
     });
 
+    it('moves hatching-soon copy into the speech bubble', () => {
+        expect(getUserSpeech(0, 600, 1, 0, null, 0, 3)).toEqual({
+            id: 'user:hatching_soon',
+            accent: 'primary',
+            lines: ['もうすぐ', 'うまれそう！'],
+        });
+
+        expect(getUserSpeech(0, 600, 1, 0, null, 1, 3)).toEqual({
+            id: 'user:hatching_soon',
+            accent: 'primary',
+            lines: ['たまごの なかで', 'うごいてるかも'],
+        });
+    });
+
     it('returns together-mode speech with info accent', () => {
         expect(getFamilySpeech(2, 300, 600, null)).toEqual({
             id: 'family:growing',

@@ -9,6 +9,12 @@ interface FuwafuwaStatusPillProps {
     onEditName: () => void;
 }
 
+function getStageMetaLabel(stage: number) {
+    if (stage === 1) return 'たまご';
+    if (stage === 2) return 'ようせい';
+    return 'おとな';
+}
+
 export const FuwafuwaStatusPill: React.FC<FuwafuwaStatusPillProps> = ({
     stage,
     daysAlive,
@@ -43,9 +49,11 @@ export const FuwafuwaStatusPill: React.FC<FuwafuwaStatusPillProps> = ({
                 }}
             >
                 {stage === 1 ? (
-                    daysAlive < 3
-                        ? `たまごになって ${daysAlive} 日目`
-                        : 'もうすぐ生まれそう...！'
+                    <>
+                        <span style={{ color: '#2D3436', fontWeight: 800 }}>{getStageMetaLabel(stage)}</span>
+                        <span style={{ margin: '0 6px', color: '#B2BEC3' }}>|</span>
+                        {daysAlive} 日目
+                    </>
                 ) : (
                     <>
                         <span style={{ color: '#2D3436', fontWeight: 800 }}>{name || 'なまえなし'}</span>
