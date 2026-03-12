@@ -7,7 +7,7 @@ describe('fuwafuwaSpeechPresence', () => {
             speech: {
                 id: 'user:relationship_ready',
                 category: 'relationship',
-                accent: 'primary',
+                accent: 'everyday',
                 lines: ['また すぐ あえたね', 'ふわふわ うれしいな'],
             },
             visitRecency: 'recent',
@@ -20,7 +20,7 @@ describe('fuwafuwaSpeechPresence', () => {
             speech: {
                 id: 'user:growing',
                 category: 'progress',
-                accent: 'primary',
+                accent: 'magic',
                 lines: ['まほうエネルギーが', 'たまってきたよ'],
             },
             visitRecency: 'recent',
@@ -31,7 +31,7 @@ describe('fuwafuwaSpeechPresence', () => {
             speech: {
                 id: 'user:relationship_ready',
                 category: 'relationship',
-                accent: 'primary',
+                accent: 'everyday',
                 lines: ['また すぐ あえたね', 'ふわふわ うれしいな'],
             },
             visitRecency: 'recent',

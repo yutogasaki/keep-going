@@ -6,12 +6,12 @@ describe('fuwafuwaSpeechCompare', () => {
         expect(isSameRenderedSpeech({
             id: 'user:mood',
             category: 'progress',
-            accent: 'primary',
+            accent: 'everyday',
             lines: ['なんだか ぽかぽか', 'してきたよ'],
         }, {
             id: 'user:growing',
             category: 'progress',
-            accent: 'primary',
+            accent: 'everyday',
             lines: ['なんだか ぽかぽか', 'してきたよ'],
         })).toBe(true);
     });
@@ -20,12 +20,12 @@ describe('fuwafuwaSpeechCompare', () => {
         expect(isSameRenderedSpeech({
             id: 'user:mood',
             category: 'progress',
-            accent: 'primary',
+            accent: 'everyday',
             lines: ['なんだか ぽかぽか', 'してきたよ'],
         }, {
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
-            accent: 'primary',
+            accent: 'magic',
             lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
         })).toBe(false);
     });

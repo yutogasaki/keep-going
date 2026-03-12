@@ -5,7 +5,7 @@ import type { HomeVisitRecency } from './homeVisitMemory';
 import type { FuwafuwaMilestoneEvent } from '../../store/useAppStore';
 import { getMilestoneSpeechLines } from './milestoneCopy';
 
-export type FuwafuwaSpeechAccent = 'primary' | 'info';
+export type FuwafuwaSpeechAccent = 'everyday' | 'magic' | 'event' | 'ambient';
 export type FuwafuwaSpeechCategory =
     | 'action_hint'
     | 'event_notice'
@@ -78,7 +78,7 @@ function createSpeech({
         category,
         accent,
         lines,
-        actionLabel,
+        ...(actionLabel ? { actionLabel } : {}),
     };
 }
 
@@ -86,7 +86,7 @@ function buildAnnouncementSpeech(announcement: HomeAnnouncement): FuwafuwaSpeech
     return createSpeech({
         id: announcement.id,
         category: 'event_notice',
-        accent: announcement.kind === 'challenge' ? 'primary' : 'info',
+        accent: 'event',
         lines: [announcement.title, announcement.detail],
         actionLabel: announcement.actionLabel,
     });
@@ -212,7 +212,7 @@ function buildAfterglowAnnouncementSpeech(
         return createSpeech({
             id: `afterglow:${announcement.id}`,
             category: 'event_notice',
-            accent: 'primary',
+            accent: 'event',
             lines: depth === 0
                 ? ['みつけてくれて', 'ふわふわ うれしいな']
                 : depth === 1
@@ -224,7 +224,7 @@ function buildAfterglowAnnouncementSpeech(
     return createSpeech({
         id: `afterglow:${announcement.id}`,
         category: 'event_notice',
-        accent: 'info',
+        accent: 'event',
         lines: depth === 0
             ? ['おすすめ みてくれて', 'ふわふわ うれしいな']
             : depth === 1
@@ -241,7 +241,7 @@ function buildFamilyAfterglowSpeech(afterglow: HomeAfterglow, depth: number): Fu
     return createSpeech({
         id: 'family:afterglow:magic_delivery',
         category: 'relationship',
-        accent: 'info',
+        accent: 'magic',
         lines: depth === 0
             ? ['みんなの まほうエネルギー', 'ちゃんと うけとったよ']
             : depth === 1
@@ -256,7 +256,7 @@ function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead, depth: n
             return createSpeech({
                 id: `family:milestone:many:${milestoneLead.kind}`,
                 category: 'event_notice',
-                accent: 'info',
+                accent: 'event',
                 lines: depth === 0
                     ? ['みんなの ところで', 'たまごが きてるみたい']
                     : depth === 1
@@ -269,7 +269,7 @@ function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead, depth: n
             return createSpeech({
                 id: `family:milestone:many:${milestoneLead.kind}`,
                 category: 'event_notice',
-                accent: 'info',
+                accent: 'event',
                 lines: depth === 0
                     ? ['みんなの ところで', 'うまれた ふわふわが いるみたい']
                     : depth === 1
@@ -281,7 +281,7 @@ function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead, depth: n
         return createSpeech({
             id: `family:milestone:many:${milestoneLead.kind}`,
             category: 'event_notice',
-            accent: 'info',
+            accent: 'event',
             lines: depth === 0
                 ? ['みんなの ところで', 'おおきく なった ふわふわが いるみたい']
                 : depth === 1
@@ -294,7 +294,7 @@ function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead, depth: n
         return createSpeech({
             id: `family:milestone:${milestoneLead.userId}:${milestoneLead.kind}`,
             category: 'event_notice',
-            accent: 'info',
+            accent: 'event',
             lines: depth === 0
                 ? [`${milestoneLead.userName}の ところに`, 'たまごが きたみたい']
                 : depth === 1
@@ -307,7 +307,7 @@ function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead, depth: n
         return createSpeech({
             id: `family:milestone:${milestoneLead.userId}:${milestoneLead.kind}`,
             category: 'event_notice',
-            accent: 'info',
+            accent: 'event',
             lines: depth === 0
                 ? [`${milestoneLead.userName}の ふわふわ`, 'うまれたみたい！']
                 : depth === 1
@@ -319,7 +319,7 @@ function buildFamilyMilestoneSpeech(milestoneLead: FamilyMilestoneLead, depth: n
     return createSpeech({
         id: `family:milestone:${milestoneLead.userId}:${milestoneLead.kind}`,
         category: 'event_notice',
-        accent: 'info',
+        accent: 'event',
         lines: depth === 0
             ? [`${milestoneLead.userName}の ふわふわ`, 'おおきく なったみたい']
             : depth === 1
@@ -444,7 +444,7 @@ function buildFamilyMoodSpeech(context: FamilySpeechContext): FuwafuwaSpeech {
     return createSpeech({
         id: `family:mood:${context.activeCount}`,
         category: 'progress',
-        accent: 'info',
+        accent: 'everyday',
         lines: pickVariant([
             ['なんだか ぽかぽか', 'してきたね'],
             ['ふわふわ なんだか', 'ごきげんだよ'],
@@ -457,7 +457,7 @@ function buildFamilyOmenSpeech(context: FamilySpeechContext): FuwafuwaSpeech {
     return createSpeech({
         id: 'family:omen',
         category: 'progress',
-        accent: 'info',
+        accent: 'magic',
         lines: pickVariant([
             ['あと すこしで', 'いいこと ありそう'],
             ['もうすぐ', 'ふわふわに とどきそう'],
@@ -470,7 +470,7 @@ function buildFamilyMechanicSpeech(context: FamilySpeechContext): FuwafuwaSpeech
     return createSpeech({
         id: 'family:mechanic_hint',
         category: 'mechanic_hint',
-        accent: 'info',
+        accent: 'magic',
         lines: pickVariant([
             ['みんなの まほうエネルギー', 'ここに たまっていくんだよ'],
             ['ここでも まほうエネルギーが', 'ふえていくんだよ'],
@@ -484,7 +484,7 @@ function buildUserMoodSpeech(context: UserSpeechContext): FuwafuwaSpeech {
         return createSpeech({
             id: 'user:mood_waiting',
             category: 'progress',
-            accent: 'primary',
+            accent: 'everyday',
             lines: pickVariant([
                 ['たまごの なかで', 'そわそわしてるかも'],
                 ['なんだか ちいさく', 'ぽかぽかしてるよ'],
@@ -496,7 +496,7 @@ function buildUserMoodSpeech(context: UserSpeechContext): FuwafuwaSpeech {
     return createSpeech({
         id: 'user:mood',
         category: 'progress',
-        accent: 'primary',
+        accent: 'everyday',
         lines: pickVariant([
             ['なんだか ぽかぽか', 'してきたよ'],
             ['ふわふわ なんだか', 'ごきげんだよ'],
@@ -509,7 +509,7 @@ function buildUserOmenSpeech(context: UserSpeechContext): FuwafuwaSpeech {
     return createSpeech({
         id: 'user:omen',
         category: 'progress',
-        accent: 'primary',
+        accent: 'magic',
         lines: pickVariant([
             ['あと すこしで', 'いいこと ありそう'],
             ['もうすぐ', 'ふわふわに とどきそう'],
@@ -525,7 +525,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
         return createSpeech({
             id: 'family:magic_delivery_active',
             category: 'action_hint',
-            accent: 'info',
+            accent: 'magic',
             lines: context.depth === 0
                 ? ['みんなの まほうエネルギーが', 'いま ふわふわに とどいてるよ']
                 : context.depth === 1
@@ -538,7 +538,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
         return createSpeech({
             id: 'family:magic_full',
             category: 'action_hint',
-            accent: 'info',
+            accent: 'magic',
             lines: context.depth === 0
                 ? ['みんなの まほうエネルギーが', 'いっぱいに なったよ', 'とどけてくれたら うれしいな']
                 : context.depth === 1
@@ -556,7 +556,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             return createSpeech({
                 id: context.announcement.id,
                 category: 'event_notice',
-                accent: 'primary',
+                accent: 'event',
                 lines: context.depth === 1
                     ? ['みんなで やると', 'ふわふわ うれしいな']
                     : ['ちょっとだけ', 'のぞいてみる？'],
@@ -568,7 +568,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             return createSpeech({
                 id: context.announcement.id,
                 category: 'event_notice',
-                accent: 'info',
+                accent: 'event',
                 lines: context.depth === 1
                     ? ['せんせいが', 'これ いいよって']
                     : ['メニューで', 'みてみる？'],
@@ -579,7 +579,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
         return createSpeech({
             id: context.announcement!.id,
             category: 'event_notice',
-            accent: 'info',
+            accent: 'event',
             lines: context.depth === 1
                 ? ['せんせいが', 'これ どうかなって']
                 : ['メニューで', 'みてみる？'],
@@ -596,14 +596,14 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
     }
 
     if (topic === 'ambient') {
-        return buildAmbientSpeech(context.ambientCue!, dailyContext.variantSeed, 'info');
+        return buildAmbientSpeech(context.ambientCue!, dailyContext.variantSeed, 'ambient');
     }
 
     if (topic === 'greeting') {
         return createSpeech({
             id: `family:idle:${dailyContext.activeCount}`,
             category: 'relationship',
-            accent: 'info',
+            accent: 'everyday',
             lines: buildFamilyRelationshipLines(
                 dailyContext.activeCount,
                 dailyContext.visitRecency,
@@ -628,7 +628,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
         return createSpeech({
             id: 'family:almost_full',
             category: 'progress',
-            accent: 'info',
+            accent: 'magic',
             lines: pickVariant([
                 ['みんなの まほうエネルギーが', 'もうすこしで まんたん！'],
                 ['あと すこしで', 'いいこと ありそう'],
@@ -641,7 +641,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
         return createSpeech({
             id: 'family:growing',
             category: 'progress',
-            accent: 'info',
+            accent: 'magic',
             lines: pickVariant([
                 ['みんなの まほうエネルギーが', 'たまってきたよ'],
                 ['まほうエネルギーが', 'みんなで ふえてるね'],
@@ -654,7 +654,7 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
     return createSpeech({
         id: 'family:small_progress',
         category: 'progress',
-        accent: 'info',
+        accent: 'magic',
         lines: pickVariant([
             ['まほうエネルギーが', 'みんなで ふえてるね'],
             ['みんなの まほうエネルギー', 'すこしずつ とどいてるよ'],
@@ -765,9 +765,9 @@ function buildUserAfterglowSpeech(afterglow: HomeAfterglow, depth: number): Fuwa
     }
 
     return createSpeech({
-        id: 'user:afterglow:magic_delivery',
-        category: 'relationship',
-        accent: 'primary',
+            id: 'user:afterglow:magic_delivery',
+            category: 'relationship',
+            accent: 'magic',
         lines: depth === 0
             ? ['まほうエネルギー', 'ちゃんと うけとったよ']
             : depth === 1
@@ -783,9 +783,9 @@ function buildUserAnnouncementSpeech(context: UserSpeechContext): FuwafuwaSpeech
 
     if (context.announcement?.kind === 'challenge') {
         return createSpeech({
-            id: context.announcement.id,
-            category: 'event_notice',
-            accent: 'primary',
+                id: context.announcement.id,
+                category: 'event_notice',
+                accent: 'event',
             lines: context.depth === 1
                 ? ['きょうのきみに', 'あいそうだよ']
                 : ['ちょっとだけ', 'のぞいてみる？'],
@@ -795,9 +795,9 @@ function buildUserAnnouncementSpeech(context: UserSpeechContext): FuwafuwaSpeech
 
     if (context.announcement?.kind === 'teacher_menu') {
         return createSpeech({
-            id: context.announcement.id,
-            category: 'event_notice',
-            accent: 'info',
+                id: context.announcement.id,
+                category: 'event_notice',
+                accent: 'event',
             lines: context.depth === 1
                 ? ['せんせいが', 'これ いいよって']
                 : ['メニューで', 'みてみる？'],
@@ -808,7 +808,7 @@ function buildUserAnnouncementSpeech(context: UserSpeechContext): FuwafuwaSpeech
     return createSpeech({
         id: context.announcement!.id,
         category: 'event_notice',
-        accent: 'info',
+        accent: 'event',
         lines: context.depth === 1
             ? ['せんせいが', 'これ どうかなって']
             : ['メニューで', 'みてみる？'],
@@ -821,7 +821,7 @@ function buildUserGrowthSpeech(context: UserSpeechContext): FuwafuwaSpeech {
         return createSpeech({
             id: 'user:hatching_soon',
             category: 'progress',
-            accent: 'primary',
+            accent: 'event',
             lines: context.depth === 0
                 ? pickVariant([
                     ['もうすぐ', 'うまれそう！'],
@@ -837,7 +837,7 @@ function buildUserGrowthSpeech(context: UserSpeechContext): FuwafuwaSpeech {
     return createSpeech({
         id: 'user:growth_soon',
         category: 'progress',
-        accent: 'primary',
+        accent: 'event',
         lines: context.depth === 0
             ? pickVariant([
                 ['もうすぐ', 'おおきく なれそう！'],
@@ -855,7 +855,7 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
         return createSpeech({
             id: 'user:almost_full',
             category: 'progress',
-            accent: 'primary',
+            accent: 'magic',
             lines: pickVariant([
                 ['まほうエネルギーが', 'もうすこしで まんたん！'],
                 ['あと すこしで', 'ふわふわに とどきそう'],
@@ -868,7 +868,7 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
         return createSpeech({
             id: 'user:growing',
             category: 'progress',
-            accent: 'primary',
+            accent: 'magic',
             lines: pickVariant([
                 ['まほうエネルギーが', 'たまってきたよ'],
                 ['まほうエネルギーが', 'じわっと ふえてるよ'],
@@ -881,7 +881,7 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
     return createSpeech({
         id: 'user:small_progress',
         category: 'progress',
-        accent: 'primary',
+        accent: 'magic',
         lines: pickVariant([
             ['まほうエネルギーが', 'すこし たまってきたよ'],
             ['まほうエネルギーも', 'ちゃんと とどいてるよ'],
@@ -895,7 +895,7 @@ function buildUserRelationshipSpeech(context: UserSpeechContext): FuwafuwaSpeech
     return createSpeech({
         id: context.stage === 1 ? 'user:relationship_waiting' : 'user:relationship_ready',
         category: 'relationship',
-        accent: 'primary',
+        accent: 'everyday',
         lines: buildUserRelationshipLines(
             context.stage,
             context.visitRecency,
@@ -911,7 +911,7 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
         return createSpeech({
             id: `user:milestone:${context.recentMilestoneEvent!.userId}:${context.recentMilestoneEvent!.kind}`,
             category: 'event_notice',
-            accent: 'primary',
+            accent: 'event',
             lines: getMilestoneSpeechLines(context.recentMilestoneEvent!.kind, context.depth),
         });
     }
@@ -920,7 +920,7 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
         return createSpeech({
             id: 'user:magic_delivery_active',
             category: 'action_hint',
-            accent: 'primary',
+            accent: 'magic',
             lines: context.depth === 0
                 ? ['まほうエネルギーが', 'いま ふわふわに とどいてるよ']
                 : context.depth === 1
@@ -933,7 +933,7 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
         return createSpeech({
             id: 'user:magic_full',
             category: 'action_hint',
-            accent: 'primary',
+            accent: 'magic',
             lines: context.depth === 0
                 ? ['まほうエネルギーが', 'いっぱいだよ', 'とどけてくれたら うれしいな']
                 : context.depth === 1
@@ -959,7 +959,7 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
     }
 
     if (topic === 'ambient') {
-        return buildAmbientSpeech(context.ambientCue!, dailyContext.variantSeed, 'info');
+        return buildAmbientSpeech(context.ambientCue!, dailyContext.variantSeed, 'ambient');
     }
 
     if (topic === 'greeting') {
@@ -977,7 +977,7 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
     return createSpeech({
         id: 'user:mechanic_hint',
         category: 'mechanic_hint',
-        accent: 'primary',
+        accent: 'magic',
         lines: pickVariant([
             ['まほうエネルギーは', 'ここに たまるんだよ'],
             ['ここに まほうエネルギーが', 'たまっていくんだよ'],

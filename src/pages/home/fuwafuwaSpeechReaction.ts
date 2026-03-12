@@ -33,7 +33,15 @@ export function getSpeechReactionStyle(speech: FuwafuwaSpeech): FuwafuwaReaction
     }
 
     if (speech.category === 'event_notice') {
-        return speech.accent === 'primary' ? 'sharing' : 'guiding';
+        if (speech.accent === 'ambient') {
+            return 'sharing';
+        }
+
+        if (speech.id.startsWith('challenge:') || speech.id.startsWith('afterglow:challenge:')) {
+            return 'sharing';
+        }
+
+        return 'guiding';
     }
 
     if (speech.category === 'progress') {

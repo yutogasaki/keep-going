@@ -21,9 +21,29 @@ export const FuwafuwaSpeechBubble: FC<FuwafuwaSpeechBubbleProps> = ({
     onAction,
     onTap,
 }) => {
-    const accentColor = accent === 'info' ? COLOR.info : COLOR.primary;
-    const accentBackground = accent === 'info' ? 'rgba(9, 132, 227, 0.08)' : 'rgba(43, 186, 160, 0.08)';
-    const accentBorder = accent === 'info' ? 'rgba(9, 132, 227, 0.15)' : 'rgba(43, 186, 160, 0.16)';
+    const accentPalette = accent === 'magic'
+        ? {
+            color: '#B9852A',
+            background: 'rgba(253, 203, 110, 0.12)',
+            border: 'rgba(253, 203, 110, 0.24)',
+        }
+        : accent === 'event'
+            ? {
+                color: COLOR.info,
+                background: 'rgba(9, 132, 227, 0.08)',
+                border: 'rgba(9, 132, 227, 0.15)',
+            }
+            : accent === 'ambient'
+                ? {
+                    color: COLOR.purple,
+                    background: 'rgba(139, 92, 246, 0.08)',
+                    border: 'rgba(139, 92, 246, 0.16)',
+                }
+                : {
+                    color: COLOR.primary,
+                    background: 'rgba(43, 186, 160, 0.08)',
+                    border: 'rgba(43, 186, 160, 0.16)',
+                };
     const visibleLines = lines.filter((line) => line.trim().length > 0);
     const motionProps = reactionStyle === 'celebrating'
         ? {
@@ -66,8 +86,8 @@ export const FuwafuwaSpeechBubble: FC<FuwafuwaSpeechBubbleProps> = ({
                 maxWidth: 320,
                 padding: '12px 16px',
                 borderRadius: 20,
-                background: accentBackground,
-                border: `1px solid ${accentBorder}`,
+                background: accentPalette.background,
+                border: `1px solid ${accentPalette.border}`,
                 boxShadow: '0 8px 20px rgba(0,0,0,0.04)',
                 textAlign: 'center',
                 cursor: onTap ? 'pointer' : 'default',
@@ -79,7 +99,7 @@ export const FuwafuwaSpeechBubble: FC<FuwafuwaSpeechBubbleProps> = ({
                     fontSize: FONT_SIZE.md,
                     fontWeight: 700,
                     lineHeight: 1.6,
-                    color: accentColor,
+                    color: accentPalette.color,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
@@ -101,7 +121,7 @@ export const FuwafuwaSpeechBubble: FC<FuwafuwaSpeechBubbleProps> = ({
                         marginTop: SPACE.sm,
                         border: 'none',
                         background: 'rgba(255,255,255,0.68)',
-                        color: accentColor,
+                        color: accentPalette.color,
                         fontFamily: FONT.body,
                         fontSize: FONT_SIZE.sm,
                         fontWeight: 700,
@@ -120,9 +140,9 @@ export const FuwafuwaSpeechBubble: FC<FuwafuwaSpeechBubbleProps> = ({
                     bottom: -7,
                     width: 14,
                     height: 14,
-                    background: accentBackground,
-                    borderRight: `1px solid ${accentBorder}`,
-                    borderBottom: `1px solid ${accentBorder}`,
+                    background: accentPalette.background,
+                    borderRight: `1px solid ${accentPalette.border}`,
+                    borderBottom: `1px solid ${accentPalette.border}`,
                     transform: 'translateX(-50%) rotate(45deg)',
                 }}
             />

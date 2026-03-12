@@ -6,21 +6,21 @@ describe('fuwafuwaSpeechReaction', () => {
         expect(getSpeechReactionStyle({
             id: 'user:milestone:user-1:fairy',
             category: 'event_notice',
-            accent: 'primary',
+            accent: 'event',
             lines: ['ついに', 'うまれたよ！'],
         })).toBe('celebrating');
 
         expect(getSpeechReactionStyle({
             id: 'user:magic_full',
             category: 'action_hint',
-            accent: 'primary',
+            accent: 'magic',
             lines: ['まほうエネルギーが', 'いっぱいだよ'],
         })).toBe('celebrating');
 
         expect(getSpeechReactionStyle({
             id: 'user:afterglow:magic_delivery',
             category: 'relationship',
-            accent: 'primary',
+            accent: 'magic',
             lines: ['まほうエネルギー', 'ちゃんと とどいたよ'],
         })).toBe('celebrating');
     });
@@ -29,28 +29,28 @@ describe('fuwafuwaSpeechReaction', () => {
         expect(getSpeechReactionStyle({
             id: 'user:mood',
             category: 'progress',
-            accent: 'primary',
+            accent: 'everyday',
             lines: ['なんだか ぽかぽか', 'してきたよ'],
         })).toBe('cozy');
 
         expect(getSpeechReactionStyle({
             id: 'user:growing',
             category: 'progress',
-            accent: 'primary',
+            accent: 'magic',
             lines: ['まほうエネルギーが', 'たまってきたよ'],
         })).toBe('growing');
 
         expect(getSpeechReactionStyle({
             id: 'user:relationship_ready',
             category: 'relationship',
-            accent: 'primary',
+            accent: 'everyday',
             lines: ['あえて うれしいな', 'まほうエネルギー ほしいな'],
         })).toBe('cozy');
 
         expect(getSpeechReactionStyle({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
-            accent: 'primary',
+            accent: 'magic',
             lines: ['まほうエネルギーは', 'ここに たまるんだよ'],
         })).toBe('guiding');
     });

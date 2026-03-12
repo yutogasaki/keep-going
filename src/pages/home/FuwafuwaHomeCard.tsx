@@ -182,7 +182,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
             : {
                 id: 'user:none',
                 category: 'relationship' as const,
-                accent: 'primary' as const,
+                accent: 'everyday' as const,
                 lines: [],
             },
         [ambientCue, announcement, idleBeat, isMagicDeliveryActive, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
@@ -208,7 +208,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
             : {
                 id: 'user:none',
                 category: 'relationship' as const,
-                accent: 'primary' as const,
+                accent: 'everyday' as const,
                 lines: [],
             },
         [ambientCue, announcement, idleBeat, isMagicDeliveryActive, pokeDepth, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
