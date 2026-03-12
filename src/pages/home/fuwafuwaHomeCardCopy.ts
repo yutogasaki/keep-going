@@ -823,7 +823,11 @@ function buildUserGrowthSpeech(context: UserSpeechContext): FuwafuwaSpeech {
             category: 'progress',
             accent: 'primary',
             lines: context.depth === 0
-                ? ['もうすぐ', 'うまれそう！']
+                ? pickVariant([
+                    ['もうすぐ', 'うまれそう！'],
+                    ['たまごが', 'そろそろ ひらきそう'],
+                    ['ちいさな へんかが', 'はじまりそう'],
+                ], context.variantSeed)
                 : context.depth === 1
                     ? ['たまごの なかで', 'そわそわしてるかも']
                     : ['あえるの', 'たのしみだな'],
@@ -835,7 +839,11 @@ function buildUserGrowthSpeech(context: UserSpeechContext): FuwafuwaSpeech {
         category: 'progress',
         accent: 'primary',
         lines: context.depth === 0
-            ? ['もうすぐ', 'おおきく なれそう！']
+            ? pickVariant([
+                ['もうすぐ', 'おおきく なれそう！'],
+                ['からだが', 'ちょっとずつ かわってきたよ'],
+                ['そろそろ', 'へんかの じゅんび してるよ'],
+            ], context.variantSeed)
             : context.depth === 1
                 ? ['ちょっとずつ', 'へんかしてるよ']
                 : ['みててね', 'たのしみだね'],

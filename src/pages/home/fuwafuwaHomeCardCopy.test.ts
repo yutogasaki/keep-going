@@ -141,6 +141,22 @@ describe('fuwafuwaHomeCardCopy', () => {
         });
     });
 
+    it('varies growth-soon idle speech for users nearing the next stage', () => {
+        expect(getUserSpeech(120, 600, 2, 6, null, null, null, 0, 6, 0)).toEqual({
+            id: 'user:growth_soon',
+            category: 'progress',
+            accent: 'primary',
+            lines: ['もうすぐ', 'おおきく なれそう！'],
+        });
+
+        expect(getUserSpeech(120, 600, 2, 6, null, null, null, 0, 6, 1)).toEqual({
+            id: 'user:growth_soon',
+            category: 'progress',
+            accent: 'primary',
+            lines: ['からだが', 'ちょっとずつ かわってきたよ'],
+        });
+    });
+
     it('surfaces announcement speech before regular progress copy', () => {
         expect(getUserSpeech(120, 600, 2, 6, null, {
             id: 'challenge:challenge-1',
