@@ -5,7 +5,13 @@ import { RADIUS, SPACE } from '../../lib/styles';
 import type { UserProfileStore } from '../../store/useAppStore';
 import { FuwafuwaSoloView } from './FuwafuwaSoloView';
 import { FuwafuwaTogetherView } from './FuwafuwaTogetherView';
-import { getFamilySpeech, getUserSpeech } from './fuwafuwaHomeCardCopy';
+import {
+    getFamilyDailySpeech,
+    getFamilyEventSpeech,
+    getUserDailySpeech,
+    getUserEventSpeech,
+    type FuwafuwaDailySelection,
+} from './fuwafuwaHomeCardCopy';
 import type { FamilyMilestoneLead } from './fuwafuwaHomeCardCopy';
 import {
     getFamilyHomeContextKey,
@@ -16,9 +22,15 @@ import type { HomeAnnouncement } from './homeAnnouncementUtils';
 import type { HomeAmbientCue } from './homeAmbientUtils';
 import type { HomeVisitRecency } from './homeVisitMemory';
 import { shouldShowFuwafuwaSpeech } from './fuwafuwaSpeechPresence';
-import { isSameRenderedSpeech } from './fuwafuwaSpeechCompare';
 import type { PerUserMagic } from './types';
 import type { FuwafuwaMilestoneEvent } from '../../store/useAppStore';
+import {
+    chooseNextDailyConversation,
+    EMPTY_DAILY_CONVERSATION_STATE,
+    type DailyConversationCandidate,
+    type DailyConversationContext,
+    type DailyConversationState,
+} from './fuwafuwaDailyConversation';
 
 interface FuwafuwaHomeCardProps {
     isTogetherMode: boolean;
@@ -62,8 +74,8 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     onAnnouncementAction,
 }) => {
     const [pokeDepth, setPokeDepth] = useState(0);
-    const [idleBeat, setIdleBeat] = useState(0);
-    const [speechVariantSeed, setSpeechVariantSeed] = useState(0);
+    const [dailyState, setDailyState] = useState<DailyConversationState>(EMPTY_DAILY_CONVERSATION_STATE);
+    const [dailySelection, setDailySelection] = useState<FuwafuwaDailySelection | null>(null);
     const pokeResetTimerRef = useRef<number | null>(null);
     const idleBeatTimerRef = useRef<number | null>(null);
     const perUserMagicMap = useMemo(
@@ -127,199 +139,253 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         () => (recentAfterglow && recentAfterglow.contextKey === soloContextKey ? recentAfterglow : null),
         [recentAfterglow, soloContextKey],
     );
-    const familyBaseSpeech = useMemo(
-        () => getFamilySpeech(
+    const familyEventSpeech = useMemo(
+        () => getFamilyEventSpeech(
             activeUsers.length,
             displaySeconds,
             targetSeconds,
             announcement,
-            ambientCue,
-            familyMilestoneLead,
-            0,
-            speechVariantSeed,
-            familyVisitRecency,
-            familyAfterglow,
-            isMagicDeliveryActive,
-            idleBeat,
-        ),
-        [activeUsers.length, ambientCue, announcement, displaySeconds, familyAfterglow, familyMilestoneLead, familyVisitRecency, idleBeat, isMagicDeliveryActive, speechVariantSeed, targetSeconds],
-    );
-    const familySpeech = useMemo(
-        () => getFamilySpeech(
-            activeUsers.length,
-            displaySeconds,
-            targetSeconds,
-            announcement,
-            ambientCue,
             familyMilestoneLead,
             pokeDepth,
-            speechVariantSeed,
             familyVisitRecency,
             familyAfterglow,
             isMagicDeliveryActive,
-            idleBeat,
         ),
-        [activeUsers.length, ambientCue, announcement, displaySeconds, familyAfterglow, familyMilestoneLead, familyVisitRecency, idleBeat, isMagicDeliveryActive, pokeDepth, speechVariantSeed, targetSeconds],
+        [activeUsers.length, announcement, displaySeconds, familyAfterglow, familyMilestoneLead, familyVisitRecency, isMagicDeliveryActive, pokeDepth, targetSeconds],
     );
-    const selectedUserBaseSpeech = useMemo(
+    const selectedUserEventSpeech = useMemo(
         () => selectedUserStatus
-            ? getUserSpeech(
+            ? getUserEventSpeech(
                 selectedUserDisplaySeconds,
                 selectedUserTargetSeconds,
                 selectedUserStatus.stage,
                 selectedUserStatus.activeDays,
                 recentMilestoneEvent,
                 announcement,
-                ambientCue,
-                0,
-                selectedUserStatus.daysAlive,
-                speechVariantSeed,
-                selectedUserVisitRecency,
-                selectedUserAfterglow,
-                isMagicDeliveryActive,
-                idleBeat,
-            )
-            : {
-                id: 'user:none',
-                category: 'relationship' as const,
-                accent: 'everyday' as const,
-                lines: [],
-            },
-        [ambientCue, announcement, idleBeat, isMagicDeliveryActive, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
-    );
-    const selectedUserSpeech = useMemo(
-        () => selectedUserStatus
-            ? getUserSpeech(
-                selectedUserDisplaySeconds,
-                selectedUserTargetSeconds,
-                selectedUserStatus.stage,
-                selectedUserStatus.activeDays,
-                recentMilestoneEvent,
-                announcement,
-                ambientCue,
                 pokeDepth,
                 selectedUserStatus.daysAlive,
-                speechVariantSeed,
-                selectedUserVisitRecency,
                 selectedUserAfterglow,
                 isMagicDeliveryActive,
-                idleBeat,
             )
-            : {
-                id: 'user:none',
-                category: 'relationship' as const,
-                accent: 'everyday' as const,
-                lines: [],
-            },
-        [ambientCue, announcement, idleBeat, isMagicDeliveryActive, pokeDepth, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency, speechVariantSeed],
+            : null,
+        [announcement, isMagicDeliveryActive, pokeDepth, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds],
     );
 
-    const isDailySpeechLike = (speech: { id: string; category: string }) => speech.id.startsWith('ambient:')
-        || speech.category === 'relationship'
-        || speech.category === 'mechanic_hint'
-        || (
-            speech.category === 'progress'
-            && !speech.id.endsWith('hatching_soon')
-            && !speech.id.endsWith('growth_soon')
-        );
-
-    const activeSpeech = isTogetherMode ? familySpeech : selectedUserSpeech;
-    const isDailySpeech = useMemo(
-        () => isDailySpeechLike(activeSpeech),
-        [activeSpeech],
-    );
-
-    const getDailySpeechForSeed = (seed: number) => {
-        if (isTogetherMode) {
-            return getFamilySpeech(
+    const buildFamilyDailyCandidate = useMemo(
+        () => (selection: FuwafuwaDailySelection): DailyConversationCandidate => {
+            const speech = getFamilyDailySpeech(
+                selection,
                 activeUsers.length,
                 displaySeconds,
                 targetSeconds,
-                announcement,
                 ambientCue,
-                familyMilestoneLead,
-                1,
-                seed,
                 familyVisitRecency,
-                familyAfterglow,
-                isMagicDeliveryActive,
-                idleBeat,
             );
-        }
 
-        if (!selectedUserStatus) {
-            return activeSpeech;
-        }
+            return {
+                selection: {
+                    group: speech.dailyGroup ?? selection.group,
+                    topic: speech.dailyTopic ?? selection.topic,
+                    replyIndex: selection.replyIndex,
+                },
+                replyId: [
+                    speech.accent,
+                    speech.actionLabel ?? '',
+                    ...speech.lines,
+                ].join('|'),
+            };
+        },
+        [activeUsers.length, ambientCue, displaySeconds, familyVisitRecency, targetSeconds],
+    );
 
-        return getUserSpeech(
-            selectedUserDisplaySeconds,
-            selectedUserTargetSeconds,
-            selectedUserStatus.stage,
-            selectedUserStatus.activeDays,
-            recentMilestoneEvent,
-            announcement,
-            ambientCue,
-            1,
-            selectedUserStatus.daysAlive,
-            seed,
-            selectedUserVisitRecency,
-            selectedUserAfterglow,
-            isMagicDeliveryActive,
-            idleBeat,
-        );
-    };
+    const buildUserDailyCandidate = useMemo(
+        () => (selection: FuwafuwaDailySelection): DailyConversationCandidate | null => {
+            if (!selectedUserStatus) {
+                return null;
+            }
+
+            const speech = getUserDailySpeech(
+                selection,
+                selectedUserDisplaySeconds,
+                selectedUserTargetSeconds,
+                selectedUserStatus.stage,
+                selectedUserStatus.activeDays,
+                ambientCue,
+                selectedUserStatus.daysAlive,
+                selectedUserVisitRecency,
+            );
+
+            return {
+                selection: {
+                    group: speech.dailyGroup ?? selection.group,
+                    topic: speech.dailyTopic ?? selection.topic,
+                    replyIndex: selection.replyIndex,
+                },
+                replyId: [
+                    speech.accent,
+                    speech.actionLabel ?? '',
+                    ...speech.lines,
+                ].join('|'),
+            };
+        },
+        [ambientCue, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency],
+    );
+
+    const buildDailyContext = useMemo(
+        () => (): DailyConversationContext => {
+            const growthAvailable = selectedUserStatus
+                ? (
+                    (selectedUserStatus.stage === 1 && selectedUserStatus.daysAlive === 3)
+                    || (selectedUserStatus.stage === 2 && selectedUserStatus.activeDays >= 6)
+                )
+                : false;
+
+            const baseSelections: FuwafuwaDailySelection[] = isTogetherMode
+                ? [
+                    { group: 'everyday', topic: 'greeting', replyIndex: 0 },
+                    { group: 'everyday', topic: 'mood', replyIndex: 0 },
+                    { group: 'magic', topic: 'mechanic', replyIndex: 0 },
+                    { group: 'magic', topic: 'progress', replyIndex: 0 },
+                    { group: 'magic', topic: 'omen', replyIndex: 0 },
+                    ...(ambientCue ? [{ group: 'ambient' as const, topic: 'ambient' as const, replyIndex: 0 }] : []),
+                ]
+                : [
+                    { group: 'everyday', topic: 'greeting', replyIndex: 0 },
+                    { group: 'everyday', topic: 'mood', replyIndex: 0 },
+                    { group: 'magic', topic: 'mechanic', replyIndex: 0 },
+                    { group: 'magic', topic: 'progress', replyIndex: 0 },
+                    { group: 'magic', topic: 'omen', replyIndex: 0 },
+                    ...(growthAvailable ? [{ group: 'magic' as const, topic: 'growth' as const, replyIndex: 0 }] : []),
+                    ...(ambientCue ? [{ group: 'ambient' as const, topic: 'ambient' as const, replyIndex: 0 }] : []),
+                ];
+
+            const rawCandidates = baseSelections.flatMap((selection) => {
+                return Array.from({ length: 4 }, (_, replyIndex) => ({
+                    ...selection,
+                    replyIndex,
+                }));
+            });
+
+            const candidates = rawCandidates.flatMap((selection) => {
+                const candidate = isTogetherMode
+                    ? buildFamilyDailyCandidate(selection)
+                    : buildUserDailyCandidate(selection);
+
+                return candidate ? [candidate] : [];
+            }).filter((candidate, index, allCandidates) => {
+                return allCandidates.findIndex((other) => (
+                    other.selection.group === candidate.selection.group
+                    && other.selection.topic === candidate.selection.topic
+                    && other.replyId === candidate.replyId
+                )) === index;
+            });
+
+            return {
+                ambientAvailable: Boolean(ambientCue),
+                percent: selectedUserStatus && !isTogetherMode
+                    ? Math.round((selectedUserDisplaySeconds / Math.max(1, selectedUserTargetSeconds)) * 100)
+                    : Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100),
+                hasGrowthLite: growthAvailable,
+                candidates,
+            };
+        },
+        [ambientCue, buildFamilyDailyCandidate, buildUserDailyCandidate, displaySeconds, isTogetherMode, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, targetSeconds],
+    );
+
+    const dailyContext = useMemo(
+        () => buildDailyContext(),
+        [buildDailyContext],
+    );
+    const initialDailyConversation = useMemo(
+        () => chooseNextDailyConversation(EMPTY_DAILY_CONVERSATION_STATE, dailyContext, 'initial'),
+        [dailyContext],
+    );
+    const resolvedDailySelection = dailySelection ?? initialDailyConversation.candidate?.selection ?? null;
+    const resolvedDailyState = dailySelection ? dailyState : initialDailyConversation.nextState;
+
+    const familyDailySpeech = useMemo(
+        () => resolvedDailySelection
+            ? getFamilyDailySpeech(
+                resolvedDailySelection,
+                activeUsers.length,
+                displaySeconds,
+                targetSeconds,
+                ambientCue,
+                familyVisitRecency,
+            )
+            : {
+                id: 'family:none',
+                category: 'relationship' as const,
+                accent: 'everyday' as const,
+                lines: [],
+            },
+        [activeUsers.length, ambientCue, displaySeconds, familyVisitRecency, resolvedDailySelection, targetSeconds],
+    );
+
+    const selectedUserDailySpeech = useMemo(
+        () => (resolvedDailySelection && selectedUserStatus)
+            ? getUserDailySpeech(
+                resolvedDailySelection,
+                selectedUserDisplaySeconds,
+                selectedUserTargetSeconds,
+                selectedUserStatus.stage,
+                selectedUserStatus.activeDays,
+                ambientCue,
+                selectedUserStatus.daysAlive,
+                selectedUserVisitRecency,
+            )
+            : {
+                id: 'user:none',
+                category: 'relationship' as const,
+                accent: 'everyday' as const,
+                lines: [],
+            },
+        [ambientCue, resolvedDailySelection, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency],
+    );
+
+    const familySpeech = familyEventSpeech ?? familyDailySpeech;
+    const selectedUserSpeech = selectedUserEventSpeech ?? selectedUserDailySpeech;
+    const activeSpeech = isTogetherMode ? familySpeech : selectedUserSpeech;
+    const hasActiveEventSpeech = isTogetherMode ? Boolean(familyEventSpeech) : Boolean(selectedUserEventSpeech);
+    const dailyCandidateSignature = useMemo(
+        () => dailyContext.candidates
+            .map((candidate) => `${candidate.selection.group}:${candidate.selection.topic}:${candidate.replyId}`)
+            .join('|'),
+        [dailyContext.candidates],
+    );
 
     const advanceConversation = () => {
-        if (isDailySpeech) {
+        if (!hasActiveEventSpeech) {
+            const { candidate, nextState } = chooseNextDailyConversation(resolvedDailyState, dailyContext, 'tap');
+            if (!candidate) {
+                return;
+            }
+
+            setDailyState(nextState);
+            setDailySelection(candidate.selection);
             setPokeDepth(1);
-            setSpeechVariantSeed((currentSeed) => {
-                let nextSeed = currentSeed + 1;
-                let nextSpeech = getDailySpeechForSeed(nextSeed);
-                let guard = 0;
-
-                while (guard < 6 && isSameRenderedSpeech(nextSpeech, activeSpeech)) {
-                    nextSeed += 1;
-                    nextSpeech = getDailySpeechForSeed(nextSeed);
-                    guard += 1;
-                }
-
-                return nextSeed;
-            });
             return;
         }
 
-        setSpeechVariantSeed((currentSeed) => currentSeed + 1);
         setPokeDepth((currentDepth) => (currentDepth + 1) % 3);
     };
 
     useEffect(() => {
-        setSpeechVariantSeed((currentSeed) => currentSeed + 1);
-    }, [isTogetherMode, selectedUser?.id]);
-
-    useEffect(() => {
+        setDailyState(initialDailyConversation.nextState);
+        setDailySelection(initialDailyConversation.candidate?.selection ?? null);
         setPokeDepth(0);
-    }, [isTogetherMode, selectedUser?.id]);
+    }, [
+        initialDailyConversation,
+        isTogetherMode,
+        selectedUser?.id,
+        dailyCandidateSignature,
+    ]);
 
     useEffect(() => {
-        const baseSpeech = isTogetherMode ? familyBaseSpeech : selectedUserBaseSpeech;
-        if (!isDailySpeechLike(baseSpeech)) {
+        if (hasActiveEventSpeech) {
             setPokeDepth(0);
         }
-    }, [familyBaseSpeech, isTogetherMode, selectedUserBaseSpeech]);
-
-    useEffect(() => {
-        setIdleBeat(0);
-    }, [
-        activeUsers.length,
-        announcement?.id,
-        familyAfterglow?.kind,
-        familyMilestoneLead?.kind,
-        isMagicDeliveryActive,
-        isTogetherMode,
-        recentMilestoneEvent?.kind,
-        selectedUser?.id,
-        selectedUserAfterglow?.kind,
-    ]);
+    }, [activeSpeech.id, hasActiveEventSpeech]);
 
     useEffect(() => {
         if (pokeResetTimerRef.current !== null) {
@@ -344,8 +410,6 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         };
     }, [isTogetherMode, pokeDepth, selectedUser]);
 
-    const idleSpeechForCycle = isTogetherMode ? familyBaseSpeech : selectedUserBaseSpeech;
-
     useEffect(() => {
         if (idleBeatTimerRef.current !== null) {
             window.clearTimeout(idleBeatTimerRef.current);
@@ -353,23 +417,19 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         }
 
         const isAutoRotatingSpeech = pokeDepth === 0
-            && !idleSpeechForCycle.actionLabel
-            && (
-                idleSpeechForCycle.id.startsWith('ambient:')
-                || idleSpeechForCycle.category === 'relationship'
-                || idleSpeechForCycle.category === 'progress'
-                || idleSpeechForCycle.category === 'mechanic_hint'
-            )
-            && !idleSpeechForCycle.id.includes(':afterglow:')
-            && !idleSpeechForCycle.id.includes(':milestone:');
+            && !hasActiveEventSpeech
+            && Boolean(resolvedDailySelection);
 
         if (!isAutoRotatingSpeech) {
             return undefined;
         }
 
         idleBeatTimerRef.current = window.setTimeout(() => {
-            setIdleBeat((currentBeat) => currentBeat + 1);
-            setSpeechVariantSeed((currentSeed) => currentSeed + 1);
+            const { candidate, nextState } = chooseNextDailyConversation(resolvedDailyState, dailyContext, 'tick');
+            if (candidate) {
+                setDailyState(nextState);
+                setDailySelection(candidate.selection);
+            }
             idleBeatTimerRef.current = null;
         }, 8000);
 
@@ -379,7 +439,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 idleBeatTimerRef.current = null;
             }
         };
-    }, [idleSpeechForCycle.actionLabel, idleSpeechForCycle.category, idleSpeechForCycle.id, pokeDepth, isTogetherMode]);
+    }, [dailyContext, hasActiveEventSpeech, pokeDepth, resolvedDailySelection, resolvedDailyState]);
 
     const shouldShowFamilySpeech = useMemo(
         () => shouldShowFuwafuwaSpeech({

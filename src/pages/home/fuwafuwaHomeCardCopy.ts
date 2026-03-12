@@ -13,12 +13,24 @@ export type FuwafuwaSpeechCategory =
     | 'relationship'
     | 'mechanic_hint';
 
+export type FuwafuwaDailyGroup = 'everyday' | 'magic' | 'ambient';
+export type FuwafuwaDailyTopic = 'greeting' | 'mood' | 'mechanic' | 'progress' | 'omen' | 'growth' | 'ambient';
+
+export interface FuwafuwaDailySelection {
+    group: FuwafuwaDailyGroup;
+    topic: FuwafuwaDailyTopic;
+    replyIndex: number;
+}
+
 export interface FuwafuwaSpeech {
     id: string;
     category: FuwafuwaSpeechCategory;
     accent: FuwafuwaSpeechAccent;
     lines: string[];
     actionLabel?: string;
+    dailyGroup?: FuwafuwaDailyGroup;
+    dailyTopic?: FuwafuwaDailyTopic;
+    replyId?: string;
 }
 
 export interface FamilyMilestoneLead {
@@ -41,6 +53,13 @@ type FuwafuwaSpeechTopic =
     | 'progress'
     | 'ambient'
     | 'mechanic';
+
+type FuwafuwaEventTopic =
+    | 'milestone'
+    | 'delivery'
+    | 'action'
+    | 'announcement'
+    | 'afterglow';
 
 export function getStageLabel(stage: number) {
     if (stage === 1) return 'たまご';
@@ -72,6 +91,9 @@ function createSpeech({
     accent,
     lines,
     actionLabel,
+    dailyGroup,
+    dailyTopic,
+    replyId,
 }: FuwafuwaSpeech): FuwafuwaSpeech {
     return {
         id,
@@ -79,7 +101,14 @@ function createSpeech({
         accent,
         lines,
         ...(actionLabel ? { actionLabel } : {}),
+        ...(dailyGroup ? { dailyGroup } : {}),
+        ...(dailyTopic ? { dailyTopic } : {}),
+        ...(replyId ? { replyId } : {}),
     };
+}
+
+function getReplyId(topic: FuwafuwaDailyTopic, replyIndex: number, count: number) {
+    return `${topic}:${Math.abs(replyIndex) % count}`;
 }
 
 function buildAnnouncementSpeech(announcement: HomeAnnouncement): FuwafuwaSpeech {
@@ -172,7 +201,7 @@ function getDailyTopicSeed(context: { variantSeed: number; idleBeat: number }) {
     return context.variantSeed + context.idleBeat;
 }
 
-function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
+function pickFamilyEventTopic(context: FamilySpeechContext): FuwafuwaEventTopic | null {
     if (context.isMagicDeliveryActive) {
         return 'delivery';
     }
@@ -191,6 +220,15 @@ function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
 
     if (context.recentAfterglow) {
         return 'afterglow';
+    }
+
+    return null;
+}
+
+function pickFamilyTopic(context: FamilySpeechContext): FuwafuwaSpeechTopic {
+    const eventTopic = pickFamilyEventTopic(context);
+    if (eventTopic) {
+        return eventTopic;
     }
 
     if (context.percent >= 90) {
@@ -334,6 +372,9 @@ function buildAmbientSpeech(ambientCue: HomeAmbientCue, seed: number, accent: Fu
             id: 'ambient:public_menu_new',
             category: 'event_notice',
             accent,
+            dailyGroup: 'ambient',
+            dailyTopic: 'ambient',
+            replyId: getReplyId('ambient', seed, 3),
             lines: pickVariant([
                 ['みんなの メニューに', 'あたらしいのが あるみたい'],
                 ['ふわふわも ちょっと', 'きになってるんだ'],
@@ -347,6 +388,9 @@ function buildAmbientSpeech(ambientCue: HomeAmbientCue, seed: number, accent: Fu
             id: 'ambient:public_menu_custom',
             category: 'event_notice',
             accent,
+            dailyGroup: 'ambient',
+            dailyTopic: 'ambient',
+            replyId: getReplyId('ambient', seed, 3),
             lines: pickVariant([
                 ['みんなの メニューで', 'あたらしい種目も みつかるかも'],
                 ['だれかの くふうが', 'はいってるみたい'],
@@ -359,6 +403,9 @@ function buildAmbientSpeech(ambientCue: HomeAmbientCue, seed: number, accent: Fu
         id: 'ambient:public_exercise',
         category: 'event_notice',
         accent,
+        dailyGroup: 'ambient',
+        dailyTopic: 'ambient',
+        replyId: getReplyId('ambient', seed, 3),
         lines: pickVariant([
             ['みんなの ところで', 'おもしろい種目が みつかるかも'],
             ['ふわふわも なんだか', 'きになってるよ'],
@@ -445,6 +492,9 @@ function buildFamilyMoodSpeech(context: FamilySpeechContext): FuwafuwaSpeech {
         id: `family:mood:${context.activeCount}`,
         category: 'progress',
         accent: 'everyday',
+        dailyGroup: 'everyday',
+        dailyTopic: 'mood',
+        replyId: getReplyId('mood', context.variantSeed, 3),
         lines: pickVariant([
             ['なんだか ぽかぽか', 'してきたね'],
             ['ふわふわ なんだか', 'ごきげんだよ'],
@@ -458,6 +508,9 @@ function buildFamilyOmenSpeech(context: FamilySpeechContext): FuwafuwaSpeech {
         id: 'family:omen',
         category: 'progress',
         accent: 'magic',
+        dailyGroup: 'magic',
+        dailyTopic: 'omen',
+        replyId: getReplyId('omen', context.variantSeed, 3),
         lines: pickVariant([
             ['あと すこしで', 'いいこと ありそう'],
             ['もうすぐ', 'ふわふわに とどきそう'],
@@ -471,6 +524,9 @@ function buildFamilyMechanicSpeech(context: FamilySpeechContext): FuwafuwaSpeech
         id: 'family:mechanic_hint',
         category: 'mechanic_hint',
         accent: 'magic',
+        dailyGroup: 'magic',
+        dailyTopic: 'mechanic',
+        replyId: getReplyId('mechanic', context.variantSeed, 3),
         lines: pickVariant([
             ['みんなの まほうエネルギー', 'ここに たまっていくんだよ'],
             ['ここでも まほうエネルギーが', 'ふえていくんだよ'],
@@ -485,6 +541,9 @@ function buildUserMoodSpeech(context: UserSpeechContext): FuwafuwaSpeech {
             id: 'user:mood_waiting',
             category: 'progress',
             accent: 'everyday',
+            dailyGroup: 'everyday',
+            dailyTopic: 'mood',
+            replyId: getReplyId('mood', context.variantSeed, 3),
             lines: pickVariant([
                 ['たまごの なかで', 'そわそわしてるかも'],
                 ['なんだか ちいさく', 'ぽかぽかしてるよ'],
@@ -497,6 +556,9 @@ function buildUserMoodSpeech(context: UserSpeechContext): FuwafuwaSpeech {
         id: 'user:mood',
         category: 'progress',
         accent: 'everyday',
+        dailyGroup: 'everyday',
+        dailyTopic: 'mood',
+        replyId: getReplyId('mood', context.variantSeed, 3),
         lines: pickVariant([
             ['なんだか ぽかぽか', 'してきたよ'],
             ['ふわふわ なんだか', 'ごきげんだよ'],
@@ -510,6 +572,9 @@ function buildUserOmenSpeech(context: UserSpeechContext): FuwafuwaSpeech {
         id: 'user:omen',
         category: 'progress',
         accent: 'magic',
+        dailyGroup: 'magic',
+        dailyTopic: 'omen',
+        replyId: getReplyId('omen', context.variantSeed, 3),
         lines: pickVariant([
             ['あと すこしで', 'いいこと ありそう'],
             ['もうすぐ', 'ふわふわに とどきそう'],
@@ -604,6 +669,9 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             id: `family:idle:${dailyContext.activeCount}`,
             category: 'relationship',
             accent: 'everyday',
+            dailyGroup: 'everyday',
+            dailyTopic: 'greeting',
+            replyId: getReplyId('greeting', dailyContext.variantSeed, 2),
             lines: buildFamilyRelationshipLines(
                 dailyContext.activeCount,
                 dailyContext.visitRecency,
@@ -629,6 +697,9 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             id: 'family:almost_full',
             category: 'progress',
             accent: 'magic',
+            dailyGroup: 'magic',
+            dailyTopic: 'progress',
+            replyId: getReplyId('progress', dailyContext.variantSeed, 3),
             lines: pickVariant([
                 ['みんなの まほうエネルギーが', 'もうすこしで まんたん！'],
                 ['あと すこしで', 'いいこと ありそう'],
@@ -642,6 +713,9 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
             id: 'family:growing',
             category: 'progress',
             accent: 'magic',
+            dailyGroup: 'magic',
+            dailyTopic: 'progress',
+            replyId: getReplyId('progress', dailyContext.variantSeed, 4),
             lines: pickVariant([
                 ['みんなの まほうエネルギーが', 'たまってきたよ'],
                 ['まほうエネルギーが', 'みんなで ふえてるね'],
@@ -655,6 +729,9 @@ function buildFamilySpeech(topic: FuwafuwaSpeechTopic, context: FamilySpeechCont
         id: 'family:small_progress',
         category: 'progress',
         accent: 'magic',
+        dailyGroup: 'magic',
+        dailyTopic: 'progress',
+        replyId: getReplyId('progress', dailyContext.variantSeed, 4),
         lines: pickVariant([
             ['まほうエネルギーが', 'みんなで ふえてるね'],
             ['みんなの まほうエネルギー', 'すこしずつ とどいてるよ'],
@@ -696,6 +773,62 @@ export function getFamilySpeech(
     return buildFamilySpeech(pickFamilyTopic(context), context);
 }
 
+export function getFamilyEventSpeech(
+    activeCount: number,
+    displaySeconds: number,
+    targetSeconds: number,
+    announcement: HomeAnnouncement | null,
+    milestoneLead: FamilyMilestoneLead | null = null,
+    pokeDepth = 0,
+    visitRecency: HomeVisitRecency = 'first',
+    recentAfterglow: HomeAfterglow | null = null,
+    isMagicDeliveryActive = false,
+): FuwafuwaSpeech | null {
+    const context: FamilySpeechContext = {
+        activeCount,
+        percent: Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100),
+        displaySeconds,
+        isMagicDeliveryActive,
+        announcement,
+        ambientCue: null,
+        milestoneLead,
+        recentAfterglow,
+        visitRecency,
+        depth: Math.max(0, Math.min(2, pokeDepth)),
+        variantSeed: 0,
+        idleBeat: 0,
+    };
+
+    const topic = pickFamilyEventTopic(context);
+    return topic ? buildFamilySpeech(topic, context) : null;
+}
+
+export function getFamilyDailySpeech(
+    selection: FuwafuwaDailySelection,
+    activeCount: number,
+    displaySeconds: number,
+    targetSeconds: number,
+    ambientCue: HomeAmbientCue | null,
+    visitRecency: HomeVisitRecency = 'first',
+): FuwafuwaSpeech {
+    const context: FamilySpeechContext = {
+        activeCount,
+        percent: Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100),
+        displaySeconds,
+        isMagicDeliveryActive: false,
+        announcement: null,
+        ambientCue,
+        milestoneLead: null,
+        recentAfterglow: null,
+        visitRecency,
+        depth: 0,
+        variantSeed: selection.replyIndex,
+        idleBeat: 0,
+    };
+
+    return buildFamilySpeech(selection.topic, context);
+}
+
 export function getFamilyMessage(activeCount: number, displaySeconds: number, targetSeconds: number) {
     const percent = Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100);
     const peopleLabel = activeCount === 2 ? 'ふたりで' : `${activeCount}にんで`;
@@ -715,7 +848,7 @@ export function getFamilyMessage(activeCount: number, displaySeconds: number, ta
     return 'みんなの まほうエネルギー、たまってきたよ！';
 }
 
-function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
+function pickUserEventTopic(context: UserSpeechContext): FuwafuwaEventTopic | null {
     if (context.isMagicDeliveryActive) {
         return 'delivery';
     }
@@ -736,13 +869,23 @@ function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
         return 'afterglow';
     }
 
-    if (isHatchingSoon(context.stage, context.daysAlive) || isGrowthSoon(context.stage, context.activeDays)) {
-        return 'growth';
+    return null;
+}
+
+function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
+    const eventTopic = pickUserEventTopic(context);
+    if (eventTopic) {
+        return eventTopic;
     }
+
+    const isGrowthTopicAvailable = isHatchingSoon(context.stage, context.daysAlive)
+        || isGrowthSoon(context.stage, context.activeDays);
 
     if (context.percent >= 90 && context.displaySeconds > 0) {
         return pickDailyTopic(
-            ['omen', 'mechanic', 'progress', 'mood'],
+            isGrowthTopicAvailable
+                ? ['growth', 'omen', 'mechanic', 'progress', 'mood']
+                : ['omen', 'mechanic', 'progress', 'mood'],
             context.ambientCue,
             getDailyTopicSeed(context),
         );
@@ -750,13 +893,21 @@ function pickUserTopic(context: UserSpeechContext): FuwafuwaSpeechTopic {
 
     if (context.displaySeconds > 0) {
         return pickDailyTopic(
-            ['mood', 'mechanic', 'progress'],
+            isGrowthTopicAvailable
+                ? ['growth', 'mood', 'mechanic', 'progress']
+                : ['mood', 'mechanic', 'progress'],
             context.ambientCue,
             getDailyTopicSeed(context),
         );
     }
 
-    return pickDailyTopic(['greeting', 'mechanic', 'mood'], context.ambientCue, getDailyTopicSeed(context));
+    return pickDailyTopic(
+        isGrowthTopicAvailable
+            ? ['growth', 'greeting', 'mechanic', 'mood']
+            : ['greeting', 'mechanic', 'mood'],
+        context.ambientCue,
+        getDailyTopicSeed(context),
+    );
 }
 
 function buildUserAfterglowSpeech(afterglow: HomeAfterglow, depth: number): FuwafuwaSpeech {
@@ -821,7 +972,10 @@ function buildUserGrowthSpeech(context: UserSpeechContext): FuwafuwaSpeech {
         return createSpeech({
             id: 'user:hatching_soon',
             category: 'progress',
-            accent: 'event',
+            accent: 'magic',
+            dailyGroup: 'magic',
+            dailyTopic: 'growth',
+            replyId: getReplyId('growth', context.variantSeed, 3),
             lines: context.depth === 0
                 ? pickVariant([
                     ['もうすぐ', 'うまれそう！'],
@@ -837,7 +991,10 @@ function buildUserGrowthSpeech(context: UserSpeechContext): FuwafuwaSpeech {
     return createSpeech({
         id: 'user:growth_soon',
         category: 'progress',
-        accent: 'event',
+        accent: 'magic',
+        dailyGroup: 'magic',
+        dailyTopic: 'growth',
+        replyId: getReplyId('growth', context.variantSeed, 3),
         lines: context.depth === 0
             ? pickVariant([
                 ['もうすぐ', 'おおきく なれそう！'],
@@ -856,6 +1013,9 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
             id: 'user:almost_full',
             category: 'progress',
             accent: 'magic',
+            dailyGroup: 'magic',
+            dailyTopic: 'progress',
+            replyId: getReplyId('progress', context.variantSeed, 3),
             lines: pickVariant([
                 ['まほうエネルギーが', 'もうすこしで まんたん！'],
                 ['あと すこしで', 'ふわふわに とどきそう'],
@@ -869,6 +1029,9 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
             id: 'user:growing',
             category: 'progress',
             accent: 'magic',
+            dailyGroup: 'magic',
+            dailyTopic: 'progress',
+            replyId: getReplyId('progress', context.variantSeed, 4),
             lines: pickVariant([
                 ['まほうエネルギーが', 'たまってきたよ'],
                 ['まほうエネルギーが', 'じわっと ふえてるよ'],
@@ -882,6 +1045,9 @@ function buildUserProgressSpeech(context: UserSpeechContext): FuwafuwaSpeech {
         id: 'user:small_progress',
         category: 'progress',
         accent: 'magic',
+        dailyGroup: 'magic',
+        dailyTopic: 'progress',
+        replyId: getReplyId('progress', context.variantSeed, 4),
         lines: pickVariant([
             ['まほうエネルギーが', 'すこし たまってきたよ'],
             ['まほうエネルギーも', 'ちゃんと とどいてるよ'],
@@ -896,6 +1062,9 @@ function buildUserRelationshipSpeech(context: UserSpeechContext): FuwafuwaSpeech
         id: context.stage === 1 ? 'user:relationship_waiting' : 'user:relationship_ready',
         category: 'relationship',
         accent: 'everyday',
+        dailyGroup: 'everyday',
+        dailyTopic: 'greeting',
+        replyId: getReplyId('greeting', context.variantSeed, 2),
         lines: buildUserRelationshipLines(
             context.stage,
             context.visitRecency,
@@ -978,6 +1147,9 @@ function buildUserSpeech(topic: FuwafuwaSpeechTopic, context: UserSpeechContext)
         id: 'user:mechanic_hint',
         category: 'mechanic_hint',
         accent: 'magic',
+        dailyGroup: 'magic',
+        dailyTopic: 'mechanic',
+        replyId: getReplyId('mechanic', dailyContext.variantSeed, 4),
         lines: pickVariant([
             ['まほうエネルギーは', 'ここに たまるんだよ'],
             ['ここに まほうエネルギーが', 'たまっていくんだよ'],
@@ -1021,6 +1193,69 @@ export function getUserSpeech(
     };
 
     return buildUserSpeech(pickUserTopic(context), context);
+}
+
+export function getUserEventSpeech(
+    displaySeconds: number,
+    targetSeconds: number,
+    stage: number,
+    activeDays: number,
+    recentMilestoneEvent: FuwafuwaMilestoneEvent | null,
+    announcement: HomeAnnouncement | null,
+    pokeDepth = 0,
+    daysAlive = 0,
+    recentAfterglow: HomeAfterglow | null = null,
+    isMagicDeliveryActive = false,
+): FuwafuwaSpeech | null {
+    const context: UserSpeechContext = {
+        percent: Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100),
+        displaySeconds,
+        isMagicDeliveryActive,
+        stage,
+        activeDays,
+        daysAlive,
+        announcement,
+        ambientCue: null,
+        recentMilestoneEvent,
+        recentAfterglow,
+        visitRecency: 'first',
+        depth: Math.max(0, Math.min(2, pokeDepth)),
+        variantSeed: 0,
+        idleBeat: 0,
+    };
+
+    const topic = pickUserEventTopic(context);
+    return topic ? buildUserSpeech(topic, context) : null;
+}
+
+export function getUserDailySpeech(
+    selection: FuwafuwaDailySelection,
+    displaySeconds: number,
+    targetSeconds: number,
+    stage: number,
+    activeDays: number,
+    ambientCue: HomeAmbientCue | null,
+    daysAlive = 0,
+    visitRecency: HomeVisitRecency = 'first',
+): FuwafuwaSpeech {
+    const context: UserSpeechContext = {
+        percent: Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100),
+        displaySeconds,
+        isMagicDeliveryActive: false,
+        stage,
+        activeDays,
+        daysAlive,
+        announcement: null,
+        ambientCue,
+        recentMilestoneEvent: null,
+        recentAfterglow: null,
+        visitRecency,
+        depth: 0,
+        variantSeed: selection.replyIndex,
+        idleBeat: 0,
+    };
+
+    return buildUserSpeech(selection.topic, context);
 }
 
 export function getUserMessage(displaySeconds: number, targetSeconds: number, stage: number, activeDays: number) {

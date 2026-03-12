@@ -142,18 +142,34 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('varies growth-soon idle speech for users nearing the next stage', () => {
-        expect(getUserSpeech(120, 600, 2, 6, null, null, null, 0, 6, 0)).toEqual({
+        expect(getUserSpeech(120, 600, 2, 6, null, null, null, 0, 6, 0)).toMatchObject({
             id: 'user:growth_soon',
             category: 'progress',
-            accent: 'event',
+            accent: 'magic',
             lines: ['もうすぐ', 'おおきく なれそう！'],
         });
 
-        expect(getUserSpeech(120, 600, 2, 6, null, null, null, 0, 6, 1)).toEqual({
-            id: 'user:growth_soon',
+        expect(getUserSpeech(120, 600, 2, 6, null, null, null, 0, 6, 1)).toMatchObject({
+            id: 'user:mood',
             category: 'progress',
-            accent: 'event',
-            lines: ['からだが', 'ちょっとずつ かわってきたよ'],
+            accent: 'everyday',
+            lines: ['ふわふわ なんだか', 'ごきげんだよ'],
+        });
+    });
+
+    it('lets growth-soon users rotate into magic and ambient daily speech', () => {
+        expect(getUserSpeech(120, 600, 2, 6, null, null, null, 0, 6, 2)).toMatchObject({
+            id: 'user:mechanic_hint',
+            category: 'mechanic_hint',
+            accent: 'magic',
+            lines: ['まほうエネルギー ここで', 'ふえていくんだよ'],
+        });
+
+        expect(getUserSpeech(120, 600, 2, 6, null, null, { kind: 'public_menu_new' }, 0, 6, 4)).toMatchObject({
+            id: 'ambient:public_menu_new',
+            category: 'event_notice',
+            accent: 'ambient',
+            lines: ['ふわふわも ちょっと', 'きになってるんだ'],
         });
     });
 
@@ -276,14 +292,14 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('moves idle solo speech into magic conversation when the daily seed advances', () => {
-        expect(getUserSpeech(0, 600, 1, 0, null, null, null)).toEqual({
+        expect(getUserSpeech(0, 600, 1, 0, null, null, null)).toMatchObject({
             id: 'user:relationship_waiting',
             category: 'relationship',
             accent: 'everyday',
             lines: ['きょうも まってたよ', 'あえて うれしいな'],
         });
 
-        expect(getUserSpeech(0, 600, 1, 0, null, null, null, 0, 0, 1)).toEqual({
+        expect(getUserSpeech(0, 600, 1, 0, null, null, null, 0, 0, 1)).toMatchObject({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'magic',
@@ -292,14 +308,14 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('rotates low-priority solo speech variants with a seed', () => {
-        expect(getUserSpeech(0, 600, 1, 0, null, null, null, 0, 0, 1)).toEqual({
+        expect(getUserSpeech(0, 600, 1, 0, null, null, null, 0, 0, 1)).toMatchObject({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'magic',
             lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
         });
 
-        expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 1)).toEqual({
+        expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 1)).toMatchObject({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'magic',
@@ -308,21 +324,21 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('moves progress speech into magic and then progress as the daily seed advances', () => {
-        expect(getUserSpeech(300, 600, 2, 4, null, null, null)).toEqual({
+        expect(getUserSpeech(300, 600, 2, 4, null, null, null)).toMatchObject({
             id: 'user:mood',
             category: 'progress',
             accent: 'everyday',
             lines: ['なんだか ぽかぽか', 'してきたよ'],
         });
 
-        expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 1)).toEqual({
+        expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 1)).toMatchObject({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'magic',
             lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
         });
 
-        expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 2)).toEqual({
+        expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 2)).toMatchObject({
             id: 'user:growing',
             category: 'progress',
             accent: 'magic',
@@ -331,14 +347,14 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('keeps solo ambient discovery on magic before mood and ambient', () => {
-        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 1)).toEqual({
+        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 1)).toMatchObject({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'magic',
             lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
         });
 
-        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 2)).toEqual({
+        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 2)).toMatchObject({
             id: 'user:mood',
             category: 'progress',
             accent: 'everyday',
@@ -347,14 +363,14 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('keeps early users on mechanic before waiting mood discovery', () => {
-        expect(getUserSpeech(0, 600, 1, 0, null, null, { kind: 'public_menu_new' }, 0, 0, 1)).toEqual({
+        expect(getUserSpeech(0, 600, 1, 0, null, null, { kind: 'public_menu_new' }, 0, 0, 1)).toMatchObject({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'magic',
             lines: ['ここに まほうエネルギーが', 'たまっていくんだよ'],
         });
 
-        expect(getUserSpeech(0, 600, 1, 0, null, null, { kind: 'public_menu_new' }, 0, 0, 2)).toEqual({
+        expect(getUserSpeech(0, 600, 1, 0, null, null, { kind: 'public_menu_new' }, 0, 0, 2)).toMatchObject({
             id: 'user:mood_waiting',
             category: 'progress',
             accent: 'everyday',
@@ -363,23 +379,30 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('moves hatching-soon copy into the speech bubble', () => {
-        expect(getUserSpeech(0, 600, 1, 0, null, null, null, 0, 3)).toEqual({
+        expect(getUserSpeech(0, 600, 1, 0, null, null, null, 0, 3)).toMatchObject({
             id: 'user:hatching_soon',
             category: 'progress',
-            accent: 'event',
+            accent: 'magic',
             lines: ['もうすぐ', 'うまれそう！'],
         });
 
-        expect(getUserSpeech(0, 600, 1, 0, null, null, null, 1, 3)).toEqual({
+        expect(getUserSpeech(0, 600, 1, 0, null, null, null, 1, 3)).toMatchObject({
             id: 'user:hatching_soon',
             category: 'progress',
-            accent: 'event',
+            accent: 'magic',
             lines: ['たまごの なかで', 'そわそわしてるかも'],
+        });
+
+        expect(getUserSpeech(0, 600, 1, 0, null, null, null, 0, 3, 1)).toMatchObject({
+            id: 'user:relationship_waiting',
+            category: 'relationship',
+            accent: 'everyday',
+            lines: ['なんだか そわそわしてたんだ', 'また あえたね'],
         });
     });
 
     it('returns together-mode speech with info accent', () => {
-        expect(getFamilySpeech(2, 300, 600, null, null)).toEqual({
+        expect(getFamilySpeech(2, 300, 600, null, null)).toMatchObject({
             id: 'family:mood:2',
             category: 'progress',
             accent: 'everyday',
@@ -388,7 +411,7 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('moves together-mode progress speech into magic when the daily seed advances', () => {
-        expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 1)).toEqual({
+        expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 1)).toMatchObject({
             id: 'family:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'magic',
@@ -397,14 +420,14 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('rotates low-priority together-mode speech variants with a seed', () => {
-        expect(getFamilySpeech(2, 0, 600, null, null, null, 0, 1)).toEqual({
+        expect(getFamilySpeech(2, 0, 600, null, null, null, 0, 1)).toMatchObject({
             id: 'family:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'magic',
             lines: ['ここでも まほうエネルギーが', 'ふえていくんだよ'],
         });
 
-        expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 1)).toEqual({
+        expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 1)).toMatchObject({
             id: 'family:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'magic',
@@ -413,14 +436,14 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('keeps together-mode idle speech on magic energy before mood and ambient discovery', () => {
-        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 1)).toEqual({
+        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 1)).toMatchObject({
             id: 'family:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'magic',
             lines: ['ここでも まほうエネルギーが', 'ふえていくんだよ'],
         });
 
-        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 2)).toEqual({
+        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 2)).toMatchObject({
             id: 'family:mood:2',
             category: 'progress',
             accent: 'everyday',
@@ -434,7 +457,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             userId: 'user-1',
             userName: 'さくら',
             hasMultiple: false,
-        })).toEqual({
+        })).toMatchObject({
             id: 'family:milestone:user-1:egg',
             category: 'event_notice',
             accent: 'event',
@@ -448,7 +471,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             userId: 'user-1',
             userName: 'さくら',
             hasMultiple: false,
-        }, 1)).toEqual({
+        }, 1)).toMatchObject({
             id: 'family:milestone:user-1:egg',
             category: 'event_notice',
             accent: 'event',
@@ -469,7 +492,7 @@ describe('fuwafuwaHomeCardCopy', () => {
             userId: 'user-1',
             userName: 'さくら',
             hasMultiple: false,
-        })).toEqual({
+        })).toMatchObject({
             id: 'challenge:challenge-1',
             category: 'event_notice',
             accent: 'event',
@@ -479,7 +502,7 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('keeps together-mode idle copy in the relationship category', () => {
-        expect(getFamilySpeech(2, 0, 600, null, null)).toEqual({
+        expect(getFamilySpeech(2, 0, 600, null, null)).toMatchObject({
             id: 'family:idle:2',
             category: 'relationship',
             accent: 'everyday',
@@ -488,7 +511,7 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('mentions magic energy in solo idle relationship variants too', () => {
-        expect(getUserSpeech(0, 600, 2, 3, null, null, null, 0, 0, 0)).toEqual({
+        expect(getUserSpeech(0, 600, 2, 3, null, null, null, 0, 0, 0)).toMatchObject({
             id: 'user:relationship_ready',
             category: 'relationship',
             accent: 'everyday',
@@ -497,7 +520,7 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('changes solo relationship speech when fuwafuwa remembers a returning visit', () => {
-        expect(getUserSpeech(0, 600, 2, 3, null, null, null, 0, 0, 0, 'returning')).toEqual({
+        expect(getUserSpeech(0, 600, 2, 3, null, null, null, 0, 0, 0, 'returning')).toMatchObject({
             id: 'user:relationship_ready',
             category: 'relationship',
             accent: 'everyday',
@@ -506,7 +529,7 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('changes together relationship speech when everyone came back recently', () => {
-        expect(getFamilySpeech(2, 0, 600, null, null, null, 0, 0, 'recent')).toEqual({
+        expect(getFamilySpeech(2, 0, 600, null, null, null, 0, 0, 'recent')).toMatchObject({
             id: 'family:idle:2',
             category: 'relationship',
             accent: 'everyday',
@@ -515,21 +538,21 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('rotates low-priority solo speech over time without poking', () => {
-        expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 0, 'first', null, false, 1)).toEqual({
+        expect(getUserSpeech(300, 600, 2, 4, null, null, null, 0, 0, 0, 'first', null, false, 1)).toMatchObject({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'magic',
             lines: ['まほうエネルギー ここで', 'ふえていくんだよ'],
         });
 
-        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 0, 'first', null, false, 1)).toEqual({
+        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 0, 'first', null, false, 1)).toMatchObject({
             id: 'user:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'magic',
             lines: ['まほうエネルギー ここで', 'ふえていくんだよ'],
         });
 
-        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 0, 'first', null, false, 3)).toEqual({
+        expect(getUserSpeech(0, 600, 2, 3, null, null, { kind: 'public_menu_new' }, 0, 0, 0, 'first', null, false, 3)).toMatchObject({
             id: 'ambient:public_menu_new',
             category: 'event_notice',
             accent: 'ambient',
@@ -538,28 +561,28 @@ describe('fuwafuwaHomeCardCopy', () => {
     });
 
     it('rotates low-priority family speech over time without poking', () => {
-        expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 0, 'first', null, false, 1)).toEqual({
+        expect(getFamilySpeech(2, 300, 600, null, null, null, 0, 0, 'first', null, false, 1)).toMatchObject({
             id: 'family:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'magic',
             lines: ['まほうエネルギーが', 'たまると うれしいな'],
         });
 
-        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 1)).toEqual({
+        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 1)).toMatchObject({
             id: 'family:mechanic_hint',
             category: 'mechanic_hint',
             accent: 'magic',
             lines: ['まほうエネルギーが', 'たまると うれしいな'],
         });
 
-        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 2)).toEqual({
+        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 2)).toMatchObject({
             id: 'family:mood:2',
             category: 'progress',
             accent: 'everyday',
             lines: ['ふわふわ なんだか', 'ごきげんだよ'],
         });
 
-        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 4)).toEqual({
+        expect(getFamilySpeech(2, 0, 600, null, { kind: 'public_menu_custom' }, null, 0, 0, 'first', null, false, 4)).toMatchObject({
             id: 'ambient:public_menu_custom',
             category: 'event_notice',
             accent: 'ambient',
