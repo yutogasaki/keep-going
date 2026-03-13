@@ -52,25 +52,66 @@ export const StretchSessionOverlayLayer: React.FC<StretchSessionOverlayLayerProp
     showExitConfirm,
 }) => (
     <>
+        {/* Session progress dots + counter */}
         <div style={{
             position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 4,
-            background: 'rgba(0,0,0,0.05)',
+            top: 'calc(env(safe-area-inset-top, 16px) + 16px)',
+            left: 16,
+            right: 64,
             zIndex: 65,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
         }}>
-            <motion.div
-                style={{
-                    height: '100%',
-                    background: '#2BBAA0',
-                    originX: 0,
-                }}
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: sessionLength > 0 ? currentIndex / sessionLength : 0 }}
-                transition={{ duration: 0.5, ease: 'easeInOut' }}
-            />
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: sessionLength > 12 ? 3 : 4,
+                flexShrink: 1,
+                minWidth: 0,
+                overflow: 'hidden',
+            }}>
+                {Array.from({ length: sessionLength }, (_, i) => {
+                    const isCurrent = i === currentIndex;
+                    const isDone = i < currentIndex;
+                    const dotSize = sessionLength > 12 ? 6 : 8;
+                    const currentSize = sessionLength > 12 ? 8 : 10;
+                    return (
+                        <motion.div
+                            key={i}
+                            animate={isCurrent ? {
+                                scale: [1, 1.3, 1],
+                            } : undefined}
+                            transition={isCurrent ? {
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: 'easeInOut',
+                            } : undefined}
+                            style={{
+                                width: isCurrent ? currentSize : dotSize,
+                                height: isCurrent ? currentSize : dotSize,
+                                borderRadius: '50%',
+                                background: isDone
+                                    ? '#2BBAA0'
+                                    : isCurrent
+                                        ? '#2BBAA0'
+                                        : 'rgba(0,0,0,0.1)',
+                                flexShrink: 0,
+                            }}
+                        />
+                    );
+                })}
+            </div>
+            <span style={{
+                fontFamily: "'Outfit', sans-serif",
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#8395A7',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+            }}>
+                {currentIndex + 1}/{sessionLength}
+            </span>
         </div>
 
         <AnimatePresence>
