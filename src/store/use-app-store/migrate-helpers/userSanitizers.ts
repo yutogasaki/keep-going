@@ -1,0 +1,115 @@
+import { getTodayKey } from '../../../lib/db';
+import type {
+    ChibifuwaRecord,
+    PastFuwafuwaRecord,
+    UserProfileStore,
+} from '../types';
+import {
+    sanitizeNonNegativeNumber,
+    sanitizeNumberArray,
+    sanitizeOptionalString,
+    sanitizePositiveNumber,
+    sanitizeStringArray,
+    VALID_CLASS_LEVELS,
+} from './primitives';
+
+function sanitizePastFuwafuwas(value: unknown): PastFuwafuwaRecord[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value.flatMap((record) => {
+        if (!record || typeof record !== 'object') {
+            return [];
+        }
+
+        const candidate = record as Record<string, unknown>;
+        if (typeof candidate.id !== 'string' || candidate.id.length === 0) {
+            return [];
+        }
+
+        return [{
+            id: candidate.id,
+            name: sanitizeOptionalString(candidate.name),
+            type: sanitizeNonNegativeNumber(candidate.type, 0),
+            activeDays: sanitizeNonNegativeNumber(candidate.activeDays, 0),
+            finalStage: sanitizeNonNegativeNumber(candidate.finalStage, 0),
+            sayonaraDate: typeof candidate.sayonaraDate === 'string' && candidate.sayonaraDate.length > 0
+                ? candidate.sayonaraDate
+                : getTodayKey(),
+        }];
+    });
+}
+
+function sanitizeChibifuwas(value: unknown): ChibifuwaRecord[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value.flatMap((record) => {
+        if (!record || typeof record !== 'object') {
+            return [];
+        }
+
+        const candidate = record as Record<string, unknown>;
+        if (
+            typeof candidate.id !== 'string'
+            || candidate.id.length === 0
+            || typeof candidate.challengeTitle !== 'string'
+            || candidate.challengeTitle.length === 0
+            || typeof candidate.earnedDate !== 'string'
+            || candidate.earnedDate.length === 0
+        ) {
+            return [];
+        }
+
+        return [{
+            id: candidate.id,
+            type: sanitizeNonNegativeNumber(candidate.type, 0),
+            challengeTitle: candidate.challengeTitle,
+            earnedDate: candidate.earnedDate,
+        }];
+    });
+}
+
+export function sanitizeUsers(value: unknown): UserProfileStore[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value.flatMap((user) => {
+        if (!user || typeof user !== 'object') {
+            return [];
+        }
+
+        const candidate = user as Record<string, unknown>;
+        if (typeof candidate.id !== 'string' || candidate.id.length === 0) {
+            return [];
+        }
+
+        const classLevel = typeof candidate.classLevel === 'string' && VALID_CLASS_LEVELS.has(candidate.classLevel)
+            ? candidate.classLevel as UserProfileStore['classLevel']
+            : '初級';
+
+        return [{
+            id: candidate.id,
+            name: typeof candidate.name === 'string' && candidate.name.length > 0 ? candidate.name : 'ゲスト',
+            classLevel,
+            fuwafuwaBirthDate: typeof candidate.fuwafuwaBirthDate === 'string' && candidate.fuwafuwaBirthDate.length > 0
+                ? candidate.fuwafuwaBirthDate
+                : getTodayKey(),
+            fuwafuwaType: sanitizeNonNegativeNumber(candidate.fuwafuwaType, 0),
+            fuwafuwaCycleCount: sanitizePositiveNumber(candidate.fuwafuwaCycleCount, 1),
+            fuwafuwaName: sanitizeOptionalString(candidate.fuwafuwaName),
+            pastFuwafuwas: sanitizePastFuwafuwas(candidate.pastFuwafuwas),
+            notifiedFuwafuwaStages: sanitizeNumberArray(candidate.notifiedFuwafuwaStages),
+            dailyTargetMinutes: sanitizePositiveNumber(candidate.dailyTargetMinutes, 10),
+            excludedExercises: sanitizeStringArray(candidate.excludedExercises),
+            requiredExercises: sanitizeStringArray(candidate.requiredExercises),
+            consumedMagicSeconds: sanitizeNonNegativeNumber(candidate.consumedMagicSeconds, 0),
+            challengeStars: sanitizeNonNegativeNumber(candidate.challengeStars, 0),
+            avatarUrl: typeof candidate.avatarUrl === 'string' && candidate.avatarUrl.length > 0 ? candidate.avatarUrl : undefined,
+            chibifuwas: sanitizeChibifuwas(candidate.chibifuwas),
+        }];
+    });
+}
