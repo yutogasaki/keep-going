@@ -14,6 +14,7 @@ import { MenuGroupTab } from './menu/MenuGroupTab';
 import { MenuIndividualTab } from './menu/MenuIndividualTab';
 import { MenuTabs } from './menu/menu-page/MenuTabs';
 import { useMenuPageData } from './menu/menu-page/useMenuPageData';
+import { useMenuUsageStats } from './menu/menu-page/useMenuUsageStats';
 
 export const MenuPage: React.FC = () => {
     const users = useAppStore((state) => state.users);
@@ -24,6 +25,7 @@ export const MenuPage: React.FC = () => {
 
     const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
     const [deleteExId, setDeleteExId] = useState<string | null>(null);
+    const usageStats = useMenuUsageStats();
 
     const {
         tab,
@@ -140,6 +142,7 @@ export const MenuPage: React.FC = () => {
 
                 {tab === 'group' && (
                     <MenuGroupTab
+                        usageStats={usageStats}
                         exerciseMap={exerciseMap}
                         isTogetherMode={isTogetherMode}
                         dailyTargetMinutes={dailyTargetMinutes}
@@ -166,6 +169,7 @@ export const MenuPage: React.FC = () => {
 
                 {tab === 'individual' && (
                     <MenuIndividualTab
+                        usageStats={usageStats}
                         exercises={exercises}
                         requiredExercises={requiredExercises}
                         customExercises={customExercises}

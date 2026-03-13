@@ -1,8 +1,10 @@
 import type { ExercisePlacement } from '../../../data/exercisePlacement';
 import type { MenuGroup } from '../../../data/menuGroups';
 import type { PublicMenu } from '../../../lib/publicMenus';
+import type { MenuUsageStats } from '../menu-page/useMenuUsageStats';
 
 export interface MenuGroupTabProps {
+    usageStats: MenuUsageStats;
     exerciseMap: Map<string, { name: string; emoji: string; sec: number; placement: ExercisePlacement }>;
     isTogetherMode: boolean;
     dailyTargetMinutes: number;

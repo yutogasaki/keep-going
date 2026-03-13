@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { isRestExercise, type Exercise } from '../../data/exercises';
 import { getExercisePlacementLabel } from '../../data/exercisePlacement';
+import type { CustomExercise } from '../../lib/db';
 import { SelectionBar } from './individual-tab/SelectionBar';
 import type { MenuIndividualTabProps } from './individual-tab/types';
 import {
@@ -8,22 +9,27 @@ import {
     filterStandardExercisesByCategory,
     getAvailableIndividualCategories,
     type IndividualCategoryId,
-    shouldShowCustomExercises,
 } from './individual-tab/selectionCategories';
 import { IndividualCategoryToolbar } from './individual-tab/IndividualCategoryToolbar';
 import { PublicExerciseSection } from './individual-tab/PublicExerciseSection';
-import { StandardExerciseList } from './individual-tab/StandardExerciseList';
-import { CustomExerciseList } from './individual-tab/CustomExerciseList';
+import { StandardExerciseCard } from './individual-tab/StandardExerciseCard';
+import { CustomExerciseCard } from './individual-tab/CustomExerciseCard';
+import { RestExerciseCard } from './individual-tab/RestExerciseCard';
 import { CreateCustomExerciseCard } from './individual-tab/CreateCustomExerciseCard';
-import { IndividualSectionHeading } from './individual-tab/IndividualSectionHeading';
 import { ShowMoreButton } from './shared/ShowMoreButton';
-import { DISPLAY_TERMS } from '../../lib/terminology';
 
 const INITIAL_VISIBLE = 4;
+const RECENT_DAYS = 7;
+
+/** Discriminated union for a flat exercise list that mixes standard + custom */
+type ExerciseItem =
+    | { kind: 'standard'; exercise: Exercise }
+    | { kind: 'custom'; exercise: CustomExercise };
 
 export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
     onStartHybridSession?: (requiredIds: string[]) => void;
 }> = ({
+    usageStats,
     exercises,
     requiredExercises,
     customExercises,
@@ -48,6 +54,13 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [category, setCategory] = useState<IndividualCategoryId>('all');
     const [showAll, setShowAll] = useState(false);
+    const [expandedId, setExpandedId] = useState<string | null>(null);
+
+    const recentCutoff = useMemo(() => {
+        const d = new Date();
+        d.setDate(d.getDate() - RECENT_DAYS);
+        return d.toISOString();
+    }, []);
 
     const availableCategories = useMemo(
         () => getAvailableIndividualCategories(exercises, customExercises),
@@ -57,46 +70,61 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
         () => filterStandardExercisesByCategory(exercises, category),
         [category, exercises],
     );
+    const filteredCustomExercises = useMemo(
+        () => filterCustomExercisesByCategory(customExercises, category),
+        [category, customExercises],
+    );
 
-    // Merge all standard + teacher section exercises into one sorted flat list
-    const allExercises = useMemo(() => {
-        const nonRest = filteredExercises.filter((e) => !isRestExercise(e));
-        return nonRest.sort((a, b) => {
-            const score = (ex: Exercise): number => {
-                if (ex.recommended) return 0;
-                if (isNewTeacherContent?.(ex.id)) return 1;
-                // teacher section exercises come after standard
-                if (ex.origin === 'teacher' && ex.displayMode !== 'standard_inline') return 3;
-                return 2;
-            };
-            const sa = score(a);
-            const sb = score(b);
+    // Merge standard + custom into one flat sorted list (excluding rest)
+    const allItems = useMemo<ExerciseItem[]>(() => {
+        const standardItems: ExerciseItem[] = filteredExercises
+            .filter((e) => !isRestExercise(e))
+            .map((exercise) => ({ kind: 'standard' as const, exercise }));
+
+        const customItems: ExerciseItem[] = filteredCustomExercises
+            .map((exercise) => ({ kind: 'custom' as const, exercise }));
+
+        const combined = [...standardItems, ...customItems];
+
+        const scoreItem = (item: ExerciseItem): number => {
+            const id = item.exercise.id;
+            if (item.kind === 'standard' && item.exercise.recommended) return 0;
+            if (isNewTeacherContent?.(id)) return 1;
+            const lastUsed = usageStats.exerciseLastUsed.get(id);
+            if (lastUsed && lastUsed >= recentCutoff) return 2;
+            if (item.kind === 'custom') return 5;
+            if (item.kind === 'standard' && item.exercise.origin === 'teacher'
+                && item.exercise.displayMode !== 'standard_inline') return 4;
+            return 3;
+        };
+
+        return combined.sort((a, b) => {
+            const sa = scoreItem(a);
+            const sb = scoreItem(b);
             if (sa !== sb) return sa - sb;
-            if (sa === 0) {
-                const oa = a.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
-                const ob = b.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
+            if (sa === 0 && a.kind === 'standard' && b.kind === 'standard') {
+                const oa = a.exercise.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
+                const ob = b.exercise.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
                 if (oa !== ob) return oa - ob;
             }
-            return a.name.localeCompare(b.name, 'ja');
+            // Within same tier, sort by last used (most recent first)
+            const la = usageStats.exerciseLastUsed.get(a.exercise.id) ?? '';
+            const lb = usageStats.exerciseLastUsed.get(b.exercise.id) ?? '';
+            if (la !== lb) return lb.localeCompare(la);
+            return a.exercise.name.localeCompare(b.exercise.name, 'ja');
         });
-    }, [filteredExercises, isNewTeacherContent]);
+    }, [filteredExercises, filteredCustomExercises, isNewTeacherContent, usageStats, recentCutoff]);
 
     const restExercises = useMemo(
         () => filteredExercises.filter((e) => isRestExercise(e)),
         [filteredExercises],
     );
 
-    const visibleExercises = showAll ? allExercises : allExercises.slice(0, INITIAL_VISIBLE);
-    const remaining = allExercises.length - INITIAL_VISIBLE;
+    const visibleItems = showAll ? allItems : allItems.slice(0, INITIAL_VISIBLE);
+    const remaining = allItems.length - INITIAL_VISIBLE;
+    const showRest = showAll || allItems.length <= INITIAL_VISIBLE;
 
-    const filteredCustomExercises = useMemo(
-        () => filterCustomExercisesByCategory(customExercises, category),
-        [category, customExercises],
-    );
-    const showCustomSection = useMemo(
-        () => shouldShowCustomExercises(customExercises, category),
-        [category, customExercises],
-    );
+    const totalCount = allItems.length + (restExercises.length > 0 ? 1 : 0);
 
     const sectionTitle = category === 'all'
         ? '種目'
@@ -109,6 +137,10 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
             setCategory('all');
         }
     }, [availableCategories, category]);
+
+    const handleToggleExpand = useCallback((exerciseId: string) => {
+        setExpandedId((current) => (current === exerciseId ? null : exerciseId));
+    }, []);
 
     const handleToggleSelect = useCallback((exerciseId: string) => {
         setSelectedIds((prev) => {
@@ -143,8 +175,6 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
         });
     }, []);
 
-    const totalCount = allExercises.length + (restExercises.length > 0 ? 1 : 0);
-
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '0 20px' }}>
             <IndividualCategoryToolbar
@@ -177,17 +207,54 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                             {totalCount}
                         </span>
                     </h2>
-                    <StandardExerciseList
-                        exercises={visibleExercises}
-                        restExercises={showAll || allExercises.length <= INITIAL_VISIBLE ? restExercises : []}
-                        requiredExerciseIds={requiredExercises}
-                        onStartExercise={onStartExercise}
-                        teacherExerciseIds={teacherExerciseIds}
-                        isNewTeacherContent={isNewTeacherContent}
-                        selectionMode={selectionMode}
-                        selectedIds={selectedIds}
-                        onToggleSelect={handleToggleSelect}
-                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {visibleItems.map((item, index) =>
+                            item.kind === 'standard' ? (
+                                <StandardExerciseCard
+                                    key={item.exercise.id}
+                                    exercise={item.exercise}
+                                    index={index}
+                                    expanded={expandedId === item.exercise.id}
+                                    required={requiredExercises.includes(item.exercise.id)}
+                                    selected={Boolean(selectionMode && selectedIds.has(item.exercise.id))}
+                                    selectionMode={selectionMode}
+                                    teacherBadge={teacherExerciseIds?.has(item.exercise.id)}
+                                    newBadge={isNewTeacherContent?.(item.exercise.id)}
+                                    onToggleExpand={handleToggleExpand}
+                                    onToggleSelect={handleToggleSelect}
+                                    onStartExercise={onStartExercise}
+                                />
+                            ) : (
+                                <CustomExerciseCard
+                                    key={item.exercise.id}
+                                    exercise={item.exercise}
+                                    index={index}
+                                    expanded={expandedId === item.exercise.id}
+                                    selected={Boolean(selectionMode && selectedIds.has(item.exercise.id))}
+                                    isTogetherMode={isTogetherMode}
+                                    creatorName={getCreatorName(item.exercise.creatorId)}
+                                    selectionMode={selectionMode}
+                                    publishedExercise={findPublishedExercise?.(item.exercise)}
+                                    canPublish={canPublish}
+                                    onToggleExpand={handleToggleExpand}
+                                    onToggleSelect={handleToggleSelect}
+                                    onEdit={onEditCustomExercise}
+                                    onDelete={onDeleteCustomExercise}
+                                    onStart={onStartCustomExercise}
+                                    onPublish={onPublishExercise}
+                                    onUnpublish={onUnpublishExercise}
+                                />
+                            ),
+                        )}
+                        {showRest && restExercises.length > 0 ? (
+                            <RestExerciseCard
+                                exercises={restExercises}
+                                selectionMode={selectionMode}
+                                selectedIds={selectedIds}
+                                onToggleSelect={handleToggleSelect}
+                            />
+                        ) : null}
+                    </div>
                     {remaining > 0 ? (
                         <div style={{ marginTop: 8 }}>
                             <ShowMoreButton
@@ -212,59 +279,7 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                 </div>
             )}
 
-            {showCustomSection ? (
-                <section>
-                    <IndividualSectionHeading>
-                        {DISPLAY_TERMS.customExercise}
-                        {filteredCustomExercises.length > 0 ? (
-                            <span style={{
-                                fontFamily: "'Outfit', sans-serif",
-                                fontSize: 12,
-                                fontWeight: 700,
-                                color: '#B2BEC3',
-                                marginLeft: 8,
-                            }}>
-                                {filteredCustomExercises.length}
-                            </span>
-                        ) : null}
-                    </IndividualSectionHeading>
-                    {filteredCustomExercises.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
-                            <CustomExerciseList
-                                customExercises={filteredCustomExercises}
-                                isTogetherMode={isTogetherMode}
-                                getCreatorName={getCreatorName}
-                                onEdit={onEditCustomExercise}
-                                onDelete={onDeleteCustomExercise}
-                                onStart={onStartCustomExercise}
-                                canPublish={canPublish}
-                                findPublishedExercise={findPublishedExercise}
-                                onPublish={onPublishExercise}
-                                onUnpublish={onUnpublishExercise}
-                                selectionMode={selectionMode}
-                                selectedIds={selectedIds}
-                                onToggleSelect={handleToggleSelect}
-                            />
-                        </div>
-                    ) : (
-                        <div
-                            className="card card-sm"
-                            style={{
-                                padding: '14px 16px',
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 12,
-                                color: '#8395A7',
-                                marginTop: 8,
-                            }}
-                        >
-                            このカテゴリの {DISPLAY_TERMS.customExercise}はまだありません。
-                        </div>
-                    )}
-                    <div style={{ marginTop: 8 }}>
-                        <CreateCustomExerciseCard onCreate={onCreateCustomExercise} />
-                    </div>
-                </section>
-            ) : null}
+            <CreateCustomExerciseCard onCreate={onCreateCustomExercise} />
 
             {onOpenPublicExerciseBrowser ? (
                 <PublicExerciseSection onOpenPublicExerciseBrowser={onOpenPublicExerciseBrowser} />

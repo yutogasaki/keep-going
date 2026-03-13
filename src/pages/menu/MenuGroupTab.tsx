@@ -9,7 +9,10 @@ import type { MenuGroup } from '../../data/menuGroups';
 
 const INITIAL_VISIBLE = 4;
 
+const RECENT_DAYS = 7;
+
 export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
+    usageStats,
     exerciseMap,
     isTogetherMode,
     dailyTargetMinutes,
@@ -34,13 +37,21 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
 }) => {
     const [showAll, setShowAll] = useState(false);
 
+    const recentCutoff = useMemo(() => {
+        const d = new Date();
+        d.setDate(d.getDate() - RECENT_DAYS);
+        return d.toISOString();
+    }, []);
+
     const allGroups = useMemo(() => {
         const scored = (group: MenuGroup): number => {
             if (group.recommended) return 0;
             if (isNewTeacherContent?.(group.id)) return 1;
-            if (!group.isPreset && !group.origin) return 4; // custom
-            if (group.origin === 'teacher' && group.displayMode !== 'standard_inline') return 3;
-            return 2; // standard / inline teacher
+            const lastUsed = usageStats.menuLastUsed.get(group.id);
+            if (lastUsed && lastUsed >= recentCutoff) return 2;
+            if (!group.isPreset && !group.origin) return 5; // custom
+            if (group.origin === 'teacher' && group.displayMode !== 'standard_inline') return 4;
+            return 3; // standard / inline teacher
         };
 
         const combined = [...presets, ...customGroups];
@@ -53,9 +64,13 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
                 const ob = b.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
                 if (oa !== ob) return oa - ob;
             }
+            // Within same tier, sort by last used (most recent first)
+            const la = usageStats.menuLastUsed.get(a.id) ?? '';
+            const lb = usageStats.menuLastUsed.get(b.id) ?? '';
+            if (la !== lb) return lb.localeCompare(la);
             return a.name.localeCompare(b.name, 'ja');
         });
-    }, [presets, customGroups, isNewTeacherContent]);
+    }, [presets, customGroups, isNewTeacherContent, usageStats.menuLastUsed, recentCutoff]);
 
     const visibleGroups = showAll ? allGroups : allGroups.slice(0, INITIAL_VISIBLE);
     const remaining = allGroups.length - INITIAL_VISIBLE;

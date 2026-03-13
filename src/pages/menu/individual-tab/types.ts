@@ -1,6 +1,7 @@
 import type { Exercise } from '../../../data/exercises';
 import type { CustomExercise } from '../../../lib/db';
 import type { PublicExercise } from '../../../lib/publicExercises';
+import type { MenuUsageStats } from '../menu-page/useMenuUsageStats';
 
 export interface IndividualSelectionProps {
     selectionMode?: boolean;
@@ -9,6 +10,7 @@ export interface IndividualSelectionProps {
 }
 
 export interface MenuIndividualTabProps {
+    usageStats: MenuUsageStats;
     exercises: Exercise[];
     requiredExercises: string[];
     customExercises: CustomExercise[];
