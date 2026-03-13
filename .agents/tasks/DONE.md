@@ -9,6 +9,11 @@
 - speech copy を topic / domain 単位で逃がし、governance の critical warning だった `fuwafuwaHomeCardCopy.ts` を解消した
 - `npx tsc --noEmit`、home speech 系の関連テスト、`npm run governance:check` を通した
 
+## 2026-03-13: `ChallengeFormCard` を責務分割
+- `ChallengeFormCard.tsx` から styles、form primitives、selection state hook、target / reward section を分離し、組み立て役へ整理した
+- `ChallengeFormCard.tsx` は `842 -> 179` 行になり、`ChallengeFormCard` の critical warning を解消した
+- `npx tsc --noEmit`、`npm run build`、`npm run governance:check` を通した
+
 ## 2026-03-11: ホームの先生/みんな導線を再設計
 - ホームの情報設計を `チャレンジ -> 先生のメニュー -> みんなのメニュー` に整理し、`先生` と `みんな` を同じカードファミリーの別バリアントとして扱う方針を仕様書と実装で揃えた
 - ホームから新しいメニュー / 種目を見つける導線を、詳細シートを含めて自然につながる形へ再設計した
