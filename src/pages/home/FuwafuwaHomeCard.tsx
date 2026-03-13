@@ -82,6 +82,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     const [pokeDepth, setPokeDepth] = useState(0);
     const [dailyState, setDailyState] = useState<DailyConversationState>(EMPTY_DAILY_CONVERSATION_STATE);
     const [dailySelection, setDailySelection] = useState<FuwafuwaDailySelection | null>(null);
+    const [eventDismissed, setEventDismissed] = useState(false);
     const pokeResetTimerRef = useRef<number | null>(null);
     const idleBeatTimerRef = useRef<number | null>(null);
     const perUserMagicMap = useMemo(
@@ -372,10 +373,14 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     );
 
     const fuwafuwaName = selectedUser?.fuwafuwaName ?? null;
-    const familySpeech = familyEventSpeech ?? familyDailySpeech;
-    const selectedUserSpeech = applySpeechName(selectedUserEventSpeech ?? selectedUserDailySpeech, fuwafuwaName);
+    const rawEventSpeechId = isTogetherMode ? familyEventSpeech?.id : selectedUserEventSpeech?.id;
+    const hasActiveEventSpeech = Boolean(rawEventSpeechId) && !eventDismissed;
+    const familySpeech = (familyEventSpeech && !eventDismissed) ? familyEventSpeech : familyDailySpeech;
+    const selectedUserSpeech = applySpeechName(
+        (selectedUserEventSpeech && !eventDismissed) ? selectedUserEventSpeech : selectedUserDailySpeech,
+        fuwafuwaName,
+    );
     const activeSpeech = isTogetherMode ? familySpeech : selectedUserSpeech;
-    const hasActiveEventSpeech = isTogetherMode ? Boolean(familyEventSpeech) : Boolean(selectedUserEventSpeech);
     const advanceConversation = () => {
         if (!hasActiveEventSpeech) {
             const { candidate, nextState } = chooseNextDailyConversation(resolvedDailyState, dailyContext, 'tap');
@@ -389,8 +394,23 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
             return;
         }
 
-        setPokeDepth((currentDepth) => (currentDepth + 1) % 3);
+        if (pokeDepth >= 2) {
+            setEventDismissed(true);
+            setPokeDepth(0);
+            const { candidate, nextState } = chooseNextDailyConversation(resolvedDailyState, dailyContext, 'tap');
+            if (candidate) {
+                setDailyState(nextState);
+                setDailySelection(candidate.selection);
+            }
+            return;
+        }
+
+        setPokeDepth((currentDepth) => currentDepth + 1);
     };
+
+    useEffect(() => {
+        setEventDismissed(false);
+    }, [rawEventSpeechId]);
 
     useEffect(() => {
         const { candidate, nextState } = chooseNextDailyConversation(

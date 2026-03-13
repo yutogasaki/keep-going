@@ -171,13 +171,6 @@ function getCandidatesForGroup(
     return candidates.filter((candidate) => candidate.selection.group === group);
 }
 
-function getCandidatesForTopic(
-    candidates: DailyConversationCandidate[],
-    topic: FuwafuwaDailyTopic,
-): DailyConversationCandidate[] {
-    return candidates.filter((candidate) => candidate.selection.topic === topic);
-}
-
 function getCandidateTopicScore(
     candidate: DailyConversationCandidate,
     state: DailyConversationState,
@@ -309,32 +302,6 @@ export function chooseNextDailyConversation(
 ): { candidate: DailyConversationCandidate | null; nextState: DailyConversationState } {
     if (context.candidates.length === 0) {
         return { candidate: null, nextState: state };
-    }
-
-    if (reason === 'tap' && state.currentTopic) {
-        const sameTopicCandidates = filterTapCandidates(
-            getCandidatesForTopic(context.candidates, state.currentTopic),
-            state,
-        );
-        const sameTopicCandidate = pickCandidateByTurn(sameTopicCandidates, state.turn + 1);
-        if (sameTopicCandidate) {
-            return {
-                candidate: sameTopicCandidate,
-                nextState: updateState(state, sameTopicCandidate),
-            };
-        }
-
-        if (state.currentGroup) {
-            const sameGroupCandidates = getCandidatesForGroup(context.candidates, state.currentGroup)
-                .filter((candidate) => candidate.selection.topic !== state.currentTopic);
-            const sameGroupCandidate = pickTopicCandidate(sameGroupCandidates, state, context, 'tap');
-            if (sameGroupCandidate) {
-                return {
-                    candidate: sameGroupCandidate,
-                    nextState: updateState(state, sameGroupCandidate),
-                };
-            }
-        }
     }
 
     const candidate = pickCrossGroupCandidate(state, context, reason);
