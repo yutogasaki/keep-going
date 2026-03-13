@@ -19,6 +19,11 @@
 - `FuwafuwaHomeCard.tsx` は `560 -> 134` 行になり、governance warning 対象から外れた
 - `npx tsc --noEmit`、home speech 系の関連テスト、`npm run build`、`npm run governance:check` を通した
 
+## 2026-03-13: `HomeScreen` の local state/effect を hook 群へ分離
+- `HomeScreen.tsx` から modal / browser / afterglow / visit recency / session user normalization を hook 群へ逃がし、画面本体を組み立て役へ整理した
+- `HomeScreen.tsx` は `596 -> 364` 行、`useHomeScreenState.ts` は `190` 行になり、`HomeScreen` 系は governance warning 対象から外れた
+- `npx tsc --noEmit`、`npm run build`、`npm run governance:check` を通した
+
 ## 2026-03-11: ホームの先生/みんな導線を再設計
 - ホームの情報設計を `チャレンジ -> 先生のメニュー -> みんなのメニュー` に整理し、`先生` と `みんな` を同じカードファミリーの別バリアントとして扱う方針を仕様書と実装で揃えた
 - ホームから新しいメニュー / 種目を見つける導線を、詳細シートを含めて自然につながる形へ再設計した

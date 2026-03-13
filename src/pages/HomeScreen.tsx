@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-const lazyConfetti = () => import('canvas-confetti').then((m) => m.default);
+import React, { useMemo } from 'react';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { PageHeader } from '../components/PageHeader';
 import { PublicExerciseBrowser } from '../components/PublicExerciseBrowser';
@@ -9,13 +8,8 @@ import { ExerciseDetailSheet } from '../components/ExerciseDetailSheet';
 import { MenuDetailSheet } from '../components/MenuDetailSheet';
 import { EXERCISES } from '../data/exercises';
 import type { ExercisePlacement } from '../data/exercisePlacement';
-import type { PublicExercise } from '../lib/publicExercises';
-import type { PublicMenu } from '../lib/publicMenus';
-import type { TeacherExercise, TeacherMenu } from '../lib/teacherContent';
-import { audio } from '../lib/audio';
 import { pickTeacherContentHighlights } from '../lib/teacherExerciseMetadata';
 import { useAppStore } from '../store/useAppStore';
-import type { FuwafuwaMilestoneEvent } from '../store/useAppStore';
 import { useTeacherContent } from '../hooks/useTeacherContent';
 import { HomeMilestoneModal } from './home/HomeMilestoneModal';
 import { HomeAnimatedBackground } from './home/HomeAnimatedBackground';
@@ -26,25 +20,20 @@ import { TeacherMenuDetailSheet } from './home/TeacherMenuDetailSheet';
 import {
     getFamilyHomeContextKey,
     getSoloHomeContextKey,
-    type HomeAfterglow,
 } from './home/homeAfterglow';
 import { pickHomeAnnouncement } from './home/homeAnnouncementUtils';
 import {
     getFamilyVisitMemoryKey,
-    getHomeVisitRecency,
-    type HomeVisitRecency,
 } from './home/homeVisitMemory';
 import { useHomeChallenges } from './home/hooks/useHomeChallenges';
 import { useHomeSessions } from './home/hooks/useHomeSessions';
 import { useHomePublicDiscovery } from './home/hooks/useHomePublicDiscovery';
 import {
-    getMilestoneStage,
     useHomeMilestoneWatcher,
 } from './home/hooks/useHomeMilestoneWatcher';
+import { useHomeScreenState } from './home/hooks/useHomeScreenState';
 import { pickTeacherExerciseDiscovery } from './home/homeMenuUtils';
 import { getMinClassLevel } from './menu/menuPageUtils';
-
-const noop = () => {};
 
 export const HomeScreen: React.FC = () => {
     const users = useAppStore((state) => state.users);
@@ -64,22 +53,6 @@ export const HomeScreen: React.FC = () => {
     const markFamilyHomeVisit = useAppStore((state) => state.markFamilyHomeVisit);
     const currentTab = useAppStore((state) => state.currentTab);
 
-    const [menuBrowserOpen, setMenuBrowserOpen] = useState(false);
-    const [exerciseBrowserOpen, setExerciseBrowserOpen] = useState(false);
-    const [pendingMilestoneEvents, setPendingMilestoneEvents] = useState<FuwafuwaMilestoneEvent[]>([]);
-    const [recentMilestoneEvent, setRecentMilestoneEvent] = useState<FuwafuwaMilestoneEvent | null>(null);
-    const [recentAfterglow, setRecentAfterglow] = useState<HomeAfterglow | null>(null);
-    const [activeMagicDeliveryContextKey, setActiveMagicDeliveryContextKey] = useState<string | null>(null);
-    const [selectedUserVisitRecency, setSelectedUserVisitRecency] = useState<HomeVisitRecency>('first');
-    const [familyVisitRecency, setFamilyVisitRecency] = useState<HomeVisitRecency>('first');
-    const [selectedPublicMenu, setSelectedPublicMenu] = useState<PublicMenu | null>(null);
-    const [selectedPublicExercise, setSelectedPublicExercise] = useState<PublicExercise | null>(null);
-    const [selectedTeacherMenu, setSelectedTeacherMenu] = useState<TeacherMenu | null>(null);
-    const [selectedTeacherExercise, setSelectedTeacherExercise] = useState<TeacherExercise | null>(null);
-    const lastSoloVisitKeyRef = useRef('');
-    const lastFamilyVisitKeyRef = useRef('');
-    const magicDeliveryTimerRef = useRef<number | null>(null);
-
     const { allSessions, activeUsers, targetSeconds, perUserMagic, displaySeconds } = useHomeSessions({
         users,
         sessionUserIds,
@@ -89,23 +62,6 @@ export const HomeScreen: React.FC = () => {
         recommendedExercises,
         ambientCue,
     } = useHomePublicDiscovery();
-
-    useEffect(() => {
-        if (users.length === 0) {
-            return;
-        }
-
-        if (sessionUserIds.length === 0) {
-            setSessionUserIds([users[0].id]);
-            return;
-        }
-
-        const userIdSet = new Set(users.map((user) => user.id));
-        const validIds = sessionUserIds.filter((id) => userIdSet.has(id));
-        if (validIds.length !== sessionUserIds.length) {
-            setSessionUserIds(validIds.length > 0 ? validIds : [users[0].id]);
-        }
-    }, [users, sessionUserIds, setSessionUserIds]);
 
     const isTogetherMode = sessionUserIds.length > 1;
     const currentUsers = useMemo(
@@ -130,21 +86,9 @@ export const HomeScreen: React.FC = () => {
             : getSoloHomeContextKey(selectedUser?.id ?? sessionUserIds[0] ?? '')),
         [currentUsers, isTogetherMode, selectedUser?.id, sessionUserIds],
     );
-    const activeMilestoneUser = useMemo(
-        () => activeMilestoneModal
-            ? users.find((user) => user.id === activeMilestoneModal.userId) ?? null
-            : null,
-        [activeMilestoneModal, users],
-    );
-    const pendingMilestoneEventsByUserId = useMemo(
-        () => new Map(
-            pendingMilestoneEvents.map((event) => [event.userId, event]),
-        ),
-        [pendingMilestoneEvents],
-    );
     const teacherContent = useTeacherContent({
         classLevel: currentClassLevel,
-        onLoadError: noop,
+        onLoadError: () => {},
     });
     const teacherMenuHighlights = useMemo(
         () => pickTeacherContentHighlights(
@@ -219,19 +163,55 @@ export const HomeScreen: React.FC = () => {
             teacherMenuHighlights,
         ],
     );
-
-    const queueMilestoneEvent = useCallback((event: FuwafuwaMilestoneEvent) => {
-        setPendingMilestoneEvents((current) => (
-            current.some((item) => item.userId === event.userId && item.kind === event.kind)
-                ? current
-                : [...current, event]
-        ));
-    }, []);
-
-    const hasKnownMilestoneEvent = useCallback((event: FuwafuwaMilestoneEvent) => (
-        pendingMilestoneEvents.some((item) => item.userId === event.userId && item.kind === event.kind)
-        || (activeMilestoneModal?.userId === event.userId && activeMilestoneModal.kind === event.kind)
-    ), [activeMilestoneModal, pendingMilestoneEvents]);
+    const {
+        activeMagicDeliveryContextKey,
+        activeMilestoneUser,
+        exerciseBrowserOpen,
+        familyVisitRecency,
+        handleAnnouncementAction,
+        handleMilestoneModalClose,
+        handleTankReset,
+        hasKnownMilestoneEvent,
+        menuBrowserOpen,
+        pendingMilestoneEventsByUserId,
+        queueMilestoneEvent,
+        recentAfterglow,
+        recentMilestoneEvent,
+        selectedPublicExercise,
+        selectedPublicMenu,
+        selectedTeacherExercise,
+        selectedTeacherMenu,
+        selectedUserVisitRecency,
+        setExerciseBrowserOpen,
+        setMenuBrowserOpen,
+        setSelectedPublicExercise,
+        setSelectedPublicMenu,
+        setSelectedTeacherExercise,
+        setSelectedTeacherMenu,
+    } = useHomeScreenState({
+        users,
+        sessionUserIds,
+        setSessionUserIds,
+        currentUsers,
+        activeUsers,
+        selectedUser,
+        currentTab,
+        setTab,
+        updateUser,
+        activeMilestoneModal,
+        setActiveMilestoneModal,
+        consumeUserMagicEnergy,
+        displaySeconds,
+        targetSeconds,
+        currentHomeContextKey,
+        homeVisitMemory,
+        markSoloHomeVisit,
+        markFamilyHomeVisit,
+        familyVisitKey,
+        isTogetherMode,
+        homeAnnouncement,
+        dismissHomeAnnouncement,
+    });
 
     useHomeMilestoneWatcher({
         allSessions,
@@ -239,194 +219,6 @@ export const HomeScreen: React.FC = () => {
         queueMilestoneEvent,
         users,
     });
-
-    useEffect(() => {
-        const validUserIds = new Set(users.map((user) => user.id));
-        setPendingMilestoneEvents((current) => current.filter((event) => validUserIds.has(event.userId)));
-    }, [users]);
-
-    useEffect(() => {
-        if (!recentMilestoneEvent) {
-            return;
-        }
-
-        const timerId = window.setTimeout(() => {
-            setRecentMilestoneEvent((current) => (
-                current?.userId === recentMilestoneEvent.userId && current.kind === recentMilestoneEvent.kind
-                    ? null
-                    : current
-            ));
-        }, 12000);
-
-        return () => window.clearTimeout(timerId);
-    }, [recentMilestoneEvent]);
-
-    useEffect(() => {
-        if (!recentAfterglow) {
-            return;
-        }
-
-        const timerId = window.setTimeout(() => {
-            setRecentAfterglow((current) => (
-                current?.kind === recentAfterglow.kind && current.contextKey === recentAfterglow.contextKey
-                    ? null
-                    : current
-            ));
-        }, 10000);
-
-        return () => window.clearTimeout(timerId);
-    }, [recentAfterglow]);
-
-    useEffect(() => {
-        return () => {
-            if (magicDeliveryTimerRef.current !== null) {
-                window.clearTimeout(magicDeliveryTimerRef.current);
-                magicDeliveryTimerRef.current = null;
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        if (isTogetherMode || !selectedUser) {
-            lastSoloVisitKeyRef.current = '';
-            setSelectedUserVisitRecency('first');
-            return;
-        }
-
-        const visitKey = selectedUser.id;
-        if (lastSoloVisitKeyRef.current === visitKey) {
-            return;
-        }
-
-        lastSoloVisitKeyRef.current = visitKey;
-        setSelectedUserVisitRecency(
-            getHomeVisitRecency(homeVisitMemory.soloByUserId[visitKey] ?? null),
-        );
-        markSoloHomeVisit(visitKey, new Date().toISOString());
-    }, [homeVisitMemory.soloByUserId, isTogetherMode, markSoloHomeVisit, selectedUser]);
-
-    useEffect(() => {
-        if (!isTogetherMode || familyVisitKey.length === 0) {
-            lastFamilyVisitKeyRef.current = '';
-            setFamilyVisitRecency('first');
-            return;
-        }
-
-        if (lastFamilyVisitKeyRef.current === familyVisitKey) {
-            return;
-        }
-
-        lastFamilyVisitKeyRef.current = familyVisitKey;
-        setFamilyVisitRecency(
-            getHomeVisitRecency(homeVisitMemory.familyByUserSet[familyVisitKey] ?? null),
-        );
-        markFamilyHomeVisit(currentUsers.map((user) => user.id), new Date().toISOString());
-    }, [currentUsers, familyVisitKey, homeVisitMemory.familyByUserSet, isTogetherMode, markFamilyHomeVisit]);
-
-    useEffect(() => {
-        if (isTogetherMode || !selectedUser || activeMilestoneModal) {
-            return;
-        }
-
-        const nextEvent = pendingMilestoneEvents.find((event) => event.userId === selectedUser.id);
-        if (!nextEvent) {
-            return;
-        }
-
-        setPendingMilestoneEvents((current) => current.filter(
-            (event) => !(event.userId === nextEvent.userId && event.kind === nextEvent.kind),
-        ));
-        setActiveMilestoneModal(nextEvent);
-    }, [activeMilestoneModal, isTogetherMode, pendingMilestoneEvents, selectedUser, setActiveMilestoneModal]);
-
-    const handleMilestoneModalClose = useCallback(() => {
-        if (activeMilestoneModal?.source === 'system' && activeMilestoneUser) {
-            const stage = getMilestoneStage(activeMilestoneModal.kind);
-            if (!(activeMilestoneUser.notifiedFuwafuwaStages || []).includes(stage)) {
-                updateUser(activeMilestoneUser.id, {
-                    notifiedFuwafuwaStages: [...(activeMilestoneUser.notifiedFuwafuwaStages || []), stage],
-                });
-            }
-        }
-
-        if (activeMilestoneModal) {
-            setRecentMilestoneEvent(activeMilestoneModal);
-        }
-        setActiveMilestoneModal(null);
-    }, [activeMilestoneModal, activeMilestoneUser, setActiveMilestoneModal, updateUser]);
-
-    useEffect(() => {
-        if (
-            currentTab === 'menu'
-            && homeAnnouncement
-            && (homeAnnouncement.kind === 'teacher_menu' || homeAnnouncement.kind === 'teacher_exercise')
-        ) {
-            dismissHomeAnnouncement(homeAnnouncement.id);
-        }
-    }, [currentTab, dismissHomeAnnouncement, homeAnnouncement]);
-
-    const handleTankReset = () => {
-        if (displaySeconds < targetSeconds || magicDeliveryTimerRef.current !== null) {
-            return;
-        }
-
-        const deliveryContextKey = currentHomeContextKey;
-        const deliveryTargets = activeUsers.map((user) => ({
-            userId: user.id,
-            targetSeconds: (user.dailyTargetMinutes || 10) * 60,
-        }));
-
-        if (deliveryContextKey) {
-            setActiveMagicDeliveryContextKey(deliveryContextKey);
-        }
-
-        const duration = 3000;
-        const end = Date.now() + duration;
-
-        lazyConfetti().then((confetti) => {
-            const frame = () => {
-                confetti({
-                    particleCount: 5,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'],
-                });
-                confetti({
-                    particleCount: 5,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
-                    colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'],
-                });
-
-                if (Date.now() < end) {
-                    requestAnimationFrame(frame);
-                }
-            };
-
-            frame();
-        });
-        audio.playSuccess();
-
-        magicDeliveryTimerRef.current = window.setTimeout(() => {
-            deliveryTargets.forEach((target) => {
-                consumeUserMagicEnergy(target.userId, target.targetSeconds);
-            });
-
-            if (deliveryContextKey) {
-                setRecentAfterglow({
-                    kind: 'magic_delivery',
-                    contextKey: deliveryContextKey,
-                });
-            }
-
-            setActiveMagicDeliveryContextKey((current) => (
-                current === deliveryContextKey ? null : current
-            ));
-            magicDeliveryTimerRef.current = null;
-        }, 900);
-    };
 
     return (
         <div
@@ -479,31 +271,7 @@ export const HomeScreen: React.FC = () => {
                     ambientCue={ambientCue}
                     familyVisitRecency={familyVisitRecency}
                     selectedUserVisitRecency={selectedUserVisitRecency}
-                    onAnnouncementAction={() => {
-                        if (!homeAnnouncement) {
-                            return;
-                        }
-
-                        if (currentHomeContextKey) {
-                            setRecentAfterglow({
-                                kind: 'announcement',
-                                contextKey: currentHomeContextKey,
-                                announcement: homeAnnouncement,
-                            });
-                        }
-
-                        dismissHomeAnnouncement(homeAnnouncement.id);
-
-                        if (homeAnnouncement.kind === 'challenge') {
-                            document.getElementById('home-challenges-section')?.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'start',
-                            });
-                            return;
-                        }
-
-                        setTab('menu');
-                    }}
+                    onAnnouncementAction={handleAnnouncementAction}
                 />
 
                 <HomeChallengesAndMenus
