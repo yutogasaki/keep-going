@@ -15,6 +15,21 @@ beforeEach(() => {
 });
 
 describe('persisted state sanitization', () => {
+    it('falls back to a sanitized empty state when persisted storage is corrupted', () => {
+        const result = migrateAppState(null, APP_STATE_VERSION);
+
+        expect(result.users).toEqual([]);
+        expect(result.sessionUserIds).toEqual([]);
+        expect(result.soundVolume).toBe(1);
+        expect(result.notificationTime).toBe('21:00');
+        expect(result.joinedChallengeIds).toEqual({});
+        expect(result.homeVisitMemory).toEqual({
+            soloByUserId: {},
+            familyByUserSet: {},
+        });
+        expect(result.sessionDraft).toBeNull();
+    });
+
     it('sanitizes corrupted current-state persisted values', () => {
         const state = makeCurrentState({
             sessionUserIds: ['ghost', 'user-1', 'user-1'],

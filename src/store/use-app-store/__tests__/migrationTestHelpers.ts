@@ -1,4 +1,34 @@
-export function makeV0State(overrides: Record<string, any> = {}) {
+import type { PersistedAppState } from '../migrate';
+import type { UserProfileStore } from '../types';
+
+export type MigrationFixtureUser = Record<string, unknown> & Partial<UserProfileStore> & {
+    consumedMagicDate?: unknown;
+};
+
+export type MigrationFixtureState = Record<string, unknown> & Partial<PersistedAppState> & {
+    users?: MigrationFixtureUser[];
+    classLevel?: string;
+    fuwafuwaBirthDate?: string;
+    fuwafuwaType?: number;
+    fuwafuwaCycleCount?: number;
+    fuwafuwaName?: string | null;
+    pastFuwafuwas?: unknown[];
+    notifiedFuwafuwaStages?: unknown[];
+    requiredExercises?: string[];
+    excludedExercises?: string[];
+    dailyTargetMinutes?: number;
+    joinedChallengeIds?: unknown;
+    sessionDraft?: unknown;
+    homeVisitMemory?: unknown;
+    ttsRate?: unknown;
+    ttsPitch?: unknown;
+};
+
+export function asPersistedAppState(state: MigrationFixtureState): PersistedAppState {
+    return state as PersistedAppState;
+}
+
+export function makeV0State(overrides: Partial<MigrationFixtureState> = {}): MigrationFixtureState {
     return {
         classLevel: '初級',
         fuwafuwaBirthDate: '2026-03-01',
@@ -17,7 +47,7 @@ export function makeV0State(overrides: Record<string, any> = {}) {
     };
 }
 
-export function makeV5State(overrides: Record<string, any> = {}) {
+export function makeV5State(overrides: Partial<MigrationFixtureState> = {}): MigrationFixtureState {
     return {
         users: [{
             id: 'user-1',
@@ -46,7 +76,7 @@ export function makeV5State(overrides: Record<string, any> = {}) {
     };
 }
 
-export function makeCurrentState(overrides: Record<string, any> = {}) {
+export function makeCurrentState(overrides: Partial<MigrationFixtureState> = {}): MigrationFixtureState {
     return {
         users: [{
             id: 'user-1',
@@ -71,6 +101,12 @@ export function makeCurrentState(overrides: Record<string, any> = {}) {
         ttsEnabled: true,
         bgmEnabled: true,
         hapticEnabled: true,
+        notificationsEnabled: false,
+        notificationTime: '21:00',
+        debugFuwafuwaStage: null,
+        debugFuwafuwaType: null,
+        debugActiveDays: null,
+        debugFuwafuwaScale: null,
         joinedChallengeIds: {},
         hasSeenSessionControlsHint: false,
         dismissedHomeAnnouncementIds: [],

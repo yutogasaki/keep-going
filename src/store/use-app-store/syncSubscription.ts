@@ -1,3 +1,4 @@
+import type { StoreApi } from 'zustand';
 import { getAccountId, isPulling } from '../../lib/sync/authState';
 import {
     deleteFamilyMember as syncDeleteFamilyMember,
@@ -13,11 +14,7 @@ function onSyncError(error: unknown): void {
     useSyncStatus.getState().reportFailure(String(error));
 }
 
-interface SyncableStore {
-    getState: () => AppState;
-    setState: (partial: Record<string, unknown>) => void;
-    subscribe: (listener: (state: AppState, prevState: AppState) => void) => () => void;
-}
+type SyncableStore = Pick<StoreApi<AppState>, 'getState' | 'setState' | 'subscribe'>;
 
 function toAppSettingsPayload(state: AppState) {
     return {
@@ -32,7 +29,9 @@ function toAppSettingsPayload(state: AppState) {
 }
 
 export function setupStoreSyncSubscription(store: SyncableStore): void {
-    registerStoreAccessor(store.getState as any, store.setState as any);
+    registerStoreAccessor(store.getState, (partial) => {
+        store.setState(partial);
+    });
 
     store.subscribe((state, prevState) => {
         if (!getAccountId()) return;

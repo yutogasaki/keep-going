@@ -3,8 +3,15 @@ import {
     migrateAppState,
     partializeAppState,
     PERSISTED_APP_STATE_KEYS,
+    type PersistedAppState,
 } from '../migrate';
-import { makeCurrentState, makeV0State, makeV5State } from './migrationTestHelpers';
+import {
+    asPersistedAppState,
+    makeCurrentState,
+    makeV0State,
+    makeV5State,
+    type MigrationFixtureState,
+} from './migrationTestHelpers';
 
 vi.mock('../../../lib/db', () => ({
     getTodayKey: vi.fn(() => '2026-03-06'),
@@ -121,7 +128,7 @@ describe('modern migrations', () => {
             },
         });
 
-        const partialized = partializeAppState(state as any);
+        const partialized = partializeAppState(asPersistedAppState(state));
 
         expect(partialized.sessionUserIds).toEqual(['user-1', 'user-2']);
         expect(partialized.sessionDraft).toEqual(state.sessionDraft);
@@ -129,7 +136,7 @@ describe('modern migrations', () => {
 
     it('keeps the persisted slice keys aligned with the declared contract', () => {
         const state = makeCurrentState();
-        const partialized = partializeAppState(state as any);
+        const partialized = partializeAppState(asPersistedAppState(state));
 
         expect(Object.keys(partialized).sort()).toEqual([...PERSISTED_APP_STATE_KEYS].sort());
     });
@@ -150,22 +157,22 @@ describe('modern migrations', () => {
         expect(result.users[0].excludedExercises).not.toContain('C01');
         expect(result.users[0].chibifuwas).toEqual([]);
         expect(result.users[0].consumedMagicSeconds).toBe(0);
-        expect((result.users[0] as any).consumedMagicDate).toBeUndefined();
+        expect((result.users[0] as typeof result.users[0] & { consumedMagicDate?: unknown }).consumedMagicDate).toBeUndefined();
         expect(result.joinedChallengeIds).toEqual({});
         expect(result.hasSeenSessionControlsHint).toBe(false);
         expect(result.sessionDraft).toBeNull();
-        expect((result as any).classLevel).toBeUndefined();
-        expect((result as any).fuwafuwaName).toBeUndefined();
-        expect((result as any).ttsRate).toBeUndefined();
-        expect((result as any).ttsPitch).toBeUndefined();
+        expect((result as AppStateLegacyFields).classLevel).toBeUndefined();
+        expect((result as AppStateLegacyFields).fuwafuwaName).toBeUndefined();
+        expect((result as AppStateLegacyFields).ttsRate).toBeUndefined();
+        expect((result as AppStateLegacyFields).ttsPitch).toBeUndefined();
     });
 
     it('v16 removes ttsRate and ttsPitch from pre-cleanup state', () => {
-        const state = { users: [], ttsRate: 0.95, ttsPitch: 1.05 } as any;
+        const state = { users: [], ttsRate: 0.95, ttsPitch: 1.05 } satisfies MigrationFixtureState;
         const result = migrateAppState(state, 15);
 
-        expect((result as any).ttsRate).toBeUndefined();
-        expect((result as any).ttsPitch).toBeUndefined();
+        expect((result as AppStateLegacyFields).ttsRate).toBeUndefined();
+        expect((result as AppStateLegacyFields).ttsPitch).toBeUndefined();
     });
 
     it('v17 initializes missing challengeStars on users', () => {
@@ -218,10 +225,17 @@ describe('modern migrations', () => {
     });
 
     it('v20 is a no-op for already migrated state', () => {
-        const state = { users: [] } as any;
+        const state = { users: [] } satisfies MigrationFixtureState;
         const result = migrateAppState(state, 20);
 
-        expect((result as any).ttsRate).toBeUndefined();
-        expect((result as any).ttsPitch).toBeUndefined();
+        expect((result as AppStateLegacyFields).ttsRate).toBeUndefined();
+        expect((result as AppStateLegacyFields).ttsPitch).toBeUndefined();
     });
 });
+
+type AppStateLegacyFields = PersistedAppState & {
+    classLevel?: unknown;
+    fuwafuwaName?: unknown;
+    ttsRate?: unknown;
+    ttsPitch?: unknown;
+};

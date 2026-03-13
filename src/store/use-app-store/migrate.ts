@@ -47,11 +47,80 @@ export const PERSISTED_APP_STATE_KEYS = [
     'joinedChallengeIds',
 ] as const satisfies ReadonlyArray<keyof PersistedAppState>;
 
-export function migrateAppState(persistedState: any, version: number): AppState {
-    const state = persistedState as any;
+type MigrationUser = Record<string, unknown> & {
+    id?: string;
+    name?: string;
+    classLevel?: string;
+    fuwafuwaBirthDate?: string;
+    fuwafuwaType?: number;
+    fuwafuwaCycleCount?: number;
+    fuwafuwaName?: string | null;
+    pastFuwafuwas?: unknown[];
+    notifiedFuwafuwaStages?: unknown[];
+    dailyTargetMinutes?: number;
+    excludedExercises?: unknown;
+    requiredExercises?: unknown;
+    consumedMagicDate?: unknown;
+    consumedMagicSeconds?: number;
+    challengeStars?: unknown;
+    avatarUrl?: unknown;
+    chibifuwas?: unknown;
+};
+
+type MigrationState = Record<string, unknown> & Omit<
+    Partial<PersistedAppState>,
+    'users' | 'joinedChallengeIds' | 'sessionDraft' | 'homeVisitMemory'
+> & {
+    users?: MigrationUser[];
+    classLevel?: string;
+    fuwafuwaBirthDate?: string;
+    fuwafuwaType?: number;
+    fuwafuwaCycleCount?: number;
+    fuwafuwaName?: string | null;
+    pastFuwafuwas?: unknown[];
+    notifiedFuwafuwaStages?: unknown[];
+    requiredExercises?: unknown;
+    excludedExercises?: unknown;
+    dailyTargetMinutes?: number;
+    joinedChallengeIds?: unknown;
+    sessionDraft?: unknown;
+    homeVisitMemory?: unknown;
+    ttsRate?: unknown;
+    ttsPitch?: unknown;
+};
+
+function toMigrationState(persistedState: unknown): MigrationState {
+    if (!persistedState || typeof persistedState !== 'object' || Array.isArray(persistedState)) {
+        return {};
+    }
+
+    return persistedState as MigrationState;
+}
+
+function toStringArray(value: unknown, fallback: string[]): string[] {
+    if (!Array.isArray(value)) {
+        return fallback;
+    }
+
+    return value.filter((item): item is string => typeof item === 'string');
+}
+
+function mapUsers(
+    state: MigrationState,
+    mapper: (user: MigrationUser, index: number) => MigrationUser,
+): void {
+    if (!Array.isArray(state.users)) {
+        return;
+    }
+
+    state.users = state.users.map(mapper);
+}
+
+export function migrateAppState(persistedState: unknown, version: number): AppState {
+    const state = toMigrationState(persistedState);
 
     if (version === 0) {
-        if (state.requiredExercises && !state.requiredExercises.includes('S07')) {
+        if (Array.isArray(state.requiredExercises) && !state.requiredExercises.includes('S07')) {
             state.requiredExercises.push('S07');
         }
     }
@@ -62,9 +131,10 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     if (version < 3) {
-        if (!state.users || state.users.length === 0) {
-            const legacyUser: any = {
-                id: crypto.randomUUID(),
+        if (!Array.isArray(state.users) || state.users.length === 0) {
+            const legacyUserId = crypto.randomUUID();
+            const legacyUser: MigrationUser = {
+                id: legacyUserId,
                 name: state.fuwafuwaName || 'ゲスト',
                 classLevel: state.classLevel || '初級',
                 fuwafuwaBirthDate: state.fuwafuwaBirthDate || getTodayKey(),
@@ -76,7 +146,7 @@ export function migrateAppState(persistedState: any, version: number): AppState 
             };
 
             state.users = [legacyUser];
-            state.sessionUserIds = [legacyUser.id];
+            state.sessionUserIds = [legacyUserId];
         }
 
         delete state.classLevel;
@@ -89,35 +159,33 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     if (version < 4) {
-        if (!state.excludedExercises || state.excludedExercises.length === 0) {
+        if (!Array.isArray(state.excludedExercises) || state.excludedExercises.length === 0) {
             state.excludedExercises = ['C01', 'C02'];
         }
     }
 
     if (version < 5) {
         const globalTarget = state.dailyTargetMinutes ?? 10;
-        const globalExcluded = state.excludedExercises ?? ['C01', 'C02'];
-        const globalRequired = state.requiredExercises ?? ['S01', 'S02', 'S07'];
+        const globalExcluded = toStringArray(state.excludedExercises, ['C01', 'C02']);
+        const globalRequired = toStringArray(state.requiredExercises, ['S01', 'S02', 'S07']);
 
-        if (state.users && Array.isArray(state.users)) {
-            state.users = state.users.map((user: any, index: number) => {
-                if (index === 0) {
-                    return {
-                        ...user,
-                        dailyTargetMinutes: user.dailyTargetMinutes ?? globalTarget,
-                        excludedExercises: user.excludedExercises ?? globalExcluded,
-                        requiredExercises: user.requiredExercises ?? globalRequired,
-                    };
-                }
-
+        mapUsers(state, (user, index) => {
+            if (index === 0) {
                 return {
                     ...user,
-                    dailyTargetMinutes: user.dailyTargetMinutes ?? 10,
-                    excludedExercises: user.excludedExercises ?? ['C01', 'C02'],
-                    requiredExercises: user.requiredExercises ?? ['S01', 'S02', 'S07'],
+                    dailyTargetMinutes: user.dailyTargetMinutes ?? globalTarget,
+                    excludedExercises: Array.isArray(user.excludedExercises) ? user.excludedExercises : globalExcluded,
+                    requiredExercises: Array.isArray(user.requiredExercises) ? user.requiredExercises : globalRequired,
                 };
-            });
-        }
+            }
+
+            return {
+                ...user,
+                dailyTargetMinutes: user.dailyTargetMinutes ?? 10,
+                excludedExercises: Array.isArray(user.excludedExercises) ? user.excludedExercises : [],
+                requiredExercises: Array.isArray(user.requiredExercises) ? user.requiredExercises : [],
+            };
+        });
 
         delete state.dailyTargetMinutes;
         delete state.excludedExercises;
@@ -125,22 +193,18 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     if (version < 6) {
-        if (state.users && Array.isArray(state.users)) {
-            state.users = state.users.map((user: any) => ({
-                ...user,
-                consumedMagicDate: user.consumedMagicDate || '',
-                consumedMagicSeconds: user.consumedMagicSeconds || 0,
-            }));
-        }
+        mapUsers(state, (user) => ({
+            ...user,
+            consumedMagicDate: user.consumedMagicDate || '',
+            consumedMagicSeconds: user.consumedMagicSeconds || 0,
+        }));
     }
 
     if (version < 8) {
-        if (state.users && Array.isArray(state.users)) {
-            state.users = state.users.map((user: any) => ({
-                ...user,
-                chibifuwas: user.chibifuwas ?? [],
-            }));
-        }
+        mapUsers(state, (user) => ({
+            ...user,
+            chibifuwas: user.chibifuwas ?? [],
+        }));
     }
 
     if (version < 9) {
@@ -148,14 +212,16 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     if (version < 10) {
-        const oldIds: string[] = Array.isArray(state.joinedChallengeIds)
-            ? state.joinedChallengeIds
+        const oldIds = Array.isArray(state.joinedChallengeIds)
+            ? state.joinedChallengeIds.filter((id): id is string => typeof id === 'string')
             : [];
 
         const newRecord: Record<string, string[]> = {};
-        if (oldIds.length > 0 && state.users && Array.isArray(state.users)) {
+        if (oldIds.length > 0 && Array.isArray(state.users)) {
             for (const user of state.users) {
-                newRecord[user.id] = [...oldIds];
+                if (typeof user.id === 'string') {
+                    newRecord[user.id] = [...oldIds];
+                }
             }
         }
 
@@ -165,27 +231,15 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     if (version < 11) {
         const OLD_REQUIRED = ['S01', 'S02', 'S07'];
         const OLD_EXCLUDED = ['C01', 'C02'];
-        if (state.users && Array.isArray(state.users)) {
-            state.users = state.users.map((user: any) => ({
-                ...user,
-                requiredExercises: (user.requiredExercises ?? []).filter(
-                    (id: string) => !OLD_REQUIRED.includes(id)
-                ),
-                excludedExercises: (user.excludedExercises ?? []).filter(
-                    (id: string) => !OLD_EXCLUDED.includes(id)
-                ),
-            }));
-        }
+        mapUsers(state, (user) => ({
+            ...user,
+            requiredExercises: toStringArray(user.requiredExercises, []).filter((id) => !OLD_REQUIRED.includes(id)),
+            excludedExercises: toStringArray(user.excludedExercises, []).filter((id) => !OLD_EXCLUDED.includes(id)),
+        }));
     }
 
     if (version < 12) {
-        if (state.users && Array.isArray(state.users)) {
-            state.users = state.users.map((user: any) => {
-                const rest = { ...user };
-                delete rest.consumedMagicDate;
-                return rest;
-            });
-        }
+        mapUsers(state, ({ consumedMagicDate: _consumedMagicDate, ...user }) => user);
     }
 
     if (version < 13) {
@@ -202,14 +256,12 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     if (version < 17) {
-        if (state.users && Array.isArray(state.users)) {
-            state.users = state.users.map((user: any) => ({
-                ...user,
-                challengeStars: typeof user.challengeStars === 'number' && Number.isFinite(user.challengeStars)
-                    ? Math.max(0, user.challengeStars)
-                    : 0,
-            }));
-        }
+        mapUsers(state, (user) => ({
+            ...user,
+            challengeStars: typeof user.challengeStars === 'number' && Number.isFinite(user.challengeStars)
+                ? Math.max(0, user.challengeStars)
+                : 0,
+        }));
     }
 
     if (version < 18) {
@@ -226,10 +278,12 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     sanitizePersistedState(state as Record<string, unknown>);
-    return state as AppState;
+    return state as unknown as AppState;
 }
 
-export function partializeAppState(state: AppState): PersistedAppState {
+export function partializeAppState(state: AppState): PersistedAppState;
+export function partializeAppState(state: PersistedAppState): PersistedAppState;
+export function partializeAppState(state: AppState | PersistedAppState): PersistedAppState {
     return Object.fromEntries(
         PERSISTED_APP_STATE_KEYS.map((key) => [key, state[key]]),
     ) as PersistedAppState;

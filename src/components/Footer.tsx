@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { Home, BarChart3, List, Settings } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { audio } from '../lib/audio';
@@ -11,14 +11,14 @@ export const Footer: React.FC = () => {
     const setTab = useAppStore((state) => state.setTab);
     const startSession = useAppStore((state) => state.startSession);
     const navRef = useRef<HTMLElement | null>(null);
-    const handleTabChange = (tabId: TabId) => {
+    const handleTabChange = useCallback((tabId: TabId) => {
         if (tabId === currentTab) {
             return;
         }
 
         haptics.tick();
         setTab(tabId);
-    };
+    }, [currentTab, setTab]);
 
     useEffect(() => {
         const nav = navRef.current;
@@ -57,7 +57,7 @@ export const Footer: React.FC = () => {
         return () => {
             nav.removeEventListener('click', handleClick);
         };
-    }, [currentTab, setTab, startSession]);
+    }, [handleTabChange, startSession]);
 
     const leftTabs: { id: TabId; icon: React.ElementType; label: string }[] = [
         { id: 'home', icon: Home, label: 'ホーム' },

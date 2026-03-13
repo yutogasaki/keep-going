@@ -3,7 +3,6 @@ import {
     EXERCISES,
     generateSession,
     type ClassLevel,
-    type Exercise,
 } from '../exercises';
 import { makeCustomExercise, seedRandom, totalSeconds } from './exerciseTestHelpers';
 

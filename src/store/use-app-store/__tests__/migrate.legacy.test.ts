@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { migrateAppState } from '../migrate';
-import { makeV0State } from './migrationTestHelpers';
+import { makeV0State, type MigrationFixtureState } from './migrationTestHelpers';
 
 vi.mock('../../../lib/db', () => ({
     getTodayKey: vi.fn(() => '2026-03-06'),
@@ -73,7 +73,7 @@ describe('legacy migrations', () => {
     });
 
     it('v5 moves global settings into the first user', () => {
-        const state: any = {
+        const state = {
             ...makeV0State(),
             users: [{ id: 'u1', name: 'テスト' }],
             sessionUserIds: ['u1'],
@@ -82,7 +82,7 @@ describe('legacy migrations', () => {
             requiredExercises: ['S01', 'S05'],
             bgmEnabled: true,
             hapticEnabled: true,
-        };
+        } satisfies MigrationFixtureState;
 
         const result = migrateAppState(state, 3);
         expect(result.users[0].dailyTargetMinutes).toBe(15);
@@ -91,13 +91,13 @@ describe('legacy migrations', () => {
     });
 
     it('v5 removes migrated global exercise fields', () => {
-        const state: any = {
+        const state = {
             ...makeV0State(),
             users: [{ id: 'u1', name: 'テスト' }],
             sessionUserIds: ['u1'],
             bgmEnabled: true,
             hapticEnabled: true,
-        };
+        } satisfies MigrationFixtureState;
 
         migrateAppState(state, 3);
         expect(state.dailyTargetMinutes).toBeUndefined();
@@ -106,7 +106,7 @@ describe('legacy migrations', () => {
     });
 
     it('v5 gives later users default per-user settings', () => {
-        const state: any = {
+        const state = {
             ...makeV0State(),
             users: [
                 { id: 'u1', name: 'ユーザー1' },
@@ -115,7 +115,7 @@ describe('legacy migrations', () => {
             sessionUserIds: ['u1'],
             bgmEnabled: true,
             hapticEnabled: true,
-        };
+        } satisfies MigrationFixtureState;
 
         const result = migrateAppState(state, 3);
         expect(result.users[1].dailyTargetMinutes).toBe(10);

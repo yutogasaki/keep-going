@@ -25,4 +25,4 @@ export const useAppStore = create<AppState>()(
     }),
 );
 
-setupStoreSyncSubscription(useAppStore as any);
+setupStoreSyncSubscription(useAppStore);
