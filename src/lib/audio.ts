@@ -147,6 +147,74 @@ class AudioEngine {
         this.playTone(1760, 'sine', 0.3, 0.15); // A6
     }
 
+    // Soft two-note chime for 10-second progress markers
+    public playProgressTone() {
+        if (this.isMuted) return;
+
+        const state = useAppStore.getState();
+        const vol = 0.06 * state.soundVolume;
+        if (vol === 0) return;
+
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const gain = this.ctx.createGain();
+        gain.connect(this.ctx.destination);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(vol, now + 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+        // G4 → B4 (gentle major third)
+        const osc1 = this.ctx.createOscillator();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(392, now); // G4
+        osc1.connect(gain);
+        osc1.start(now);
+        osc1.stop(now + 0.6);
+
+        const osc2 = this.ctx.createOscillator();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(493.88, now + 0.1); // B4
+        osc2.connect(gain);
+        osc2.start(now + 0.1);
+        osc2.stop(now + 0.6);
+    }
+
+    // Rising two-note for exercise start (after GO)
+    public playExerciseStart() {
+        if (this.isMuted) return;
+
+        const state = useAppStore.getState();
+        const vol = 0.12 * state.soundVolume;
+        if (vol === 0) return;
+
+        this.init();
+        if (!this.ctx) return;
+
+        const now = this.ctx.currentTime;
+        const gain = this.ctx.createGain();
+        gain.connect(this.ctx.destination);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(vol, now + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+
+        // C5 → E5 (bright, warm start)
+        const osc1 = this.ctx.createOscillator();
+        osc1.type = 'triangle';
+        osc1.frequency.setValueAtTime(523.25, now); // C5
+        osc1.connect(gain);
+        osc1.start(now);
+        osc1.stop(now + 0.4);
+
+        const osc2 = this.ctx.createOscillator();
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(659.25, now + 0.15); // E5
+        osc2.connect(gain);
+        osc2.start(now + 0.15);
+        osc2.stop(now + 0.8);
+    }
+
     // Gentle chime for transition/changing exercise
     public playTransition() {
         if (this.isMuted) return;

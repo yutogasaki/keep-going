@@ -1,4 +1,5 @@
 import { isRestExercise, type Exercise } from '../../data/exercises';
+import { isRestPlacement } from '../../data/exercisePlacement';
 
 export interface SessionSideCue {
     currentSide: 'right' | 'left' | null;
@@ -203,4 +204,46 @@ export function getExerciseCompletionState({
             : null,
         shouldPulseTransition: !isRest,
     };
+}
+
+export function getCountdownAnnouncement({
+    timeLeft,
+    currentExercise,
+    nextExercise,
+}: {
+    timeLeft: number;
+    currentExercise: Exercise;
+    nextExercise?: Exercise;
+}): string | null {
+    if (timeLeft !== 10 || isRestPlacement(currentExercise.placement)) {
+        return null;
+    }
+    if (nextExercise && !isRestPlacement(nextExercise.placement)) {
+        return `残り10秒、次は${nextExercise.reading || nextExercise.name}`;
+    }
+    return '残り10秒です';
+}
+
+export function getHalfwayAnnouncement({
+    elapsed,
+    currentExercise,
+    hasLRSplit,
+    isPointFlex,
+}: {
+    elapsed: number;
+    currentExercise: Exercise;
+    hasLRSplit: boolean;
+    isPointFlex: boolean;
+}): string | null {
+    const halfwayPoint = Math.floor(currentExercise.sec / 2);
+    if (
+        elapsed === halfwayPoint &&
+        currentExercise.sec >= 30 &&
+        !isRestPlacement(currentExercise.placement) &&
+        !hasLRSplit &&
+        !isPointFlex
+    ) {
+        return '半分です';
+    }
+    return null;
 }

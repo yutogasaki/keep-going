@@ -26,6 +26,7 @@ interface ExercisePanelProps {
     dashOffset: number;
     timeLeft: number;
     phaseTimeLeft: number;
+    nextExercise: Exercise | undefined;
 }
 
 export const ExercisePanel: React.FC<ExercisePanelProps> = ({
@@ -45,6 +46,7 @@ export const ExercisePanel: React.FC<ExercisePanelProps> = ({
     dashOffset,
     timeLeft,
     phaseTimeLeft,
+    nextExercise,
 }) => (
     <AnimatePresence mode="popLayout">
         <motion.div
@@ -246,6 +248,44 @@ export const ExercisePanel: React.FC<ExercisePanelProps> = ({
                 isPointFlex={isPointFlex}
                 phaseTimeLeft={phaseTimeLeft}
             />
+
+            <AnimatePresence>
+                {nextExercise && !isTransitioning && !isBigBreak && !isCounting && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 0.7 }}
+                        exit={{ opacity: 0 }}
+                        style={{
+                            position: 'absolute',
+                            bottom: 'calc(env(safe-area-inset-bottom, 16px) + 100px)',
+                            zIndex: 20,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            padding: '6px 14px',
+                            borderRadius: 20,
+                            background: 'rgba(255,255,255,0.6)',
+                            backdropFilter: 'blur(8px)',
+                            WebkitBackdropFilter: 'blur(8px)',
+                        }}
+                    >
+                        <ExerciseIcon
+                            id={nextExercise.id}
+                            emoji={nextExercise.emoji}
+                            size={20}
+                            color={getExercisePlacementAccentColor(nextExercise.placement)}
+                        />
+                        <span style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            color: '#8395A7',
+                        }}>
+                            次: <ExerciseName name={nextExercise.name} reading={nextExercise.reading} />
+                        </span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </motion.div>
     </AnimatePresence>
 );

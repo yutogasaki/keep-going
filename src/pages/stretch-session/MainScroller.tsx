@@ -76,6 +76,7 @@ export const MainScroller: React.FC<MainScrollerProps> = ({
                 dashOffset={dashOffset}
                 timeLeft={timeLeft}
                 phaseTimeLeft={phaseTimeLeft}
+                nextExercise={nextExercise}
             />
 
             <TransitionOverlay

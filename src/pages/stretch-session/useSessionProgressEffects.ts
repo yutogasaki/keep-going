@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
+import { isRestPlacement } from '../../data/exercisePlacement';
 const lazyConfetti = () => import('canvas-confetti').then((m) => m.default);
 import type { Exercise } from '../../data/exercises';
 import { audio } from '../../lib/audio';
 import { haptics } from '../../lib/haptics';
 import {
+    getCountdownAnnouncement,
     getExerciseCompletionState,
+    getHalfwayAnnouncement,
     getSessionSideCue,
     getSessionVisibilityUpdate,
 } from './sessionProgressHelpers';
@@ -80,6 +83,7 @@ export function useSessionProgressEffects({
     const goToNextRef = useRef<() => void>(() => { });
     const completionTimerRef = useRef<number | null>(null);
     const hasInitializedTimeRef = useRef(false);
+    const prevIndexRef = useRef(-1);
 
     useEffect(() => {
         if (!isLoading && sessionExercises.length > 0 && !hasInitializedTimeRef.current) {
@@ -88,14 +92,45 @@ export function useSessionProgressEffects({
         }
     }, [isLoading, sessionExercises, setTimeLeft]);
 
+    // Exercise start announcement — plays name after GO for each new exercise
+    useEffect(() => {
+        if (isCounting || !currentExercise || isLoading) return;
+
+        // Skip the first exercise (handled by CountdownOverlay)
+        if (prevIndexRef.current === -1) {
+            prevIndexRef.current = currentIndex;
+            return;
+        }
+
+        if (currentIndex !== prevIndexRef.current) {
+            prevIndexRef.current = currentIndex;
+            audio.playExerciseStart();
+
+            if (!isRestPlacement(currentExercise.placement)) {
+                const timer = setTimeout(() => {
+                    audio.speak(currentExercise.reading || currentExercise.name);
+                }, 500);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [currentIndex, currentExercise, isCounting, isLoading]);
+
     useEffect(() => {
         if (!currentExercise) {
             return;
         }
 
         const elapsed = currentExercise.sec - timeLeft;
-        if (elapsed > 0 && elapsed % 10 === 0 && timeLeft > 3 && !isTransitioning && !isCounting) {
-            audio.playTick();
+
+        // Soft progress chime every 10 seconds (skip near end — countdown takes over)
+        if (elapsed > 0 && elapsed % 10 === 0 && timeLeft > 10 && !isTransitioning && !isCounting) {
+            audio.playProgressTone();
+        }
+
+        // Halfway TTS for non-split exercises >= 30s
+        const halfway = getHalfwayAnnouncement({ elapsed, currentExercise, hasLRSplit, isPointFlex });
+        if (halfway && !isTransitioning && !isCounting) {
+            audio.speak(halfway);
         }
 
         if (isCounting) {
@@ -177,8 +212,13 @@ export function useSessionProgressEffects({
             return;
         }
 
-        if (timeLeft === 10 && currentExercise.placement !== 'rest') {
-            audio.speak('残り10秒です');
+        const countdownMsg = getCountdownAnnouncement({
+            timeLeft,
+            currentExercise,
+            nextExercise: sessionExercises[currentIndex + 1],
+        });
+        if (countdownMsg) {
+            audio.speak(countdownMsg);
         }
 
         if (timeLeft > 0 && timeLeft <= 5) {
