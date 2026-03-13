@@ -1,7 +1,6 @@
 import type { Exercise } from '../../../data/exercises';
 import type { CustomExercise } from '../../../lib/db';
 import type { PublicExercise } from '../../../lib/publicExercises';
-import type { MenuSectionVisibilityState } from '../menu-page/types';
 
 export interface IndividualSelectionProps {
     selectionMode?: boolean;
@@ -27,6 +26,4 @@ export interface MenuIndividualTabProps {
     onPublishExercise?: (exercise: CustomExercise) => void;
     onUnpublishExercise?: (exercise: CustomExercise) => void;
     onOpenPublicExerciseBrowser?: () => void;
-    sectionState: MenuSectionVisibilityState;
-    onToggleSection: (sectionId: keyof MenuSectionVisibilityState, nextExpanded: boolean) => void;
 }

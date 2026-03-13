@@ -1,12 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { AutoMenuSettingsCard } from './group-tab/AutoMenuSettingsCard';
-import { PresetGroupsSection } from './group-tab/PresetGroupsSection';
-import { TeacherGroupsSection } from './group-tab/TeacherGroupsSection';
-import { CustomGroupsSection } from './group-tab/CustomGroupsSection';
 import { PublicMenuSection } from './group-tab/PublicMenuSection';
+import { CreateGroupCard } from './group-tab/CreateGroupCard';
 import type { MenuGroupTabProps } from './group-tab/types';
-import { buildGroupCardSummary } from './group-card/groupCardUtils';
-import { MenuHighlightsStrip, type MenuHighlightItem } from './shared/MenuHighlightsStrip';
+import { GroupCard } from './GroupCard';
+import { ShowMoreButton } from './shared/ShowMoreButton';
+import type { MenuGroup } from '../../data/menuGroups';
+
+const INITIAL_VISIBLE = 4;
 
 export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
     exerciseMap,
@@ -30,69 +31,34 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
     onOpenPublicBrowser,
     teacherMenuIds,
     isNewTeacherContent,
-    sectionState,
-    onToggleSection,
 }) => {
-    const teacherGroups = presets.filter(
-        (group) => group.origin === 'teacher' && group.displayMode !== 'standard_inline'
-    );
-    const mainGroups = presets.filter(
-        (group) => group.origin !== 'teacher' || group.displayMode === 'standard_inline'
-    );
-    const standardExpanded = sectionState.standard ?? true;
-    const hasTeacherHighlights = teacherGroups.some(
-        (group) => group.recommended || isNewTeacherContent?.(group.id),
-    );
-    const teacherExpanded = teacherGroups.length === 0
-        ? false
-        : sectionState.teacher ?? hasTeacherHighlights;
-    const customExpanded = customGroups.length === 0
-        ? true
-        : sectionState.custom ?? false;
-    const highlightItems = useMemo<MenuHighlightItem[]>(
-        () => presets
-            .filter((group) => group.recommended || isNewTeacherContent?.(group.id))
-            .sort((left, right) => {
-                const leftRecommended = left.recommended ? 0 : 1;
-                const rightRecommended = right.recommended ? 0 : 1;
-                if (leftRecommended !== rightRecommended) {
-                    return leftRecommended - rightRecommended;
-                }
+    const [showAll, setShowAll] = useState(false);
 
-                const leftNew = isNewTeacherContent?.(left.id) ? 0 : 1;
-                const rightNew = isNewTeacherContent?.(right.id) ? 0 : 1;
-                if (leftNew !== rightNew) {
-                    return leftNew - rightNew;
-                }
+    const allGroups = useMemo(() => {
+        const scored = (group: MenuGroup): number => {
+            if (group.recommended) return 0;
+            if (isNewTeacherContent?.(group.id)) return 1;
+            if (!group.isPreset && !group.origin) return 4; // custom
+            if (group.origin === 'teacher' && group.displayMode !== 'standard_inline') return 3;
+            return 2; // standard / inline teacher
+        };
 
-                const leftOrder = left.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
-                const rightOrder = right.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
-                if (leftOrder !== rightOrder) {
-                    return leftOrder - rightOrder;
-                }
+        const combined = [...presets, ...customGroups];
+        return combined.sort((a, b) => {
+            const sa = scored(a);
+            const sb = scored(b);
+            if (sa !== sb) return sa - sb;
+            if (sa === 0) {
+                const oa = a.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
+                const ob = b.recommendedOrder ?? Number.MAX_SAFE_INTEGER;
+                if (oa !== ob) return oa - ob;
+            }
+            return a.name.localeCompare(b.name, 'ja');
+        });
+    }, [presets, customGroups, isNewTeacherContent]);
 
-                return left.name.localeCompare(right.name, 'ja');
-            })
-            .slice(0, 3)
-            .map((group) => {
-                const summary = buildGroupCardSummary(group, exerciseMap);
-                return {
-                    id: group.id,
-                    emoji: group.emoji,
-                    title: group.name,
-                    meta: `約${summary.minutes}分 · ${summary.exerciseCount}種目`,
-                    caption: group.recommended
-                        ? '先生のおすすめをすぐ始められます'
-                        : '新しく届いたメニューを試せます',
-                    badges: [
-                        ...(group.recommended ? ['おすすめ'] : []),
-                        ...(isNewTeacherContent?.(group.id) ? ['New'] : []),
-                    ],
-                    onSelect: () => onGroupTap(group),
-                };
-            }),
-        [exerciseMap, isNewTeacherContent, onGroupTap, presets],
-    );
+    const visibleGroups = showAll ? allGroups : allGroups.slice(0, INITIAL_VISIBLE);
+    const remaining = allGroups.length - INITIAL_VISIBLE;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '0 20px' }}>
@@ -104,49 +70,75 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
                 onOpenCustomMenu={onOpenCustomMenu}
             />
 
-            <MenuHighlightsStrip
-                title="先生のおすすめ"
-                description="おすすめや新着を先に見て、迷わず始めます"
-                items={highlightItems}
-            />
+            {allGroups.length > 0 ? (
+                <section>
+                    <h2 style={{
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: '#8395A7',
+                        marginBottom: 10,
+                        letterSpacing: 1,
+                    }}>
+                        メニュー
+                        <span style={{
+                            fontFamily: "'Outfit', sans-serif",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: '#B2BEC3',
+                            marginLeft: 8,
+                        }}>
+                            {allGroups.length}
+                        </span>
+                    </h2>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {visibleGroups.map((group, index) => {
+                            const isCustom = !group.isPreset && !group.origin;
+                            const published = isCustom ? findPublishedMenu(group) : undefined;
+                            return (
+                                <GroupCard
+                                    key={group.id}
+                                    group={group}
+                                    index={index}
+                                    exerciseMap={exerciseMap}
+                                    creatorName={sessionUserCount > 1 && isCustom ? getCreatorName(group.creatorId) : undefined}
+                                    onTap={() => onGroupTap(group)}
+                                    onEdit={isCustom ? () => onEditGroup(group) : undefined}
+                                    onDelete={isCustom ? () => onDeleteGroup(group.id) : undefined}
+                                    onPublish={isCustom && canPublish ? () => onPublishGroup(group) : undefined}
+                                    onUnpublish={isCustom ? () => onUnpublishGroup(group) : undefined}
+                                    isCustom={isCustom}
+                                    isPublished={isCustom ? !!published : undefined}
+                                    downloadCount={published?.downloadCount}
+                                    isTeacher={teacherMenuIds?.has(group.id)}
+                                    isNew={isNewTeacherContent?.(group.id)}
+                                />
+                            );
+                        })}
+                        {remaining > 0 ? (
+                            <ShowMoreButton
+                                remainingCount={remaining}
+                                expanded={showAll}
+                                onToggle={() => setShowAll((v) => !v)}
+                            />
+                        ) : null}
+                    </div>
+                </section>
+            ) : (
+                <div
+                    className="card card-sm"
+                    style={{
+                        padding: '14px 16px',
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 12,
+                        color: '#8395A7',
+                    }}
+                >
+                    いま使えるメニューはまだありません。
+                </div>
+            )}
 
-            <PresetGroupsSection
-                title="今日つかうメニュー"
-                groups={mainGroups}
-                exerciseMap={exerciseMap}
-                onTap={onGroupTap}
-                teacherMenuIds={teacherMenuIds}
-                isNewTeacherContent={isNewTeacherContent}
-                emptyMessage={mainGroups.length === 0 && teacherGroups.length === 0 ? 'いま使えるメニューはまだありません。' : null}
-                expanded={standardExpanded}
-                onToggle={() => onToggleSection('standard', !standardExpanded)}
-            />
-
-            <TeacherGroupsSection
-                groups={teacherGroups}
-                exerciseMap={exerciseMap}
-                onTap={onGroupTap}
-                isNewTeacherContent={isNewTeacherContent}
-                expanded={teacherExpanded}
-                onToggle={() => onToggleSection('teacher', !teacherExpanded)}
-            />
-
-            <CustomGroupsSection
-                groups={customGroups}
-                exerciseMap={exerciseMap}
-                sessionUserCount={sessionUserCount}
-                canPublish={canPublish}
-                getCreatorName={getCreatorName}
-                findPublishedMenu={findPublishedMenu}
-                onTap={onGroupTap}
-                onEdit={onEditGroup}
-                onDelete={onDeleteGroup}
-                onPublish={onPublishGroup}
-                onUnpublish={onUnpublishGroup}
-                onCreate={onCreateGroup}
-                expanded={customExpanded}
-                onToggle={() => onToggleSection('custom', !customExpanded)}
-            />
+            <CreateGroupCard hasGroups={customGroups.length > 0} onCreate={onCreateGroup} />
 
             <PublicMenuSection onOpen={onOpenPublicBrowser} />
         </div>

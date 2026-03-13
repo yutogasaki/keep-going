@@ -20,6 +20,7 @@ interface GroupCardMainRowProps {
     creatorName?: string | null;
     isTeacher?: boolean;
     isNew?: boolean;
+    isCustom?: boolean;
     detailsId: string;
     onTap: () => void;
     onToggleExpanded: () => void;
@@ -33,6 +34,7 @@ export const GroupCardMainRow: React.FC<GroupCardMainRowProps> = ({
     creatorName,
     isTeacher,
     isNew,
+    isCustom,
     detailsId,
     onTap,
     onToggleExpanded,
@@ -92,6 +94,24 @@ export const GroupCardMainRow: React.FC<GroupCardMainRowProps> = ({
                                 }}
                             >
                                 先生
+                            </span>
+                        ) : null}
+                        {isCustom ? (
+                            <span
+                                style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 9,
+                                    fontWeight: 700,
+                                    color: '#8B5CF6',
+                                    background: 'rgba(139, 92, 246, 0.1)',
+                                    padding: '1px 5px',
+                                    borderRadius: 6,
+                                    marginLeft: 6,
+                                    display: 'inline-block',
+                                    verticalAlign: 'middle',
+                                }}
+                            >
+                                じぶん
                             </span>
                         ) : null}
                         {isNew ? (

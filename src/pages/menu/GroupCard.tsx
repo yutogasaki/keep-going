@@ -59,6 +59,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                 creatorName={creatorName}
                 isTeacher={isTeacher ?? group.origin === 'teacher'}
                 isNew={isNew}
+                isCustom={isCustom}
                 detailsId={detailsId}
                 onTap={onTap}
                 onToggleExpanded={() => setExpanded((current) => !current)}
