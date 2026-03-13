@@ -150,14 +150,17 @@ function filterCandidates(
     return candidates;
 }
 
-function filterTapSameTopicCandidates(
+function filterTapCandidates(
     candidates: DailyConversationCandidate[],
     state: DailyConversationState,
 ): DailyConversationCandidate[] {
-    return candidates.filter((candidate) => (
-        candidate.replyId !== state.currentReplyId
-        && !state.recentReplyIds.includes(candidate.replyId)
-    ));
+    const distinctCandidates = candidates.filter((candidate) => candidate.replyId !== state.currentReplyId);
+    if (distinctCandidates.length === 0) {
+        return [];
+    }
+
+    const freshCandidates = distinctCandidates.filter((candidate) => !state.recentReplyIds.includes(candidate.replyId));
+    return freshCandidates.length > 0 ? freshCandidates : distinctCandidates;
 }
 
 function getCandidatesForGroup(
@@ -212,6 +215,7 @@ function pickTopicCandidate(
     groupCandidates: DailyConversationCandidate[],
     state: DailyConversationState,
     context: DailyConversationContext,
+    reason: DailyConversationReason = 'tick',
 ): DailyConversationCandidate | null {
     const groupedByTopic = new Map<FuwafuwaDailyTopic, DailyConversationCandidate[]>();
     groupCandidates.forEach((candidate) => {
@@ -238,7 +242,10 @@ function pickTopicCandidate(
         });
 
     for (const entry of topicEntries) {
-        const candidate = pickCandidateByTurn(filterCandidates(entry.candidates, state), state.turn);
+        const filteredCandidates = reason === 'tap'
+            ? filterTapCandidates(entry.candidates, state)
+            : filterCandidates(entry.candidates, state);
+        const candidate = pickCandidateByTurn(filteredCandidates, state.turn);
         if (candidate) {
             return candidate;
         }
@@ -250,6 +257,7 @@ function pickTopicCandidate(
 function pickCrossGroupCandidate(
     state: DailyConversationState,
     context: DailyConversationContext,
+    reason: DailyConversationReason = 'tick',
 ): DailyConversationCandidate | null {
     const groupScores = getGroupScores(state, context);
     const orderedGroups = sortGroupsByScore(groupScores, state.turn);
@@ -261,13 +269,16 @@ function pickCrossGroupCandidate(
         }
 
         const groupCandidates = getCandidatesForGroup(context.candidates, group);
-        const candidate = pickTopicCandidate(groupCandidates, state, context);
+        const candidate = pickTopicCandidate(groupCandidates, state, context, reason);
         if (candidate) {
             return candidate;
         }
     }
 
-    return pickCandidateByTurn(filterCandidates(context.candidates, state), state.turn);
+    const fallbackCandidates = reason === 'tap'
+        ? filterTapCandidates(context.candidates, state)
+        : filterCandidates(context.candidates, state);
+    return pickCandidateByTurn(fallbackCandidates, state.turn);
 }
 
 function updateState(
@@ -296,7 +307,7 @@ export function chooseNextDailyConversation(
     }
 
     if (reason === 'tap' && state.currentTopic) {
-        const sameTopicCandidates = filterTapSameTopicCandidates(
+        const sameTopicCandidates = filterTapCandidates(
             getCandidatesForTopic(context.candidates, state.currentTopic),
             state,
         );
@@ -311,7 +322,7 @@ export function chooseNextDailyConversation(
         if (state.currentGroup) {
             const sameGroupCandidates = getCandidatesForGroup(context.candidates, state.currentGroup)
                 .filter((candidate) => candidate.selection.topic !== state.currentTopic);
-            const sameGroupCandidate = pickTopicCandidate(sameGroupCandidates, state, context);
+            const sameGroupCandidate = pickTopicCandidate(sameGroupCandidates, state, context, 'tap');
             if (sameGroupCandidate) {
                 return {
                     candidate: sameGroupCandidate,
@@ -321,7 +332,7 @@ export function chooseNextDailyConversation(
         }
     }
 
-    const candidate = pickCrossGroupCandidate(state, context);
+    const candidate = pickCrossGroupCandidate(state, context, reason);
     if (!candidate) {
         return { candidate: null, nextState: state };
     }
