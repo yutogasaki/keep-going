@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { formatDateKey } from './db';
 import { calculateStreak } from './teacher';
 import type { StudentMember, StudentSession } from './teacher';
+import type { Database } from './supabase-types';
 
 // ─── Types ───────────────────────────────────────────
 
@@ -20,12 +21,65 @@ export interface AdminAccountSummary {
     suspended: boolean;
 }
 
+type AdminFamilyMemberRow = Pick<
+    Database['public']['Tables']['family_members']['Row'],
+    'id' | 'account_id' | 'name' | 'class_level' | 'avatar_url' | 'created_at'
+>;
+
+type AdminSessionRow = Pick<
+    Database['public']['Tables']['sessions']['Row'],
+    'id' | 'account_id' | 'date' | 'started_at' | 'total_seconds' | 'user_ids'
+>;
+
+type AdminAppSettingsRow = Pick<
+    Database['public']['Tables']['app_settings']['Row'],
+    'account_id' | 'suspended'
+>;
+
+function buildAdminAccountSummary(
+    accountId: string,
+    members: AdminFamilyMemberRow[],
+    sessions: AdminSessionRow[],
+    suspendedMap: Map<string, boolean>,
+): AdminAccountSummary {
+    const streak = calculateStreak(sessions);
+    const lastActiveDate = sessions.length > 0 ? sessions[0].date : null;
+    const createdDates = members
+        .map((member) => member.created_at)
+        .filter(Boolean)
+        .sort();
+    const registeredAt = createdDates[0] ?? null;
+
+    return {
+        accountId,
+        members: members.map((member) => ({
+            id: member.id,
+            name: member.name,
+            classLevel: member.class_level,
+            avatarUrl: member.avatar_url || undefined,
+            createdAt: member.created_at ?? null,
+        })),
+        sessions: sessions.slice(0, 50).map((session) => ({
+            id: session.id,
+            date: session.date,
+            startedAt: session.started_at,
+            totalSeconds: session.total_seconds,
+            userIds: session.user_ids ?? [],
+        })),
+        streak,
+        totalSessions: sessions.length,
+        lastActiveDate,
+        registeredAt,
+        suspended: suspendedMap.get(accountId) ?? false,
+    };
+}
+
 // ─── Fetch all accounts (developer only) ─────────────
 
 export async function fetchAllAccountsForAdmin(): Promise<AdminAccountSummary[]> {
     if (!supabase) return [];
 
-    const [membersRes, sessionsRes, settingsRes] = await Promise.all([
+    const [membersResult, sessionsResult, settingsResult] = await Promise.allSettled([
         supabase.from('family_members').select('id, account_id, name, class_level, avatar_url, created_at'),
         supabase
             .from('sessions')
@@ -35,56 +89,33 @@ export async function fetchAllAccountsForAdmin(): Promise<AdminAccountSummary[]>
         supabase.from('app_settings').select('account_id, suspended'),
     ]);
 
-    if (membersRes.error || sessionsRes.error) {
-        console.error('[developer] fetch failed:', membersRes.error, sessionsRes.error);
+    if (membersResult.status === 'rejected') {
+        console.error('[developer] fetch failed:', membersResult.reason, sessionsResult.status === 'rejected' ? sessionsResult.reason : null);
         return [];
     }
 
-    const members = membersRes.data ?? [];
-    const sessions = sessionsRes.data ?? [];
-    const settings = settingsRes.data ?? [];
-    const suspendedMap = new Map(settings.map(s => [s.account_id, s.suspended ?? false]));
+    if (sessionsResult.status === 'rejected') {
+        console.warn('[developer] sessions fetch failed, falling back to member-only accounts:', sessionsResult.reason);
+    }
+
+    if (settingsResult.status === 'rejected') {
+        console.warn('[developer] settings fetch failed, assuming accounts are active:', settingsResult.reason);
+    }
+
+    const members = membersResult.value.data ?? [];
+    const sessions = sessionsResult.status === 'fulfilled' ? sessionsResult.value.data ?? [] : [];
+    const settings = settingsResult.status === 'fulfilled' ? settingsResult.value.data ?? [] : [];
+    const suspendedMap = new Map(settings.map((setting: AdminAppSettingsRow) => [setting.account_id, setting.suspended ?? false]));
 
     // Group by account_id
-    const accountIds = new Set(members.map(m => m.account_id));
+    const accountIds = new Set(members.map((member) => member.account_id));
     const results: AdminAccountSummary[] = [];
 
     for (const accountId of accountIds) {
-        const acctMembers = members.filter(m => m.account_id === accountId);
-        const acctSessions = sessions.filter(s => s.account_id === accountId);
+        const accountMembers = members.filter((member) => member.account_id === accountId);
+        const accountSessions = sessions.filter((session) => session.account_id === accountId);
 
-        const streak = calculateStreak(acctSessions);
-        const lastActiveDate = acctSessions.length > 0 ? acctSessions[0].date : null;
-
-        // Earliest created_at as registration date
-        const createdDates = acctMembers
-            .map(m => m.created_at)
-            .filter(Boolean)
-            .sort();
-        const registeredAt = createdDates[0] ?? null;
-
-        results.push({
-            accountId,
-            members: acctMembers.map(m => ({
-                id: m.id,
-                name: m.name,
-                classLevel: m.class_level,
-                avatarUrl: m.avatar_url || undefined,
-                createdAt: m.created_at ?? null,
-            })),
-            sessions: acctSessions.slice(0, 50).map(s => ({
-                id: s.id,
-                date: s.date,
-                startedAt: s.started_at,
-                totalSeconds: s.total_seconds,
-                userIds: (s.user_ids as string[]) ?? [],
-            })),
-            streak,
-            totalSessions: acctSessions.length,
-            lastActiveDate,
-            registeredAt,
-            suspended: suspendedMap.get(accountId) ?? false,
-        });
+        results.push(buildAdminAccountSummary(accountId, accountMembers, accountSessions, suspendedMap));
     }
 
     // Sort: most recently active first
