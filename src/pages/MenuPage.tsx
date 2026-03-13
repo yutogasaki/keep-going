@@ -54,7 +54,6 @@ export const MenuPage: React.FC = () => {
         requiredExercises,
         currentUsers,
         exercises,
-        autoMenuMinutes,
         canPublish,
         effectiveRequiredCount,
         effectiveExcludedCount,
@@ -150,7 +149,6 @@ export const MenuPage: React.FC = () => {
                         dailyTargetMinutes={dailyTargetMinutes}
                         effectiveRequiredCount={effectiveRequiredCount}
                         effectiveExcludedCount={effectiveExcludedCount}
-                        autoMenuMinutes={autoMenuMinutes}
                         presets={presets}
                         customGroups={customGroups}
                         sessionUserCount={sessionUserCount}

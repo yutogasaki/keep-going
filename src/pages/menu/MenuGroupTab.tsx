@@ -14,7 +14,6 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
     dailyTargetMinutes,
     effectiveRequiredCount,
     effectiveExcludedCount,
-    autoMenuMinutes,
     presets,
     customGroups,
     sessionUserCount,
@@ -102,7 +101,6 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
                 dailyTargetMinutes={dailyTargetMinutes}
                 requiredCount={effectiveRequiredCount}
                 excludedCount={effectiveExcludedCount}
-                autoMenuMinutes={autoMenuMinutes}
                 onOpenCustomMenu={onOpenCustomMenu}
             />
 

@@ -9,7 +9,6 @@ export interface MenuGroupTabProps {
     dailyTargetMinutes: number;
     effectiveRequiredCount: number;
     effectiveExcludedCount: number;
-    autoMenuMinutes: number;
     presets: MenuGroup[];
     customGroups: MenuGroup[];
     sessionUserCount: number;
