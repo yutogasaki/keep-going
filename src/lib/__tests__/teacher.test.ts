@@ -302,4 +302,33 @@ describe('fetchAllStudents', () => {
 
         expect(students).toEqual([]);
     });
+
+    it('does not expose suspended current account fallback when settings still mark it suspended', async () => {
+        teacherSupabaseMocks.errors.family_members = new Error('family_members unavailable');
+        teacherSupabaseMocks.appSettings = [
+            createAppSettings('active-account', true),
+        ];
+
+        const students = await fetchAllStudents({
+            currentAccountId: 'active-account',
+            localMembers: [
+                {
+                    id: 'member-local',
+                    name: 'local-member',
+                    classLevel: '初級',
+                },
+            ],
+            localSessions: [
+                {
+                    id: 'session-local',
+                    date: '2026-03-07',
+                    startedAt: '2026-03-07T12:00:00Z',
+                    totalSeconds: 180,
+                    userIds: ['member-local'],
+                },
+            ],
+        });
+
+        expect(students).toEqual([]);
+    });
 });

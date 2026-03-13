@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type Dispatch, type SetStateAction } from 'react';
-import { getCustomExercises, getAllSessions, getTodayKey } from '../../lib/db';
+import { getCustomExercises, getAllSessions, getTodayKey, type SessionRecord } from '../../lib/db';
 import { fetchTeacherMenuSettingsForClass } from '../../lib/teacherMenuSettings';
 import { fetchTeacherExercises } from '../../lib/teacherContent';
 import { fetchAllTeacherItemOverrides } from '../../lib/teacherItemOverrides';
@@ -31,6 +31,17 @@ interface UseSessionSetupResult {
     sessionExercises: Exercise[];
     setSessionExercises: Dispatch<SetStateAction<Exercise[]>>;
     isLoading: boolean;
+}
+
+export async function loadHistoricalSessionsSafely(
+    loader: () => Promise<SessionRecord[]> = getAllSessions,
+): Promise<SessionRecord[]> {
+    try {
+        return await loader();
+    } catch (error) {
+        console.warn('[sessionSetup] Failed to load session history:', error);
+        return [];
+    }
 }
 
 export function useSessionSetup({
@@ -85,7 +96,7 @@ export function useSessionSetup({
                 const allCustomPool = [...customExercises, ...teacherCustomPool];
 
                 if (!sessionExerciseIds || sessionHybridMode) {
-                    const allSessions = await getAllSessions();
+                    const allSessions = await loadHistoricalSessionsSafely();
                     setSessionExercises(buildAutoSessionExercises({
                         classLevel,
                         dailyTargetMinutes,

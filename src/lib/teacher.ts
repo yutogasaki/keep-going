@@ -239,13 +239,19 @@ export async function fetchAllStudents(options: FetchAllStudentsOptions = {}): P
         fetchTeacherAppSettings(),
     ]);
 
+    const suspendedIds = new Set(
+        settingsResult.status === 'fulfilled'
+            ? settingsResult.value.filter((setting) => setting.suspended).map((setting) => setting.account_id)
+            : [],
+    );
+
     if (membersResult.status === 'rejected' || sessionsResult.status === 'rejected') {
         console.error(
             '[teacher] fetch failed:',
             membersResult.status === 'rejected' ? membersResult.reason : null,
             sessionsResult.status === 'rejected' ? sessionsResult.reason : null,
         );
-        return buildFallbackStudentSummaries(options);
+        return buildFallbackStudentSummaries(options, suspendedIds);
     }
 
     if (settingsResult.status === 'rejected') {
@@ -257,9 +263,11 @@ export async function fetchAllStudents(options: FetchAllStudentsOptions = {}): P
     const settings = settingsResult.status === 'fulfilled' ? settingsResult.value : [];
 
     // Filter out suspended accounts
-    const suspendedIds = new Set(
-        settings.filter((setting) => setting.suspended).map((setting) => setting.account_id)
-    );
+    for (const setting of settings) {
+        if (setting.suspended) {
+            suspendedIds.add(setting.account_id);
+        }
+    }
 
     const membersByAccount = new Map<string, TeacherFamilyMemberRow[]>();
     for (const member of members) {
