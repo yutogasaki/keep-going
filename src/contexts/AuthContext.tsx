@@ -2,25 +2,19 @@ import {
     createContext,
     useCallback,
     useContext,
-    useEffect,
     useMemo,
-    useRef,
     useState,
     type ReactNode,
 } from 'react';
 import type { User } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
-import { initialSync, isPulling, processQueue, setAccountId, setupOnlineListener } from '../lib/sync';
-import { useAppStore } from '../store/useAppStore';
-import { useSyncStatus } from '../store/useSyncStatus';
 import { SyncConflictModal } from '../components/SyncConflictModal';
-import { fetchCurrentUserRoleFlags } from '../lib/userRoles';
 import { createAuthActions } from './auth/authActions';
-import { LOGIN_CONTEXT_KEY } from './auth/constants';
-import { getAppSettingsSnapshot } from './auth/settingsSnapshot';
 import { runSettingsLoginSync } from './auth/syncFlows';
 import type { AuthContextValue, LoginContext } from './auth/types';
-import type { SyncConflictPromptData, SyncConflictResolution } from '../lib/sync';
+import { useAuthBootstrap } from './auth/useAuthBootstrap';
+import { useAuthSideEffects } from './auth/useAuthSideEffects';
+import { useLoginContextState } from './auth/useLoginContextState';
+import { useSyncConflictPromptState } from './auth/useSyncConflictPromptState';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -31,42 +25,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isAnonymous, setIsAnonymous] = useState(false);
     const [isTeacher, setIsTeacher] = useState(false);
     const [isDeveloper, setIsDeveloper] = useState(false);
-    const [loginContext, setLoginContextState] = useState<LoginContext>(() => {
-        const saved = sessionStorage.getItem(LOGIN_CONTEXT_KEY);
-        return saved === 'onboarding' || saved === 'settings' ? saved : null;
-    });
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [authError, setAuthError] = useState<string | null>(null);
-    const [syncConflictPrompt, setSyncConflictPrompt] = useState<SyncConflictPromptData | null>(null);
+    const { loginContext, setLoginContext } = useLoginContextState();
+    const {
+        requestSyncConflictResolution,
+        resolveSyncConflict,
+        syncConflictPrompt,
+    } = useSyncConflictPromptState();
 
-    const hasSyncedRef = useRef(false);
-    const prevUserIdRef = useRef<string | null>(null);
-    const prevAnonymousRef = useRef<boolean | null>(null);
-    const syncConflictResolverRef = useRef<((choice: SyncConflictResolution) => void) | null>(null);
-
-    const setLoginContext = useCallback((ctx: LoginContext) => {
-        setLoginContextState(ctx);
-        if (ctx) {
-            sessionStorage.setItem(LOGIN_CONTEXT_KEY, ctx);
-        } else {
-            sessionStorage.removeItem(LOGIN_CONTEXT_KEY);
-        }
-    }, []);
+    const setLoginContextSafe = useCallback((ctx: LoginContext) => {
+        setLoginContext(ctx);
+    }, [setLoginContext]);
 
     const clearToast = useCallback(() => setToastMessage(null), []);
-
-    const requestSyncConflictResolution = useCallback((prompt: SyncConflictPromptData) => {
-        return new Promise<SyncConflictResolution>((resolve) => {
-            syncConflictResolverRef.current = resolve;
-            setSyncConflictPrompt(prompt);
-        });
-    }, []);
-
-    const resolveSyncConflict = useCallback((choice: SyncConflictResolution) => {
-        syncConflictResolverRef.current?.(choice);
-        syncConflictResolverRef.current = null;
-        setSyncConflictPrompt(null);
-    }, []);
 
     const handleSettingsLogin = useCallback(async (accountId: string) => {
         await runSettingsLoginSync({
@@ -74,190 +46,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             resolveConflict: requestSyncConflictResolution,
             setIsSyncing,
             setToastMessage,
-            setLoginContext,
+            setLoginContext: setLoginContextSafe,
         });
-    }, [requestSyncConflictResolution, setLoginContext]);
+    }, [requestSyncConflictResolution, setLoginContextSafe]);
 
     const { startEmailAuth, verifyEmailAuthCode, signInWithGoogle, signOut } = useMemo(
         () => createAuthActions({ user, setToastMessage }),
         [user],
     );
 
-    useEffect(() => {
-        if (!toastMessage) return;
-        const timer = setTimeout(() => setToastMessage(null), 3000);
-        return () => clearTimeout(timer);
-    }, [toastMessage]);
+    useAuthSideEffects({
+        handleSettingsLogin,
+        loginContext,
+        setIsAnonymous,
+        setIsDeveloper,
+        setIsTeacher,
+        setLoginContext: setLoginContextSafe,
+        setToastMessage,
+        toastMessage,
+        user,
+    });
 
-    useEffect(() => {
-        if (!user) {
-            setAccountId(null);
-            setIsTeacher(false);
-            setIsDeveloper(false);
-            setIsAnonymous(false);
-            hasSyncedRef.current = false;
-            prevUserIdRef.current = null;
-            prevAnonymousRef.current = null;
-            return;
-        }
-
-        const wasAnonymous = prevAnonymousRef.current;
-        const isAnonymousUser = user.is_anonymous ?? false;
-
-        if (
-            prevUserIdRef.current !== null &&
-            (prevUserIdRef.current !== user.id || (wasAnonymous === true && !isAnonymousUser))
-        ) {
-            hasSyncedRef.current = false;
-        }
-        prevUserIdRef.current = user.id;
-        prevAnonymousRef.current = isAnonymousUser;
-
-        setAccountId(user.id);
-        setIsAnonymous(isAnonymousUser);
-
-        if (hasSyncedRef.current) return;
-        hasSyncedRef.current = true;
-
-        if (isAnonymousUser) {
-            const state = useAppStore.getState();
-            if (state.users.length > 0) {
-                initialSync(state.users, getAppSettingsSnapshot()).catch((err) => {
-                    console.warn('[sync]', err);
-                    useSyncStatus.getState().reportFailure(String(err));
-                });
-            }
-            return;
-        }
-
-        const isOnboarding = loginContext === 'onboarding' && !useAppStore.getState().onboardingCompleted;
-        if (isOnboarding) return;
-
-        if (loginContext === 'onboarding') {
-            setLoginContext(null);
-            // Trigger queue processing so data created during onboarding syncs immediately
-            processQueue().catch((err) => {
-                console.warn('[sync]', err);
-            });
-            return;
-        }
-
-        if (loginContext === 'settings') {
-            handleSettingsLogin(user.id);
-        } else {
-            processQueue().then(({ failed, dropped }) => {
-                if (dropped > 0) {
-                    useSyncStatus.getState().reportFailure(`${dropped}件のデータ同期に失敗しました`);
-                } else if (failed === 0) {
-                    useSyncStatus.getState().clearFailure();
-                }
-            }).catch((err) => {
-                console.warn('[sync]', err);
-                useSyncStatus.getState().reportFailure(String(err));
-            });
-        }
-    }, [user, loginContext, handleSettingsLogin, setLoginContext]);
-
-    useEffect(() => {
-        let cancelled = false;
-
-        if (!user || user.is_anonymous) {
-            setIsTeacher(false);
-            setIsDeveloper(false);
-            return;
-        }
-
-        setIsTeacher(false);
-        setIsDeveloper(false);
-
-        fetchCurrentUserRoleFlags().then((roles) => {
-            if (cancelled) return;
-            setIsTeacher(roles.isTeacher);
-            setIsDeveloper(roles.isDeveloper);
-        }).catch((error) => {
-            console.warn('[auth] Failed to fetch role flags:', error);
-            if (cancelled) return;
-            setIsTeacher(false);
-            setIsDeveloper(false);
-        });
-
-        return () => {
-            cancelled = true;
-        };
-    }, [user]);
-
-    useEffect(() => {
-        const cleanup = setupOnlineListener();
-        return cleanup;
-    }, []);
-
-    useEffect(() => {
-        if (!user) return;
-
-        const interval = setInterval(() => {
-            // Skip queue processing while a pull/merge is in progress
-            // to avoid pushing stale data during account transitions
-            if (isPulling()) return;
-            processQueue().then(({ failed, dropped }) => {
-                if (dropped > 0) {
-                    useSyncStatus.getState().reportFailure(`${dropped}件のデータ同期に失敗しました`);
-                } else if (failed === 0) {
-                    useSyncStatus.getState().clearFailure();
-                }
-            }).catch((err) => {
-                console.warn('[sync]', err);
-                useSyncStatus.getState().reportFailure(String(err));
-            });
-        }, 60_000);
-
-        return () => clearInterval(interval);
-    }, [user]);
-
-    const initAuth = useCallback(() => {
-        if (!supabase) {
-            setIsLoading(false);
-            return;
-        }
-
-        setAuthError(null);
-        setIsLoading(true);
-
-        const sb = supabase;
-
-        sb.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user) {
-                setUser(session.user);
-                setIsLoading(false);
-            } else {
-                sb.auth.signInAnonymously().then(({ error }) => {
-                    if (error) {
-                        console.warn('[auth] anonymous sign-in failed:', error);
-                        setAuthError('サーバーに接続できませんでした');
-                    }
-                    setIsLoading(false);
-                });
-            }
-        }).catch((error) => {
-            console.warn('[auth] getSession failed:', error);
-            setAuthError('サーバーに接続できませんでした');
-            setIsLoading(false);
-        });
-    }, []);
-
-    useEffect(() => {
-        initAuth();
-
-        if (!supabase) return;
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            const nextUser = session?.user ?? null;
-            setUser(nextUser);
-            setIsAnonymous(nextUser?.is_anonymous ?? false);
-            if (nextUser) setAuthError(null);
-        });
-
-        return () => subscription.unsubscribe();
-    }, [initAuth]);
+    const { retryAuth } = useAuthBootstrap({
+        setAuthError,
+        setIsAnonymous,
+        setIsLoading,
+        setUser,
+    });
 
     return (
         <AuthContext.Provider
@@ -269,9 +84,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 isTeacher,
                 isDeveloper,
                 loginContext,
-                setLoginContext,
+                setLoginContext: setLoginContextSafe,
                 authError,
-                retryAuth: initAuth,
+                retryAuth,
                 toastMessage,
                 clearToast,
                 requestSyncConflictResolution,

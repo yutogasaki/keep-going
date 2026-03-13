@@ -1,7 +1,6 @@
 # Done
 
-重要度の高い履歴だけを残し、細かい修正は日単位・テーマ単位に要約する。
-詳細履歴は `.agents/tasks/archive/YYYY-MM.md` に移す。
+重要度の高い履歴だけを残し、細かい修正は日単位・テーマ単位に要約する。詳細履歴は `.agents/tasks/archive/YYYY-MM.md` に移す。
 
 ## 2026-03-13: `fuwafuwaHomeCardCopy` を content bank へ分割
 - `fuwafuwaHomeCardCopy.ts` を façade に戻し、型・shared helper・family speech・user speech を別モジュールへ分割した
@@ -20,18 +19,19 @@
 
 ## 2026-03-13: `HomeScreen` の local state/effect を hook 群へ分離
 - `HomeScreen.tsx` から modal / browser / afterglow / visit recency / session user normalization を hook 群へ逃がし、画面本体を組み立て役へ整理した
-- `HomeScreen.tsx` は `596 -> 364` 行、`useHomeScreenState.ts` は `190` 行になり、`HomeScreen` 系は governance warning 対象から外れた
-- `npx tsc --noEmit`、`npm run build`、`npm run governance:check` を通した
+- `HomeScreen.tsx` は `596 -> 364` 行、`useHomeScreenState.ts` は `190` 行になり、`npx tsc --noEmit`、`npm run build`、`npm run governance:check` を通した
 
 ## 2026-03-13: `migrateHelpers` を sanitize ドメイン別に分割
 - `migrateHelpers.ts` を façade に戻し、primitive / user / session / home visit sanitize を `migrate-helpers/` 配下へ分離した
-- `migrateHelpers.ts` は `360 -> 47` 行になり、migration helper の governance warning を解消した
-- `npx tsc --noEmit`、migration テスト 33 本、`npm run build`、`npm run governance:check` を通した
+- `migrateHelpers.ts` は `360 -> 47` 行になり、migration テスト 33 本、`npx tsc --noEmit`、`npm run build`、`npm run governance:check` を通した
 
 ## 2026-03-13: `createState` を store slice へ分割
 - `createState.ts` を compose 専用に戻し、user / session / settings / home / debug slice を `create-state/` 配下へ分離した
-- `createState.ts` は `303 -> 15` 行になり、store createState の governance warning を解消した
-- `npx tsc --noEmit`、`createState` テスト 11 本、`npm run build`、`npm run governance:check` を通した
+- `createState.ts` は `303 -> 15` 行になり、`createState` テスト 11 本、`npx tsc --noEmit`、`npm run build`、`npm run governance:check` を通した
+
+## 2026-03-13: `AuthContext` の provider 責務を hook へ分離
+- `AuthContext.tsx` から login context 永続化、sync conflict prompt、auth bootstrap、sync / role side effects を auth hook へ逃がし、provider 本体を組み立て役へ整理した
+- `AuthContext.tsx` は `305 -> 119` 行になり、auth 関連テスト 10 本、`npx tsc --noEmit`、`npm run build`、`npm run governance:check` を通した
 
 ## 2026-03-11: ホームの先生/みんな導線を再設計
 - ホームの情報設計を `チャレンジ -> 先生のメニュー -> みんなのメニュー` に整理し、`先生` と `みんな` を同じカードファミリーの別バリアントとして扱う方針を仕様書と実装で揃えた
