@@ -48,6 +48,7 @@
 - 目安:
   - React page / modal / editor: 500 行超で分割検討、700 行超は原則分割
   - Hook / service / data mapper: 250-300 行超で責務分離を検討
+  - `src/` の任意ファイル: 800 行超は設計負債として優先的に分割計画を立てる
   - `AGENTS.md`, `CLAUDE.md`: 120 行前後を上限目安
   - `TASKS.md`, `DONE.md`, `MEMORY.md`: 肥大化したら整理する
 

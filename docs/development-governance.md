@@ -97,11 +97,14 @@
 - 最終回答で主張する内容は、検証結果と一致させる。
 - Help 文言や設定説明が古くなる変更では、関連文言も同時に更新する。
 - 大きいファイルの修正時は、ついでに責務分割可能性も判断する。
+- copy / speech / help などの content bank は、UI state や rendering と同居させすぎず topic / domain 単位で分ける。
 
 ## File Size Guardrails
 
 - React page / modal / editor: 500 行超で警戒、700 行超は分割優先
 - Hook / util / service: 250-300 行超で責務分離を検討
+- copy / speech / help などの content bank: 400 行超で topic / domain 分割を検討
+- `src/**/*.ts(x)`: 800 行超は種別に関係なく優先分割対象
 - `AGENTS.md`, `CLAUDE.md`: 30 行前後の入口に保つ
 - `.agents/agent-guide.md`: 120 行前後で収める
 - `.agents/skills/*/SKILL.md` を正本にし、`.claude/skills/*` は redirect 以外を置かない
@@ -127,8 +130,8 @@
 - `AGENTS.md` と `CLAUDE.md` に同じ長文を二重記載する
 - shared guide ではなく入口ファイル側を正本のように更新する
 - task, done, memory, backlog を同じファイルに混在させる
+- page 本体や editor 本体に大量の copy / speech / help data を抱え込んだまま肥大化させる
 - UI 変更で `visual-qa` と token 確認を省略する
 - UI 変更を型チェックだけで完了扱いにする
 - state migrate をテストなしで出す
 - 既存の canonical path を直さず、別の path を増やして逃げる
-

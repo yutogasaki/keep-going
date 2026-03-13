@@ -3,6 +3,16 @@ import path from 'node:path';
 
 const root = process.cwd();
 
+function isTestFile(relativePath) {
+  return (
+    relativePath.includes('/__tests__/') ||
+    relativePath.endsWith('.test.ts') ||
+    relativePath.endsWith('.test.tsx') ||
+    relativePath.endsWith('.spec.ts') ||
+    relativePath.endsWith('.spec.tsx')
+  );
+}
+
 const governanceChecks = [
   ['AGENTS.md', 30],
   ['CLAUDE.md', 30],
@@ -84,12 +94,27 @@ const sourceGuardrails = [
     matches(relativePath) {
       return (
         relativePath.startsWith('src/') &&
+        !isTestFile(relativePath) &&
         /\.(ts|tsx)$/.test(relativePath) &&
         /(\/hooks\/|\/lib\/|\/data\/|\/store\/|\/contexts\/)/.test(relativePath)
       );
     },
   },
+  {
+    label: 'Copy / content bank',
+    threshold: 400,
+    matches(relativePath) {
+      return (
+        relativePath.startsWith('src/') &&
+        !isTestFile(relativePath) &&
+        /\.ts$/.test(relativePath) &&
+        /(Copy|Conversation|Speech|Announcement|Ambient|Afterglow|Milestone|HelpData)\.ts$/.test(relativePath)
+      );
+    },
+  },
 ];
+
+const criticalSourceThreshold = 800;
 
 async function walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -211,6 +236,28 @@ async function collectSourceWarnings(files) {
   return warnings.sort();
 }
 
+async function collectCriticalSourceWarnings(files) {
+  const warnings = [];
+
+  for (const fullPath of files) {
+    const relativePath = toRelative(fullPath);
+    if (
+      !relativePath.startsWith('src/') ||
+      isTestFile(relativePath) ||
+      !/\.(ts|tsx)$/.test(relativePath)
+    ) {
+      continue;
+    }
+
+    const lineCount = await countLines(relativePath);
+    if (lineCount > criticalSourceThreshold) {
+      warnings.push(`${relativePath}: ${lineCount} lines (critical threshold ${criticalSourceThreshold})`);
+    }
+  }
+
+  return warnings.sort();
+}
+
 async function collectLegacySkillIssues() {
   const issues = [];
   const canonicalRoot = path.join(root, '.agents', 'skills');
@@ -286,6 +333,14 @@ async function main() {
     console.log('- none');
   } else {
     sourceWarnings.forEach((entry) => console.log(`- ${entry}`));
+  }
+
+  const criticalSourceWarnings = await collectCriticalSourceWarnings(files);
+  console.log('\nCritical source size warnings:');
+  if (criticalSourceWarnings.length === 0) {
+    console.log('- none');
+  } else {
+    criticalSourceWarnings.forEach((entry) => console.log(`- ${entry}`));
   }
 
   if (errors.length > 0) {
