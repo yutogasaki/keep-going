@@ -4,6 +4,11 @@
 細かい修正は日単位・テーマ単位に要約する。
 詳細履歴は `.agents/tasks/archive/YYYY-MM.md` に移す。
 
+## 2026-03-13: `fuwafuwaHomeCardCopy` を content bank へ分割
+- `fuwafuwaHomeCardCopy.ts` を façade に戻し、型・shared helper・family speech・user speech を別モジュールへ分割した
+- speech copy を topic / domain 単位で逃がし、governance の critical warning だった `fuwafuwaHomeCardCopy.ts` を解消した
+- `npx tsc --noEmit`、home speech 系の関連テスト、`npm run governance:check` を通した
+
 ## 2026-03-11: ホームの先生/みんな導線を再設計
 - ホームの情報設計を `チャレンジ -> 先生のメニュー -> みんなのメニュー` に整理し、`先生` と `みんな` を同じカードファミリーの別バリアントとして扱う方針を仕様書と実装で揃えた
 - ホームから新しいメニュー / 種目を見つける導線を、詳細シートを含めて自然につながる形へ再設計した
