@@ -1,4 +1,5 @@
 import localforage from 'localforage';
+import { supabase } from './supabase';
 import { getAccountId } from './sync/authState';
 import { deleteCustomExerciseRemote, pushCustomExercise as syncPushCustomExercise, pushSession as syncPushSession } from './sync/push';
 import { normalizeSessionRecord, type SessionCountMap } from './sessionRecords';
@@ -186,7 +187,6 @@ const CLOUD_TABLES_TO_CLEAR = [
 ] as const;
 
 async function deleteCloudData(): Promise<void> {
-    const { supabase } = await import('./supabase');
     const accountId = getAccountId();
     if (!supabase || !accountId) return;
 

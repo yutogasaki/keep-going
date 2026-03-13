@@ -67,6 +67,47 @@ interface FetchAllStudentsOptions {
     localSessions?: LocalStudentSessionSnapshot[];
 }
 
+function mapLocalMembersToTeacherRows(
+    accountId: string,
+    localMembers: LocalStudentMemberSnapshot[],
+): TeacherFamilyMemberRow[] {
+    return localMembers.map((member) => ({
+        id: member.id,
+        account_id: accountId,
+        name: member.name,
+        class_level: member.classLevel,
+        avatar_url: member.avatarUrl ?? null,
+    }));
+}
+
+function mapLocalSessionsToTeacherRows(
+    accountId: string,
+    localSessions: LocalStudentSessionSnapshot[],
+): TeacherSessionRow[] {
+    return localSessions.map((session) => ({
+        id: session.id,
+        account_id: accountId,
+        date: session.date,
+        started_at: session.startedAt,
+        total_seconds: session.totalSeconds,
+        user_ids: session.userIds ?? [],
+    }));
+}
+
+function buildLocalStudentSummary(options: FetchAllStudentsOptions): StudentSummary | null {
+    if (!options.currentAccountId) {
+        return null;
+    }
+
+    const localMembers = mapLocalMembersToTeacherRows(options.currentAccountId, options.localMembers ?? []);
+    if (localMembers.length === 0) {
+        return null;
+    }
+
+    const localSessions = mapLocalSessionsToTeacherRows(options.currentAccountId, options.localSessions ?? []);
+    return buildStudentSummary(options.currentAccountId, localMembers, localSessions);
+}
+
 function sortTeacherSessions<T extends Pick<TeacherSessionRow, 'date' | 'started_at'>>(sessions: T[]): T[] {
     return [...sessions].sort((left, right) => {
         const dateCompare = right.date.localeCompare(left.date);
@@ -176,7 +217,10 @@ async function fetchTeacherAppSettings(): Promise<TeacherAppSettingsRow[]> {
 }
 
 export async function fetchAllStudents(options: FetchAllStudentsOptions = {}): Promise<StudentSummary[]> {
-    if (!supabase) return [];
+    if (!supabase) {
+        const localSummary = buildLocalStudentSummary(options);
+        return localSummary ? [localSummary] : [];
+    }
 
     const [membersResult, sessionsResult, settingsResult] = await Promise.allSettled([
         fetchTeacherMembers(),
@@ -232,21 +276,8 @@ export async function fetchAllStudents(options: FetchAllStudentsOptions = {}): P
 
     if (options.currentAccountId && !suspendedIds.has(options.currentAccountId)) {
         const currentAccountId = options.currentAccountId;
-        const localMembers = (options.localMembers ?? []).map<TeacherFamilyMemberRow>((member) => ({
-            id: member.id,
-            account_id: currentAccountId,
-            name: member.name,
-            class_level: member.classLevel,
-            avatar_url: member.avatarUrl ?? null,
-        }));
-        const localSessions = (options.localSessions ?? []).map<TeacherSessionRow>((session) => ({
-            id: session.id,
-            account_id: currentAccountId,
-            date: session.date,
-            started_at: session.startedAt,
-            total_seconds: session.totalSeconds,
-            user_ids: session.userIds ?? [],
-        }));
+        const localMembers = mapLocalMembersToTeacherRows(currentAccountId, options.localMembers ?? []);
+        const localSessions = mapLocalSessionsToTeacherRows(currentAccountId, options.localSessions ?? []);
 
         if (localMembers.length > 0) {
             membersByAccount.set(
@@ -283,9 +314,9 @@ export async function fetchAllStudents(options: FetchAllStudentsOptions = {}): P
 
 export async function teacherDeleteFamilyMember(memberId: string): Promise<void> {
     if (!supabase) throw new Error('Supabase not configured');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-    const { error } = await (supabase.rpc as Function)('teacher_delete_family_member', {
+    const args: Database['public']['Functions']['teacher_delete_family_member']['Args'] = {
         target_member_id: memberId,
-    });
+    };
+    const { error } = await supabase.rpc('teacher_delete_family_member', args);
     if (error) throw error;
 }
