@@ -1,28 +1,17 @@
-import type { SessionRecord } from '../../../lib/db';
-import type { RecordInsightSummary, RecordSessionHistoryDay } from '../recordHistorySummary';
-
-export interface TopExercise {
-    id: string;
-    count: number;
-    name?: string;
-    emoji?: string;
-}
+import type {
+    RecordHistoryAccordionSection,
+    RecordSuggestionSummary,
+    RecordTopExerciseChip,
+    TodayRecordSummary,
+    TwoWeekRecordSummary,
+} from '../recordOverviewSummary';
 
 export interface RecordTabContentProps {
     loading: boolean;
-    sessions: SessionRecord[];
-    sessionsCount: number;
-    historyDays: RecordSessionHistoryDay[];
-    todaySessionsCount: number;
-    todayExerciseCount: number;
-    todayMinutes: number;
-    progressPercent: number;
-    ringRadius: number;
-    ringCircumference: number;
-    ringOffset: number;
-    totalSessions: number;
-    totalMinutes: number;
-    uniqueDays: number;
-    topExercises: TopExercise[];
-    recordInsightSummary: RecordInsightSummary;
+    todaySummary: TodayRecordSummary;
+    twoWeekSummary: TwoWeekRecordSummary;
+    suggestion: RecordSuggestionSummary;
+    topExercises: RecordTopExerciseChip[];
+    historySections: RecordHistoryAccordionSection[];
+    onSuggestionClick: () => void;
 }

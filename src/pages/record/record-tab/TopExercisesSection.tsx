@@ -1,88 +1,103 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ExerciseIcon } from '../../../components/ExerciseIcon';
-import type { TopExercise } from './types';
+import { COLOR, FONT, FONT_SIZE, RADIUS } from '../../../lib/styles';
+import type { RecordTopExerciseChip } from '../recordOverviewSummary';
 
 interface TopExercisesSectionProps {
-    loading: boolean;
-    topExercises: TopExercise[];
+    topExercises: RecordTopExerciseChip[];
 }
 
-export const TopExercisesSection: React.FC<TopExercisesSectionProps> = ({ loading, topExercises }) => {
-    if (loading || topExercises.length === 0) {
+export const TopExercisesSection: React.FC<TopExercisesSectionProps> = ({ topExercises }) => {
+    if (topExercises.length === 0) {
         return null;
     }
 
     return (
-        <section>
-            <h2 style={{
-                fontFamily: "'Noto Sans JP', sans-serif",
-                fontSize: 13,
-                fontWeight: 700,
-                color: '#8395A7',
-                marginBottom: 10,
-                letterSpacing: 1,
-            }}>
-                よくがんばった種目
-            </h2>
-            <div style={{ display: 'flex', gap: 10 }}>
-                {topExercises.map(({ id, count, name, emoji }, index) => {
-                    if (!name) return null;
-
-                    return (
-                        <motion.div
-                            key={id}
-                            className="card card-sm"
-                            initial={{ opacity: 0, y: 16 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 + index * 0.1 }}
+        <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.16, ease: 'easeOut' }}
+        >
+            <div
+                style={{
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.md,
+                    fontWeight: 800,
+                    color: COLOR.dark,
+                    marginBottom: 10,
+                }}
+            >
+                よく会う種目
+            </div>
+            <div
+                style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                    gap: 10,
+                }}
+            >
+                {topExercises.map((exercise, index) => (
+                    <motion.div
+                        key={exercise.id}
+                        className="card card-sm"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.18 + index * 0.06 }}
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 6,
+                            padding: '14px 10px',
+                            textAlign: 'center',
+                            background: 'linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,250,252,0.92))',
+                        }}
+                    >
+                        <div
                             style={{
-                                flex: 1,
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                gap: 6,
-                                padding: '12px 8px',
-                                background: 'var(--glass-bg-heavy)',
-                            }}
-                        >
-                            <div style={{
-                                width: 48,
-                                height: 48,
-                                borderRadius: 16,
-                                background: '#E1705515',
+                                width: 42,
+                                height: 42,
+                                borderRadius: RADIUS['2xl'],
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                flexShrink: 0,
-                            }}>
-                                <ExerciseIcon id={id} emoji={emoji ?? '🎯'} size={28} color="#E17055" />
-                            </div>
-                            <span style={{
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 10,
+                                background: 'rgba(43, 186, 160, 0.1)',
+                                fontSize: 22,
+                            }}
+                        >
+                            {exercise.emoji}
+                        </div>
+                        <div
+                            style={{
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.sm,
+                                fontWeight: 800,
+                                color: COLOR.dark,
+                                lineHeight: 1.35,
+                                wordBreak: 'keep-all',
+                            }}
+                        >
+                            {exercise.name}
+                        </div>
+                        <div
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                padding: '4px 8px',
+                                borderRadius: RADIUS.full,
+                                background: 'rgba(43, 186, 160, 0.12)',
+                                color: COLOR.primaryDark,
+                                fontFamily: FONT.heading,
+                                fontSize: FONT_SIZE.sm,
                                 fontWeight: 700,
-                                color: '#2D3436',
-                                textAlign: 'center',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                maxWidth: '100%',
-                            }}>
-                                {name}
-                            </span>
-                            <span style={{
-                                fontFamily: "'Outfit', sans-serif",
-                                fontSize: 12,
-                                fontWeight: 700,
-                                color: '#2BBAA0',
-                            }}>
-                                {count}回
-                            </span>
-                        </motion.div>
-                    );
-                })}
+                            }}
+                        >
+                            {exercise.count}回
+                        </div>
+                    </motion.div>
+                ))}
             </div>
-        </section>
+        </motion.section>
     );
 };
