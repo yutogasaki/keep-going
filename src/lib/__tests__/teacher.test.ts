@@ -145,10 +145,12 @@ beforeEach(() => {
     teacherSupabaseMocks.errors.app_settings = null;
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-07T12:00:00+09:00'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
 afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
 });
 
 describe('fetchAllStudents', () => {
@@ -255,5 +257,49 @@ describe('fetchAllStudents', () => {
             totalSeconds: 180,
             userIds: ['member-active'],
         });
+    });
+
+    it('falls back to the current account local snapshot when family member fetch fails', async () => {
+        teacherSupabaseMocks.errors.family_members = new Error('family_members unavailable');
+
+        const students = await fetchAllStudents({
+            currentAccountId: 'active-account',
+            localMembers: [
+                {
+                    id: 'member-local',
+                    name: 'local-member',
+                    classLevel: '初級',
+                    avatarUrl: 'https://example.com/avatar.png',
+                },
+            ],
+            localSessions: [
+                {
+                    id: 'session-local',
+                    date: '2026-03-07',
+                    startedAt: '2026-03-07T12:00:00Z',
+                    totalSeconds: 180,
+                    userIds: ['member-local'],
+                },
+            ],
+        });
+
+        expect(students).toHaveLength(1);
+        expect(students[0]).toMatchObject({
+            accountId: 'active-account',
+            totalSessions: 1,
+            lastActiveDate: '2026-03-07',
+        });
+        expect(students[0].members[0]).toMatchObject({
+            id: 'member-local',
+            name: 'local-member',
+        });
+    });
+
+    it('returns an empty list when remote fetch fails and no local fallback is available', async () => {
+        teacherSupabaseMocks.errors.sessions = new Error('sessions unavailable');
+
+        const students = await fetchAllStudents();
+
+        expect(students).toEqual([]);
     });
 });

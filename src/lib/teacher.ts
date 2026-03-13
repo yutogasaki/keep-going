@@ -108,6 +108,18 @@ function buildLocalStudentSummary(options: FetchAllStudentsOptions): StudentSumm
     return buildStudentSummary(options.currentAccountId, localMembers, localSessions);
 }
 
+function buildFallbackStudentSummaries(
+    options: FetchAllStudentsOptions,
+    suspendedIds: ReadonlySet<string> = new Set<string>(),
+): StudentSummary[] {
+    const localSummary = buildLocalStudentSummary(options);
+    if (!localSummary || suspendedIds.has(localSummary.accountId)) {
+        return [];
+    }
+
+    return [localSummary];
+}
+
 function sortTeacherSessions<T extends Pick<TeacherSessionRow, 'date' | 'started_at'>>(sessions: T[]): T[] {
     return [...sessions].sort((left, right) => {
         const dateCompare = right.date.localeCompare(left.date);
@@ -218,8 +230,7 @@ async function fetchTeacherAppSettings(): Promise<TeacherAppSettingsRow[]> {
 
 export async function fetchAllStudents(options: FetchAllStudentsOptions = {}): Promise<StudentSummary[]> {
     if (!supabase) {
-        const localSummary = buildLocalStudentSummary(options);
-        return localSummary ? [localSummary] : [];
+        return buildFallbackStudentSummaries(options);
     }
 
     const [membersResult, sessionsResult, settingsResult] = await Promise.allSettled([
@@ -234,7 +245,7 @@ export async function fetchAllStudents(options: FetchAllStudentsOptions = {}): P
             membersResult.status === 'rejected' ? membersResult.reason : null,
             sessionsResult.status === 'rejected' ? sessionsResult.reason : null,
         );
-        return [];
+        return buildFallbackStudentSummaries(options);
     }
 
     if (settingsResult.status === 'rejected') {
