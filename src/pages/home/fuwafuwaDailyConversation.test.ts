@@ -24,6 +24,7 @@ function context(candidates: DailyConversationCandidate[], overrides: Partial<Da
         ambientAvailable: false,
         percent: 0,
         hasGrowthLite: false,
+        hasNamingHint: false,
         candidates,
         ...overrides,
     };

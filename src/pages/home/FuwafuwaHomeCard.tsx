@@ -11,6 +11,7 @@ import {
     getUserDailySpeech,
     getUserEventSpeech,
     type FuwafuwaDailySelection,
+    type FuwafuwaSpeech,
 } from './fuwafuwaHomeCardCopy';
 import type { FamilyMilestoneLead } from './fuwafuwaHomeCardCopy';
 import {
@@ -31,6 +32,11 @@ import {
     type DailyConversationContext,
     type DailyConversationState,
 } from './fuwafuwaDailyConversation';
+
+function applySpeechName(speech: FuwafuwaSpeech, name: string | null): FuwafuwaSpeech {
+    if (!name) return speech;
+    return { ...speech, lines: speech.lines.map((line) => line.split('ふわふわ').join(name)) };
+}
 
 interface FuwafuwaHomeCardProps {
     isTogetherMode: boolean;
@@ -246,6 +252,14 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 )
                 : false;
 
+            const namingAvailable = Boolean(
+                !isTogetherMode
+                && selectedUser
+                && !selectedUser.fuwafuwaName
+                && selectedUserStatus
+                && selectedUserStatus.stage > 1,
+            );
+
             const baseSelections: FuwafuwaDailySelection[] = isTogetherMode
                 ? [
                     { group: 'everyday', topic: 'greeting', replyIndex: 0 },
@@ -262,6 +276,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                     { group: 'magic', topic: 'progress', replyIndex: 0 },
                     { group: 'magic', topic: 'omen', replyIndex: 0 },
                     ...(growthAvailable ? [{ group: 'magic' as const, topic: 'growth' as const, replyIndex: 0 }] : []),
+                    ...(namingAvailable ? [{ group: 'everyday' as const, topic: 'naming' as const, replyIndex: 0 }] : []),
                     ...(ambientCue ? [{ group: 'ambient' as const, topic: 'ambient' as const, replyIndex: 0 }] : []),
                 ];
 
@@ -292,10 +307,11 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                     ? Math.round((selectedUserDisplaySeconds / Math.max(1, selectedUserTargetSeconds)) * 100)
                     : Math.round((displaySeconds / Math.max(1, targetSeconds)) * 100),
                 hasGrowthLite: growthAvailable,
+                hasNamingHint: Boolean(namingAvailable),
                 candidates,
             };
         },
-        [ambientCue, buildFamilyDailyCandidate, buildUserDailyCandidate, displaySeconds, isTogetherMode, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, targetSeconds],
+        [ambientCue, buildFamilyDailyCandidate, buildUserDailyCandidate, displaySeconds, isTogetherMode, selectedUser, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, targetSeconds],
     );
 
     const dailyContext = useMemo(
@@ -355,8 +371,9 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         [ambientCue, resolvedDailySelection, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency],
     );
 
+    const fuwafuwaName = selectedUser?.fuwafuwaName ?? null;
     const familySpeech = familyEventSpeech ?? familyDailySpeech;
-    const selectedUserSpeech = selectedUserEventSpeech ?? selectedUserDailySpeech;
+    const selectedUserSpeech = applySpeechName(selectedUserEventSpeech ?? selectedUserDailySpeech, fuwafuwaName);
     const activeSpeech = isTogetherMode ? familySpeech : selectedUserSpeech;
     const hasActiveEventSpeech = isTogetherMode ? Boolean(familyEventSpeech) : Boolean(selectedUserEventSpeech);
     const advanceConversation = () => {
@@ -442,7 +459,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 setDailySelection(candidate.selection);
             }
             idleBeatTimerRef.current = null;
-        }, 8000);
+        }, 12000);
 
         return () => {
             if (idleBeatTimerRef.current !== null) {

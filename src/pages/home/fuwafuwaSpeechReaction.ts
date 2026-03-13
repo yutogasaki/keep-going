@@ -20,6 +20,10 @@ export function getSpeechReactionStyle(speech: FuwafuwaSpeech): FuwafuwaReaction
         return 'celebrating';
     }
 
+    if (speech.id.includes(':naming')) {
+        return 'cozy';
+    }
+
     if (speech.id.includes(':mood')) {
         return 'cozy';
     }

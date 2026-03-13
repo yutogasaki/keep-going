@@ -20,6 +20,7 @@ export interface DailyConversationContext {
     ambientAvailable: boolean;
     percent: number;
     hasGrowthLite: boolean;
+    hasNamingHint: boolean;
     candidates: DailyConversationCandidate[];
 }
 
@@ -86,7 +87,7 @@ function getGroupScores(
     }
 
     if (context.percent >= 90) {
-        scores.set('magic', (scores.get('magic') ?? 0) + 0.5);
+        scores.set('magic', (scores.get('magic') ?? 0) + 0.2);
     }
 
     if (context.hasGrowthLite) {
@@ -200,6 +201,10 @@ function getCandidateTopicScore(
         score += context.hasGrowthLite ? 0.2 : -Infinity;
     }
 
+    if (candidate.selection.topic === 'naming') {
+        score += context.hasNamingHint ? 0.3 : -Infinity;
+    }
+
     if (candidate.selection.topic === 'omen' && context.percent >= 90) {
         score += 0.25;
     }
@@ -290,8 +295,8 @@ function updateState(
         currentTopic: candidate.selection.topic,
         currentReplyId: candidate.replyId,
         recentGroups: [candidate.selection.group, ...state.recentGroups].slice(0, 2),
-        recentTopics: [candidate.selection.topic, ...state.recentTopics].slice(0, 3),
-        recentReplyIds: [candidate.replyId, ...state.recentReplyIds].slice(0, 2),
+        recentTopics: [candidate.selection.topic, ...state.recentTopics].slice(0, 4),
+        recentReplyIds: [candidate.replyId, ...state.recentReplyIds].slice(0, 4),
         ambientGap: candidate.selection.group === 'ambient' ? 0 : state.ambientGap + 1,
         turn: state.turn + 1,
     };
