@@ -63,7 +63,7 @@ function getGroupScores(
     const scores = new Map<FuwafuwaDailyGroup, number>([
         ['everyday', 1.0],
         ['magic', 1.0],
-        ['ambient', context.ambientAvailable ? 0.35 : -Infinity],
+        ['ambient', context.ambientAvailable ? 0.6 : -Infinity],
     ]);
 
     const [latestGroup, secondLatestGroup] = state.recentGroups;
@@ -78,8 +78,8 @@ function getGroupScores(
         }
     }
 
-    if (context.ambientAvailable && state.ambientGap >= 4) {
-        scores.set('ambient', (scores.get('ambient') ?? 0) + 0.4);
+    if (context.ambientAvailable && state.ambientGap >= 3) {
+        scores.set('ambient', (scores.get('ambient') ?? 0) + 0.5);
     }
 
     if (context.percent >= 30) {
@@ -198,8 +198,14 @@ function getCandidateTopicScore(
         score += context.hasNamingHint ? 0.3 : -Infinity;
     }
 
-    if (candidate.selection.topic === 'omen' && context.percent >= 90) {
-        score += 0.25;
+    if (candidate.selection.topic === 'omen') {
+        if (context.percent < 70) {
+            return -Infinity;
+        }
+
+        if (context.percent >= 90) {
+            score += 0.25;
+        }
     }
 
     if (candidate.selection.topic === 'progress' && context.percent >= 30) {

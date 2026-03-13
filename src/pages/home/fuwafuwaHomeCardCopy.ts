@@ -486,7 +486,7 @@ function buildFamilyOmenSpeech(context: FamilySpeechContext): FuwafuwaSpeech {
     return createSpeech({
         id: 'family:omen',
         category: 'progress',
-        accent: 'magic',
+        accent: 'event',
         dailyGroup: 'magic',
         dailyTopic: 'omen',
         replyId: getReplyId('omen', context.variantSeed, 3),
@@ -552,7 +552,7 @@ function buildUserOmenSpeech(context: UserSpeechContext): FuwafuwaSpeech {
     return createSpeech({
         id: 'user:omen',
         category: 'progress',
-        accent: 'magic',
+        accent: 'event',
         dailyGroup: 'magic',
         dailyTopic: 'omen',
         replyId: getReplyId('omen', context.variantSeed, 3),
