@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus } from 'lucide-react';
+import {
+    EXERCISE_PLACEMENTS,
+    getExercisePlacementLabel,
+    type ExercisePlacement,
+} from '../../../data/exercisePlacement';
+import { COLOR, FONT, RADIUS } from '../../../lib/styles';
 
 export interface PickerExercise {
     id: string;
@@ -8,11 +14,15 @@ export interface PickerExercise {
     sec: number;
     emoji: string;
     splitLabel?: string; // e.g., "R30→L30" — undefined means single
+    placement?: ExercisePlacement;
 }
+
+export type PickerOrigin = 'builtin' | 'teacher' | 'custom';
 
 export interface ExercisePickerSection {
     label: string;
     exercises: PickerExercise[];
+    origin?: PickerOrigin;
 }
 
 interface ExercisePickerListProps {
@@ -212,15 +222,101 @@ const RestPickerCard: React.FC<{
     </div>
 );
 
+type PlacementFilterId = 'all' | 'rest' | ExercisePlacement;
+type OriginFilterId = 'all' | 'teacher' | 'custom';
+
+const chipStyle = (active: boolean) => ({
+    padding: '6px 12px',
+    borderRadius: RADIUS.full,
+    border: active ? `1.5px solid ${COLOR.primary}` : '1px solid rgba(0,0,0,0.08)',
+    background: active ? 'rgba(43, 186, 160, 0.12)' : 'rgba(255,255,255,0.8)',
+    color: active ? COLOR.primaryDark : COLOR.text,
+    fontFamily: FONT.body,
+    fontSize: 12,
+    fontWeight: (active ? 700 : 600) as number,
+    cursor: 'pointer' as const,
+});
+
 export const ExercisePickerList: React.FC<ExercisePickerListProps> = ({
     sections,
     selectedIds,
     onAddExercise,
     restExercises,
 }) => {
+    const [placement, setPlacement] = useState<PlacementFilterId>('all');
+    const [origin, setOrigin] = useState<OriginFilterId>('all');
+
+    // Placement filter options (including rest)
+    const availablePlacements = useMemo<PlacementFilterId[]>(() => {
+        const allExercises = sections.flatMap((s) => s.exercises);
+        const placements = new Set(allExercises.map((e) => e.placement).filter(Boolean));
+        const available: PlacementFilterId[] = ['all'];
+        for (const p of EXERCISE_PLACEMENTS) {
+            if (placements.has(p)) available.push(p);
+        }
+        if (restExercises && restExercises.length > 0) available.push('rest');
+        return available;
+    }, [sections, restExercises]);
+
+    // Origin filter options
+    const availableOrigins = useMemo<OriginFilterId[]>(() => {
+        const origins: OriginFilterId[] = ['all'];
+        if (sections.some((s) => s.origin === 'teacher' && s.exercises.length > 0)) origins.push('teacher');
+        if (sections.some((s) => s.origin === 'custom' && s.exercises.length > 0)) origins.push('custom');
+        return origins;
+    }, [sections]);
+
+    // Apply both filters
+    const filteredSections = useMemo(() => {
+        let result = sections;
+        // Origin filter
+        if (origin !== 'all') {
+            result = result.filter((s) => s.origin === origin);
+        }
+        // Placement filter (rest handled separately)
+        if (placement !== 'all' && placement !== 'rest') {
+            result = result.map((section) => ({
+                ...section,
+                exercises: section.exercises.filter((e) => e.placement === placement),
+            }));
+        }
+        return result;
+    }, [sections, placement, origin]);
+
+    const showRest = placement === 'all' || placement === 'rest';
+    const showExercises = placement !== 'rest';
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {sections.map((section) => {
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {availablePlacements.length > 2 ? (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {availablePlacements.map((id) => {
+                        const active = id === placement;
+                        const label = id === 'all' ? 'ぜんぶ' : id === 'rest' ? '休憩' : getExercisePlacementLabel(id);
+                        return (
+                            <button key={id} type="button" onClick={() => setPlacement(id)} style={chipStyle(active)}>
+                                {label}
+                            </button>
+                        );
+                    })}
+                </div>
+            ) : null}
+
+            {availableOrigins.length > 1 ? (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {availableOrigins.map((id) => {
+                        const active = id === origin;
+                        const label = id === 'all' ? 'ぜんぶ' : id === 'teacher' ? '先生' : 'じぶん';
+                        return (
+                            <button key={id} type="button" onClick={() => setOrigin(id)} style={chipStyle(active)}>
+                                {label}
+                            </button>
+                        );
+                    })}
+                </div>
+            ) : null}
+
+            {showExercises ? filteredSections.map((section) => {
                 if (section.exercises.length === 0) return null;
                 return (
                     <div key={section.label}>
@@ -250,8 +346,8 @@ export const ExercisePickerList: React.FC<ExercisePickerListProps> = ({
                         </div>
                     </div>
                 );
-            })}
-            {restExercises && restExercises.length > 0 ? (
+            }) : null}
+            {showRest && restExercises && restExercises.length > 0 ? (
                 <RestPickerCard
                     exercises={restExercises}
                     selectedIds={selectedIds}

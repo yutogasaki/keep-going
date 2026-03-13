@@ -10,7 +10,7 @@ import type { TeacherExercise } from '../../lib/teacherContent';
 import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import { EditorShell, getEditorSubmitButtonStyle } from '../../components/editor/EditorShell';
 import { EmojiSelectorCard } from './create-group/EmojiSelectorCard';
-import { ExercisePickerList, type ExercisePickerSection, type PickerExercise } from './create-group/ExercisePickerList';
+import { ExercisePickerList, type ExercisePickerSection, type PickerExercise, type PickerOrigin } from './create-group/ExercisePickerList';
 import { MenuMetaCards } from './create-group/MenuMetaCards';
 import { PublishToggleCard } from './create-group/PublishToggleCard';
 import { SelectedExercisesCard } from './create-group/SelectedExercisesCard';
@@ -24,6 +24,7 @@ function toPickerExercise(ex: CustomExercise | TeacherExercise): PickerExercise 
         sec: ex.sec,
         emoji: ex.emoji,
         splitLabel: ex.hasSplit ? 'みぎ→ひだり' : undefined,
+        placement: ex.placement,
     };
 }
 
@@ -79,6 +80,7 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
             sec: ex.sec,
             emoji: ex.emoji,
             splitLabel: ex.internal !== 'single' ? ex.internal : undefined,
+            placement: ex.placement,
         })),
         [builtInExercises],
     );
@@ -111,13 +113,13 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
     // Sections for picker
     const sections: ExercisePickerSection[] = useMemo(() => {
         const result: ExercisePickerSection[] = [
-            { label: '種目をタップして追加（くりかえしOK）', exercises: builtInPicker },
+            { label: '種目をタップして追加（くりかえしOK）', exercises: builtInPicker, origin: 'builtin' as PickerOrigin },
         ];
         if (teacherPicker.length > 0) {
-            result.push({ label: '先生の種目', exercises: teacherPicker });
+            result.push({ label: '先生の種目', exercises: teacherPicker, origin: 'teacher' as PickerOrigin });
         }
         if (customPicker.length > 0) {
-            result.push({ label: 'じぶんの種目', exercises: customPicker });
+            result.push({ label: 'じぶんの種目', exercises: customPicker, origin: 'custom' as PickerOrigin });
         }
         return result;
     }, [builtInPicker, teacherPicker, customPicker]);
