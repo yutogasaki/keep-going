@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Home, BarChart3, List, Settings, Sparkles } from 'lucide-react';
+import { Home, BarChart3, List, Settings, Sparkles } from 'lucide-react';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../lib/styles';
+import { OnboardingStepScaffold } from './OnboardingStepScaffold';
 
 interface StartStepProps {
     onNext: () => void;
@@ -24,50 +25,24 @@ export const StartStep: React.FC<StartStepProps> = ({ onNext, onBack }) => {
             exit={{ opacity: 0, y: -30 }}
             transition={{ duration: 0.5 }}
             style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: SPACE['2xl'],
-                padding: `0 ${SPACE['3xl']}px`,
-                maxWidth: 360,
-                textAlign: 'center',
                 width: '100%',
             }}
         >
-            <button
-                onClick={onBack}
-                style={{
-                    alignSelf: 'flex-start',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: SPACE.xs,
-                    padding: 0,
-                    background: 'none',
-                    border: 'none',
-                    color: COLOR.muted,
-                    fontSize: FONT_SIZE.md,
-                    fontFamily: FONT.body,
-                    cursor: 'pointer',
-                }}
-            >
-                <ChevronLeft size={18} />
-                もどる
-            </button>
-
-            <div
-                style={{
-                    width: '100%',
-                    padding: `${SPACE['3xl']}px ${SPACE.xl}px`,
-                    borderRadius: RADIUS['3xl'],
-                    background: 'linear-gradient(160deg, rgba(255,255,255,0.82) 0%, rgba(232,248,240,0.92) 100%)',
-                    border: '1px solid rgba(43, 186, 160, 0.16)',
-                    boxShadow: '0 20px 40px rgba(43, 186, 160, 0.12)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: SPACE.lg,
-                }}
-            >
+            <OnboardingStepScaffold onBack={onBack} maxWidth={420} gap={SPACE['2xl']}>
+                <div
+                    style={{
+                        width: '100%',
+                        padding: `${SPACE['3xl']}px ${SPACE.xl}px`,
+                        borderRadius: RADIUS['3xl'],
+                        background: 'linear-gradient(160deg, rgba(255,255,255,0.82) 0%, rgba(232,248,240,0.92) 100%)',
+                        border: '1px solid rgba(43, 186, 160, 0.16)',
+                        boxShadow: '0 20px 40px rgba(43, 186, 160, 0.12)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: SPACE.lg,
+                    }}
+                >
                 <div
                     style={{
                         display: 'inline-flex',
@@ -250,7 +225,8 @@ export const StartStep: React.FC<StartStepProps> = ({ onNext, onBack }) => {
                         これと おなじ ボタンを さがしてね
                     </div>
                 </div>
-            </div>
+                </div>
+            </OnboardingStepScaffold>
         </motion.div>
     );
 };

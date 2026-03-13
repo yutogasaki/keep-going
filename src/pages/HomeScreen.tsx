@@ -4,6 +4,7 @@ import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { PageHeader } from '../components/PageHeader';
 import { PublicExerciseBrowser } from '../components/PublicExerciseBrowser';
 import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
+import { ScreenScaffold } from '../components/ScreenScaffold';
 import { ExerciseDetailSheet } from '../components/ExerciseDetailSheet';
 import { MenuDetailSheet } from '../components/MenuDetailSheet';
 import { EXERCISES } from '../data/exercises';
@@ -438,8 +439,6 @@ export const HomeScreen: React.FC = () => {
                 overflow: 'hidden',
             }}
         >
-            <PageHeader title="ホーム" rightElement={<CurrentContextBadge />} />
-
             <HomeMilestoneModal
                 activeMilestoneModal={activeMilestoneModal}
                 user={activeMilestoneUser}
@@ -448,19 +447,18 @@ export const HomeScreen: React.FC = () => {
 
             <HomeAnimatedBackground />
 
-            <div
-                style={{
+            <ScreenScaffold
+                header={<PageHeader title="ホーム" rightElement={<CurrentContextBadge />} />}
+                withBottomNav
+                style={{ position: 'relative', zIndex: 1 }}
+                contentStyle={{
                     position: 'relative',
                     zIndex: 1,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     width: '100%',
-                    flex: 1,
                     paddingTop: 12,
-                    paddingBottom: 90,
-                    overflowY: 'auto',
-                    WebkitOverflowScrolling: 'touch',
                 }}
             >
                 <FuwafuwaHomeCard
@@ -537,7 +535,7 @@ export const HomeScreen: React.FC = () => {
                     onMenuTap={setSelectedPublicMenu}
                     onExerciseTap={setSelectedPublicExercise}
                 />
-            </div>
+            </ScreenScaffold>
 
             <PublicMenuBrowser
                 open={menuBrowserOpen}

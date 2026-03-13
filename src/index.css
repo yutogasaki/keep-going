@@ -27,6 +27,12 @@
     --theme-bg-2: var(--color-peach-100);
     --theme-bg-3: var(--color-mint-100);
     --theme-bg-4: var(--color-mint-200);
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --screen-padding-x: 20px;
+    --screen-header-top: calc(var(--safe-area-top) + 16px);
+    --screen-bottom-padding: calc(var(--safe-area-bottom) + 24px);
+    --screen-bottom-with-footer: calc(var(--safe-area-bottom) + 56px + 24px);
 }
 
 [data-theme="day"] {
@@ -120,7 +126,7 @@ body {
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: calc(env(safe-area-inset-top, 8px) + 16px) 16px calc(env(safe-area-inset-bottom, 24px) + 90px) 16px;
+    padding: var(--screen-header-top) var(--screen-padding-x) var(--screen-bottom-with-footer) var(--screen-padding-x);
     gap: 16px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -300,7 +306,7 @@ html {
 
 /* ─── Safe Area Footer Fix ──────────────── */
 .footer-nav {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: var(--safe-area-bottom);
 }
 
 /* ─── Responsive Breakpoints ──────────────── */

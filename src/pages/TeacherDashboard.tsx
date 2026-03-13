@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { ArrowLeft, RefreshCw, Settings, Trophy, Users } from 'lucide-react';
+import { RefreshCw, Settings, Trophy, Users } from 'lucide-react';
 import { fetchAllStudents, calculateStreak, type StudentSummary } from '../lib/teacher';
 import { getAllSessions, getTodayKey, getDateKeyOffset } from '../lib/db';
 import { CLASS_LEVELS } from '../data/exercises';
@@ -11,6 +11,9 @@ import { MenuSettingsSection } from './teacher-dashboard/MenuSettingsSection';
 import type { IndividualStudent, WeeklyStats } from './teacher-dashboard/types';
 import { useAppStore } from '../store/useAppStore';
 import { getAccountId } from '../lib/sync/authState';
+import { PageHeader } from '../components/PageHeader';
+import { ScreenScaffold } from '../components/ScreenScaffold';
+import { COLOR, HEADER_ICON_BUTTON_SIZE, SCREEN_PADDING_X } from '../lib/styles';
 
 const CLASS_ORDER = CLASS_LEVELS.map((c) => c.id);
 
@@ -197,73 +200,58 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
         setExpandedStudent((current) => (current === studentId ? null : studentId));
     }, []);
 
-    return (
-        <div style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            overflowY: 'auto',
-            paddingBottom: 100,
-        }}>
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '24px 20px 12px',
-                gap: 12,
-            }}>
-                <button
-                    onClick={onBack}
-                    style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: '50%',
-                        border: 'none',
-                        background: '#F0F3F5',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        color: '#2D3436',
-                        flexShrink: 0,
-                    }}
-                >
-                    <ArrowLeft size={18} />
-                </button>
-                <h1 style={{
-                    fontFamily: "'Outfit', sans-serif",
-                    fontSize: 24,
-                    fontWeight: 800,
-                    color: '#2D3436',
-                    margin: 0,
-                    flex: 1,
-                }}>
-                    先生ダッシュボード
-                </h1>
-                <button
-                    onClick={activeTab === 'students' ? load : activeTab === 'challenges' ? loadChallenges : () => {}}
-                    disabled={activeTab === 'students' ? loading : activeTab === 'challenges' ? challengesLoading : false}
-                    style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: '50%',
-                        border: 'none',
-                        background: '#F0F3F5',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        color: '#8395A7',
-                        flexShrink: 0,
-                    }}
-                >
-                    <RefreshCw size={16} style={(loading || challengesLoading) ? { animation: 'spin 1s linear infinite' } : undefined} />
-                </button>
-            </div>
+    const isRefreshing = activeTab === 'students'
+        ? loading
+        : activeTab === 'challenges'
+            ? challengesLoading
+            : false;
 
+    const handleRefresh = activeTab === 'students'
+        ? () => {
+            void load();
+        }
+        : activeTab === 'challenges'
+            ? () => {
+                void loadChallenges();
+            }
+            : undefined;
+
+    return (
+        <ScreenScaffold
+            header={(
+                <PageHeader
+                    title="先生ダッシュボード"
+                    onBack={onBack}
+                    rightElement={(
+                        <button
+                            type="button"
+                            onClick={handleRefresh}
+                            disabled={!handleRefresh || isRefreshing}
+                            aria-label="データを更新"
+                            style={{
+                                width: HEADER_ICON_BUTTON_SIZE,
+                                height: HEADER_ICON_BUTTON_SIZE,
+                                borderRadius: '50%',
+                                border: 'none',
+                                background: COLOR.bgMuted,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: !handleRefresh || isRefreshing ? 'not-allowed' : 'pointer',
+                                color: COLOR.muted,
+                                flexShrink: 0,
+                                opacity: !handleRefresh ? 0.45 : 1,
+                            }}
+                        >
+                            <RefreshCw size={16} style={isRefreshing ? { animation: 'spin 1s linear infinite' } : undefined} />
+                        </button>
+                    )}
+                />
+            )}
+        >
             <div style={{
                 display: 'flex',
-                padding: '0 20px',
+                padding: `0 ${SCREEN_PADDING_X}px`,
                 gap: 8,
                 marginBottom: 16,
             }}>
@@ -331,6 +319,6 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                     weeklyStats={weeklyStats}
                 />
             )}
-        </div>
+        </ScreenScaffold>
     );
 };

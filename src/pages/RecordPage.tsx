@@ -2,7 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { CalendarDays, Home } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
+import { ScreenScaffold } from '../components/ScreenScaffold';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
+import { SCREEN_PADDING_X } from '../lib/styles';
 import { getAllSessions, getCustomExercises, getSessionsByDate, getTodayKey, type SessionRecord } from '../lib/db';
 import { getSessionCompletedExerciseTotal, getSessionExerciseCounts } from '../lib/sessionRecords';
 import { subscribeTeacherContentUpdated } from '../lib/teacherContentEvents';
@@ -191,105 +193,102 @@ export const RecordPage: React.FC = () => {
     }, [todaySessions, users, sessionUserIds]);
 
     return (
-        <div style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            overflowY: 'auto',
-            paddingBottom: 100,
-        }}>
-            <PageHeader title="きろく" rightElement={<CurrentContextBadge />} />
+        <>
+            <ScreenScaffold
+                header={<PageHeader title="きろく" rightElement={<CurrentContextBadge />} />}
+                withBottomNav
+                contentStyle={{ display: 'flex', flexDirection: 'column' }}
+            >
+                <div style={{ padding: `0 ${SCREEN_PADDING_X}px`, display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    <div style={{
+                        display: 'flex',
+                        background: 'rgba(0,0,0,0.04)',
+                        borderRadius: 12,
+                        padding: 4,
+                        marginBottom: -12,
+                    }}>
+                        <button
+                            onClick={() => setActiveTab('record')}
+                            style={{
+                                flex: 1,
+                                padding: '10px 0',
+                                fontSize: 14,
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontWeight: 700,
+                                border: 'none',
+                                background: activeTab === 'record' ? '#fff' : 'transparent',
+                                color: activeTab === 'record' ? '#2D3436' : '#8395A7',
+                                borderRadius: 8,
+                                boxShadow: activeTab === 'record' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 6,
+                            }}
+                        >
+                            <CalendarDays size={16} />
+                            きろく
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('album')}
+                            style={{
+                                flex: 1,
+                                padding: '10px 0',
+                                fontSize: 14,
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontWeight: 700,
+                                border: 'none',
+                                background: activeTab === 'album' ? '#fff' : 'transparent',
+                                color: activeTab === 'album' ? '#E84393' : '#8395A7',
+                                borderRadius: 8,
+                                boxShadow: activeTab === 'album' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
+                                transition: 'all 0.2s',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 6,
+                            }}
+                        >
+                            <Home size={16} />
+                            お部屋
+                        </button>
+                    </div>
 
-            <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-                <div style={{
-                    display: 'flex',
-                    background: 'rgba(0,0,0,0.04)',
-                    borderRadius: 12,
-                    padding: 4,
-                    marginBottom: -12,
-                }}>
-                    <button
-                        onClick={() => setActiveTab('record')}
-                        style={{
-                            flex: 1,
-                            padding: '10px 0',
-                            fontSize: 14,
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontWeight: 700,
-                            border: 'none',
-                            background: activeTab === 'record' ? '#fff' : 'transparent',
-                            color: activeTab === 'record' ? '#2D3436' : '#8395A7',
-                            borderRadius: 8,
-                            boxShadow: activeTab === 'record' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-                            transition: 'all 0.2s',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 6,
-                        }}
-                    >
-                        <CalendarDays size={16} />
-                        きろく
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('album')}
-                        style={{
-                            flex: 1,
-                            padding: '10px 0',
-                            fontSize: 14,
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontWeight: 700,
-                            border: 'none',
-                            background: activeTab === 'album' ? '#fff' : 'transparent',
-                            color: activeTab === 'album' ? '#E84393' : '#8395A7',
-                            borderRadius: 8,
-                            boxShadow: activeTab === 'album' ? '0 2px 8px rgba(0,0,0,0.05)' : 'none',
-                            transition: 'all 0.2s',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 6,
-                        }}
-                    >
-                        <Home size={16} />
-                        お部屋
-                    </button>
+                    <AnimatePresence mode="wait">
+                        {activeTab === 'record' ? (
+                            <RecordTabContent
+                                loading={loading}
+                                sessions={sessions}
+                                sessionsCount={sessions.length}
+                                historyDays={historyDays}
+                                todaySessionsCount={todaySessions.length}
+                                todayExerciseCount={todayExerciseCount}
+                                todayMinutes={todayMinutes}
+                                progressPercent={progressPercent}
+                                ringRadius={ringRadius}
+                                ringCircumference={ringCircumference}
+                                ringOffset={ringOffset}
+                                totalSessions={totalSessions}
+                                totalMinutes={totalMinutes}
+                                uniqueDays={uniqueDays}
+                                topExercises={topExercises}
+                                recordInsightSummary={recordInsightSummary}
+                            />
+                        ) : (
+                            <AlbumTabContent
+                                chibifuwas={chibifuwas}
+                                pastFuwafuwas={pastFuwafuwas}
+                                challengeStarsTotal={challengeStarsTotal}
+                                onSelectBadge={setSelectedBadge}
+                                onSelectFuwafuwa={setSelectedFuwafuwa}
+                            />
+                        )}
+                    </AnimatePresence>
                 </div>
-
-                <AnimatePresence mode="wait">
-                    {activeTab === 'record' ? (
-                        <RecordTabContent
-                            loading={loading}
-                            sessions={sessions}
-                            sessionsCount={sessions.length}
-                            historyDays={historyDays}
-                            todaySessionsCount={todaySessions.length}
-                            todayExerciseCount={todayExerciseCount}
-                            todayMinutes={todayMinutes}
-                            progressPercent={progressPercent}
-                            ringRadius={ringRadius}
-                            ringCircumference={ringCircumference}
-                            ringOffset={ringOffset}
-                            totalSessions={totalSessions}
-                            totalMinutes={totalMinutes}
-                            uniqueDays={uniqueDays}
-                            topExercises={topExercises}
-                            recordInsightSummary={recordInsightSummary}
-                        />
-                    ) : (
-                        <AlbumTabContent
-                            chibifuwas={chibifuwas}
-                            pastFuwafuwas={pastFuwafuwas}
-                            challengeStarsTotal={challengeStarsTotal}
-                            onSelectBadge={setSelectedBadge}
-                            onSelectFuwafuwa={setSelectedFuwafuwa}
-                        />
-                    )}
-                </AnimatePresence>
-            </div>
+            </ScreenScaffold>
 
             <RecordModals
                 selectedFuwafuwa={selectedFuwafuwa}
@@ -297,6 +296,6 @@ export const RecordPage: React.FC = () => {
                 onCloseFuwafuwa={() => setSelectedFuwafuwa(null)}
                 onCloseBadge={() => setSelectedBadge(null)}
             />
-        </div>
+        </>
     );
 };

@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { EXERCISES, getExercisesByClass, type ClassLevel } from '../../data/exercises';
 import type { MenuGroup } from '../../data/menuGroups';
@@ -9,8 +8,7 @@ import { publishMenu, unpublishMenu } from '../../lib/publicMenus';
 import { getAccountId } from '../../lib/sync';
 import type { TeacherExercise } from '../../lib/teacherContent';
 import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
-import { COLOR, FONT } from '../../lib/styles';
-import { CreateGroupHeader } from './create-group/CreateGroupHeader';
+import { EditorShell, getEditorSubmitButtonStyle } from '../../components/editor/EditorShell';
 import { EmojiSelectorCard } from './create-group/EmojiSelectorCard';
 import { ExercisePickerList, type ExercisePickerSection, type PickerExercise } from './create-group/ExercisePickerList';
 import { MenuMetaCards } from './create-group/MenuMetaCards';
@@ -200,22 +198,11 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
         onSave();
     };
 
-    return createPortal(
-        <div style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%)',
-            zIndex: 100,
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '64px 20px 32px 20px',
-            gap: 20,
-            overflowY: 'auto',
-        }}>
-            <CreateGroupHeader isEditing={isEditing} onCancel={onCancel} />
-
+    return (
+        <EditorShell
+            title={isEditing ? 'へんしゅう' : 'じぶんでつくる'}
+            onBack={onCancel}
+        >
             <EmojiSelectorCard
                 options={EMOJI_OPTIONS}
                 selectedEmoji={emoji}
@@ -257,20 +244,8 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
                 onClick={handleSave}
                 disabled={!canSave}
                 style={{
-                    position: 'sticky',
-                    bottom: 0,
-                    padding: '16px 0',
-                    borderRadius: 16,
-                    border: 'none',
-                    background: canSave ? 'linear-gradient(135deg, #2BBAA0, #1A937D)' : COLOR.disabled,
-                    color: canSave ? COLOR.white : COLOR.light,
-                    fontFamily: FONT.body,
-                    fontSize: 16,
-                    fontWeight: 700,
-                    cursor: canSave ? 'pointer' : 'not-allowed',
-                    boxShadow: canSave ? '0 8px 20px rgba(43, 186, 160, 0.3)' : 'none',
-                    transition: 'all 0.3s ease',
-                    marginTop: 16,
+                    ...getEditorSubmitButtonStyle(canSave),
+                    zIndex: 1,
                 }}
             >
                 {saving ? 'ほぞん中...' : isEditing ? 'ほぞん' : 'つくる！'}
@@ -285,7 +260,6 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
                 confirmLabel="更新する"
                 confirmColor="#2BBAA0"
             />
-        </div>,
-        document.body,
+        </EditorShell>
     );
 };

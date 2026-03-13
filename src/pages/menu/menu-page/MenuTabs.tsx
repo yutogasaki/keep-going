@@ -1,4 +1,5 @@
 import React from 'react';
+import { SCREEN_PADDING_X_CSS } from '../../../lib/styles';
 import { MENU_TABS, type MenuTab } from './types';
 
 interface MenuTabsProps {
@@ -14,7 +15,7 @@ export const MenuTabs: React.FC<MenuTabsProps> = React.memo(({ tab, onChange }) 
             background: 'rgba(0,0,0,0.04)',
             borderRadius: 12,
             padding: 3,
-            margin: '0 20px 16px',
+            margin: `0 ${SCREEN_PADDING_X_CSS} 16px`,
         }}>
             {MENU_TABS.map((menuTab) => (
                 <button

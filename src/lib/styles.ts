@@ -99,9 +99,18 @@ export const Z = {
     confirm: 2000,
 } as const;
 
+export const SAFE_AREA_TOP = 'var(--safe-area-top)';
+export const SAFE_AREA_BOTTOM = 'var(--safe-area-bottom)';
+export const SCREEN_PADDING_X = 20;
+export const SCREEN_PADDING_X_CSS = 'var(--screen-padding-x)';
+export const SCREEN_HEADER_TOP = 'var(--screen-header-top)';
+export const SCREEN_BOTTOM_PADDING = 'var(--screen-bottom-padding)';
+export const SCREEN_BOTTOM_WITH_FOOTER = 'var(--screen-bottom-with-footer)';
+export const HEADER_ICON_BUTTON_SIZE = 44;
+
 export const BOTTOM_NAV_HEIGHT = 56;
-export const FLOATING_UI_BOTTOM = `calc(${BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom, 0px) + 16px)`;
-export const FLOATING_UI_TOP = 'calc(env(safe-area-inset-top, 0px) + 16px)';
+export const FLOATING_UI_BOTTOM = `calc(${BOTTOM_NAV_HEIGHT}px + ${SAFE_AREA_BOTTOM} + 16px)`;
+export const FLOATING_UI_TOP = `calc(${SAFE_AREA_TOP} + 16px)`;
 
 /* ─── Common Style Mixins ──────── */
 

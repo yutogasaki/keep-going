@@ -1,7 +1,9 @@
 import React from 'react';
 import { Chrome, KeyRound, Mail } from 'lucide-react';
-import { LoginBackButton } from './LoginBackButton';
+import { PageHeader } from '../../components/PageHeader';
+import { ScreenScaffold } from '../../components/ScreenScaffold';
 import type { EmailAuthMode } from '../../contexts/auth/types';
+import { SCREEN_PADDING_X } from '../../lib/styles';
 
 interface AuthFormViewProps {
     mode: EmailAuthMode;
@@ -21,25 +23,15 @@ interface AuthFormViewProps {
     onEditEmail: () => void;
 }
 
-const containerStyle: React.CSSProperties = {
-    width: '100%',
-    minHeight: '100dvh',
-    display: 'flex',
-    flexDirection: 'column',
-    padding: '0 20px',
-    boxSizing: 'border-box',
-    overflowY: 'auto',
-};
-
 const sectionStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
     gap: 18,
-    paddingTop: 20,
-    paddingBottom: 40,
     width: '100%',
     maxWidth: 420,
     margin: '0 auto',
+    padding: `8px ${SCREEN_PADDING_X}px 0`,
+    boxSizing: 'border-box',
 };
 
 const fieldStyle: React.CSSProperties = {
@@ -112,12 +104,19 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
         : '前のデータをひきつぐときはこちら';
 
     return (
-        <div style={containerStyle}>
-            <LoginBackButton onBack={onBack} />
-
+        <ScreenScaffold
+            background="transparent"
+            header={(
+                <PageHeader
+                    title={title}
+                    onBack={onBack}
+                    showBackLabel
+                    background="transparent"
+                />
+            )}
+        >
             <div style={sectionStyle}>
                 <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>{title}</h2>
                     <p style={{ color: '#8395A7', fontSize: 13, margin: 0, lineHeight: 1.6 }}>
                         {subtitle}
                     </p>
@@ -302,6 +301,6 @@ export const AuthFormView: React.FC<AuthFormViewProps> = ({
                     {isSignUp ? 'すでに登録ずみの方はこちら' : 'はじめて使うのでアカウントを作る'}
                 </button>
             </div>
-        </div>
+        </ScreenScaffold>
     );
 };

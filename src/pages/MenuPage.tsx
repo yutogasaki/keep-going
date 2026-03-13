@@ -4,6 +4,7 @@ import { PublicExerciseBrowser } from '../components/PublicExerciseBrowser';
 import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
+import { ScreenScaffold } from '../components/ScreenScaffold';
 import { Toast } from '../components/Toast';
 import { useAppStore } from '../store/useAppStore';
 import { CustomMenuModal } from './menu/CustomMenuModal';
@@ -134,75 +135,72 @@ export const MenuPage: React.FC = () => {
     }
 
     return (
-        <div style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            overflowY: 'auto',
-            paddingBottom: 100,
-        }}>
-            <PageHeader title="メニュー" rightElement={<CurrentContextBadge />} />
+        <>
+            <ScreenScaffold
+                header={<PageHeader title="メニュー" rightElement={<CurrentContextBadge />} />}
+                withBottomNav
+                contentStyle={{ display: 'flex', flexDirection: 'column' }}
+            >
+                <MenuTabs tab={tab} onChange={setTab} />
 
-            <MenuTabs tab={tab} onChange={setTab} />
+                {tab === 'group' && (
+                    <MenuGroupTab
+                        exerciseMap={exerciseMap}
+                        isTogetherMode={isTogetherMode}
+                        dailyTargetMinutes={dailyTargetMinutes}
+                        effectiveRequiredCount={effectiveRequiredCount}
+                        effectiveExcludedCount={effectiveExcludedCount}
+                        autoMenuMinutes={autoMenuMinutes}
+                        presets={presets}
+                        customGroups={customGroups}
+                        sessionUserCount={sessionUserCount}
+                        getCreatorName={getCreatorName}
+                        onOpenCustomMenu={() => setShowCustomMenu(true)}
+                        onGroupTap={handleGroupTap}
+                        onEditGroup={setEditGroup}
+                        onDeleteGroup={(groupId) => setDeleteGroupId(groupId)}
+                        onCreateGroup={() => setShowCreateGroup(true)}
+                        canPublish={canPublish}
+                        onPublishGroup={handlePublishGroup}
+                        onUnpublishGroup={handleUnpublishGroup}
+                        findPublishedMenu={findPublishedMenu}
+                        onOpenPublicBrowser={() => setShowPublicBrowser(true)}
+                        teacherMenuIds={teacherMenuIds}
+                        isNewTeacherContent={isNewTeacherContent}
+                        sectionState={groupSectionState}
+                        onToggleSection={(sectionId, nextExpanded) => {
+                            setGroupSectionState((current) => toggleMenuSection(current, sectionId, nextExpanded));
+                        }}
+                    />
+                )}
 
-            {tab === 'group' && (
-                <MenuGroupTab
-                    exerciseMap={exerciseMap}
-                    isTogetherMode={isTogetherMode}
-                    dailyTargetMinutes={dailyTargetMinutes}
-                    effectiveRequiredCount={effectiveRequiredCount}
-                    effectiveExcludedCount={effectiveExcludedCount}
-                    autoMenuMinutes={autoMenuMinutes}
-                    presets={presets}
-                    customGroups={customGroups}
-                    sessionUserCount={sessionUserCount}
-                    getCreatorName={getCreatorName}
-                    onOpenCustomMenu={() => setShowCustomMenu(true)}
-                    onGroupTap={handleGroupTap}
-                    onEditGroup={setEditGroup}
-                    onDeleteGroup={(groupId) => setDeleteGroupId(groupId)}
-                    onCreateGroup={() => setShowCreateGroup(true)}
-                    canPublish={canPublish}
-                    onPublishGroup={handlePublishGroup}
-                    onUnpublishGroup={handleUnpublishGroup}
-                    findPublishedMenu={findPublishedMenu}
-                    onOpenPublicBrowser={() => setShowPublicBrowser(true)}
-                    teacherMenuIds={teacherMenuIds}
-                    isNewTeacherContent={isNewTeacherContent}
-                    sectionState={groupSectionState}
-                    onToggleSection={(sectionId, nextExpanded) => {
-                        setGroupSectionState((current) => toggleMenuSection(current, sectionId, nextExpanded));
-                    }}
-                />
-            )}
-
-            {tab === 'individual' && (
-                <MenuIndividualTab
-                    exercises={exercises}
-                    requiredExercises={requiredExercises}
-                    customExercises={customExercises}
-                    isTogetherMode={isTogetherMode}
-                    getCreatorName={getCreatorName}
-                    onStartExercise={handleStartSingleExercise}
-                    onEditCustomExercise={setEditEx}
-                    onDeleteCustomExercise={(exId) => setDeleteExId(exId)}
-                    onStartCustomExercise={handleStartCustomExercise}
-                    onCreateCustomExercise={() => setShowCreateEx(true)}
-                    teacherExerciseIds={teacherExerciseIds}
-                    isNewTeacherContent={isNewTeacherContent}
-                    canPublish={canPublish}
-                    findPublishedExercise={findPublishedExercise}
-                    onPublishExercise={handlePublishExercise}
-                    onUnpublishExercise={handleUnpublishExercise}
-                    onOpenPublicExerciseBrowser={() => setShowPublicExerciseBrowser(true)}
-                    onStartHybridSession={handleStartHybridSession}
-                    sectionState={individualSectionState}
-                    onToggleSection={(sectionId, nextExpanded) => {
-                        setIndividualSectionState((current) => toggleMenuSection(current, sectionId, nextExpanded));
-                    }}
-                />
-            )}
+                {tab === 'individual' && (
+                    <MenuIndividualTab
+                        exercises={exercises}
+                        requiredExercises={requiredExercises}
+                        customExercises={customExercises}
+                        isTogetherMode={isTogetherMode}
+                        getCreatorName={getCreatorName}
+                        onStartExercise={handleStartSingleExercise}
+                        onEditCustomExercise={setEditEx}
+                        onDeleteCustomExercise={(exId) => setDeleteExId(exId)}
+                        onStartCustomExercise={handleStartCustomExercise}
+                        onCreateCustomExercise={() => setShowCreateEx(true)}
+                        teacherExerciseIds={teacherExerciseIds}
+                        isNewTeacherContent={isNewTeacherContent}
+                        canPublish={canPublish}
+                        findPublishedExercise={findPublishedExercise}
+                        onPublishExercise={handlePublishExercise}
+                        onUnpublishExercise={handleUnpublishExercise}
+                        onOpenPublicExerciseBrowser={() => setShowPublicExerciseBrowser(true)}
+                        onStartHybridSession={handleStartHybridSession}
+                        sectionState={individualSectionState}
+                        onToggleSection={(sectionId, nextExpanded) => {
+                            setIndividualSectionState((current) => toggleMenuSection(current, sectionId, nextExpanded));
+                        }}
+                    />
+                )}
+            </ScreenScaffold>
 
             <CustomMenuModal
                 show={showCustomMenu}
@@ -264,6 +262,6 @@ export const MenuPage: React.FC = () => {
                 type={toastMessage?.type ?? 'success'}
                 onClose={clearToast}
             />
-        </div>
+        </>
     );
 };

@@ -1,11 +1,14 @@
 import React, { useEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { PageHeader } from '../PageHeader';
+import { ScreenScaffold } from '../ScreenScaffold';
 import {
     COLOR,
     FONT,
     FONT_SIZE,
     RADIUS,
+    SCREEN_PADDING_X,
     SPACE,
 } from '../../lib/styles';
 
@@ -144,47 +147,37 @@ export const EditorShell: React.FC<EditorShellProps> = ({
                 inset: 0,
                 background: 'linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%)',
                 zIndex: 100,
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                padding: '64px 20px 32px 20px',
-                gap: SPACE.xl,
-                overflowY: 'auto',
             }}
         >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <button
-                    type="button"
-                    onClick={onBack}
-                    aria-label="前の画面にもどる"
+            <ScreenScaffold
+                background="linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%)"
+                header={(
+                    <PageHeader
+                        title={title}
+                        titleId={titleId}
+                        onBack={onBack}
+                        showBackLabel
+                        background="transparent"
+                    />
+                )}
+                contentStyle={{
+                    padding: `0 ${SCREEN_PADDING_X}px`,
+                    boxSizing: 'border-box',
+                }}
+            >
+                <div
                     style={{
-                        border: 'none',
-                        background: 'none',
-                        cursor: 'pointer',
-                        fontFamily: FONT.body,
-                        fontSize: FONT_SIZE.md,
-                        color: COLOR.muted,
+                        width: '100%',
+                        maxWidth: 720,
+                        margin: '0 auto',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: SPACE.xl,
                     }}
                 >
-                    ← もどる
-                </button>
-                <h1
-                    id={titleId}
-                    style={{
-                        fontFamily: FONT.heading,
-                        fontSize: FONT_SIZE['2xl'],
-                        fontWeight: 700,
-                        color: COLOR.dark,
-                        margin: 0,
-                    }}
-                >
-                    {title}
-                </h1>
-                <div style={{ width: 48 }} aria-hidden="true" />
-            </div>
-
-            {children}
+                    {children}
+                </div>
+            </ScreenScaffold>
         </div>,
         document.body,
     );

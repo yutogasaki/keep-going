@@ -18,6 +18,7 @@ import { NotificationStep } from './onboarding/NotificationStep';
 import type { OnboardingStep } from './onboarding/types';
 import { getLoginSyncFailureMessage } from '../contexts/auth/syncFlowMessages';
 import { shouldFinishOnboardingAfterLogin } from './onboarding/postLoginFlow';
+import { SCREEN_BOTTOM_PADDING, SCREEN_HEADER_TOP } from '../lib/styles';
 
 export const Onboarding: React.FC = () => {
     const setOnboardingCompleted = useAppStore((state) => state.setOnboardingCompleted);
@@ -144,12 +145,19 @@ export const Onboarding: React.FC = () => {
                 inset: 0,
                 zIndex: 100,
                 background: 'linear-gradient(165deg, #FFF5F0 0%, #E8F8F0 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
                 overflow: 'auto',
             }}
         >
+            <div
+                style={{
+                    minHeight: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: `${SCREEN_HEADER_TOP} 0 ${SCREEN_BOTTOM_PADDING}`,
+                    boxSizing: 'border-box',
+                }}
+            >
                 <AnimatePresence mode="wait">
                     {step === 'welcome' && (
                         <WelcomeStep onNext={() => setStep('account')} />
@@ -213,6 +221,7 @@ export const Onboarding: React.FC = () => {
                         />
                     )}
                 </AnimatePresence>
+            </div>
         </div>
     );
 };

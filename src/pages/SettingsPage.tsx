@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
+import { ScreenScaffold } from '../components/ScreenScaffold';
+import { COLOR, HEADER_ICON_BUTTON_SIZE, SCREEN_PADDING_X } from '../lib/styles';
 import { AccountSection } from './settings/AccountSection';
 import { TeacherSection } from './settings/TeacherSection';
 import { UserManagementSection } from './settings/UserManagementSection';
@@ -62,124 +64,122 @@ export const SettingsPage: React.FC = () => {
     }
 
     return (
-        <div style={{
-            width: '100%',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            overflowY: 'auto',
-            paddingBottom: 100,
-        }}>
-            <PageHeader
-                title="せってい"
-                rightElement={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <button
-                            onClick={() => setShowCacheClearConfirm(true)}
-                            style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: '50%',
-                                border: 'none',
-                                background: '#F0F3F5',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                color: '#8395A7',
-                            }}
-                            title="アプリを最新版に更新"
-                        >
-                            <RefreshCw size={16} />
-                        </button>
-                        <CurrentContextBadge />
-                    </div>
+        <>
+            <ScreenScaffold
+                header={
+                    <PageHeader
+                        title="せってい"
+                        rightElement={
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <button
+                                    onClick={() => setShowCacheClearConfirm(true)}
+                                    style={{
+                                        width: HEADER_ICON_BUTTON_SIZE,
+                                        height: HEADER_ICON_BUTTON_SIZE,
+                                        borderRadius: '50%',
+                                        border: 'none',
+                                        background: COLOR.bgMuted,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        color: COLOR.muted,
+                                    }}
+                                    title="アプリを最新版に更新"
+                                >
+                                    <RefreshCw size={16} />
+                                </button>
+                                <CurrentContextBadge />
+                            </div>
+                        }
+                    />
                 }
-            />
+                withBottomNav
+            >
+                <div style={{ padding: `0 ${SCREEN_PADDING_X}px`, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <AccountSection />
 
-            <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <AccountSection />
+                    {isTeacher && (
+                        <TeacherSection onEnterDashboard={() => setShowTeacherDashboard(true)} />
+                    )}
 
-                {isTeacher && (
-                    <TeacherSection onEnterDashboard={() => setShowTeacherDashboard(true)} />
-                )}
-
-                {isDeveloper && (
-                    <div style={{
-                        background: 'linear-gradient(135deg, #1a1a2e, #16213e)',
-                        borderRadius: 16, padding: 16,
-                    }}>
-                        <button
-                            onClick={() => setShowDeveloperDashboard(true)}
-                            style={{
-                                width: '100%', padding: '12px 16px', borderRadius: 10,
-                                border: 'none', background: 'rgba(255,255,255,0.15)',
-                                color: '#fff', fontWeight: 700, fontSize: 14,
-                                cursor: 'pointer', display: 'flex', alignItems: 'center',
-                                justifyContent: 'center', gap: 8,
-                            }}
-                        >
-                            Developer Dashboard
-                        </button>
-                    </div>
-                )}
-
-                <UserManagementSection
-                    users={users}
-                    onAddUser={addUser}
-                    onUpdateUser={updateUser}
-                    onDeleteUser={deleteUser}
-                />
-
-                <SoundNotificationSettingsSection />
-                <HelpCenterSection />
-                <FeedbackSection />
-
-                <div
-                    className="card"
-                    onClick={() => window.open('/website/', '_blank', 'noopener,noreferrer')}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 12,
-                        padding: '16px 20px',
-                        cursor: 'pointer',
-                    }}
-                >
-                    <div style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 12,
-                        background: 'linear-gradient(135deg, #E8F8F0, #F0FDFA)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                    }}>
-                        <Globe size={22} color="#2BBAA0" />
-                    </div>
-                    <div style={{ flex: 1 }}>
+                    {isDeveloper && (
                         <div style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 14,
-                            fontWeight: 700,
-                            color: '#2D3436',
+                            background: 'linear-gradient(135deg, #1a1a2e, #16213e)',
+                            borderRadius: 16, padding: 16,
                         }}>
-                            ウェブサイト
+                            <button
+                                onClick={() => setShowDeveloperDashboard(true)}
+                                style={{
+                                    width: '100%', padding: '12px 16px', borderRadius: 10,
+                                    border: 'none', background: 'rgba(255,255,255,0.15)',
+                                    color: '#fff', fontWeight: 700, fontSize: 14,
+                                    cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                    justifyContent: 'center', gap: 8,
+                                }}
+                            >
+                                Developer Dashboard
+                            </button>
                         </div>
+                    )}
+
+                    <UserManagementSection
+                        users={users}
+                        onAddUser={addUser}
+                        onUpdateUser={updateUser}
+                        onDeleteUser={deleteUser}
+                    />
+
+                    <SoundNotificationSettingsSection />
+                    <HelpCenterSection />
+                    <FeedbackSection />
+
+                    <div
+                        className="card"
+                        onClick={() => window.open('/website/', '_blank', 'noopener,noreferrer')}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            padding: '16px 20px',
+                            cursor: 'pointer',
+                        }}
+                    >
                         <div style={{
-                            fontFamily: "'Noto Sans JP', sans-serif",
-                            fontSize: 12,
-                            color: '#8395A7',
+                            width: 40,
+                            height: 40,
+                            borderRadius: 12,
+                            background: 'linear-gradient(135deg, #E8F8F0, #F0FDFA)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
                         }}>
-                            更新情報・Tips・インストール方法
+                            <Globe size={22} color="#2BBAA0" />
                         </div>
+                        <div style={{ flex: 1 }}>
+                            <div style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 14,
+                                fontWeight: 700,
+                                color: '#2D3436',
+                            }}>
+                                ウェブサイト
+                            </div>
+                            <div style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 12,
+                                color: '#8395A7',
+                            }}>
+                                更新情報・Tips・インストール方法
+                            </div>
+                        </div>
+                        <ChevronRight size={18} color="#B2BEC3" />
                     </div>
-                    <ChevronRight size={18} color="#B2BEC3" />
+
+                    <AppInfoActionsSection />
                 </div>
-
-                <AppInfoActionsSection />
-            </div>
+            </ScreenScaffold>
 
             <ConfirmDeleteModal
                 open={showCacheClearConfirm}
@@ -205,6 +205,6 @@ export const SettingsPage: React.FC = () => {
                 loadingLabel="クリア中..."
                 confirmColor="#0984E3"
             />
-        </div>
+        </>
     );
 };
