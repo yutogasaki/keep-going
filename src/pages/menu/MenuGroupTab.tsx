@@ -1,13 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AutoMenuSettingsCard } from './group-tab/AutoMenuSettingsCard';
 import { PublicMenuSection } from './group-tab/PublicMenuSection';
 import { CreateGroupCard } from './group-tab/CreateGroupCard';
 import type { MenuGroupTabProps } from './group-tab/types';
 import { GroupCard } from './GroupCard';
 import { ShowMoreButton } from './shared/ShowMoreButton';
+import { OriginFilter, type OriginFilterId } from './shared/OriginFilter';
 import type { MenuGroup } from '../../data/menuGroups';
 
-const INITIAL_VISIBLE = 4;
+const INITIAL_VISIBLE = 5;
 
 const RECENT_DAYS = 7;
 
@@ -36,6 +37,7 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
     isNewTeacherContent,
 }) => {
     const [showAll, setShowAll] = useState(false);
+    const [origin, setOrigin] = useState<OriginFilterId>('all');
 
     const recentCutoff = useMemo(() => {
         const d = new Date();
@@ -72,8 +74,31 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
         });
     }, [presets, customGroups, isNewTeacherContent, usageStats.menuLastUsed, recentCutoff]);
 
-    const visibleGroups = showAll ? allGroups : allGroups.slice(0, INITIAL_VISIBLE);
-    const remaining = allGroups.length - INITIAL_VISIBLE;
+    const availableOrigins = useMemo<OriginFilterId[]>(() => {
+        const origins: OriginFilterId[] = ['all'];
+        if (allGroups.some((g) => g.origin === 'teacher')) origins.push('teacher');
+        if (allGroups.some((g) => !g.isPreset && !g.origin)) origins.push('custom');
+        return origins;
+    }, [allGroups]);
+
+    const originFiltered = useMemo(() => {
+        if (origin === 'all') return allGroups;
+        if (origin === 'teacher') return allGroups.filter((g) => g.origin === 'teacher');
+        return allGroups.filter((g) => !g.isPreset && !g.origin);
+    }, [allGroups, origin]);
+
+    useEffect(() => {
+        if (!availableOrigins.includes(origin)) {
+            setOrigin('all');
+        }
+    }, [availableOrigins, origin]);
+
+    useEffect(() => {
+        setShowAll(false);
+    }, [origin]);
+
+    const visibleGroups = showAll ? originFiltered : originFiltered.slice(0, INITIAL_VISIBLE);
+    const remaining = originFiltered.length - INITIAL_VISIBLE;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: '0 20px' }}>
@@ -85,7 +110,13 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
                 onOpenCustomMenu={onOpenCustomMenu}
             />
 
-            {allGroups.length > 0 ? (
+            <OriginFilter
+                value={origin}
+                onChange={setOrigin}
+                available={availableOrigins}
+            />
+
+            {originFiltered.length > 0 ? (
                 <section>
                     <h2 style={{
                         fontFamily: "'Noto Sans JP', sans-serif",
@@ -103,7 +134,7 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
                             color: '#B2BEC3',
                             marginLeft: 8,
                         }}>
-                            {allGroups.length}
+                            {originFiltered.length}
                         </span>
                     </h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

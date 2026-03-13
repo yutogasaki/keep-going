@@ -17,8 +17,9 @@ import { CustomExerciseCard } from './individual-tab/CustomExerciseCard';
 import { RestExerciseCard } from './individual-tab/RestExerciseCard';
 import { CreateCustomExerciseCard } from './individual-tab/CreateCustomExerciseCard';
 import { ShowMoreButton } from './shared/ShowMoreButton';
+import { OriginFilter, type OriginFilterId } from './shared/OriginFilter';
 
-const INITIAL_VISIBLE = 4;
+const INITIAL_VISIBLE = 5;
 const RECENT_DAYS = 7;
 
 /** Discriminated union for a flat exercise list that mixes standard + custom */
@@ -53,6 +54,7 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
     const [selectionMode, setSelectionMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [category, setCategory] = useState<IndividualCategoryId>('all');
+    const [origin, setOrigin] = useState<OriginFilterId>('all');
     const [showAll, setShowAll] = useState(false);
     const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -120,11 +122,31 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
         [filteredExercises],
     );
 
-    const visibleItems = showAll ? allItems : allItems.slice(0, INITIAL_VISIBLE);
-    const remaining = allItems.length - INITIAL_VISIBLE;
-    const showRest = showAll || allItems.length <= INITIAL_VISIBLE;
+    // Origin filter
+    const availableOrigins = useMemo<OriginFilterId[]>(() => {
+        const origins: OriginFilterId[] = ['all'];
+        if (allItems.some((item) => item.kind === 'standard' && item.exercise.origin === 'teacher')) {
+            origins.push('teacher');
+        }
+        if (allItems.some((item) => item.kind === 'custom')) {
+            origins.push('custom');
+        }
+        return origins;
+    }, [allItems]);
 
-    const totalCount = allItems.length + (restExercises.length > 0 ? 1 : 0);
+    const originFiltered = useMemo(() => {
+        if (origin === 'all') return allItems;
+        if (origin === 'teacher') return allItems.filter((item) => item.kind === 'standard' && item.exercise.origin === 'teacher');
+        return allItems.filter((item) => item.kind === 'custom');
+    }, [allItems, origin]);
+
+    const originFilteredRest = origin === 'all' || origin === 'teacher' ? restExercises : [];
+
+    const visibleItems = showAll ? originFiltered : originFiltered.slice(0, INITIAL_VISIBLE);
+    const remaining = originFiltered.length - INITIAL_VISIBLE;
+    const showRest = showAll || originFiltered.length <= INITIAL_VISIBLE;
+
+    const totalCount = originFiltered.length + (originFilteredRest.length > 0 ? 1 : 0);
 
     const sectionTitle = category === 'all'
         ? '種目'
@@ -137,6 +159,17 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
             setCategory('all');
         }
     }, [availableCategories, category]);
+
+    useEffect(() => {
+        if (!availableOrigins.includes(origin)) {
+            setOrigin('all');
+        }
+    }, [availableOrigins, origin]);
+
+    // Reset showAll when filters change
+    useEffect(() => {
+        setShowAll(false);
+    }, [category, origin]);
 
     const handleToggleExpand = useCallback((exerciseId: string) => {
         setExpandedId((current) => (current === exerciseId ? null : exerciseId));
@@ -184,6 +217,12 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                 selectionEnabled={selectionEnabled}
                 selectionMode={selectionMode}
                 onToggleMode={handleToggleMode}
+            />
+
+            <OriginFilter
+                value={origin}
+                onChange={setOrigin}
+                available={availableOrigins}
             />
 
             {totalCount > 0 ? (
@@ -246,9 +285,9 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                                 />
                             ),
                         )}
-                        {showRest && restExercises.length > 0 ? (
+                        {showRest && originFilteredRest.length > 0 ? (
                             <RestExerciseCard
-                                exercises={restExercises}
+                                exercises={originFilteredRest}
                                 selectionMode={selectionMode}
                                 selectedIds={selectedIds}
                                 onToggleSelect={handleToggleSelect}

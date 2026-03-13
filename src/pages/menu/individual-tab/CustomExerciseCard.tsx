@@ -96,6 +96,21 @@ export const CustomExerciseCard: React.FC<CustomExerciseCardProps> = ({
                         >
                             {exercise.name}
                         </span>
+                        <span
+                            style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 9,
+                                fontWeight: 700,
+                                color: '#8B5CF6',
+                                background: 'rgba(139, 92, 246, 0.1)',
+                                padding: '1px 5px',
+                                borderRadius: 6,
+                                display: 'inline-block',
+                                verticalAlign: 'middle',
+                            }}
+                        >
+                            じぶん
+                        </span>
                         {isTogetherMode && exercise.creatorId && creatorName ? (
                             <span
                                 style={{

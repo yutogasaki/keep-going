@@ -21,7 +21,7 @@ export interface MenuGroup {
 export const PRESET_GROUPS: MenuGroup[] = [
     {
         id: 'preset-quick',
-        name: '今日の3ふん',
+        name: '今日の3分',
         emoji: '☀️',
         description: 'まずはこれ。今日も3分だけやってみよう',
         exerciseIds: ['S07', 'S01', 'S02', 'S06', 'S08'],
