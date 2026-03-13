@@ -93,10 +93,16 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         [activeUsers, allSessions],
     );
 
-    const selectedUserSessions = selectedUser ? sessionsByUserId.get(selectedUser.id) ?? [] : [];
-    const selectedUserStatus = selectedUser
-        ? calculateFuwafuwaStatus(selectedUser.fuwafuwaBirthDate, selectedUserSessions)
-        : null;
+    const selectedUserSessions = useMemo(
+        () => (selectedUser ? sessionsByUserId.get(selectedUser.id) ?? [] : []),
+        [selectedUser, sessionsByUserId],
+    );
+    const selectedUserStatus = useMemo(
+        () => (selectedUser
+            ? calculateFuwafuwaStatus(selectedUser.fuwafuwaBirthDate, selectedUserSessions)
+            : null),
+        [selectedUser, selectedUserSessions],
+    );
     const selectedUserMagic = selectedUser ? perUserMagicMap.get(selectedUser.id) : null;
     const selectedUserDisplaySeconds = selectedUserMagic?.displaySeconds ?? displaySeconds;
     const selectedUserTargetSeconds = selectedUserMagic?.targetSeconds ?? targetSeconds;
@@ -296,9 +302,15 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
         () => buildDailyContext(),
         [buildDailyContext],
     );
+    const dailyCandidateSignature = useMemo(
+        () => dailyContext.candidates
+            .map((candidate) => `${candidate.selection.group}:${candidate.selection.topic}:${candidate.replyId}`)
+            .join('|'),
+        [dailyContext.candidates],
+    );
     const initialDailyConversation = useMemo(
         () => chooseNextDailyConversation(EMPTY_DAILY_CONVERSATION_STATE, dailyContext, 'initial'),
-        [dailyContext],
+        [dailyCandidateSignature, dailyContext],
     );
     const resolvedDailySelection = dailySelection ?? initialDailyConversation.candidate?.selection ?? null;
     const resolvedDailyState = dailySelection ? dailyState : initialDailyConversation.nextState;
@@ -347,13 +359,6 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     const selectedUserSpeech = selectedUserEventSpeech ?? selectedUserDailySpeech;
     const activeSpeech = isTogetherMode ? familySpeech : selectedUserSpeech;
     const hasActiveEventSpeech = isTogetherMode ? Boolean(familyEventSpeech) : Boolean(selectedUserEventSpeech);
-    const dailyCandidateSignature = useMemo(
-        () => dailyContext.candidates
-            .map((candidate) => `${candidate.selection.group}:${candidate.selection.topic}:${candidate.replyId}`)
-            .join('|'),
-        [dailyContext.candidates],
-    );
-
     const advanceConversation = () => {
         if (!hasActiveEventSpeech) {
             const { candidate, nextState } = chooseNextDailyConversation(resolvedDailyState, dailyContext, 'tap');
@@ -371,14 +376,20 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     };
 
     useEffect(() => {
-        setDailyState(initialDailyConversation.nextState);
-        setDailySelection(initialDailyConversation.candidate?.selection ?? null);
+        const { candidate, nextState } = chooseNextDailyConversation(
+            EMPTY_DAILY_CONVERSATION_STATE,
+            dailyContext,
+            'initial',
+        );
+
+        setDailyState(nextState);
+        setDailySelection(candidate?.selection ?? null);
         setPokeDepth(0);
     }, [
-        initialDailyConversation,
         isTogetherMode,
         selectedUser?.id,
         dailyCandidateSignature,
+        dailyContext,
     ]);
 
     useEffect(() => {
