@@ -14,6 +14,11 @@
 - `ChallengeFormCard.tsx` は `842 -> 179` 行になり、`ChallengeFormCard` の critical warning を解消した
 - `npx tsc --noEmit`、`npm run build`、`npm run governance:check` を通した
 
+## 2026-03-13: `FuwafuwaHomeCard` の speech state を hook へ分離
+- speech / daily conversation / poke state を `useFuwafuwaSpeechState` へ切り出し、`FuwafuwaHomeCard.tsx` は描画中心の組み立て役へ整理した
+- `FuwafuwaHomeCard.tsx` は `560 -> 134` 行になり、governance warning 対象から外れた
+- `npx tsc --noEmit`、home speech 系の関連テスト、`npm run build`、`npm run governance:check` を通した
+
 ## 2026-03-11: ホームの先生/みんな導線を再設計
 - ホームの情報設計を `チャレンジ -> 先生のメニュー -> みんなのメニュー` に整理し、`先生` と `みんな` を同じカードファミリーの別バリアントとして扱う方針を仕様書と実装で揃えた
 - ホームから新しいメニュー / 種目を見つける導線を、詳細シートを含めて自然につながる形へ再設計した
