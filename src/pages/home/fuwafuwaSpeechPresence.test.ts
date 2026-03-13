@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { shouldShowFuwafuwaSpeech } from './fuwafuwaSpeechPresence';
 
 describe('fuwafuwaSpeechPresence', () => {
-    it('hides only recent low-priority relationship speech at depth 0', () => {
+    it('keeps normal speech visible even on recent revisits', () => {
         expect(shouldShowFuwafuwaSpeech({
             speech: {
                 id: 'user:relationship_ready',
@@ -12,10 +12,10 @@ describe('fuwafuwaSpeechPresence', () => {
             },
             visitRecency: 'recent',
             pokeDepth: 0,
-        })).toBe(false);
+        })).toBe(true);
     });
 
-    it('keeps important or user-expanded speech visible', () => {
+    it('hides only empty speech payloads', () => {
         expect(shouldShowFuwafuwaSpeech({
             speech: {
                 id: 'user:growing',
@@ -29,13 +29,13 @@ describe('fuwafuwaSpeechPresence', () => {
 
         expect(shouldShowFuwafuwaSpeech({
             speech: {
-                id: 'user:relationship_ready',
+                id: 'user:none',
                 category: 'relationship',
                 accent: 'everyday',
-                lines: ['また すぐ あえたね', 'ふわふわ うれしいな'],
+                lines: [],
             },
             visitRecency: 'recent',
-            pokeDepth: 1,
-        })).toBe(true);
+            pokeDepth: 0,
+        })).toBe(false);
     });
 });
