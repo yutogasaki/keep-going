@@ -39,6 +39,11 @@ export const TwoWeekTrendSection: React.FC<TwoWeekTrendSectionProps> = ({ summar
     const streakLine = summary.streak > 0
         ? `${summary.streak}日つづいたよ`
         : 'これから いいながれ';
+    const statCards = [
+        { label: 'つづき', value: streakLine },
+        { label: '会えた日', value: `${summary.activeDays}日` },
+        { label: '会いやすい時間', value: summary.dominantTimeLine.replace('会いやすいのは ', '').replace('みたい', '') },
+    ];
 
     return (
         <motion.section
@@ -60,35 +65,133 @@ export const TwoWeekTrendSection: React.FC<TwoWeekTrendSectionProps> = ({ summar
             <div
                 className="card"
                 style={{
+                    position: 'relative',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: SPACE.lg,
-                    background: 'linear-gradient(180deg, rgba(255,255,255,0.9), rgba(248,250,252,0.92))',
+                    gap: SPACE.md,
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.92), rgba(244,250,255,0.92) 52%, rgba(255,246,241,0.92))',
+                    overflow: 'hidden',
                 }}
             >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div
+                    aria-hidden="true"
+                    style={{
+                        position: 'absolute',
+                        top: -26,
+                        left: -24,
+                        width: 120,
+                        height: 120,
+                        borderRadius: RADIUS.circle,
+                        background: 'radial-gradient(circle, rgba(9,132,227,0.16), rgba(9,132,227,0))',
+                    }}
+                />
+                <div
+                    aria-hidden="true"
+                    style={{
+                        position: 'absolute',
+                        right: -22,
+                        bottom: -36,
+                        width: 140,
+                        height: 140,
+                        borderRadius: RADIUS.circle,
+                        background: 'radial-gradient(circle, rgba(43,186,160,0.18), rgba(43,186,160,0))',
+                    }}
+                />
+
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                        flexWrap: 'wrap',
+                    }}
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <div
+                            style={{
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.sm + 1,
+                                fontWeight: 800,
+                                color: COLOR.primaryDark,
+                                letterSpacing: 0.8,
+                            }}
+                        >
+                            いいながれ
+                        </div>
+                        <div
+                            style={{
+                                fontFamily: FONT.body,
+                                fontSize: 24,
+                                fontWeight: 800,
+                                color: COLOR.dark,
+                                lineHeight: 1.2,
+                            }}
+                        >
+                            {streakLine}
+                        </div>
+                    </div>
+
                     <div
                         style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            padding: '8px 12px',
+                            borderRadius: RADIUS.full,
+                            background: 'rgba(255,255,255,0.72)',
+                            color: COLOR.info,
                             fontFamily: FONT.body,
-                            fontSize: FONT_SIZE.sm + 1,
+                            fontSize: FONT_SIZE.sm,
                             fontWeight: 800,
-                            color: COLOR.primaryDark,
-                            letterSpacing: 0.8,
                         }}
                     >
-                        いいながれ
+                        14 DAYS
                     </div>
-                    <div
-                        style={{
-                            fontFamily: FONT.body,
-                            fontSize: 22,
-                            fontWeight: 800,
-                            color: COLOR.dark,
-                            lineHeight: 1.25,
-                        }}
-                    >
-                        {streakLine}
-                    </div>
+                </div>
+
+                <div
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                        gap: 10,
+                    }}
+                >
+                    {statCards.map((card) => (
+                        <div
+                            key={card.label}
+                            style={{
+                                padding: '12px 10px',
+                                borderRadius: RADIUS.xl,
+                                background: 'rgba(255,255,255,0.62)',
+                                border: '1px solid rgba(255,255,255,0.72)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 6,
+                            }}
+                        >
+                            <div
+                                style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.xs + 1,
+                                    fontWeight: 700,
+                                    color: COLOR.muted,
+                                }}
+                            >
+                                {card.label}
+                            </div>
+                            <div
+                                style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.sm,
+                                    fontWeight: 800,
+                                    color: COLOR.dark,
+                                    lineHeight: 1.35,
+                                }}
+                            >
+                                {card.value}
+                            </div>
+                        </div>
+                    ))}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -98,6 +201,9 @@ export const TwoWeekTrendSection: React.FC<TwoWeekTrendSectionProps> = ({ summar
                             gridTemplateColumns: 'repeat(14, minmax(0, 1fr))',
                             gap: 6,
                             alignItems: 'end',
+                            padding: '14px 12px 10px',
+                            borderRadius: RADIUS['2xl'],
+                            background: 'rgba(255,255,255,0.58)',
                         }}
                     >
                         {summary.dots.map((dot, index) => {
