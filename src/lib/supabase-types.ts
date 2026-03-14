@@ -252,6 +252,7 @@ export interface Database {
                     challenge_id: string;
                     account_id: string;
                     member_id: string;
+                    completed_at?: string;
                 };
                 Update: Partial<Database['public']['Tables']['challenge_completions']['Insert']>;
                 Relationships: [];
@@ -295,6 +296,38 @@ export interface Database {
                     effective_end_date: string;
                 };
                 Update: Partial<Database['public']['Tables']['challenge_enrollments']['Insert']>;
+                Relationships: [];
+            };
+            challenge_attempts: {
+                Row: {
+                    id: string;
+                    challenge_id: string;
+                    account_id: string;
+                    member_id: string;
+                    attempt_no: number;
+                    joined_at: string;
+                    effective_start_date: string;
+                    effective_end_date: string;
+                    status: string;
+                    completed_at: string | null;
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    challenge_id: string;
+                    account_id: string;
+                    member_id: string;
+                    attempt_no: number;
+                    joined_at?: string;
+                    effective_start_date: string;
+                    effective_end_date: string;
+                    status?: string;
+                    completed_at?: string | null;
+                    created_at?: string;
+                    updated_at?: string;
+                };
+                Update: Partial<Database['public']['Tables']['challenge_attempts']['Insert']>;
                 Relationships: [];
             };
             personal_challenges: {

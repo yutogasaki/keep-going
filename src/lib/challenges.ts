@@ -22,6 +22,7 @@ export type ChallengeRewardKind = 'star' | 'medal';
 export type ChallengeWindowType = 'calendar' | 'rolling';
 export type ChallengeGoalType = 'total_count' | 'active_day';
 export type ChallengePublishMode = 'seasonal' | 'always_on';
+export type ChallengeAttemptStatus = 'active' | 'completed' | 'expired';
 
 export interface Challenge {
     id: string;
@@ -80,6 +81,21 @@ export interface ChallengeEnrollment {
     effectiveStartDate: string;
     effectiveEndDate: string;
     createdAt: string;
+}
+
+export interface ChallengeAttempt {
+    id: string;
+    challengeId: string;
+    accountId: string;
+    memberId: string;
+    attemptNo: number;
+    joinedAt: string;
+    effectiveStartDate: string;
+    effectiveEndDate: string;
+    status: ChallengeAttemptStatus;
+    completedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface ChallengeEnrollmentState {
@@ -154,6 +170,10 @@ function normalizePublishMode(value: string | null | undefined): ChallengePublis
     return value === 'always_on' ? 'always_on' : 'seasonal';
 }
 
+function normalizeChallengeAttemptStatus(value: string | null | undefined): ChallengeAttemptStatus {
+    return value === 'completed' || value === 'expired' ? value : 'active';
+}
+
 function mapChallenge(row: Database['public']['Tables']['challenges']['Row']): Challenge {
     const challengeType = normalizeChallengeType(row.challenge_type);
     const rewardKind = normalizeRewardKind(row.reward_kind);
@@ -213,6 +233,25 @@ function mapChallengeEnrollment(
         effectiveStartDate: row.effective_start_date,
         effectiveEndDate: row.effective_end_date,
         createdAt: row.created_at,
+    };
+}
+
+function mapChallengeAttempt(
+    row: Database['public']['Tables']['challenge_attempts']['Row'],
+): ChallengeAttempt {
+    return {
+        id: row.id,
+        challengeId: row.challenge_id,
+        accountId: row.account_id,
+        memberId: row.member_id,
+        attemptNo: row.attempt_no,
+        joinedAt: row.joined_at,
+        effectiveStartDate: row.effective_start_date,
+        effectiveEndDate: row.effective_end_date,
+        status: normalizeChallengeAttemptStatus(row.status),
+        completedAt: row.completed_at ?? null,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
     };
 }
 
@@ -522,6 +561,38 @@ export function buildChallengeEnrollmentState(
     };
 }
 
+export function getLatestChallengeAttempts(
+    attempts: ChallengeAttempt[],
+): Map<string, ChallengeAttempt> {
+    const latestAttempts = new Map<string, ChallengeAttempt>();
+
+    for (const attempt of attempts) {
+        const current = latestAttempts.get(attempt.memberId);
+        if (!current || attempt.attemptNo > current.attemptNo) {
+            latestAttempts.set(attempt.memberId, attempt);
+        }
+    }
+
+    return latestAttempts;
+}
+
+export function getChallengeRetryStats(attempts: ChallengeAttempt[]) {
+    const latestAttempts = getLatestChallengeAttempts(attempts);
+    const retryingMemberCount = [...latestAttempts.values()].filter(
+        (attempt) => attempt.attemptNo > 1 && attempt.status === 'active',
+    ).length;
+    const repeatCompletionCount = attempts.filter(
+        (attempt) => attempt.attemptNo > 1 && attempt.status === 'completed',
+    ).length;
+
+    return {
+        totalAttempts: attempts.length,
+        retryingMemberCount,
+        repeatCompletionCount,
+        latestAttempts,
+    };
+}
+
 function normalizeChallengeText(value: string | null | undefined): string | null {
     const normalized = value?.trim();
     return normalized ? normalized : null;
@@ -750,6 +821,121 @@ export async function fetchTeacherChallengeEnrollments(): Promise<ChallengeEnrol
     return (data ?? []).map(mapChallengeEnrollment);
 }
 
+export async function fetchTeacherChallengeAttempts(): Promise<ChallengeAttempt[]> {
+    if (!supabase) return [];
+
+    const { data, error } = await supabase
+        .from('challenge_attempts')
+        .select('*');
+
+    if (error) {
+        console.warn('[challenges] fetchTeacherChallengeAttempts failed:', error);
+        return [];
+    }
+
+    return (data ?? []).map(mapChallengeAttempt);
+}
+
+async function fetchLatestChallengeAttemptRow(
+    challengeId: string,
+    accountId: string,
+    memberId: string,
+): Promise<Database['public']['Tables']['challenge_attempts']['Row'] | null> {
+    if (!supabase) return null;
+
+    const { data, error } = await supabase
+        .from('challenge_attempts')
+        .select('*')
+        .eq('challenge_id', challengeId)
+        .eq('account_id', accountId)
+        .eq('member_id', memberId)
+        .order('attempt_no', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (error) {
+        throw error;
+    }
+
+    return data ?? null;
+}
+
+async function createChallengeAttempt(
+    challengeId: string,
+    accountId: string,
+    memberId: string,
+    effectiveWindow: ChallengeProgressWindow,
+    options: {
+        joinedAt: string;
+        forceNewAttempt?: boolean;
+    },
+): Promise<void> {
+    if (!supabase) return;
+
+    const latestAttempt = await fetchLatestChallengeAttemptRow(challengeId, accountId, memberId);
+    if (
+        !options.forceNewAttempt
+        && latestAttempt
+        && latestAttempt.status === 'active'
+        && latestAttempt.effective_start_date === effectiveWindow.startDate
+        && latestAttempt.effective_end_date === effectiveWindow.endDate
+    ) {
+        return;
+    }
+
+    const payload: Database['public']['Tables']['challenge_attempts']['Insert'] = {
+        challenge_id: challengeId,
+        account_id: accountId,
+        member_id: memberId,
+        attempt_no: (latestAttempt?.attempt_no ?? 0) + 1,
+        joined_at: options.joinedAt,
+        effective_start_date: effectiveWindow.startDate,
+        effective_end_date: effectiveWindow.endDate,
+        status: 'active',
+    };
+
+    const { error } = await supabase.from('challenge_attempts').insert(payload);
+    if (error) throw error;
+}
+
+async function updateLatestChallengeAttemptStatus(
+    challengeId: string,
+    accountId: string,
+    memberId: string,
+    status: ChallengeAttemptStatus,
+    options: {
+        completedAt?: string | null;
+        updatedAt?: string;
+    } = {},
+): Promise<void> {
+    if (!supabase) return;
+
+    const latestAttempt = await fetchLatestChallengeAttemptRow(challengeId, accountId, memberId);
+    if (!latestAttempt) {
+        return;
+    }
+
+    if (
+        latestAttempt.status === status
+        && (status !== 'completed' || latestAttempt.completed_at === (options.completedAt ?? latestAttempt.completed_at))
+    ) {
+        return;
+    }
+
+    const update: Database['public']['Tables']['challenge_attempts']['Update'] = {
+        status,
+        updated_at: options.updatedAt ?? new Date().toISOString(),
+        completed_at: status === 'completed' ? (options.completedAt ?? new Date().toISOString()) : null,
+    };
+
+    const { error } = await supabase
+        .from('challenge_attempts')
+        .update(update)
+        .eq('id', latestAttempt.id);
+
+    if (error) throw error;
+}
+
 export async function markChallengeJoined(
     challengeId: string,
     memberId: string,
@@ -758,17 +944,22 @@ export async function markChallengeJoined(
     if (!supabase) return;
     const accountId = getAccountId();
     if (!accountId) return;
+    const joinedAt = new Date().toISOString();
 
     const { error } = await supabase.from('challenge_enrollments').upsert({
         challenge_id: challengeId,
         account_id: accountId,
         member_id: memberId,
-        joined_at: new Date().toISOString(),
+        joined_at: joinedAt,
         effective_start_date: effectiveWindow.startDate,
         effective_end_date: effectiveWindow.endDate,
     }, { onConflict: 'challenge_id,account_id,member_id' });
 
     if (error) throw error;
+
+    await createChallengeAttempt(challengeId, accountId, memberId, effectiveWindow, {
+        joinedAt,
+    });
 }
 
 export async function markChallengeComplete(
@@ -778,14 +969,21 @@ export async function markChallengeComplete(
     if (!supabase) return;
     const accountId = getAccountId();
     if (!accountId) return;
+    const completedAt = new Date().toISOString();
 
     const { error } = await supabase.from('challenge_completions').upsert({
         challenge_id: challengeId,
         account_id: accountId,
         member_id: memberId,
+        completed_at: completedAt,
     }, { onConflict: 'challenge_id,account_id,member_id' });
 
     if (error) throw error;
+
+    await updateLatestChallengeAttemptStatus(challengeId, accountId, memberId, 'completed', {
+        completedAt,
+        updatedAt: completedAt,
+    });
 }
 
 export async function markChallengeRewardGranted(
@@ -815,6 +1013,13 @@ export async function retryChallenge(
     if (!accountId) return;
 
     const joinedAt = new Date().toISOString();
+    const latestAttempt = await fetchLatestChallengeAttemptRow(challengeId, accountId, memberId);
+    if (latestAttempt?.status === 'active') {
+        await updateLatestChallengeAttemptStatus(challengeId, accountId, memberId, 'expired', {
+            updatedAt: joinedAt,
+        });
+    }
+
     const enrollmentPayload: Database['public']['Tables']['challenge_enrollments']['Insert'] = {
         challenge_id: challengeId,
         account_id: accountId,
@@ -836,6 +1041,11 @@ export async function retryChallenge(
 
     if (enrollmentError) throw enrollmentError;
     if (completionError) throw completionError;
+
+    await createChallengeAttempt(challengeId, accountId, memberId, effectiveWindow, {
+        joinedAt,
+        forceNewAttempt: true,
+    });
 }
 
 // ─── Progress calculation (from local sessions) ──────

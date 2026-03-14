@@ -174,7 +174,9 @@ export async function clearAllData(): Promise<void> {
 
 const CLOUD_TABLES_TO_CLEAR = [
     'personal_challenges',
+    'challenge_attempts',
     'challenge_enrollments',
+    'challenge_reward_grants',
     'challenge_completions',
     'exercise_downloads',
     'public_exercises',

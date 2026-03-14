@@ -5,9 +5,11 @@ import { getAllSessions, getTodayKey, getDateKeyOffset } from '../lib/db';
 import { CLASS_LEVELS } from '../data/exercises';
 import {
     fetchAllChallenges,
+    fetchTeacherChallengeAttempts,
     fetchTeacherChallengeCompletions,
     fetchTeacherChallengeEnrollments,
     type Challenge,
+    type ChallengeAttempt,
     type ChallengeCompletion,
     type ChallengeEnrollment,
 } from '../lib/challenges';
@@ -43,6 +45,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
     const [challenges, setChallenges] = useState<Challenge[]>([]);
     const [challengeCompletions, setChallengeCompletions] = useState<ChallengeCompletion[]>([]);
     const [challengeEnrollments, setChallengeEnrollments] = useState<ChallengeEnrollment[]>([]);
+    const [challengeAttempts, setChallengeAttempts] = useState<ChallengeAttempt[]>([]);
     const [challengesLoading, setChallengesLoading] = useState(false);
     const [showCreateForm, setShowCreateForm] = useState(false);
 
@@ -74,14 +77,16 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
     const loadChallenges = useCallback(async () => {
         setChallengesLoading(true);
         try {
-            const [challengeRows, completionRows, enrollmentRows] = await Promise.all([
+            const [challengeRows, completionRows, enrollmentRows, attemptRows] = await Promise.all([
                 fetchAllChallenges(),
                 fetchTeacherChallengeCompletions(),
                 fetchTeacherChallengeEnrollments(),
+                fetchTeacherChallengeAttempts(),
             ]);
             setChallenges(challengeRows);
             setChallengeCompletions(completionRows);
             setChallengeEnrollments(enrollmentRows);
+            setChallengeAttempts(attemptRows);
         } catch (err) {
             console.warn('[teacher] Failed to load challenges:', err);
         } finally {
@@ -323,6 +328,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                     challenges={challenges}
                     challengeCompletions={challengeCompletions}
                     challengeEnrollments={challengeEnrollments}
+                    challengeAttempts={challengeAttempts}
                     memberNameMap={challengeMemberNameMap}
                     sessionsByMemberId={challengeSessionsByMemberId}
                     loading={challengesLoading}

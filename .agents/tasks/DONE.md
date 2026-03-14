@@ -84,3 +84,8 @@
 - 編集画面を開いて保存しなくても、カード上の `おまかせ` / `非表示` 変更がクラス別表示に即時反映されるようにし、helper テスト追加のうえ `tsc` / `test` / `build` を通した
 - ホームの `先生のメニュー` セクションに `先生の新しい種目` 発見パネルと詳細シートを追加し、公開メニュー側と同じくメニュー主役 + 種目発見1件の構成へ揃えた
 - `homeMenuUtils` に先生種目 discovery helper を追加し、`npm run verify` と desktop/mobile の Playwright 画面確認でホーム表示と詳細シート遷移を確認した
+
+## 2026-03-15: 先生チャレンジ再挑戦の履歴化
+- `challenge_attempts` を追加して、先生チャレンジの参加/再挑戦/クリアを append-only に記録する土台を入れた
+- join / retry / complete で current state の `challenge_enrollments` / `challenge_completions` を維持したまま、attempt 履歴も同期して記録するようにした
+- 先生ダッシュボードのチャレンジ一覧で `これまでの挑戦回数`、`再挑戦中の人数`、`もう一回クリア回数` と、参加者ごとの `2回目` 表示を出せるようにした

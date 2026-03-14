@@ -31,6 +31,8 @@ create policy "Developers can read all menu_groups" on menu_groups
   for select using (is_developer());
 create policy "Developers can read all challenge_completions" on challenge_completions
   for select using (is_developer());
+create policy "Developers can read all challenge_attempts" on challenge_attempts
+  for select using (is_developer());
 
 -- 先生も app_settings を読めるようにする（休止フィルタ用）
 create policy "Teachers can read all app_settings" on app_settings
@@ -57,6 +59,7 @@ begin
   if not is_developer() then
     raise exception 'Unauthorized: only developers can delete account data';
   end if;
+  delete from challenge_attempts where account_id = target_account_id;
   delete from challenge_completions where account_id = target_account_id;
   delete from public_menus where account_id = target_account_id;
   delete from app_settings where account_id = target_account_id;

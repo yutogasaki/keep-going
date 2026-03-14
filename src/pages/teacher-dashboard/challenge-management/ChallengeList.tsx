@@ -12,11 +12,14 @@ import {
     getChallengeInviteWindowLabel,
     getChallengeProgressLabel,
     getChallengePublishLabel,
+    getChallengeRetryStats,
     getChallengeRewardLabel,
     getChallengeTargetLabel,
     type Challenge,
+    type ChallengeAttempt,
     type ChallengeCompletion,
     type ChallengeEnrollment,
+    getLatestChallengeAttempts,
 } from '../../../lib/challenges';
 import type { StudentSession } from '../../../lib/teacher';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
@@ -27,6 +30,7 @@ interface ChallengeListProps {
     challenges: Challenge[];
     challengeCompletions: ChallengeCompletion[];
     challengeEnrollments: ChallengeEnrollment[];
+    challengeAttempts: ChallengeAttempt[];
     memberNameMap: ReadonlyMap<string, string>;
     sessionsByMemberId: ReadonlyMap<string, StudentSession[]>;
     teacherMenus: TeacherMenu[];
@@ -43,12 +47,14 @@ interface ParticipantStatusItem {
     completed: boolean;
     progress: number;
     completedAt: string | null;
+    attemptNo: number;
 }
 
 function buildParticipantStatusItems(
     challenge: Challenge,
     completions: ChallengeCompletion[],
     enrollments: ChallengeEnrollment[],
+    attempts: ChallengeAttempt[],
     memberNameMap: ReadonlyMap<string, string>,
     sessionsByMemberId: ReadonlyMap<string, StudentSession[]>,
 ): ParticipantStatusItem[] {
@@ -62,19 +68,29 @@ function buildParticipantStatusItems(
             .filter((enrollment) => enrollment.challengeId === challenge.id)
             .map((enrollment) => [enrollment.memberId, enrollment]),
     );
+    const latestAttemptMap = getLatestChallengeAttempts(
+        attempts.filter((attempt) => attempt.challengeId === challenge.id),
+    );
     const participantIds = new Set<string>([
         ...completionMap.keys(),
         ...enrollmentMap.keys(),
+        ...latestAttemptMap.keys(),
     ]);
 
     const items = [...participantIds].map((memberId) => {
         const completion = completionMap.get(memberId) ?? null;
         const enrollment = enrollmentMap.get(memberId) ?? null;
+        const latestAttempt = latestAttemptMap.get(memberId) ?? null;
         const effectiveWindow = enrollment
             ? {
                 startDate: enrollment.effectiveStartDate,
                 endDate: enrollment.effectiveEndDate,
             }
+            : latestAttempt
+                ? {
+                    startDate: latestAttempt.effectiveStartDate,
+                    endDate: latestAttempt.effectiveEndDate,
+                }
             : null;
         const sessions = sessionsByMemberId.get(memberId) ?? [];
         const progress = countChallengeProgressFromSessions(
@@ -84,15 +100,26 @@ function buildParticipantStatusItems(
             getChallengeActiveWindow(challenge, effectiveWindow),
         );
         const completed = completion !== null;
+        const attemptNo = latestAttempt?.attemptNo ?? 1;
+        const baseProgressLabel = completed ? 'クリア' : getChallengeProgressLabel(challenge, progress);
+        const progressLabel = attemptNo > 1 ? `${attemptNo}回目・${baseProgressLabel}` : baseProgressLabel;
+        const subLabel = completed
+            ? (attemptNo > 1 ? 'もう一回クリア' : 'ごほうびゲット')
+            : attemptNo > 1
+                ? '再挑戦中'
+                : progress > 0
+                    ? '参加中'
+                    : '参加したよ';
 
         return {
             memberId,
             name: memberNameMap.get(memberId) ?? '生徒',
-            progressLabel: completed ? 'クリア' : getChallengeProgressLabel(challenge, progress),
-            subLabel: completed ? 'ごほうびゲット' : progress > 0 ? '参加中' : '参加したよ',
+            progressLabel,
+            subLabel,
             completed,
             progress,
             completedAt: completion?.completedAt ?? null,
+            attemptNo,
         };
     });
 
@@ -117,6 +144,7 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
     challenges,
     challengeCompletions,
     challengeEnrollments,
+    challengeAttempts,
     memberNameMap,
     sessionsByMemberId,
     teacherMenus,
@@ -179,8 +207,12 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                     challenge,
                     challengeCompletions,
                     challengeEnrollments,
+                    challengeAttempts,
                     memberNameMap,
                     sessionsByMemberId,
+                );
+                const challengeAttemptStats = getChallengeRetryStats(
+                    challengeAttempts.filter((attempt) => attempt.challengeId === challenge.id),
                 );
                 const completedCount = participantStatuses.filter((item) => item.completed).length;
                 const visibleParticipants = participantStatuses.slice(0, 6);
@@ -250,6 +282,20 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                         ? `参加 ${participantStatuses.length}人 ・ クリア ${completedCount}人`
                                         : 'まだ参加している人はいません'}
                                 </div>
+                                {challengeAttemptStats.totalAttempts > 0 ? (
+                                    <div style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 10,
+                                        color: '#8395A7',
+                                        marginTop: 4,
+                                    }}>
+                                        {`これまで ${challengeAttemptStats.totalAttempts}回挑戦 ・ 再挑戦中 ${challengeAttemptStats.retryingMemberCount}人${
+                                            challengeAttemptStats.repeatCompletionCount > 0
+                                                ? ` ・ もう一回クリア ${challengeAttemptStats.repeatCompletionCount}回`
+                                                : ''
+                                        }`}
+                                    </div>
+                                ) : null}
                                 {cardText && (
                                     <div style={{
                                         fontFamily: "'Noto Sans JP', sans-serif",

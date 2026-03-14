@@ -182,6 +182,24 @@ create table challenge_enrollments (
   unique(challenge_id, account_id, member_id)
 );
 
+create table challenge_attempts (
+  id uuid primary key default gen_random_uuid(),
+  challenge_id uuid references challenges not null,
+  account_id uuid references auth.users not null,
+  member_id uuid not null,
+  attempt_no int not null,
+  joined_at timestamptz not null default now(),
+  effective_start_date text not null,
+  effective_end_date text not null,
+  status text not null default 'active',
+  completed_at timestamptz,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  constraint challenge_attempts_window_check check (effective_end_date >= effective_start_date),
+  constraint challenge_attempts_status_check check (status in ('active', 'completed', 'expired')),
+  unique(challenge_id, account_id, member_id, attempt_no)
+);
+
 create table personal_challenges (
   id uuid primary key default gen_random_uuid(),
   account_id uuid references auth.users not null,
@@ -249,6 +267,7 @@ create index idx_challenges_dates on challenges (start_date, end_date);
 create index idx_challenge_completions_account on challenge_completions (account_id);
 create index idx_challenge_reward_grants_account on challenge_reward_grants (account_id);
 create index idx_challenge_enrollments_account on challenge_enrollments (account_id);
+create index idx_challenge_attempts_account on challenge_attempts (account_id);
 create index idx_personal_challenges_account on personal_challenges (account_id);
 create index idx_personal_challenges_member_status on personal_challenges (member_id, status);
 create index idx_public_menus_downloads on public_menus (download_count desc);
@@ -264,6 +283,7 @@ alter table challenges enable row level security;
 alter table challenge_completions enable row level security;
 alter table challenge_reward_grants enable row level security;
 alter table challenge_enrollments enable row level security;
+alter table challenge_attempts enable row level security;
 alter table personal_challenges enable row level security;
 alter table public_menus enable row level security;
 
@@ -298,6 +318,10 @@ create policy "Teachers can read all challenge reward grants" on challenge_rewar
 create policy "Users can manage own enrollments" on challenge_enrollments
   for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
 create policy "Teachers can read all enrollments" on challenge_enrollments
+  for select using (is_teacher());
+create policy "Users can manage own challenge attempts" on challenge_attempts
+  for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
+create policy "Teachers can read all challenge attempts" on challenge_attempts
   for select using (is_teacher());
 
 create policy "Users can manage own personal challenges" on personal_challenges
@@ -398,6 +422,8 @@ create policy "Developers can read all challenge_completions" on challenge_compl
   for select using (is_developer());
 create policy "Developers can read all challenge_reward_grants" on challenge_reward_grants
   for select using (is_developer());
+create policy "Developers can read all challenge_attempts" on challenge_attempts
+  for select using (is_developer());
 
 -- 休止トグル RPC（開発者のみ）
 create or replace function suspend_account(target_account_id uuid, is_suspended boolean)
@@ -421,6 +447,7 @@ begin
     raise exception 'Unauthorized: only developers can delete account data';
   end if;
   delete from challenge_reward_grants where account_id = target_account_id;
+  delete from challenge_attempts where account_id = target_account_id;
   delete from challenge_completions where account_id = target_account_id;
   delete from public_menus where account_id = target_account_id;
   delete from app_settings where account_id = target_account_id;

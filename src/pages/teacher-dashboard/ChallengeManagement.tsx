@@ -3,6 +3,7 @@ import {
     createChallenge,
     deleteChallenge,
     type Challenge,
+    type ChallengeAttempt,
     type ChallengeCompletion,
     type ChallengeEnrollment,
     updateChallenge,
@@ -23,6 +24,7 @@ interface ChallengeManagementProps {
     challenges: Challenge[];
     challengeCompletions: ChallengeCompletion[];
     challengeEnrollments: ChallengeEnrollment[];
+    challengeAttempts: ChallengeAttempt[];
     memberNameMap: ReadonlyMap<string, string>;
     sessionsByMemberId: ReadonlyMap<string, StudentSession[]>;
     loading: boolean;
@@ -37,6 +39,7 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
     challenges,
     challengeCompletions,
     challengeEnrollments,
+    challengeAttempts,
     memberNameMap,
     sessionsByMemberId,
     loading,
@@ -249,6 +252,7 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                 challenges={challenges}
                 challengeCompletions={challengeCompletions}
                 challengeEnrollments={challengeEnrollments}
+                challengeAttempts={challengeAttempts}
                 memberNameMap={memberNameMap}
                 sessionsByMemberId={sessionsByMemberId}
                 teacherMenus={teacherMenus}
