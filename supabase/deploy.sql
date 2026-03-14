@@ -319,6 +319,19 @@ create index if not exists idx_challenge_enrollments_account on challenge_enroll
 
 alter table challenge_enrollments enable row level security;
 
+create table if not exists challenge_reward_grants (
+  id uuid primary key default gen_random_uuid(),
+  challenge_id uuid references challenges not null,
+  account_id uuid references auth.users not null,
+  member_id uuid not null,
+  granted_at timestamptz default now(),
+  unique (challenge_id, account_id, member_id)
+);
+
+create index if not exists idx_challenge_reward_grants_account on challenge_reward_grants (account_id);
+
+alter table challenge_reward_grants enable row level security;
+
 do $$ begin
   create policy "Users can manage own enrollments" on challenge_enrollments
     for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
@@ -330,6 +343,23 @@ do $$ begin
     for select using (is_teacher());
 exception when duplicate_object then null;
 end $$;
+
+do $$ begin
+  create policy "Users can manage own challenge reward grants" on challenge_reward_grants
+    for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create policy "Teachers can read all challenge reward grants" on challenge_reward_grants
+    for select using (is_teacher());
+exception when duplicate_object then null;
+end $$;
+
+insert into challenge_reward_grants (challenge_id, account_id, member_id, granted_at)
+select challenge_id, account_id, member_id, completed_at
+from challenge_completions
+on conflict (challenge_id, account_id, member_id) do nothing;
 
 create table if not exists personal_challenges (
   id uuid primary key default gen_random_uuid(),
@@ -468,6 +498,13 @@ do $$ begin
 exception when duplicate_object then null;
 end $$;
 
+-- 開発者: 全challenge_reward_grantsをSELECT
+do $$ begin
+  create policy "Developers can read all challenge_reward_grants" on challenge_reward_grants
+    for select using (is_developer());
+exception when duplicate_object then null;
+end $$;
+
 -- ─── RPC関数 ──────────────────────────────────────────
 
 -- ダウンロード数インクリメント（旧版、フォールバック用）
@@ -502,6 +539,7 @@ begin
   delete from exercise_downloads where account_id = target_account_id;
   delete from public_exercises where account_id = target_account_id;
   delete from menu_downloads where account_id = target_account_id;
+  delete from challenge_reward_grants where account_id = target_account_id;
   delete from challenge_completions where account_id = target_account_id;
   delete from public_menus where account_id = target_account_id;
   delete from app_settings where account_id = target_account_id;

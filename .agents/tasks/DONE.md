@@ -4,6 +4,19 @@
 細かい修正は日単位・テーマ単位に要約する。
 詳細履歴は `.agents/tasks/archive/YYYY-MM.md` に移す。
 
+## 2026-03-15: website の更新情報をチャレンジ導線に刷新
+- `public/website/index.html` の更新情報を、ホームで新しい先生チャレンジを見つけて `参加する` まで伝わる内容へ差し替えた
+- Tips も `ホームのチャレンジをのぞこう` に更新し、`npm run build` と desktop / mobile の Playwright visual QA で静的 LP の見え方を確認した
+
+## 2026-03-15: じぶんチャレンジ再挑戦導線
+- `completed / ended_manual / ended_expired` の `じぶんチャレンジ` 詳細から `もう一回つくる` を出し、前回と同じ対象・説明・絵文字・プリセットで新しいチャレンジを作り直せるようにした
+- `npx tsc --noEmit`、対象 vitest、`npm run build` を通した
+
+## 2026-03-15: 先生チャレンジ再挑戦の MVP
+- `always_on + rolling` の先生チャレンジだけ `もう一度やる` を出し、completion を外して新しい rolling 期間で再開できるようにした
+- ごほうびの二重配布を防ぐため `challenge_reward_grants` を追加し、既存 completion からの backfill migration を用意した
+- `npx tsc --noEmit`、対象 vitest、`npm run build` を通した
+
 ## 2026-03-14: じぶんチャレンジ reverse entry 追加
 - 公開メニュー / 公開種目の詳細から、そのまま `じぶんチャレンジ` 作成フォームへ入れる導線を追加した
 - public detail から作る時は一度 import して `もらったメニュー / もらった種目` として扱い、ホーム / 一覧 / 詳細カードでも target 名と絵文字が崩れないよう custom target 解決を追加した
@@ -13,10 +26,6 @@
 - 先生ダッシュボードのチャレンジ一覧で、参加人数・クリア人数・参加中メンバーの進みぐあいを見えるようにした
 - teacher / developer 向けの session snapshot を exercise / menu 判定に足りる形へ広げ、先生画面から `3 / 5日` などの状況を出せるようにした
 - `じぶんチャレンジ` は進捗 0 のときだけ削除できるようにし、先生チャレンジ詳細の `報酬` 文言は `ごほうび` に寄せた
-- `npx tsc --noEmit`、対象 vitest、`npm run build` を通した
-
-## 2026-03-15: じぶんチャレンジ再挑戦導線
-- `completed / ended_manual / ended_expired` の `じぶんチャレンジ` 詳細から `もう一回つくる` を出し、前回と同じ対象・説明・絵文字・プリセットで新しいチャレンジを作り直せるようにした
 - `npx tsc --noEmit`、対象 vitest、`npm run build` を通した
 
 ## 2026-03-14: チャレンジ拡張の仕様整理

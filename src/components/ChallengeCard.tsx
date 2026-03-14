@@ -7,6 +7,7 @@ import { ProgressChallengeCard } from './challenge-card/ProgressChallengeCard';
 import { useChallengeProgress } from './challenge-card/useChallengeProgress';
 import type { ChallengeCardProps } from './challenge-card/types';
 import {
+    canRetryTeacherChallenge,
     createRollingChallengeWindow,
     getChallengeDailyCapLabel,
     getChallengeDeadlineLabel,
@@ -18,12 +19,14 @@ import {
     getChallengeProgressLabel,
     getChallengeTargetLabel,
     markChallengeJoined,
+    retryChallenge,
 } from '../lib/challenges';
 import type { ChallengeProgressWindow } from '../lib/challenge-engine';
 
 export const ChallengeCard: React.FC<ChallengeCardProps> = ({
     challenge,
     completions,
+    rewardGrants,
     teacherExercises = [],
     onCompleted,
     expired,
@@ -55,7 +58,17 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
         [completions, challenge.id],
     );
 
+    const rewardGrantedUserIds = useMemo(
+        () => new Set(
+            rewardGrants
+                .filter((grant) => grant.challengeId === challenge.id)
+                .map((grant) => grant.memberId),
+        ),
+        [rewardGrants, challenge.id],
+    );
+
     const allCompleted = activeUserIds.every((userId) => completedUserIds.has(userId));
+    const canRetry = canRetryTeacherChallenge(challenge);
 
     const effectiveWindow = useMemo<ChallengeProgressWindow | null>(() => {
         for (const userId of activeUserIds) {
@@ -74,6 +87,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
         allCompleted,
         activeUserIds,
         completedUserIds,
+        rewardGrantedUserIds,
         effectiveWindow,
         addChibifuwa,
         addChallengeStars,
@@ -110,6 +124,19 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
         setDetailOpen(false);
     };
 
+    const handleRetry = () => {
+        const nextWindow = createRollingChallengeWindow(challenge);
+
+        activeUserIds.forEach((userId) => {
+            joinChallenge(userId, challenge.id, nextWindow);
+            retryChallenge(challenge.id, userId, nextWindow).catch((error) => {
+                console.warn('[challenges] retryChallenge failed:', error);
+            });
+        });
+        onCompleted();
+        setDetailOpen(false);
+    };
+
     if (expired) {
         const wasCompleted = activeUserIds.some((userId) => completedUserIds.has(userId));
 
@@ -132,8 +159,11 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
                     effectiveWindow={effectiveWindow}
                     joined={isJoined}
                     completed={wasCompleted}
+                    expired
+                    canRetry={canRetry}
                     onClose={() => setDetailOpen(false)}
                     onJoin={handleJoin}
+                    onRetry={handleRetry}
                 />
             </>
         );
@@ -159,8 +189,11 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
                     effectiveWindow={effectiveWindow}
                     joined={false}
                     completed={false}
+                    expired={false}
+                    canRetry={false}
                     onClose={() => setDetailOpen(false)}
                     onJoin={handleJoin}
+                    onRetry={handleRetry}
                 />
             </>
         );
@@ -187,8 +220,11 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
                 effectiveWindow={effectiveWindow}
                 joined
                 completed={allCompleted}
+                expired={false}
+                canRetry={canRetry}
                 onClose={() => setDetailOpen(false)}
                 onJoin={handleJoin}
+                onRetry={handleRetry}
             />
         </>
     );

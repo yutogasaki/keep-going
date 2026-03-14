@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     buildChallengeEnrollmentState,
+    canRetryTeacherChallenge,
     countChallengeProgress,
     getChallengeCardText,
     getChallengeDescriptionText,
@@ -296,6 +297,28 @@ describe('getChallengeRewardLabel', () => {
             rewardFuwafuwaType: 4,
             tier: 'big',
         }))).toBe('メダル');
+    });
+});
+
+describe('canRetryTeacherChallenge', () => {
+    it('allows retry for always-on rolling challenges', () => {
+        expect(canRetryTeacherChallenge(makeChallenge({
+            publishMode: 'always_on',
+            windowType: 'rolling',
+            windowDays: 7,
+        }))).toBe(true);
+    });
+
+    it('does not allow retry for seasonal or calendar challenges', () => {
+        expect(canRetryTeacherChallenge(makeChallenge({
+            publishMode: 'seasonal',
+            windowType: 'rolling',
+            windowDays: 7,
+        }))).toBe(false);
+        expect(canRetryTeacherChallenge(makeChallenge({
+            publishMode: 'always_on',
+            windowType: 'calendar',
+        }))).toBe(false);
     });
 });
 

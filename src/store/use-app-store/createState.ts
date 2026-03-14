@@ -309,14 +309,16 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
     }),
     joinChallenge: (userId, challengeId, effectiveWindow) => set((state) => {
         const joinedForUser = state.joinedChallengeIds[userId] || [];
-        if (joinedForUser.includes(challengeId)) {
+        const alreadyJoined = joinedForUser.includes(challengeId);
+
+        if (alreadyJoined && !effectiveWindow) {
             return state;
         }
 
         return {
             joinedChallengeIds: {
                 ...state.joinedChallengeIds,
-                [userId]: [...joinedForUser, challengeId],
+                [userId]: alreadyJoined ? joinedForUser : [...joinedForUser, challengeId],
             },
             challengeEnrollmentWindows: effectiveWindow ? {
                 ...state.challengeEnrollmentWindows,

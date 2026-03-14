@@ -256,6 +256,24 @@ export interface Database {
                 Update: Partial<Database['public']['Tables']['challenge_completions']['Insert']>;
                 Relationships: [];
             };
+            challenge_reward_grants: {
+                Row: {
+                    id: string;
+                    challenge_id: string;
+                    account_id: string;
+                    member_id: string;
+                    granted_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    challenge_id: string;
+                    account_id: string;
+                    member_id: string;
+                    granted_at?: string;
+                };
+                Update: Partial<Database['public']['Tables']['challenge_reward_grants']['Insert']>;
+                Relationships: [];
+            };
             challenge_enrollments: {
                 Row: {
                     id: string;

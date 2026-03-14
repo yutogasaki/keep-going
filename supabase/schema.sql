@@ -160,6 +160,15 @@ create table challenge_completions (
   unique(challenge_id, account_id, member_id)
 );
 
+create table challenge_reward_grants (
+  id uuid primary key default gen_random_uuid(),
+  challenge_id uuid references challenges not null,
+  account_id uuid references auth.users not null,
+  member_id uuid not null,
+  granted_at timestamptz default now(),
+  unique(challenge_id, account_id, member_id)
+);
+
 create table challenge_enrollments (
   id uuid primary key default gen_random_uuid(),
   challenge_id uuid references challenges not null,
@@ -238,6 +247,7 @@ create index idx_sessions_date on sessions (account_id, date);
 create index idx_user_roles_role on user_roles (role);
 create index idx_challenges_dates on challenges (start_date, end_date);
 create index idx_challenge_completions_account on challenge_completions (account_id);
+create index idx_challenge_reward_grants_account on challenge_reward_grants (account_id);
 create index idx_challenge_enrollments_account on challenge_enrollments (account_id);
 create index idx_personal_challenges_account on personal_challenges (account_id);
 create index idx_personal_challenges_member_status on personal_challenges (member_id, status);
@@ -252,6 +262,7 @@ alter table app_settings enable row level security;
 alter table user_roles enable row level security;
 alter table challenges enable row level security;
 alter table challenge_completions enable row level security;
+alter table challenge_reward_grants enable row level security;
 alter table challenge_enrollments enable row level security;
 alter table personal_challenges enable row level security;
 alter table public_menus enable row level security;
@@ -277,6 +288,11 @@ create policy "Teachers can manage challenges" on challenges
 create policy "Users can manage own completions" on challenge_completions
   for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
 create policy "Teachers can read all completions" on challenge_completions
+  for select using (is_teacher());
+
+create policy "Users can manage own challenge reward grants" on challenge_reward_grants
+  for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
+create policy "Teachers can read all challenge reward grants" on challenge_reward_grants
   for select using (is_teacher());
 
 create policy "Users can manage own enrollments" on challenge_enrollments
@@ -380,6 +396,8 @@ create policy "Developers can read all menu_groups" on menu_groups
   for select using (is_developer());
 create policy "Developers can read all challenge_completions" on challenge_completions
   for select using (is_developer());
+create policy "Developers can read all challenge_reward_grants" on challenge_reward_grants
+  for select using (is_developer());
 
 -- 休止トグル RPC（開発者のみ）
 create or replace function suspend_account(target_account_id uuid, is_suspended boolean)
@@ -402,6 +420,7 @@ begin
   if not is_developer() then
     raise exception 'Unauthorized: only developers can delete account data';
   end if;
+  delete from challenge_reward_grants where account_id = target_account_id;
   delete from challenge_completions where account_id = target_account_id;
   delete from public_menus where account_id = target_account_id;
   delete from app_settings where account_id = target_account_id;

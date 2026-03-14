@@ -25,8 +25,11 @@ interface ChallengeDetailSheetProps {
     effectiveWindow?: ChallengeProgressWindow | null;
     joined: boolean;
     completed: boolean;
+    expired: boolean;
+    canRetry: boolean;
     onClose: () => void;
     onJoin: () => void;
+    onRetry: () => void;
 }
 
 export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
@@ -37,8 +40,11 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
     effectiveWindow,
     joined,
     completed,
+    expired,
+    canRetry,
     onClose,
     onJoin,
+    onRetry,
 }) => {
     if (!challenge) {
         return null;
@@ -145,7 +151,9 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                     }}
                 >
                     {completed ? (
-                        'クリア済みです。'
+                        canRetry ? 'クリア済みです。またやりたくなったら、もう一度できます。' : 'クリア済みです。'
+                    ) : expired ? (
+                        canRetry ? '期間が終わったよ。もう一度やると、新しい期間ではじめられるよ。' : '期間が終わったよ。'
                     ) : joined ? (
                         `いまの進みぐあい: ${progressLabel}`
                     ) : (
@@ -173,6 +181,26 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                         }}
                     >
                         参加する
+                    </button>
+                )}
+                {canRetry && (completed || expired) && (
+                    <button
+                        type="button"
+                        onClick={onRetry}
+                        style={{
+                            width: '100%',
+                            padding: '12px 0',
+                            borderRadius: RADIUS.lg,
+                            border: '1px solid rgba(43, 186, 160, 0.18)',
+                            background: 'rgba(255,255,255,0.75)',
+                            color: COLOR.primaryDark,
+                            fontFamily: FONT.body,
+                            fontSize: FONT_SIZE.md,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                        }}
+                    >
+                        もう一度やる
                     </button>
                 )}
             </div>

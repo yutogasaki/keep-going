@@ -226,6 +226,7 @@ export const HomeScreen: React.FC = () => {
         todayDoneChallenges,
         pastChallenges,
         completions,
+        rewardGrants,
         teacherExercises,
         pastExpanded,
         setPastExpanded,
@@ -757,6 +758,7 @@ export const HomeScreen: React.FC = () => {
                 personalTodayDoneChallenges={personalTodayDoneChallenges.slice(0, 2)}
                 personalPastChallenges={personalPastChallenges.slice(0, 2)}
                 completions={completions}
+                rewardGrants={rewardGrants}
                 recommendedMenus={recommendedMenus}
                 recommendedExercises={recommendedExercises}
                 teacherExercises={teacherExercises}
@@ -797,6 +799,7 @@ export const HomeScreen: React.FC = () => {
                 teacherTodayDoneChallenges={todayDoneChallenges}
                 teacherPastChallenges={pastChallenges}
                 completions={completions}
+                rewardGrants={rewardGrants}
                 teacherExercises={teacherExercises}
                 teacherMenus={teacherContent.teacherMenus}
                 customExercises={customChallengeExercises}

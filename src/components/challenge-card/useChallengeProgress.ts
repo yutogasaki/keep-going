@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
     countChallengeProgress,
+    markChallengeRewardGranted,
     getChallengeGoalTarget,
     markChallengeComplete,
     type Challenge,
@@ -14,6 +15,7 @@ interface UseChallengeProgressParams {
     allCompleted: boolean;
     activeUserIds: string[];
     completedUserIds: Set<string>;
+    rewardGrantedUserIds: Set<string>;
     effectiveWindow?: ChallengeProgressWindow | null;
     addChibifuwa: (userId: string, record: Omit<ChibifuwaRecord, 'id'>) => void;
     addChallengeStars: (userId: string, amount: number) => void;
@@ -26,6 +28,7 @@ export function useChallengeProgress({
     allCompleted,
     activeUserIds,
     completedUserIds,
+    rewardGrantedUserIds,
     effectiveWindow,
     addChibifuwa,
     addChallengeStars,
@@ -59,14 +62,17 @@ export function useChallengeProgress({
             for (const userId of activeUserIds) {
                 if (!completedUserIds.has(userId)) {
                     await markChallengeComplete(challenge.id, userId).catch(console.warn);
-                    if (challenge.rewardKind === 'star') {
-                        addChallengeStars(userId, challenge.rewardValue);
-                    } else if (challenge.rewardFuwafuwaType != null) {
-                        addChibifuwa(userId, {
-                            type: challenge.rewardFuwafuwaType,
-                            challengeTitle: challenge.title,
-                            earnedDate: new Date().toISOString().split('T')[0],
-                        });
+                    if (!rewardGrantedUserIds.has(userId)) {
+                        await markChallengeRewardGranted(challenge.id, userId).catch(console.warn);
+                        if (challenge.rewardKind === 'star') {
+                            addChallengeStars(userId, challenge.rewardValue);
+                        } else if (challenge.rewardFuwafuwaType != null) {
+                            addChibifuwa(userId, {
+                                type: challenge.rewardFuwafuwaType,
+                                challengeTitle: challenge.title,
+                                earnedDate: new Date().toISOString().split('T')[0],
+                            });
+                        }
                     }
                 }
             }
@@ -79,6 +85,7 @@ export function useChallengeProgress({
         allCompleted,
         activeUserIds,
         completedUserIds,
+        rewardGrantedUserIds,
         addChibifuwa,
         addChallengeStars,
         onCompleted,

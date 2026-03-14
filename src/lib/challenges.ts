@@ -63,6 +63,14 @@ export interface ChallengeCompletion {
     completedAt: string;
 }
 
+export interface ChallengeRewardGrant {
+    id: string;
+    challengeId: string;
+    accountId: string;
+    memberId: string;
+    grantedAt: string;
+}
+
 export interface ChallengeEnrollment {
     id: string;
     challengeId: string;
@@ -295,6 +303,12 @@ export function getChallengeRewardLabel(challenge: Challenge): string {
     return challenge.rewardKind === 'star'
         ? `ほし ${challenge.rewardValue}こ`
         : 'メダル';
+}
+
+export function canRetryTeacherChallenge(
+    challenge: Pick<Challenge, 'publishMode' | 'windowType'>,
+): boolean {
+    return challenge.publishMode === 'always_on' && challenge.windowType === 'rolling';
 }
 
 export function getChallengeGoalTarget(
@@ -658,6 +672,30 @@ export async function fetchMyCompletions(): Promise<ChallengeCompletion[]> {
     }));
 }
 
+export async function fetchMyChallengeRewardGrants(): Promise<ChallengeRewardGrant[]> {
+    if (!supabase) return [];
+    const accountId = getAccountId();
+    if (!accountId) return [];
+
+    const { data, error } = await supabase
+        .from('challenge_reward_grants')
+        .select('*')
+        .eq('account_id', accountId);
+
+    if (error) {
+        console.warn('[challenges] fetchMyChallengeRewardGrants failed:', error);
+        return [];
+    }
+
+    return (data ?? []).map((row) => ({
+        id: row.id,
+        challengeId: row.challenge_id,
+        accountId: row.account_id,
+        memberId: row.member_id,
+        grantedAt: row.granted_at,
+    }));
+}
+
 export async function fetchTeacherChallengeCompletions(): Promise<ChallengeCompletion[]> {
     if (!supabase) return [];
 
@@ -748,6 +786,56 @@ export async function markChallengeComplete(
     }, { onConflict: 'challenge_id,account_id,member_id' });
 
     if (error) throw error;
+}
+
+export async function markChallengeRewardGranted(
+    challengeId: string,
+    memberId: string,
+): Promise<void> {
+    if (!supabase) return;
+    const accountId = getAccountId();
+    if (!accountId) return;
+
+    const { error } = await supabase.from('challenge_reward_grants').upsert({
+        challenge_id: challengeId,
+        account_id: accountId,
+        member_id: memberId,
+    }, { onConflict: 'challenge_id,account_id,member_id' });
+
+    if (error) throw error;
+}
+
+export async function retryChallenge(
+    challengeId: string,
+    memberId: string,
+    effectiveWindow: ChallengeProgressWindow,
+): Promise<void> {
+    if (!supabase) return;
+    const accountId = getAccountId();
+    if (!accountId) return;
+
+    const joinedAt = new Date().toISOString();
+    const enrollmentPayload: Database['public']['Tables']['challenge_enrollments']['Insert'] = {
+        challenge_id: challengeId,
+        account_id: accountId,
+        member_id: memberId,
+        joined_at: joinedAt,
+        effective_start_date: effectiveWindow.startDate,
+        effective_end_date: effectiveWindow.endDate,
+    };
+
+    const [{ error: enrollmentError }, { error: completionError }] = await Promise.all([
+        supabase.from('challenge_enrollments').upsert(enrollmentPayload, { onConflict: 'challenge_id,account_id,member_id' }),
+        supabase
+            .from('challenge_completions')
+            .delete()
+            .eq('challenge_id', challengeId)
+            .eq('account_id', accountId)
+            .eq('member_id', memberId),
+    ]);
+
+    if (enrollmentError) throw enrollmentError;
+    if (completionError) throw completionError;
 }
 
 // ─── Progress calculation (from local sessions) ──────

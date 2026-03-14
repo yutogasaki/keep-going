@@ -4,6 +4,7 @@ import {
     fetchAllChallenges,
     fetchMyEnrollments,
     fetchMyCompletions,
+    fetchMyChallengeRewardGrants,
     buildChallengeEnrollmentState,
     getChallengeActiveWindow,
     isChallengeDoneForToday,
@@ -12,6 +13,7 @@ import {
     isChallengePublishedOnDate,
     type Challenge,
     type ChallengeCompletion,
+    type ChallengeRewardGrant,
 } from '../../../lib/challenges';
 import { getTodayKey } from '../../../lib/db';
 import { fetchTeacherExercises, type TeacherExercise } from '../../../lib/teacherContent';
@@ -28,6 +30,7 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
     const [todayDoneChallenges, setTodayDoneChallenges] = useState<Challenge[]>([]);
     const [pastChallenges, setPastChallenges] = useState<Challenge[]>([]);
     const [completions, setCompletions] = useState<ChallengeCompletion[]>([]);
+    const [rewardGrants, setRewardGrants] = useState<ChallengeRewardGrant[]>([]);
     const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
     const [pastExpanded, setPastExpanded] = useState(false);
     const hydrateChallengeEnrollmentState = useAppStore((state) => state.hydrateChallengeEnrollmentState);
@@ -37,6 +40,7 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
     const loadChallenges = useCallback(() => {
         fetchAllChallenges().then(setAllChallenges).catch(console.warn);
         fetchMyCompletions().then(setCompletions).catch(console.warn);
+        fetchMyChallengeRewardGrants().then(setRewardGrants).catch(console.warn);
         fetchMyEnrollments()
             .then((enrollments) => {
                 const enrollmentState = buildChallengeEnrollmentState(enrollments);
@@ -174,6 +178,7 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
         todayDoneChallenges,
         pastChallenges,
         completions,
+        rewardGrants,
         teacherExercises,
         pastExpanded,
         setPastExpanded,

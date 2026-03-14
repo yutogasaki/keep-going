@@ -7,7 +7,7 @@ import { PopularMenusRow } from '../../components/PopularMenusRow';
 import { HomeTeacherMenuHighlights } from './HomeTeacherMenuHighlights';
 import type { ExercisePlacement } from '../../data/exercisePlacement';
 import type { MenuGroup } from '../../data/menuGroups';
-import type { Challenge, ChallengeCompletion } from '../../lib/challenges';
+import type { Challenge, ChallengeCompletion, ChallengeRewardGrant } from '../../lib/challenges';
 import type { CustomExercise } from '../../lib/db';
 import type { PublicExercise } from '../../lib/publicExercises';
 import type { PublicMenu } from '../../lib/publicMenus';
@@ -23,6 +23,7 @@ interface HomeChallengesAndMenusProps {
     personalTodayDoneChallenges: PersonalChallengeProgressItem[];
     personalPastChallenges: PersonalChallengeProgressItem[];
     completions: ChallengeCompletion[];
+    rewardGrants: ChallengeRewardGrant[];
     recommendedMenus: PublicMenu[];
     recommendedExercises: PublicExercise[];
     teacherExercises: TeacherExercise[];
@@ -58,6 +59,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
     personalTodayDoneChallenges,
     personalPastChallenges,
     completions,
+    rewardGrants,
     recommendedMenus,
     recommendedExercises,
     teacherExercises,
@@ -139,6 +141,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                             key={challenge.id}
                             challenge={challenge}
                             completions={completions}
+                            rewardGrants={rewardGrants}
                             teacherExercises={teacherExercises}
                             onCompleted={onChallengesUpdated}
                         />
@@ -172,6 +175,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                                     key={challenge.id}
                                     challenge={challenge}
                                     completions={completions}
+                                    rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
                                     onCompleted={onChallengesUpdated}
                                 />
@@ -260,6 +264,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                                         key={challenge.id}
                                         challenge={challenge}
                                         completions={completions}
+                                        rewardGrants={rewardGrants}
                                         teacherExercises={teacherExercises}
                                         onCompleted={onChallengesUpdated}
                                         expired

@@ -3,7 +3,7 @@ import { Modal } from '../../components/Modal';
 import { ChallengeCard } from '../../components/ChallengeCard';
 import { PersonalChallengeCard } from '../../components/PersonalChallengeCard';
 import type { MenuGroup } from '../../data/menuGroups';
-import type { Challenge, ChallengeCompletion } from '../../lib/challenges';
+import type { Challenge, ChallengeCompletion, ChallengeRewardGrant } from '../../lib/challenges';
 import type { CustomExercise } from '../../lib/db';
 import type { TeacherExercise, TeacherMenu } from '../../lib/teacherContent';
 import type { PersonalChallengeProgressItem } from './hooks/usePersonalChallenges';
@@ -18,6 +18,7 @@ interface ChallengeHubSheetProps {
     teacherTodayDoneChallenges: Challenge[];
     teacherPastChallenges: Challenge[];
     completions: ChallengeCompletion[];
+    rewardGrants: ChallengeRewardGrant[];
     teacherExercises: TeacherExercise[];
     teacherMenus: TeacherMenu[];
     customExercises: CustomExercise[];
@@ -39,6 +40,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
     teacherTodayDoneChallenges,
     teacherPastChallenges,
     completions,
+    rewardGrants,
     teacherExercises,
     teacherMenus,
     customExercises,
@@ -119,6 +121,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     key={challenge.id}
                                     challenge={challenge}
                                     completions={completions}
+                                    rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
                                     onCompleted={onTeacherChallengesUpdated}
                                 />
@@ -146,6 +149,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                         key={challenge.id}
                                         challenge={challenge}
                                         completions={completions}
+                                        rewardGrants={rewardGrants}
                                         teacherExercises={teacherExercises}
                                         onCompleted={onTeacherChallengesUpdated}
                                     />
@@ -175,6 +179,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     key={challenge.id}
                                     challenge={challenge}
                                     completions={completions}
+                                    rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
                                     onCompleted={onTeacherChallengesUpdated}
                                 />
@@ -184,6 +189,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     key={challenge.id}
                                     challenge={challenge}
                                     completions={completions}
+                                    rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
                                     onCompleted={onTeacherChallengesUpdated}
                                 />
@@ -270,6 +276,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     key={challenge.id}
                                     challenge={challenge}
                                     completions={completions}
+                                    rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
                                     onCompleted={onTeacherChallengesUpdated}
                                     expired
