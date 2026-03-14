@@ -604,7 +604,9 @@ export async function fetchAllChallenges(): Promise<Challenge[]> {
 // ─── Create / Delete (teacher only) ─────────────────
 
 export async function createChallenge(data: ChallengeWriteInput): Promise<void> {
-    if (!supabase) return;
+    if (!supabase) {
+        throw new Error('Supabase is not configured');
+    }
 
     const { error } = await supabase.from('challenges').insert(toChallengeInsertRow(data));
 
@@ -612,7 +614,9 @@ export async function createChallenge(data: ChallengeWriteInput): Promise<void> 
 }
 
 export async function updateChallenge(id: string, data: ChallengeWriteInput): Promise<void> {
-    if (!supabase) return;
+    if (!supabase) {
+        throw new Error('Supabase is not configured');
+    }
 
     const { error } = await supabase.from('challenges').update(toChallengeUpdateRow(data)).eq('id', id);
 
@@ -620,7 +624,9 @@ export async function updateChallenge(id: string, data: ChallengeWriteInput): Pr
 }
 
 export async function deleteChallenge(id: string): Promise<void> {
-    if (!supabase) return;
+    if (!supabase) {
+        throw new Error('Supabase is not configured');
+    }
 
     const { error } = await supabase.from('challenges').delete().eq('id', id);
     if (error) throw error;

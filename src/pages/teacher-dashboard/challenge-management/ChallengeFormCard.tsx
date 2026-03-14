@@ -19,6 +19,7 @@ interface ChallengeFormCardProps {
     teacherExercises: TeacherExercise[];
     submitting: boolean;
     isEditing: boolean;
+    saveError?: string | null;
     onChange: (patch: Partial<ChallengeFormValues>) => void;
     onToggleClassLevel: (level: string) => void;
     onCancel: () => void;
@@ -202,6 +203,7 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
     teacherExercises,
     submitting,
     isEditing,
+    saveError = null,
     onChange,
     onToggleClassLevel,
     onCancel,
@@ -1217,6 +1219,22 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                     アイコンは別で入力せず、選んだ種目やメニューの見た目をそのまま使います。
                 </div>
             </Section>
+
+            {saveError ? (
+                <div style={{
+                    padding: '12px 14px',
+                    borderRadius: RADIUS.lg,
+                    background: 'rgba(225, 112, 85, 0.1)',
+                    border: '1px solid rgba(225, 112, 85, 0.24)',
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.sm,
+                    color: COLOR.danger,
+                    lineHeight: 1.7,
+                }}
+                >
+                    {saveError}
+                </div>
+            ) : null}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
                 <button

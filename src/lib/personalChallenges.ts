@@ -16,6 +16,7 @@ import { getAccountId } from './sync/authState';
 export type PersonalChallengeStatus = 'active' | 'completed' | 'ended_manual' | 'ended_expired';
 export const PERSONAL_CHALLENGE_ACTIVE_LIMIT = 3;
 export const PERSONAL_CHALLENGE_LIMIT_REACHED_ERROR = 'PERSONAL_CHALLENGE_LIMIT_REACHED';
+export const PERSONAL_CHALLENGE_ACCOUNT_REQUIRED_ERROR = 'PERSONAL_CHALLENGE_ACCOUNT_REQUIRED';
 
 export interface PersonalChallenge {
     id: string;
@@ -402,9 +403,13 @@ export async function fetchMyPastPersonalChallenges(limit = 20): Promise<Persona
 export async function createPersonalChallenge(
     input: PersonalChallengeCreateInput,
 ): Promise<PersonalChallenge | null> {
-    if (!supabase) return null;
+    if (!supabase) {
+        throw new Error(PERSONAL_CHALLENGE_ACCOUNT_REQUIRED_ERROR);
+    }
     const accountId = getAccountId();
-    if (!accountId) return null;
+    if (!accountId) {
+        throw new Error(PERSONAL_CHALLENGE_ACCOUNT_REQUIRED_ERROR);
+    }
 
     const activeCount = await fetchMyActivePersonalChallengeCount(input.memberId);
     if (isPersonalChallengeLimitReached(activeCount)) {

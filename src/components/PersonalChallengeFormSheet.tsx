@@ -3,6 +3,7 @@ import { getExercisesByClass } from '../data/exercises';
 import { getPresetsForClass, type MenuGroup } from '../data/menuGroups';
 import type { CustomExercise } from '../lib/db';
 import {
+    PERSONAL_CHALLENGE_ACCOUNT_REQUIRED_ERROR,
     createPersonalChallenge,
     fetchMyActivePersonalChallengeCount,
     getRemainingPersonalChallengeSlots,
@@ -12,6 +13,7 @@ import {
     updatePersonalChallengeMeta,
     updatePersonalChallengeSetup,
 } from '../lib/personalChallenges';
+import { getAccountId } from '../lib/sync/authState';
 import type { TeacherExercise, TeacherMenu } from '../lib/teacherContent';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../lib/styles';
 import type { PersonalChallengeProgressItem } from '../pages/home/hooks/usePersonalChallenges';
@@ -220,9 +222,14 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
     const selectedTargetMissing = challengeType === 'exercise'
         ? !exerciseId
         : !targetMenuId;
+    const hasChallengeAccount = Boolean(getAccountId());
     const limitReached = !isEditing && isPersonalChallengeLimitReached(activeChallengeCount);
     const remainingSlots = getRemainingPersonalChallengeSlots(activeChallengeCount);
-    const submitDisabled = !member || submitting || selectedTargetMissing || (!isEditing && (activeCountLoading || limitReached));
+    const submitDisabled = !member
+        || !hasChallengeAccount
+        || submitting
+        || selectedTargetMissing
+        || (!isEditing && (activeCountLoading || limitReached));
 
     const handleSubmit = async () => {
         if (!member || submitDisabled) {
@@ -297,6 +304,8 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
             if (error instanceof Error && error.message === PERSONAL_CHALLENGE_LIMIT_REACHED_ERROR) {
                 setSaveError(`いまは${PERSONAL_CHALLENGE_ACTIVE_LIMIT}つ進めているよ。どれか終わったら新しくつくれるよ。`);
                 setActiveChallengeCount(PERSONAL_CHALLENGE_ACTIVE_LIMIT);
+            } else if (error instanceof Error && error.message === PERSONAL_CHALLENGE_ACCOUNT_REQUIRED_ERROR) {
+                setSaveError('じぶんチャレンジは アカウントをつないでから使えるよ。');
             } else {
                 setSaveError('ほぞんに失敗したよ。もう一度ためしてみてね。');
             }
@@ -521,12 +530,12 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
                         />
                     </label>
                     <label style={fieldStyle}>
-                        <span style={fieldLabelStyle}>アイコン</span>
+                        <span style={fieldLabelStyle}>カードの絵文字</span>
                         <input
                             type="text"
                             value={iconEmoji}
                             onChange={(event) => setIconEmoji(event.target.value)}
-                            placeholder="⭐ など"
+                            placeholder="空なら種目やメニューの絵文字を使うよ"
                             style={inputStyle}
                         />
                     </label>
@@ -535,7 +544,9 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
                 <div style={summaryCardStyle}>
                     <div style={{ fontWeight: 800, color: COLOR.dark }}>ほし 1こ</div>
                     <div style={{ marginTop: 4 }}>
-                        {isEditing
+                        {!hasChallengeAccount
+                            ? 'じぶんチャレンジは アカウントをつなぐと保存して続きから使えるよ。'
+                            : isEditing
                             ? '軽い目標だけど、1日では終わらないように 7日以上から選べるよ。'
                             : activeCountLoading
                                 ? 'いま進めているチャレンジ数を確認しているよ。'

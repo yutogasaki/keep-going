@@ -40,6 +40,7 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
     const [editingId, setEditingId] = useState<string | null>(null);
     const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
     const [deleting, setDeleting] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
     const [teacherMenus, setTeacherMenus] = useState<TeacherMenu[]>([]);
     const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
 
@@ -59,12 +60,31 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
     const resetForm = () => {
         setFormValues(createDefaultChallengeFormValues());
         setEditingId(null);
+        setSaveError(null);
     };
 
     const startEdit = (challenge: Challenge) => {
         setFormValues(createChallengeFormValuesFromChallenge(challenge));
         setEditingId(challenge.id);
+        setSaveError(null);
         setShowCreateForm(true);
+    };
+
+    const formatSaveError = (error: unknown): string => {
+        if (!(error instanceof Error)) {
+            return '保存に失敗しました。もう一度ためしてね。';
+        }
+
+        const message = error.message.trim();
+        if (message.length === 0) {
+            return '保存に失敗しました。もう一度ためしてね。';
+        }
+
+        if (message.includes('relation') || message.includes('column') || message.includes('schema cache')) {
+            return `DBの更新がまだ入っていないかも。${message}`;
+        }
+
+        return message;
     };
 
     const toggleClassLevel = (level: string) => {
@@ -82,6 +102,7 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
         }
 
         setSubmitting(true);
+        setSaveError(null);
         const trimmedTitle = formValues.title.trim();
         const trimmedDescription = formValues.description.trim();
         const windowType = formValues.windowType;
@@ -159,6 +180,7 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
             onCreated();
         } catch (error) {
             console.warn('[teacher] Failed to save challenge:', error);
+            setSaveError(formatSaveError(error));
         } finally {
             setSubmitting(false);
         }
@@ -201,6 +223,7 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                     teacherExercises={teacherExercises}
                     submitting={submitting}
                     isEditing={!!editingId}
+                    saveError={saveError}
                     onChange={(patch) => {
                         setFormValues((previous) => ({ ...previous, ...patch }));
                     }}
