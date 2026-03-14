@@ -48,7 +48,7 @@ export interface RecordSuggestionSummary {
     title: string;
     body: string;
     ctaLabel: string;
-    suggestedPlacement: ExercisePlacement | null;
+    targetTab: 'group' | 'individual';
 }
 
 export interface RecordTopExerciseChip {
@@ -68,8 +68,6 @@ export interface RecordHistoryAccordionSection {
 }
 
 const WEEKDAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'];
-const ACTIONABLE_PLACEMENTS: ExercisePlacement[] = ['stretch', 'core', 'barre', 'ending'];
-
 function formatTime(iso: string): string {
     return new Date(iso).toLocaleTimeString('ja-JP', {
         hour: '2-digit',
@@ -283,88 +281,88 @@ export function buildTwoWeekRecordSummary({
 
 export function buildRecordSuggestionSummary({
     sessions,
-    exerciseMap,
+    todaySummary,
+    quickMenuName,
 }: {
     sessions: SessionRecord[];
-    exerciseMap: Map<string, RecordExerciseDisplayInfo>;
+    todaySummary: TodayRecordSummary;
+    quickMenuName: string | null;
 }): RecordSuggestionSummary {
     const dates = new Set(Array.from({ length: 14 }, (_, index) => getDateKeyOffset(-(13 - index))));
     const recentSessions = sessions.filter((session) => dates.has(session.date));
-    const availablePlacements = ACTIONABLE_PLACEMENTS.filter((placement) =>
-        Array.from(exerciseMap.values()).some((exercise) => exercise.placement === placement),
-    );
-    const preferredDefaultPlacement = availablePlacements.includes('stretch')
-        ? 'stretch'
-        : availablePlacements[0] ?? 'stretch';
-    const placementCounts = new Map<ExercisePlacement, number>();
-
-    for (const placement of availablePlacements) {
-        placementCounts.set(placement, 0);
-    }
-
+    const recentMenuCandidates = new Map<string, { name: string; count: number; lastStartedAt: string }>();
     for (const session of recentSessions) {
-        for (const [exerciseId, count] of Object.entries(getSessionExerciseCounts(session))) {
-            const placement = exerciseMap.get(exerciseId)?.placement ?? 'stretch';
-            if (!placementCounts.has(placement)) {
-                continue;
-            }
-            placementCounts.set(placement, (placementCounts.get(placement) ?? 0) + count);
+        if (!session.sourceMenuName) {
+            continue;
         }
-    }
 
-    if (recentSessions.length === 0) {
-        return {
-            title: 'まずはひとつ、どう？',
-            body: 'はじめやすい ストレッチからでも いいよ',
-            ctaLabel: 'みてみる',
-            suggestedPlacement: preferredDefaultPlacement,
-        };
-    }
-
-    const sortedSuggestedPlacements = Array.from(placementCounts.entries())
-        .sort((a, b) => {
-            if (a[1] !== b[1]) {
-                return a[1] - b[1];
+        const key = `${session.sourceMenuSource ?? 'unknown'}:${session.sourceMenuId ?? session.sourceMenuName}`;
+        const existing = recentMenuCandidates.get(key);
+        if (existing) {
+            existing.count += 1;
+            if (session.startedAt > existing.lastStartedAt) {
+                existing.lastStartedAt = session.startedAt;
             }
+            continue;
+        }
 
-            const order = ['core', 'barre', 'ending', 'stretch'];
-            return order.indexOf(a[0]) - order.indexOf(b[0]);
+        recentMenuCandidates.set(key, {
+            name: session.sourceMenuName,
+            count: 1,
+            lastStartedAt: session.startedAt,
         });
-    const suggestedPlacement = sortedSuggestedPlacements.length > 0
-        ? sortedSuggestedPlacements[0][0]
-        : preferredDefaultPlacement;
+    }
 
-    switch (suggestedPlacement) {
-    case 'stretch':
+    const familiarMenu = Array.from(recentMenuCandidates.values())
+        .sort((left, right) => {
+            if (right.count !== left.count) {
+                return right.count - left.count;
+            }
+            if (right.lastStartedAt !== left.lastStartedAt) {
+                return right.lastStartedAt.localeCompare(left.lastStartedAt);
+            }
+            return left.name.localeCompare(right.name, 'ja');
+        })[0] ?? null;
+
+    if (todaySummary.sessionCount === 0) {
         return {
-            title: 'ストレッチをひとつ、どう？',
-            body: 'この2週間は まだ出番が少なめ',
-            ctaLabel: 'みてみる',
-            suggestedPlacement,
-        };
-    case 'barre':
-        return {
-            title: 'バーをひとつ、どう？',
-            body: 'この2週間は まだ出番が少なめ',
-            ctaLabel: 'みてみる',
-            suggestedPlacement,
-        };
-    case 'ending':
-        return {
-            title: 'おわりをひとつ、どう？',
-            body: 'この2週間は まだ出番が少なめ',
-            ctaLabel: 'みてみる',
-            suggestedPlacement,
-        };
-    case 'core':
-    default:
-        return {
-            title: '体幹をひとつ、どう？',
-            body: 'この2週間は まだ出番が少なめ',
-            ctaLabel: 'みてみる',
-            suggestedPlacement: 'core',
+            title: 'まずはやってみよう',
+            body: quickMenuName
+                ? `「${quickMenuName}」からでも いいよ`
+                : '短めのメニューからでも いいよ',
+            ctaLabel: 'メニューをみる',
+            targetTab: 'group',
         };
     }
+
+    if (todaySummary.remainingMinutes > 0) {
+        return {
+            title: todaySummary.remainingMinutes <= 3
+                ? `あと${todaySummary.remainingMinutes}分だけ やってみる？`
+                : 'もうすこしやってみる？',
+            body: quickMenuName
+                ? `「${quickMenuName}」みたいな 短めメニューが合いそう`
+                : '短めのメニューなら つづけやすいよ',
+            ctaLabel: 'メニューをみる',
+            targetTab: 'group',
+        };
+    }
+
+    if (familiarMenu) {
+        return {
+            title: `「${familiarMenu.name}」どう？`,
+            body: '最近よく会うメニューだよ',
+            ctaLabel: 'メニューをみる',
+            targetTab: 'group',
+        };
+    }
+
+    return {
+        title: 'メニューをのぞいてみる？',
+        body: '次にやるときのメニューを 見ておくのもよさそう',
+        ctaLabel: 'メニューをみる',
+        targetTab: 'group',
+    };
 }
 
 export function buildTopExerciseChips({

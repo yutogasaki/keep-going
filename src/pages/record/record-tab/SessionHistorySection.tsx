@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CalendarDays, ChevronRight, Clock3 } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../../lib/styles';
 import type { RecordHistoryAccordionSection } from '../recordOverviewSummary';
 import { formatDate } from '../recordUtils';
@@ -13,18 +13,6 @@ interface SessionHistorySectionProps {
 function formatDuration(totalSeconds: number): string {
     const minutes = Math.floor(totalSeconds / 60);
     return `${minutes}分`;
-}
-
-function getSectionHint(section: RecordHistoryAccordionSection): string {
-    switch (section.id) {
-    case 'today':
-        return 'きょうの足あと';
-    case 'thisWeek':
-        return '今週のまとまり';
-    case 'lastWeek':
-    default:
-        return '先週のまとまり';
-    }
 }
 
 function getSessionBadgeLabel(
@@ -120,46 +108,16 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
                                 textAlign: 'left',
                             }}
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                                <div
-                                    style={{
-                                        width: 38,
-                                        height: 38,
-                                        borderRadius: RADIUS['2xl'],
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        background: expanded
-                                            ? 'rgba(43, 186, 160, 0.12)'
-                                            : 'rgba(131, 149, 167, 0.12)',
-                                        color: expanded ? COLOR.primaryDark : COLOR.muted,
-                                        flexShrink: 0,
-                                    }}
-                                >
-                                    <CalendarDays size={18} />
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-                                    <span
-                                        style={{
-                                            fontFamily: FONT.body,
-                                            fontSize: FONT_SIZE.lg,
-                                            fontWeight: 800,
-                                            color: COLOR.dark,
-                                        }}
-                                    >
-                                        {section.label}
-                                    </span>
-                                    <span
-                                        style={{
-                                            fontFamily: FONT.body,
-                                            fontSize: FONT_SIZE.sm,
-                                            color: COLOR.muted,
-                                        }}
-                                    >
-                                        {getSectionHint(section)}
-                                    </span>
-                                </div>
-                            </div>
+                            <span
+                                style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.lg,
+                                    fontWeight: 800,
+                                    color: COLOR.dark,
+                                }}
+                            >
+                                {section.label}
+                            </span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                                 <span
                                     style={{
@@ -253,28 +211,13 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
                                                     >
                                                         <span
                                                             style={{
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                width: 28,
-                                                                height: 28,
-                                                                borderRadius: RADIUS.circle,
-                                                                background: 'rgba(43, 186, 160, 0.12)',
-                                                                color: COLOR.primaryDark,
-                                                                flexShrink: 0,
-                                                            }}
-                                                        >
-                                                            <Clock3 size={14} />
-                                                        </span>
-                                                        <span
-                                                            style={{
                                                                 fontFamily: FONT.heading,
                                                                 fontSize: FONT_SIZE.md,
                                                                 fontWeight: 700,
                                                                 color: COLOR.dark,
                                                             }}
                                                         >
-                                                            {section.id === 'today' ? '今日の足あと' : formatDate(day.date)}
+                                                            {section.id === 'today' ? '今日' : formatDate(day.date)}
                                                         </span>
                                                     </div>
                                                     <span

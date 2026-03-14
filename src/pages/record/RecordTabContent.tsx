@@ -26,8 +26,8 @@ export const RecordTabContent: React.FC<RecordTabContentProps> = ({
             style={{ display: 'flex', flexDirection: 'column', gap: 20 }}
         >
             <TodayHeroCard summary={todaySummary} />
-            <TwoWeekTrendSection summary={twoWeekSummary} />
             <RecordSuggestionCard suggestion={suggestion} onClick={onSuggestionClick} />
+            <TwoWeekTrendSection summary={twoWeekSummary} />
             <TopExercisesSection topExercises={topExercises} />
             <SessionHistorySection loading={loading} sections={historySections} />
         </motion.div>

@@ -8,9 +8,11 @@ import { SCREEN_PADDING_X } from '../lib/styles';
 import { getAllSessions, getCustomExercises, getTodayKey, type SessionRecord } from '../lib/db';
 import { subscribeTeacherContentUpdated } from '../lib/teacherContentEvents';
 import { EXERCISES } from '../data/exercises';
+import { getPresetsForClass } from '../data/menuGroups';
 import { fetchTeacherExercises } from '../lib/teacherContent';
 import { useAppStore } from '../store/useAppStore';
 import type { ChibifuwaRecord, PastFuwafuwaRecord } from '../store/useAppStore';
+import { getMinClassLevel } from './menu/menuPageUtils';
 import { RecordTabContent } from './record/RecordTabContent';
 import { AlbumTabContent } from './record/AlbumTabContent';
 import { RecordModals } from './record/RecordModals';
@@ -192,6 +194,14 @@ export const RecordPage: React.FC = () => {
         const fallbackTargetMinutes = users.length > 0 ? (users[0].dailyTargetMinutes ?? 10) : 10;
         return currentViewUsers.length > 0 ? dailyTargetMinutes : fallbackTargetMinutes;
     }, [currentViewUsers, users]);
+    const currentClassLevel = useMemo(
+        () => getMinClassLevel(currentViewUsers),
+        [currentViewUsers],
+    );
+    const quickMenuName = useMemo(
+        () => getPresetsForClass(currentClassLevel).find((group) => group.id === 'preset-quick')?.name ?? null,
+        [currentClassLevel],
+    );
 
     const todaySummary = useMemo(
         () => buildTodayRecordSummary({
@@ -212,9 +222,10 @@ export const RecordPage: React.FC = () => {
     const suggestion = useMemo(
         () => buildRecordSuggestionSummary({
             sessions,
-            exerciseMap,
+            todaySummary,
+            quickMenuName,
         }),
-        [exerciseMap, sessions],
+        [quickMenuName, sessions, todaySummary],
     );
 
     const topExercises = useMemo(
@@ -309,8 +320,7 @@ export const RecordPage: React.FC = () => {
                                 historySections={historySections}
                                 onSuggestionClick={() => {
                                     openMenuWithIntent({
-                                        tab: 'individual',
-                                        placement: suggestion.suggestedPlacement,
+                                        tab: suggestion.targetTab,
                                     });
                                     setTab('menu');
                                 }}

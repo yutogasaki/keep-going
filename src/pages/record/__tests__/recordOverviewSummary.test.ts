@@ -81,7 +81,15 @@ describe('recordOverviewSummary', () => {
         ];
 
         const summary = buildTwoWeekRecordSummary({ sessions, exerciseMap });
-        const suggestion = buildRecordSuggestionSummary({ sessions, exerciseMap });
+        const todaySummary = buildTodayRecordSummary({
+            todaySessions: sessions.filter((session) => session.date === '2026-03-14'),
+            targetMinutes: 10,
+        });
+        const suggestion = buildRecordSuggestionSummary({
+            sessions,
+            todaySummary,
+            quickMenuName: '今日の3分',
+        });
         const topExercises = buildTopExerciseChips({ sessions, exerciseMap });
 
         expect(summary.streak).toBe(3);
@@ -91,8 +99,9 @@ describe('recordOverviewSummary', () => {
         expect(summary.dominantPlacementLine).toBe('最近は のばす日が多め');
         expect(summary.dots).toHaveLength(14);
 
-        expect(suggestion.title).toBe('体幹をひとつ、どう？');
-        expect(suggestion.body).toBe('この2週間は まだ出番が少なめ');
+        expect(suggestion.title).toBe('もうすこしやってみる？');
+        expect(suggestion.body).toBe('「今日の3分」みたいな 短めメニューが合いそう');
+        expect(suggestion.targetTab).toBe('group');
 
         expect(topExercises).toEqual([
             { id: 'S01', name: '開脚', emoji: '🦵', count: 4 },
@@ -133,34 +142,54 @@ describe('recordOverviewSummary', () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date(2026, 2, 14, 10, 0, 0));
 
+        const todaySummary = buildTodayRecordSummary({
+            todaySessions: [],
+            targetMinutes: 10,
+        });
         const suggestion = buildRecordSuggestionSummary({
             sessions: [],
-            exerciseMap,
+            todaySummary,
+            quickMenuName: '今日の3分',
         });
 
-        expect(suggestion.title).toBe('まずはひとつ、どう？');
-        expect(suggestion.body).toBe('はじめやすい ストレッチからでも いいよ');
-        expect(suggestion.suggestedPlacement).toBe('stretch');
+        expect(suggestion.title).toBe('まずはやってみよう');
+        expect(suggestion.body).toBe('「今日の3分」からでも いいよ');
+        expect(suggestion.targetTab).toBe('group');
     });
 
-    it('does not suggest unavailable placements', () => {
+    it('suggests a familiar menu after today is already enough', () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date(2026, 2, 14, 10, 0, 0));
 
-        const exerciseMapWithoutBarre = new Map([
-            ['S01', { name: '開脚', emoji: '🦵', placement: 'stretch' as const }],
-            ['S04', { name: 'ブリッジ', emoji: '🌈', placement: 'core' as const }],
-            ['S09', { name: '深呼吸', emoji: '🌬️', placement: 'ending' as const }],
-        ]);
-
+        const sessions = [
+            createSession({
+                id: 'today',
+                date: '2026-03-14',
+                totalSeconds: 360,
+                sourceMenuId: 'preset-basic',
+                sourceMenuSource: 'preset',
+                sourceMenuName: '基本ストレッチ',
+            }),
+            createSession({
+                id: 'recent-1',
+                date: '2026-03-13',
+                sourceMenuId: 'preset-basic',
+                sourceMenuSource: 'preset',
+                sourceMenuName: '基本ストレッチ',
+            }),
+        ];
+        const todaySummary = buildTodayRecordSummary({
+            todaySessions: sessions.filter((session) => session.date === '2026-03-14'),
+            targetMinutes: 5,
+        });
         const suggestion = buildRecordSuggestionSummary({
-            sessions: [
-                createSession({ id: 'recent', date: '2026-03-14', exerciseIds: ['S01', 'S09'] }),
-            ],
-            exerciseMap: exerciseMapWithoutBarre,
+            sessions,
+            todaySummary,
+            quickMenuName: '今日の3分',
         });
 
-        expect(suggestion.title).toBe('体幹をひとつ、どう？');
-        expect(suggestion.suggestedPlacement).toBe('core');
+        expect(suggestion.title).toBe('「基本ストレッチ」どう？');
+        expect(suggestion.body).toBe('最近よく会うメニューだよ');
+        expect(suggestion.targetTab).toBe('group');
     });
 });

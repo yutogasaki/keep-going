@@ -53,10 +53,7 @@ export const TwoWeekTrendSection: React.FC<TwoWeekTrendSectionProps> = ({ summar
     const streakLine = summary.streak > 0
         ? `${summary.streak}日つづいたよ`
         : 'これから いいながれ';
-    const insightChips = [
-        getTimeInsight(summary),
-        summary.dominantPlacementLine,
-    ];
+    const insightLines = [getTimeInsight(summary), summary.dominantPlacementLine];
 
     return (
         <motion.section
@@ -114,35 +111,22 @@ export const TwoWeekTrendSection: React.FC<TwoWeekTrendSectionProps> = ({ summar
                 <div
                     style={{
                         display: 'flex',
-                        alignItems: 'flex-start',
+                        alignItems: 'center',
                         justifyContent: 'space-between',
                         gap: 12,
                         flexWrap: 'wrap',
                     }}
                 >
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <div
-                            style={{
-                                fontFamily: FONT.body,
-                                fontSize: FONT_SIZE.sm + 1,
-                                fontWeight: 800,
-                                color: COLOR.primaryDark,
-                                letterSpacing: 0.8,
-                            }}
-                        >
-                            いいながれ
-                        </div>
-                        <div
-                            style={{
-                                fontFamily: FONT.body,
-                                fontSize: 24,
-                                fontWeight: 800,
-                                color: COLOR.dark,
-                                lineHeight: 1.2,
-                            }}
-                        >
-                            {streakLine}
-                        </div>
+                    <div
+                        style={{
+                            fontFamily: FONT.body,
+                            fontSize: 24,
+                            fontWeight: 800,
+                            color: COLOR.dark,
+                            lineHeight: 1.2,
+                        }}
+                    >
+                        {streakLine}
                     </div>
 
                     <div
@@ -154,7 +138,7 @@ export const TwoWeekTrendSection: React.FC<TwoWeekTrendSectionProps> = ({ summar
                             background: 'rgba(255,255,255,0.72)',
                             color: COLOR.info,
                             fontFamily: FONT.body,
-                            fontSize: FONT_SIZE.sm,
+                            fontSize: FONT_SIZE.sm + 1,
                             fontWeight: 800,
                         }}
                     >
@@ -216,30 +200,19 @@ export const TwoWeekTrendSection: React.FC<TwoWeekTrendSectionProps> = ({ summar
                     </div>
                 </div>
 
-                <div
-                    style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: 8,
-                    }}
-                >
-                    {insightChips.map((chip) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {insightLines.map((line) => (
                         <div
-                            key={chip}
+                            key={line}
                             style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                padding: '9px 12px',
-                                borderRadius: RADIUS.full,
-                                background: 'rgba(255,255,255,0.62)',
-                                border: '1px solid rgba(255,255,255,0.72)',
                                 fontFamily: FONT.body,
-                                fontSize: FONT_SIZE.sm,
+                                fontSize: FONT_SIZE.md,
                                 fontWeight: 700,
                                 color: COLOR.text,
+                                lineHeight: 1.5,
                             }}
                         >
-                            {chip}
+                            {line}
                         </div>
                     ))}
                 </div>

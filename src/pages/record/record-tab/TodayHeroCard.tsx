@@ -118,17 +118,6 @@ function TodayProgressFigure({ progressPercent }: { progressPercent: number }) {
                 >
                     {progressPercent}%
                 </div>
-                <div
-                    style={{
-                        fontFamily: FONT.body,
-                        fontSize: FONT_SIZE.xs + 1,
-                        fontWeight: 700,
-                        color: COLOR.muted,
-                        letterSpacing: 1.4,
-                    }}
-                >
-                    TODAY
-                </div>
             </div>
         </div>
     );
@@ -148,7 +137,7 @@ function TodaySessionTimeline({ sessionTimes }: { sessionTimes: string[] }) {
                     textAlign: 'center',
                 }}
             >
-                きょうの足あとが ここに並びます
+                まだ きょうのきろくは ありません
             </div>
         );
     }
@@ -266,11 +255,6 @@ export const TodayHeroCard: React.FC<TodayHeroCardProps> = ({ summary }) => {
         : summary.remainingMinutes > 0
             ? `あと${summary.remainingMinutes}分で きょうのまる`
             : 'きょうのまるまで できたね';
-    const summaryChips = [
-        { label: 'じかん', value: `${summary.minutes}分` },
-        { label: 'かいすう', value: `${summary.sessionCount}回` },
-        { label: 'しゅもく', value: `${summary.exerciseCount}種目` },
-    ];
 
     return (
         <motion.section
@@ -328,43 +312,12 @@ export const TodayHeroCard: React.FC<TodayHeroCardProps> = ({ summary }) => {
                     }}
                 />
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', textAlign: 'center' }}>
-                    <div
-                        style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '6px 12px',
-                            borderRadius: RADIUS.full,
-                            background: 'rgba(255,255,255,0.72)',
-                            color: COLOR.primaryDark,
-                            fontFamily: FONT.body,
-                            fontSize: FONT_SIZE.xs + 1,
-                            fontWeight: 800,
-                            letterSpacing: 0.8,
-                        }}
-                    >
-                        きょうのきろく
-                    </div>
-                    <div
-                        style={{
-                            fontFamily: FONT.body,
-                            fontSize: 28,
-                            fontWeight: 800,
-                            color: COLOR.dark,
-                            lineHeight: 1.2,
-                        }}
-                    >
-                        きょうはここまで
-                    </div>
-                </div>
-
                 <div
                     style={{
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        gap: 6,
+                        gap: 10,
                         textAlign: 'center',
                     }}
                 >
@@ -384,67 +337,12 @@ export const TodayHeroCard: React.FC<TodayHeroCardProps> = ({ summary }) => {
                         style={{
                             fontFamily: FONT.body,
                             fontSize: FONT_SIZE.md,
-                            color: COLOR.text,
-                        }}
-                    >
-                        {summary.rhythmLine}
-                    </div>
-                    <div
-                        style={{
-                            fontFamily: FONT.body,
-                            fontSize: FONT_SIZE.md,
                             fontWeight: 700,
                             color: COLOR.primaryDark,
                         }}
                     >
                         {remainingLine}
                     </div>
-                </div>
-
-                <div
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                        gap: 10,
-                    }}
-                >
-                    {summaryChips.map((chip) => (
-                        <div
-                            key={chip.label}
-                            style={{
-                                padding: '10px 8px',
-                                borderRadius: RADIUS.xl,
-                                background: 'rgba(255,255,255,0.6)',
-                                border: '1px solid rgba(255,255,255,0.7)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 2,
-                                alignItems: 'center',
-                                textAlign: 'center',
-                            }}
-                        >
-                            <span
-                                style={{
-                                    fontFamily: FONT.body,
-                                    fontSize: FONT_SIZE.md,
-                                    fontWeight: 800,
-                                    color: COLOR.primaryDark,
-                                }}
-                            >
-                                {chip.value}
-                            </span>
-                            <span
-                                style={{
-                                    fontFamily: FONT.body,
-                                    fontSize: FONT_SIZE.xs + 1,
-                                    fontWeight: 700,
-                                    color: COLOR.muted,
-                                }}
-                            >
-                                {chip.label}
-                            </span>
-                        </div>
-                    ))}
                 </div>
 
                 <TodaySessionTimeline sessionTimes={summary.sessionTimes} />
