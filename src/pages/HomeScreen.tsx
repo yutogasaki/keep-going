@@ -65,6 +65,7 @@ import {
 } from './home/hooks/useHomeMilestoneWatcher';
 import { pickTeacherExerciseDiscovery } from './home/homeMenuUtils';
 import { getMinClassLevel } from './menu/menuPageUtils';
+import { findPersonalChallengePreset } from '../components/personal-challenge/shared';
 
 const noop = () => {};
 
@@ -576,6 +577,56 @@ export const HomeScreen: React.FC = () => {
         setPersonalFormOpen(true);
     }, [selectedPersonalChallenge]);
 
+    const handleRetryPersonalChallenge = useCallback(async () => {
+        if (!selectedPersonalChallenge) {
+            return;
+        }
+
+        const { challenge } = selectedPersonalChallenge;
+        const presetId = findPersonalChallengePreset(challenge) ?? 'week';
+
+        if (
+            challenge.challengeType === 'menu'
+            || customChallengeExercises.some((exercise) => exercise.id === challenge.exerciseId)
+        ) {
+            await loadCustomChallengeTargets();
+        }
+
+        openPersonalChallengeForm({
+            challengeType: challenge.challengeType === 'menu' ? 'menu' : 'exercise',
+            presetId,
+            exerciseSource: challenge.challengeType === 'exercise'
+                ? (
+                    teacherContent.teacherExercises.some((exercise) => exercise.id === challenge.exerciseId)
+                        ? 'teacher'
+                        : customChallengeExercises.some((exercise) => exercise.id === challenge.exerciseId)
+                            ? 'custom'
+                            : 'standard'
+                )
+                : undefined,
+            menuSource: challenge.challengeType === 'menu'
+                ? (
+                    challenge.menuSource === 'teacher'
+                        ? 'teacher'
+                        : challenge.menuSource === 'custom'
+                            ? 'custom'
+                            : 'preset'
+                )
+                : undefined,
+            exerciseId: challenge.exerciseId,
+            targetMenuId: challenge.targetMenuId,
+            title: challenge.title,
+            description: challenge.description ?? '',
+            iconEmoji: challenge.iconEmoji ?? '',
+        });
+    }, [
+        customChallengeExercises,
+        loadCustomChallengeTargets,
+        openPersonalChallengeForm,
+        selectedPersonalChallenge,
+        teacherContent.teacherExercises,
+    ]);
+
     const handleEndPersonalChallenge = useCallback(async () => {
         if (!selectedPersonalChallenge) {
             return;
@@ -771,6 +822,7 @@ export const HomeScreen: React.FC = () => {
                 onEdit={handleEditPersonalChallenge}
                 onEnd={handleEndPersonalChallenge}
                 onDelete={handlePromptDeletePersonalChallenge}
+                onRetry={handleRetryPersonalChallenge}
             />
 
             <ConfirmDeleteModal

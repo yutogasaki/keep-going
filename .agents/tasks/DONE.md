@@ -15,6 +15,10 @@
 - `じぶんチャレンジ` は進捗 0 のときだけ削除できるようにし、先生チャレンジ詳細の `報酬` 文言は `ごほうび` に寄せた
 - `npx tsc --noEmit`、対象 vitest、`npm run build` を通した
 
+## 2026-03-15: じぶんチャレンジ再挑戦導線
+- `completed / ended_manual / ended_expired` の `じぶんチャレンジ` 詳細から `もう一回つくる` を出し、前回と同じ対象・説明・絵文字・プリセットで新しいチャレンジを作り直せるようにした
+- `npx tsc --noEmit`、対象 vitest、`npm run build` を通した
+
 ## 2026-03-14: チャレンジ拡張の仕様整理
 - 先生チャレンジと `じぶんチャレンジ` を同じ計算基盤で扱う方針、`参加 = 開始` / `作成 = 開始`、`種目 / メニュー` 両対応、じぶん報酬 `ほし1こ固定` を仕様・backlog・task queue に反映した
 - UI / Logic / Operation のチャレンジ仕様書へ rolling / active_day とクラウド保存前提の拡張メモを追記し、`npm run governance:check` で terminology drift なしを確認した

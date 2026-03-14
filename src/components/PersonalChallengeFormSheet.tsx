@@ -45,6 +45,7 @@ type MenuSource = 'preset' | 'teacher' | 'custom';
 
 export interface PersonalChallengeCreateSeed {
     challengeType: ChallengeType;
+    presetId?: PersonalChallengePresetId;
     exerciseSource?: ExerciseSource;
     menuSource?: MenuSource;
     exerciseId?: string | null;
@@ -152,7 +153,7 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
             setMenuSource(nextMenuSource);
             setExerciseId(initialSeed.exerciseId ?? resolveFirstExerciseId(nextExerciseSource));
             setTargetMenuId(initialSeed.targetMenuId ?? resolveFirstMenuId(nextMenuSource));
-            setPresetId('week');
+            setPresetId(initialSeed.presetId ?? 'week');
             setTitle(initialSeed.title ?? '');
             setDescription(initialSeed.description ?? '');
             setIconEmoji(initialSeed.iconEmoji ?? '');

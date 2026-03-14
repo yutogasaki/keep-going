@@ -27,6 +27,7 @@ interface PersonalChallengeDetailSheetProps {
     onEdit: () => void;
     onEnd: () => void;
     onDelete: () => void;
+    onRetry: () => void;
 }
 
 export const PersonalChallengeDetailSheet: React.FC<PersonalChallengeDetailSheetProps> = ({
@@ -40,6 +41,7 @@ export const PersonalChallengeDetailSheet: React.FC<PersonalChallengeDetailSheet
     onEdit,
     onEnd,
     onDelete,
+    onRetry,
 }) => {
     if (!item) {
         return null;
@@ -177,7 +179,17 @@ export const PersonalChallengeDetailSheet: React.FC<PersonalChallengeDetailSheet
                             </button>
                         )}
                     </div>
-                ) : null}
+                ) : (
+                    <div style={{ display: 'grid', gap: SPACE.sm }}>
+                        <button
+                            type="button"
+                            onClick={onRetry}
+                            style={primaryButtonStyle}
+                        >
+                            もう一回つくる
+                        </button>
+                    </div>
+                )}
             </div>
         </Modal>
     );
