@@ -12,6 +12,10 @@ function createImportedExerciseId(menuId: string, exerciseId: string): string {
     return `imported-ex-${menuId}-${exerciseId}`;
 }
 
+export function getImportedPublicMenuId(publicMenuId: string): string {
+    return `imported-${publicMenuId}`;
+}
+
 async function persistImportedCustomExercises(publicMenu: PublicMenu): Promise<Map<string, string>> {
     const idRemap = new Map<string, string>();
     if (!publicMenu.customExerciseData.length) {
@@ -58,7 +62,7 @@ function createImportedMenu(
     });
 
     return {
-        id: `imported-${publicMenu.id}`,
+        id: getImportedPublicMenuId(publicMenu.id),
         name: publicMenu.name,
         emoji: publicMenu.emoji,
         description: `${publicMenu.authorName}さんのメニュー`,
@@ -100,4 +104,3 @@ export async function importMenu(publicMenu: PublicMenu): Promise<void> {
 
     void tryIncrementDownload(publicMenu.id);
 }
-

@@ -2,7 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { Modal } from '../../components/Modal';
 import { ChallengeCard } from '../../components/ChallengeCard';
 import { PersonalChallengeCard } from '../../components/PersonalChallengeCard';
+import type { MenuGroup } from '../../data/menuGroups';
 import type { Challenge, ChallengeCompletion } from '../../lib/challenges';
+import type { CustomExercise } from '../../lib/db';
 import type { TeacherExercise, TeacherMenu } from '../../lib/teacherContent';
 import type { PersonalChallengeProgressItem } from './hooks/usePersonalChallenges';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../lib/styles';
@@ -18,6 +20,8 @@ interface ChallengeHubSheetProps {
     completions: ChallengeCompletion[];
     teacherExercises: TeacherExercise[];
     teacherMenus: TeacherMenu[];
+    customExercises: CustomExercise[];
+    customMenus: MenuGroup[];
     personalActiveChallenges: PersonalChallengeProgressItem[];
     personalTodayDoneChallenges: PersonalChallengeProgressItem[];
     personalPastChallenges: PersonalChallengeProgressItem[];
@@ -37,6 +41,8 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
     completions,
     teacherExercises,
     teacherMenus,
+    customExercises,
+    customMenus,
     personalActiveChallenges,
     personalTodayDoneChallenges,
     personalPastChallenges,
@@ -122,6 +128,8 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     item={item}
                                     teacherExercises={teacherExercises}
                                     teacherMenus={teacherMenus}
+                                    customExercises={customExercises}
+                                    customMenus={customMenus}
                                     onOpenDetail={() => onOpenPersonalChallenge(item)}
                                 />
                             ))}
@@ -147,6 +155,8 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                         item={item}
                                         teacherExercises={teacherExercises}
                                         teacherMenus={teacherMenus}
+                                        customExercises={customExercises}
+                                        customMenus={customMenus}
                                         onOpenDetail={() => onOpenPersonalChallenge(item)}
                                         variant="today_done"
                                     />
@@ -195,6 +205,8 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     item={item}
                                     teacherExercises={teacherExercises}
                                     teacherMenus={teacherMenus}
+                                    customExercises={customExercises}
+                                    customMenus={customMenus}
                                     onOpenDetail={() => onOpenPersonalChallenge(item)}
                                 />
                             ))}
@@ -204,6 +216,8 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     item={item}
                                     teacherExercises={teacherExercises}
                                     teacherMenus={teacherMenus}
+                                    customExercises={customExercises}
+                                    customMenus={customMenus}
                                     onOpenDetail={() => onOpenPersonalChallenge(item)}
                                     variant="today_done"
                                 />
@@ -234,6 +248,8 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     item={item}
                                     teacherExercises={teacherExercises}
                                     teacherMenus={teacherMenus}
+                                    customExercises={customExercises}
+                                    customMenus={customMenus}
                                     onOpenDetail={() => onOpenPersonalChallenge(item)}
                                     variant="past"
                                 />

@@ -1,5 +1,7 @@
+import type { MenuGroup } from '../../data/menuGroups';
 import { EXERCISES } from '../../data/exercises';
 import { PRESET_GROUPS } from '../../data/menuGroups';
+import type { CustomExercise } from '../../lib/db';
 import {
     getPersonalChallengeDaysLeft,
     getPersonalChallengeGoalTarget,
@@ -39,11 +41,22 @@ export function getPersonalChallengeTargetName(
     challenge: Pick<PersonalChallenge, 'challengeType' | 'exerciseId' | 'targetMenuId' | 'menuSource'>,
     teacherExercises: TeacherExercise[] = [],
     teacherMenus: TeacherMenu[] = [],
+    customExercises: CustomExercise[] = [],
+    customMenus: MenuGroup[] = [],
 ): string {
     if (challenge.challengeType === 'menu') {
         if (challenge.menuSource === 'teacher') {
             return teacherMenus.find((menu) => menu.id === challenge.targetMenuId)?.name
                 ?? '先生メニュー';
+        }
+
+        if (challenge.menuSource === 'custom') {
+            return customMenus.find((menu) => menu.id === challenge.targetMenuId)?.name
+                ?? 'うちのメニュー';
+        }
+
+        if (challenge.menuSource === 'public') {
+            return 'みんなのメニュー';
         }
 
         return PRESET_GROUPS.find((menu) => menu.id === challenge.targetMenuId)?.name
@@ -52,6 +65,7 @@ export function getPersonalChallengeTargetName(
 
     return EXERCISES.find((exercise) => exercise.id === challenge.exerciseId)?.name
         ?? teacherExercises.find((exercise) => exercise.id === challenge.exerciseId)?.name
+        ?? customExercises.find((exercise) => exercise.id === challenge.exerciseId)?.name
         ?? '種目';
 }
 
@@ -59,6 +73,8 @@ export function getPersonalChallengeEmoji(
     challenge: Pick<PersonalChallenge, 'challengeType' | 'exerciseId' | 'targetMenuId' | 'menuSource' | 'iconEmoji'>,
     teacherExercises: TeacherExercise[] = [],
     teacherMenus: TeacherMenu[] = [],
+    customExercises: CustomExercise[] = [],
+    customMenus: MenuGroup[] = [],
 ): string {
     if (challenge.iconEmoji) {
         return challenge.iconEmoji;
@@ -69,11 +85,20 @@ export function getPersonalChallengeEmoji(
             return teacherMenus.find((menu) => menu.id === challenge.targetMenuId)?.emoji ?? '🗂️';
         }
 
+        if (challenge.menuSource === 'custom') {
+            return customMenus.find((menu) => menu.id === challenge.targetMenuId)?.emoji ?? '🗂️';
+        }
+
+        if (challenge.menuSource === 'public') {
+            return '🌍';
+        }
+
         return PRESET_GROUPS.find((menu) => menu.id === challenge.targetMenuId)?.emoji ?? '🗂️';
     }
 
     return EXERCISES.find((exercise) => exercise.id === challenge.exerciseId)?.emoji
         ?? teacherExercises.find((exercise) => exercise.id === challenge.exerciseId)?.emoji
+        ?? customExercises.find((exercise) => exercise.id === challenge.exerciseId)?.emoji
         ?? '🎯';
 }
 
@@ -125,13 +150,15 @@ export function buildDefaultPersonalChallengeTitle(params: {
     requiredDays: number;
     teacherExercises?: TeacherExercise[];
     teacherMenus?: TeacherMenu[];
+    customExercises?: CustomExercise[];
+    customMenus?: MenuGroup[];
 }): string {
     const targetName = getPersonalChallengeTargetName({
         challengeType: params.challengeType,
         exerciseId: params.exerciseId,
         targetMenuId: params.targetMenuId,
         menuSource: params.menuSource,
-    }, params.teacherExercises, params.teacherMenus);
+    }, params.teacherExercises, params.teacherMenus, params.customExercises, params.customMenus);
 
     return `${targetName}を ${params.windowDays}日で${params.requiredDays}日`;
 }

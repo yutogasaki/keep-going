@@ -22,6 +22,10 @@ export interface PublicExercise {
     createdAt: string;
 }
 
+export function getImportedPublicExerciseId(publicExerciseId: string): string {
+    return `imported-ex-${publicExerciseId}`;
+}
+
 async function fetchActiveExercises(
     sortBy: PublicExerciseSort,
     limit: number,
@@ -110,7 +114,7 @@ export async function fetchMyPublishedExercises(): Promise<PublicExercise[]> {
 
 export async function importExercise(pub: PublicExercise): Promise<void> {
     const localEx: CustomExercise = {
-        id: `imported-ex-${pub.id}`,
+        id: getImportedPublicExerciseId(pub.id),
         name: pub.name,
         sec: pub.sec,
         emoji: pub.emoji,

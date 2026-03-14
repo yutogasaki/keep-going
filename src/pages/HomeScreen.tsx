@@ -8,11 +8,17 @@ import { ScreenScaffold } from '../components/ScreenScaffold';
 import { ExerciseDetailSheet } from '../components/ExerciseDetailSheet';
 import { MenuDetailSheet } from '../components/MenuDetailSheet';
 import { PersonalChallengeDetailSheet } from '../components/PersonalChallengeDetailSheet';
-import { PersonalChallengeFormSheet } from '../components/PersonalChallengeFormSheet';
+import {
+    PersonalChallengeFormSheet,
+    type PersonalChallengeCreateSeed,
+} from '../components/PersonalChallengeFormSheet';
 import { EXERCISES } from '../data/exercises';
 import type { ExercisePlacement } from '../data/exercisePlacement';
-import type { PublicExercise } from '../lib/publicExercises';
-import type { PublicMenu } from '../lib/publicMenus';
+import type { MenuGroup } from '../data/menuGroups';
+import { getCustomGroups } from '../lib/customGroups';
+import { getCustomExercises, type CustomExercise } from '../lib/db';
+import { type PublicExercise } from '../lib/publicExercises';
+import { type PublicMenu } from '../lib/publicMenus';
 import { endPersonalChallenge } from '../lib/personalChallenges';
 import type { TeacherExercise, TeacherMenu } from '../lib/teacherContent';
 import { audio } from '../lib/audio';
@@ -87,7 +93,10 @@ export const HomeScreen: React.FC = () => {
     const [challengeHubOpen, setChallengeHubOpen] = useState(false);
     const [selectedPersonalChallenge, setSelectedPersonalChallenge] = useState<PersonalChallengeProgressItem | null>(null);
     const [editingPersonalChallenge, setEditingPersonalChallenge] = useState<PersonalChallengeProgressItem | null>(null);
+    const [personalChallengeSeed, setPersonalChallengeSeed] = useState<PersonalChallengeCreateSeed | null>(null);
     const [personalFormOpen, setPersonalFormOpen] = useState(false);
+    const [customChallengeExercises, setCustomChallengeExercises] = useState<CustomExercise[]>([]);
+    const [customChallengeMenus, setCustomChallengeMenus] = useState<MenuGroup[]>([]);
     const lastSoloVisitKeyRef = useRef('');
     const lastFamilyVisitKeyRef = useRef('');
     const magicDeliveryTimerRef = useRef<number | null>(null);
@@ -218,6 +227,14 @@ export const HomeScreen: React.FC = () => {
         users,
         sessionUserIds,
     });
+    const loadCustomChallengeTargets = useCallback(async () => {
+        const [menus, exercises] = await Promise.all([
+            getCustomGroups(),
+            getCustomExercises(),
+        ]);
+        setCustomChallengeMenus(menus);
+        setCustomChallengeExercises(exercises);
+    }, []);
     const activeAnnouncementUserIds = useMemo(
         () => (currentUsers.length > 0 ? currentUsers.map((user) => user.id) : sessionUserIds),
         [currentUsers, sessionUserIds],
@@ -242,6 +259,10 @@ export const HomeScreen: React.FC = () => {
             teacherMenuHighlights,
         ],
     );
+
+    useEffect(() => {
+        void loadCustomChallengeTargets();
+    }, [loadCustomChallengeTargets]);
 
     const queueMilestoneEvent = useCallback((event: FuwafuwaMilestoneEvent) => {
         setPendingMilestoneEvents((current) => (
@@ -458,12 +479,29 @@ export const HomeScreen: React.FC = () => {
         setSelectedPersonalChallenge(item);
     }, []);
 
-    const handleCreatePersonalChallenge = useCallback(() => {
+    const openPersonalChallengeForm = useCallback((seed: PersonalChallengeCreateSeed | null = null) => {
         setChallengeHubOpen(false);
         setSelectedPersonalChallenge(null);
         setEditingPersonalChallenge(null);
+        setPersonalChallengeSeed(seed);
         setPersonalFormOpen(true);
     }, []);
+
+    const handleCreatePersonalChallenge = useCallback(() => {
+        openPersonalChallengeForm(null);
+    }, [openPersonalChallengeForm]);
+
+    const handleCreatePersonalChallengeFromPublicMenu = useCallback(async (seed: PersonalChallengeCreateSeed) => {
+        await loadCustomChallengeTargets();
+        setSelectedPublicMenu(null);
+        openPersonalChallengeForm(seed);
+    }, [loadCustomChallengeTargets, openPersonalChallengeForm]);
+
+    const handleCreatePersonalChallengeFromPublicExercise = useCallback(async (seed: PersonalChallengeCreateSeed) => {
+        await loadCustomChallengeTargets();
+        setSelectedPublicExercise(null);
+        openPersonalChallengeForm(seed);
+    }, [loadCustomChallengeTargets, openPersonalChallengeForm]);
 
     const handleEditPersonalChallenge = useCallback(() => {
         if (!selectedPersonalChallenge) {
@@ -473,6 +511,7 @@ export const HomeScreen: React.FC = () => {
         setEditingPersonalChallenge(selectedPersonalChallenge);
         setSelectedPersonalChallenge(null);
         setChallengeHubOpen(false);
+        setPersonalChallengeSeed(null);
         setPersonalFormOpen(true);
     }, [selectedPersonalChallenge]);
 
@@ -574,16 +613,18 @@ export const HomeScreen: React.FC = () => {
                     todayDoneChallenges={todayDoneChallenges}
                     pastChallenges={pastChallenges}
                     personalActiveChallenges={personalActiveChallenges.slice(0, 2)}
-                    personalTodayDoneChallenges={personalTodayDoneChallenges.slice(0, 2)}
-                    personalPastChallenges={personalPastChallenges.slice(0, 2)}
-                    completions={completions}
-                    recommendedMenus={recommendedMenus}
-                    recommendedExercises={recommendedExercises}
-                    teacherExercises={teacherExercises}
-                    teacherMenus={teacherContent.teacherMenus}
-                    teacherMenuHighlights={teacherMenuHighlights}
-                    teacherExerciseHighlight={teacherExerciseHighlight}
-                    teacherMenuExerciseMap={teacherMenuExerciseMap}
+                personalTodayDoneChallenges={personalTodayDoneChallenges.slice(0, 2)}
+                personalPastChallenges={personalPastChallenges.slice(0, 2)}
+                completions={completions}
+                recommendedMenus={recommendedMenus}
+                recommendedExercises={recommendedExercises}
+                teacherExercises={teacherExercises}
+                teacherMenus={teacherContent.teacherMenus}
+                customChallengeExercises={customChallengeExercises}
+                customChallengeMenus={customChallengeMenus}
+                teacherMenuHighlights={teacherMenuHighlights}
+                teacherExerciseHighlight={teacherExerciseHighlight}
+                teacherMenuExerciseMap={teacherMenuExerciseMap}
                     isNewTeacherContent={teacherContent.isNewTeacherContent}
                     pastExpanded={pastExpanded}
                     onTogglePastExpanded={() => setPastExpanded((previous) => !previous)}
@@ -617,6 +658,8 @@ export const HomeScreen: React.FC = () => {
                 completions={completions}
                 teacherExercises={teacherExercises}
                 teacherMenus={teacherContent.teacherMenus}
+                customExercises={customChallengeExercises}
+                customMenus={customChallengeMenus}
                 personalActiveChallenges={personalActiveChallenges}
                 personalTodayDoneChallenges={personalTodayDoneChallenges}
                 personalPastChallenges={personalPastChallenges}
@@ -632,6 +675,8 @@ export const HomeScreen: React.FC = () => {
                 item={selectedPersonalChallenge}
                 teacherExercises={teacherContent.teacherExercises}
                 teacherMenus={teacherContent.teacherMenus}
+                customExercises={customChallengeExercises}
+                customMenus={customChallengeMenus}
                 onClose={() => setSelectedPersonalChallenge(null)}
                 onEdit={handleEditPersonalChallenge}
                 onEnd={handleEndPersonalChallenge}
@@ -642,14 +687,19 @@ export const HomeScreen: React.FC = () => {
                 member={personalChallengeFormMember}
                 teacherExercises={teacherContent.teacherExercises}
                 teacherMenus={teacherContent.teacherMenus}
+                customExercises={customChallengeExercises}
+                customMenus={customChallengeMenus}
                 initialItem={editingPersonalChallenge}
+                initialSeed={personalChallengeSeed}
                 onClose={() => {
                     setPersonalFormOpen(false);
                     setEditingPersonalChallenge(null);
+                    setPersonalChallengeSeed(null);
                 }}
                 onSaved={() => {
                     reloadPersonalChallenges();
                     setEditingPersonalChallenge(null);
+                    setPersonalChallengeSeed(null);
                 }}
             />
 
@@ -689,6 +739,10 @@ export const HomeScreen: React.FC = () => {
             <MenuDetailSheet
                 menu={selectedPublicMenu}
                 onClose={() => setSelectedPublicMenu(null)}
+                onImported={() => {
+                    void loadCustomChallengeTargets();
+                }}
+                onCreatePersonalChallenge={handleCreatePersonalChallengeFromPublicMenu}
                 onTry={(exerciseIds, metadata) => {
                     setSelectedPublicMenu(null);
                     startSessionWithExercises(exerciseIds, {
@@ -702,6 +756,10 @@ export const HomeScreen: React.FC = () => {
             <ExerciseDetailSheet
                 exercise={selectedPublicExercise}
                 onClose={() => setSelectedPublicExercise(null)}
+                onImported={() => {
+                    void loadCustomChallengeTargets();
+                }}
+                onCreatePersonalChallenge={handleCreatePersonalChallengeFromPublicExercise}
                 onTry={(exerciseId) => {
                     setSelectedPublicExercise(null);
                     startSessionWithExercises([exerciseId]);

@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { getExercisesByClass } from '../data/exercises';
-import { getPresetsForClass } from '../data/menuGroups';
+import { getPresetsForClass, type MenuGroup } from '../data/menuGroups';
+import type { CustomExercise } from '../lib/db';
 import {
     createPersonalChallenge,
     updatePersonalChallengeMeta,
@@ -23,21 +24,38 @@ interface PersonalChallengeFormSheetProps {
     member: UserProfileStore | null;
     teacherExercises: TeacherExercise[];
     teacherMenus: TeacherMenu[];
+    customExercises?: CustomExercise[];
+    customMenus?: MenuGroup[];
     initialItem?: PersonalChallengeProgressItem | null;
+    initialSeed?: PersonalChallengeCreateSeed | null;
     onClose: () => void;
     onSaved: () => void;
 }
 
-type ExerciseSource = 'standard' | 'teacher';
-type MenuSource = 'preset' | 'teacher';
 type ChallengeType = 'exercise' | 'menu';
+type ExerciseSource = 'standard' | 'teacher' | 'custom';
+type MenuSource = 'preset' | 'teacher' | 'custom';
+
+export interface PersonalChallengeCreateSeed {
+    challengeType: ChallengeType;
+    exerciseSource?: ExerciseSource;
+    menuSource?: MenuSource;
+    exerciseId?: string | null;
+    targetMenuId?: string | null;
+    title?: string;
+    description?: string | null;
+    iconEmoji?: string | null;
+}
 
 export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProps> = ({
     open,
     member,
     teacherExercises,
     teacherMenus,
+    customExercises = [],
+    customMenus = [],
     initialItem = null,
+    initialSeed = null,
     onClose,
     onSaved,
 }) => {
@@ -63,6 +81,26 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
     const [iconEmoji, setIconEmoji] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
+    const resolveFirstExerciseId = useCallback((source: ExerciseSource): string => {
+        if (source === 'teacher') {
+            return teacherExercises[0]?.id ?? customExercises[0]?.id ?? standardExercises[0]?.id ?? '';
+        }
+        if (source === 'custom') {
+            return customExercises[0]?.id ?? teacherExercises[0]?.id ?? standardExercises[0]?.id ?? '';
+        }
+        return standardExercises[0]?.id ?? teacherExercises[0]?.id ?? customExercises[0]?.id ?? '';
+    }, [customExercises, standardExercises, teacherExercises]);
+
+    const resolveFirstMenuId = useCallback((source: MenuSource): string => {
+        if (source === 'teacher') {
+            return teacherMenus[0]?.id ?? customMenus[0]?.id ?? presetMenus[0]?.id ?? '';
+        }
+        if (source === 'custom') {
+            return customMenus[0]?.id ?? teacherMenus[0]?.id ?? presetMenus[0]?.id ?? '';
+        }
+        return presetMenus[0]?.id ?? teacherMenus[0]?.id ?? customMenus[0]?.id ?? '';
+    }, [customMenus, presetMenus, teacherMenus]);
+
     useEffect(() => {
         if (!open || !member) {
             return;
@@ -72,15 +110,21 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
             const { challenge } = initialItem;
             const nextExerciseSource: ExerciseSource = teacherExercises.some((item) => item.id === challenge.exerciseId)
                 ? 'teacher'
-                : 'standard';
-            const nextMenuSource: MenuSource = challenge.menuSource === 'teacher' ? 'teacher' : 'preset';
+                : customExercises.some((item) => item.id === challenge.exerciseId)
+                    ? 'custom'
+                    : 'standard';
+            const nextMenuSource: MenuSource = challenge.menuSource === 'teacher'
+                ? 'teacher'
+                : challenge.menuSource === 'custom'
+                    ? 'custom'
+                    : 'preset';
             const nextPreset = findPersonalChallengePreset(challenge) ?? 'week';
 
             setChallengeType(challenge.challengeType === 'menu' ? 'menu' : 'exercise');
             setExerciseSource(nextExerciseSource);
             setMenuSource(nextMenuSource);
-            setExerciseId(challenge.exerciseId ?? standardExercises[0]?.id ?? teacherExercises[0]?.id ?? '');
-            setTargetMenuId(challenge.targetMenuId ?? presetMenus[0]?.id ?? teacherMenus[0]?.id ?? '');
+            setExerciseId(challenge.exerciseId ?? resolveFirstExerciseId(nextExerciseSource));
+            setTargetMenuId(challenge.targetMenuId ?? resolveFirstMenuId(nextMenuSource));
             setPresetId(nextPreset);
             setTitle(challenge.title);
             setDescription(challenge.description ?? '');
@@ -88,16 +132,46 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
             return;
         }
 
+        if (initialSeed) {
+            const nextChallengeType = initialSeed.challengeType;
+            const nextExerciseSource = initialSeed.exerciseSource ?? 'standard';
+            const nextMenuSource = initialSeed.menuSource ?? 'preset';
+
+            setChallengeType(nextChallengeType);
+            setExerciseSource(nextExerciseSource);
+            setMenuSource(nextMenuSource);
+            setExerciseId(initialSeed.exerciseId ?? resolveFirstExerciseId(nextExerciseSource));
+            setTargetMenuId(initialSeed.targetMenuId ?? resolveFirstMenuId(nextMenuSource));
+            setPresetId('week');
+            setTitle(initialSeed.title ?? '');
+            setDescription(initialSeed.description ?? '');
+            setIconEmoji(initialSeed.iconEmoji ?? '');
+            return;
+        }
+
         setChallengeType('exercise');
         setExerciseSource('standard');
         setMenuSource('preset');
-        setExerciseId(standardExercises[0]?.id ?? teacherExercises[0]?.id ?? '');
-        setTargetMenuId(presetMenus[0]?.id ?? teacherMenus[0]?.id ?? '');
+        setExerciseId(resolveFirstExerciseId('standard'));
+        setTargetMenuId(resolveFirstMenuId('preset'));
         setPresetId('week');
         setTitle('');
         setDescription('');
         setIconEmoji('');
-    }, [initialItem, member, open, presetMenus, standardExercises, teacherExercises, teacherMenus]);
+    }, [
+        customExercises,
+        customMenus,
+        initialItem,
+        initialSeed,
+        member,
+        open,
+        presetMenus,
+        resolveFirstExerciseId,
+        resolveFirstMenuId,
+        standardExercises,
+        teacherExercises,
+        teacherMenus,
+    ]);
 
     const selectedPreset = PERSONAL_CHALLENGE_PRESET_OPTIONS.find((option) => option.id === presetId)
         ?? PERSONAL_CHALLENGE_PRESET_OPTIONS[0];
@@ -122,6 +196,8 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
             requiredDays: selectedPreset.requiredDays,
             teacherExercises,
             teacherMenus,
+            customExercises,
+            customMenus,
         });
 
         setSubmitting(true);
@@ -228,11 +304,16 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
                                 {([
                                     { id: 'standard', label: 'いつもの種目' },
                                     { id: 'teacher', label: '先生の種目' },
+                                    { id: 'custom', label: 'もらった種目' },
                                 ] as const).map((option) => (
                                     <SegmentButton
                                         key={option.id}
                                         active={exerciseSource === option.id}
-                                        disabled={(isEditing && !canEditSetup) || (option.id === 'teacher' && teacherExercises.length === 0)}
+                                        disabled={
+                                            (isEditing && !canEditSetup)
+                                            || (option.id === 'teacher' && teacherExercises.length === 0)
+                                            || (option.id === 'custom' && customExercises.length === 0)
+                                        }
                                         onClick={() => {
                                             setExerciseSource(option.id);
                                             if (option.id === 'teacher' && teacherExercises[0]) {
@@ -249,6 +330,13 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
                                                         : standardExercises[0].id
                                                 ));
                                             }
+                                            if (option.id === 'custom' && customExercises[0]) {
+                                                setExerciseId((current) => (
+                                                    customExercises.some((exercise) => exercise.id === current)
+                                                        ? current
+                                                        : customExercises[0].id
+                                                ));
+                                            }
                                         }}
                                     >
                                         {option.label}
@@ -261,7 +349,11 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
                                 onChange={(event) => setExerciseId(event.target.value)}
                                 style={inputStyle}
                             >
-                                {(exerciseSource === 'teacher' ? teacherExercises : standardExercises).map((exercise) => (
+                                {(exerciseSource === 'teacher'
+                                    ? teacherExercises
+                                    : exerciseSource === 'custom'
+                                        ? customExercises
+                                        : standardExercises).map((exercise) => (
                                     <option key={exercise.id} value={exercise.id}>
                                         {exercise.emoji} {exercise.name}
                                     </option>
@@ -274,11 +366,16 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
                                 {([
                                     { id: 'preset', label: 'いつものメニュー' },
                                     { id: 'teacher', label: '先生のメニュー' },
+                                    { id: 'custom', label: 'もらったメニュー' },
                                 ] as const).map((option) => (
                                     <SegmentButton
                                         key={option.id}
                                         active={menuSource === option.id}
-                                        disabled={(isEditing && !canEditSetup) || (option.id === 'teacher' && teacherMenus.length === 0)}
+                                        disabled={
+                                            (isEditing && !canEditSetup)
+                                            || (option.id === 'teacher' && teacherMenus.length === 0)
+                                            || (option.id === 'custom' && customMenus.length === 0)
+                                        }
                                         onClick={() => {
                                             setMenuSource(option.id);
                                             if (option.id === 'teacher' && teacherMenus[0]) {
@@ -295,6 +392,13 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
                                                         : presetMenus[0].id
                                                 ));
                                             }
+                                            if (option.id === 'custom' && customMenus[0]) {
+                                                setTargetMenuId((current) => (
+                                                    customMenus.some((menu) => menu.id === current)
+                                                        ? current
+                                                        : customMenus[0].id
+                                                ));
+                                            }
                                         }}
                                     >
                                         {option.label}
@@ -307,7 +411,11 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
                                 onChange={(event) => setTargetMenuId(event.target.value)}
                                 style={inputStyle}
                             >
-                                {(menuSource === 'teacher' ? teacherMenus : presetMenus).map((menu) => (
+                                {(menuSource === 'teacher'
+                                    ? teacherMenus
+                                    : menuSource === 'custom'
+                                        ? customMenus
+                                        : presetMenus).map((menu) => (
                                     <option key={menu.id} value={menu.id}>
                                         {menu.emoji} {menu.name}
                                     </option>

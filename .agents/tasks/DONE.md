@@ -4,6 +4,11 @@
 細かい修正は日単位・テーマ単位に要約する。
 詳細履歴は `.agents/tasks/archive/YYYY-MM.md` に移す。
 
+## 2026-03-14: じぶんチャレンジ reverse entry 追加
+- 公開メニュー / 公開種目の詳細から、そのまま `じぶんチャレンジ` 作成フォームへ入れる導線を追加した
+- public detail から作る時は一度 import して `もらったメニュー / もらった種目` として扱い、ホーム / 一覧 / 詳細カードでも target 名と絵文字が崩れないよう custom target 解決を追加した
+- `npx tsc --noEmit`、`npm run build`、対象 vitest、Playwright smoke で `detail -> form` 導線を確認した
+
 ## 2026-03-14: チャレンジ拡張の仕様整理
 - 先生チャレンジと `じぶんチャレンジ` を同じ計算基盤で扱う方針、`参加 = 開始` / `作成 = 開始`、`種目 / メニュー` 両対応、じぶん報酬 `ほし1こ固定` を仕様・backlog・task queue に反映した
 - UI / Logic / Operation のチャレンジ仕様書へ rolling / active_day とクラウド保存前提の拡張メモを追記し、`npm run governance:check` で terminology drift なしを確認した

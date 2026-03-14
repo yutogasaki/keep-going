@@ -1,5 +1,7 @@
 import React from 'react';
 import { Calendar, Flag, Sparkles, Target } from 'lucide-react';
+import type { MenuGroup } from '../data/menuGroups';
+import type { CustomExercise } from '../lib/db';
 import { Modal } from './Modal';
 import type { TeacherExercise, TeacherMenu } from '../lib/teacherContent';
 import type { PersonalChallengeProgressItem } from '../pages/home/hooks/usePersonalChallenges';
@@ -18,6 +20,8 @@ interface PersonalChallengeDetailSheetProps {
     item: PersonalChallengeProgressItem | null;
     teacherExercises?: TeacherExercise[];
     teacherMenus?: TeacherMenu[];
+    customExercises?: CustomExercise[];
+    customMenus?: MenuGroup[];
     onClose: () => void;
     onEdit: () => void;
     onEnd: () => void;
@@ -28,6 +32,8 @@ export const PersonalChallengeDetailSheet: React.FC<PersonalChallengeDetailSheet
     item,
     teacherExercises = [],
     teacherMenus = [],
+    customExercises = [],
+    customMenus = [],
     onClose,
     onEdit,
     onEnd,
@@ -37,8 +43,8 @@ export const PersonalChallengeDetailSheet: React.FC<PersonalChallengeDetailSheet
     }
 
     const { challenge, owner, progress, canEditSetup } = item;
-    const targetName = getPersonalChallengeTargetName(challenge, teacherExercises, teacherMenus);
-    const emoji = getPersonalChallengeEmoji(challenge, teacherExercises, teacherMenus);
+    const targetName = getPersonalChallengeTargetName(challenge, teacherExercises, teacherMenus, customExercises, customMenus);
+    const emoji = getPersonalChallengeEmoji(challenge, teacherExercises, teacherMenus, customExercises, customMenus);
     const goalLabel = getPersonalChallengeGoalLabel(challenge, targetName);
     const progressLabel = getPersonalChallengeProgressLabel(challenge, progress);
     const deadlineLabel = getPersonalChallengeDeadlineLabel(challenge);

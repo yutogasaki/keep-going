@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Trophy } from 'lucide-react';
+import type { MenuGroup } from '../data/menuGroups';
+import type { CustomExercise } from '../lib/db';
 import type { TeacherExercise, TeacherMenu } from '../lib/teacherContent';
 import type { PersonalChallengeProgressItem } from '../pages/home/hooks/usePersonalChallenges';
 import {
@@ -16,6 +18,8 @@ interface PersonalChallengeCardProps {
     item: PersonalChallengeProgressItem;
     teacherExercises?: TeacherExercise[];
     teacherMenus?: TeacherMenu[];
+    customExercises?: CustomExercise[];
+    customMenus?: MenuGroup[];
     onOpenDetail: () => void;
     variant?: 'active' | 'today_done' | 'past';
 }
@@ -24,12 +28,14 @@ export const PersonalChallengeCard: React.FC<PersonalChallengeCardProps> = ({
     item,
     teacherExercises = [],
     teacherMenus = [],
+    customExercises = [],
+    customMenus = [],
     onOpenDetail,
     variant = 'active',
 }) => {
     const { challenge, owner, progress, goalTarget } = item;
-    const emoji = getPersonalChallengeEmoji(challenge, teacherExercises, teacherMenus);
-    const targetName = getPersonalChallengeTargetName(challenge, teacherExercises, teacherMenus);
+    const emoji = getPersonalChallengeEmoji(challenge, teacherExercises, teacherMenus, customExercises, customMenus);
+    const targetName = getPersonalChallengeTargetName(challenge, teacherExercises, teacherMenus, customExercises, customMenus);
     const goalLabel = getPersonalChallengeGoalLabel(challenge, targetName);
     const progressLabel = getPersonalChallengeProgressLabel(challenge, progress);
     const deadlineLabel = getPersonalChallengeDeadlineLabel(challenge);

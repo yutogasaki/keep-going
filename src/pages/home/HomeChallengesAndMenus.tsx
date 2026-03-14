@@ -6,7 +6,9 @@ import { PersonalChallengeCard } from '../../components/PersonalChallengeCard';
 import { PopularMenusRow } from '../../components/PopularMenusRow';
 import { HomeTeacherMenuHighlights } from './HomeTeacherMenuHighlights';
 import type { ExercisePlacement } from '../../data/exercisePlacement';
+import type { MenuGroup } from '../../data/menuGroups';
 import type { Challenge, ChallengeCompletion } from '../../lib/challenges';
+import type { CustomExercise } from '../../lib/db';
 import type { PublicExercise } from '../../lib/publicExercises';
 import type { PublicMenu } from '../../lib/publicMenus';
 import type { TeacherExercise, TeacherMenu } from '../../lib/teacherContent';
@@ -25,6 +27,8 @@ interface HomeChallengesAndMenusProps {
     recommendedExercises: PublicExercise[];
     teacherExercises: TeacherExercise[];
     teacherMenus: TeacherMenu[];
+    customChallengeExercises: CustomExercise[];
+    customChallengeMenus: MenuGroup[];
     teacherMenuHighlights: TeacherMenu[];
     teacherExerciseHighlight: TeacherExercise | null;
     teacherMenuExerciseMap: Map<string, { name: string; emoji: string; sec: number; placement: ExercisePlacement }>;
@@ -58,6 +62,8 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
     recommendedExercises,
     teacherExercises,
     teacherMenus,
+    customChallengeExercises,
+    customChallengeMenus,
     teacherMenuHighlights,
     teacherExerciseHighlight,
     teacherMenuExerciseMap,
@@ -143,6 +149,8 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                             item={item}
                             teacherExercises={teacherExercises}
                             teacherMenus={teacherMenus}
+                            customExercises={customChallengeExercises}
+                            customMenus={customChallengeMenus}
                             onOpenDetail={() => onOpenPersonalChallenge(item)}
                         />
                     ))}
@@ -174,6 +182,8 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                                     item={item}
                                     teacherExercises={teacherExercises}
                                     teacherMenus={teacherMenus}
+                                    customExercises={customChallengeExercises}
+                                    customMenus={customChallengeMenus}
                                     onOpenDetail={() => onOpenPersonalChallenge(item)}
                                     variant="today_done"
                                 />
@@ -261,6 +271,8 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                                         item={item}
                                         teacherExercises={teacherExercises}
                                         teacherMenus={teacherMenus}
+                                        customExercises={customChallengeExercises}
+                                        customMenus={customChallengeMenus}
                                         onOpenDetail={() => onOpenPersonalChallenge(item)}
                                         variant="past"
                                     />

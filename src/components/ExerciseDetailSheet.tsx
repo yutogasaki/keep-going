@@ -3,7 +3,12 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Play, Loader2, Clock } from 'lucide-react';
 import { getExercisePlacementLabel } from '../data/exercisePlacement';
-import { type PublicExercise, importExercise } from '../lib/publicExercises';
+import { type PersonalChallengeCreateSeed } from './PersonalChallengeFormSheet';
+import {
+    getImportedPublicExerciseId,
+    type PublicExercise,
+    importExercise,
+} from '../lib/publicExercises';
 import { Z } from '../lib/styles';
 
 interface ExerciseDetailSheetProps {
@@ -11,9 +16,16 @@ interface ExerciseDetailSheetProps {
     onClose: () => void;
     onTry: (exerciseId: string) => void;
     onImported?: () => void;
+    onCreatePersonalChallenge?: (seed: PersonalChallengeCreateSeed) => void | Promise<void>;
 }
 
-export const ExerciseDetailSheet: React.FC<ExerciseDetailSheetProps> = ({ exercise, onClose, onTry, onImported }) => {
+export const ExerciseDetailSheet: React.FC<ExerciseDetailSheetProps> = ({
+    exercise,
+    onClose,
+    onTry,
+    onImported,
+    onCreatePersonalChallenge,
+}) => {
     const [importing, setImporting] = useState(false);
     const [imported, setImported] = useState(false);
     const [error, setError] = useState<string | false>(false);
@@ -47,7 +59,34 @@ export const ExerciseDetailSheet: React.FC<ExerciseDetailSheetProps> = ({ exerci
             // ignore duplicate import failures
         }
         onClose();
-        onTry(`imported-ex-${exercise.id}`);
+        onTry(getImportedPublicExerciseId(exercise.id));
+    };
+
+    const handleCreatePersonalChallenge = async () => {
+        if (!exercise || importing || !onCreatePersonalChallenge) return;
+
+        setImporting(true);
+        setError(false);
+        try {
+            await importExercise(exercise);
+            setImported(true);
+            onImported?.();
+            await onCreatePersonalChallenge({
+                challengeType: 'exercise',
+                exerciseSource: 'custom',
+                exerciseId: getImportedPublicExerciseId(exercise.id),
+                description: exercise.description ?? '',
+                iconEmoji: exercise.emoji,
+            });
+            onClose();
+        } catch (err) {
+            console.error('[ExerciseDetailSheet] create challenge failed:', err);
+            const msg = err instanceof Error ? err.message : 'チャレンジ作成の準備に失敗しました';
+            setError(msg);
+            setTimeout(() => setError(false), 5000);
+        } finally {
+            setImporting(false);
+        }
     };
 
     React.useEffect(() => {
@@ -222,67 +261,89 @@ export const ExerciseDetailSheet: React.FC<ExerciseDetailSheetProps> = ({ exerci
                         <div
                             style={{
                                 padding: '14px 20px calc(18px + env(safe-area-inset-bottom, 16px))',
-                                display: 'flex',
+                                display: 'grid',
                                 gap: 10,
                                 borderTop: '1px solid rgba(0,0,0,0.05)',
                                 background: '#FFF',
                             }}
                         >
-                            <button
-                                onClick={handleImport}
-                                disabled={importing}
-                                style={{
-                                    flex: 1,
-                                    padding: '14px',
-                                    borderRadius: 14,
-                                    border: '2px solid #2BBAA0',
-                                    background: error ? '#FFE0E0' : imported ? '#E8F8F0' : 'white',
-                                    color: error ? '#E84393' : '#2BBAA0',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 14,
-                                    fontWeight: 700,
-                                    cursor: imported ? 'default' : 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: 6,
-                                }}
-                            >
-                                {importing ? (
-                                    <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-                                ) : error ? (
-                                    typeof error === 'string' ? `失敗: ${error.slice(0, 20)}` : '失敗…'
-                                ) : imported ? (
-                                    '追加済み ✓'
-                                ) : (
-                                    <>
-                                        <Download size={16} />
-                                        もらう
-                                    </>
-                                )}
-                            </button>
-                            <button
-                                onClick={handleTry}
-                                style={{
-                                    flex: 1,
-                                    padding: '14px',
-                                    borderRadius: 14,
-                                    border: 'none',
-                                    background: '#2BBAA0',
-                                    color: 'white',
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 14,
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: 6,
-                                }}
-                            >
-                                <Play size={16} fill="white" />
-                                ためしてみる
-                            </button>
+                            {onCreatePersonalChallenge ? (
+                                <button
+                                    onClick={handleCreatePersonalChallenge}
+                                    disabled={importing}
+                                    style={{
+                                        width: '100%',
+                                        padding: '13px 14px',
+                                        borderRadius: 14,
+                                        border: '1px solid rgba(43,186,160,0.18)',
+                                        background: 'linear-gradient(135deg, #F8FFFD, #F0FBF7)',
+                                        color: '#1E7F6D',
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 13,
+                                        fontWeight: 800,
+                                        cursor: importing ? 'default' : 'pointer',
+                                    }}
+                                >
+                                    この種目で じぶんチャレンジをつくる
+                                </button>
+                            ) : null}
+                            <div style={{ display: 'flex', gap: 10 }}>
+                                <button
+                                    onClick={handleImport}
+                                    disabled={importing}
+                                    style={{
+                                        flex: 1,
+                                        padding: '14px',
+                                        borderRadius: 14,
+                                        border: '2px solid #2BBAA0',
+                                        background: error ? '#FFE0E0' : imported ? '#E8F8F0' : 'white',
+                                        color: error ? '#E84393' : '#2BBAA0',
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 14,
+                                        fontWeight: 700,
+                                        cursor: imported ? 'default' : 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: 6,
+                                    }}
+                                >
+                                    {importing ? (
+                                        <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
+                                    ) : error ? (
+                                        typeof error === 'string' ? `失敗: ${error.slice(0, 20)}` : '失敗…'
+                                    ) : imported ? (
+                                        '追加済み ✓'
+                                    ) : (
+                                        <>
+                                            <Download size={16} />
+                                            もらう
+                                        </>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={handleTry}
+                                    style={{
+                                        flex: 1,
+                                        padding: '14px',
+                                        borderRadius: 14,
+                                        border: 'none',
+                                        background: '#2BBAA0',
+                                        color: 'white',
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 14,
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: 6,
+                                    }}
+                                >
+                                    <Play size={16} fill="white" />
+                                    ためしてみる
+                                </button>
+                            </div>
                         </div>
                     </motion.div>
                 </motion.div>
