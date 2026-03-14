@@ -12,6 +12,7 @@ import {
     PersonalChallengeFormSheet,
     type PersonalChallengeCreateSeed,
 } from '../components/PersonalChallengeFormSheet';
+import { Toast } from '../components/Toast';
 import { EXERCISES } from '../data/exercises';
 import type { ExercisePlacement } from '../data/exercisePlacement';
 import type { MenuGroup } from '../data/menuGroups';
@@ -22,6 +23,7 @@ import { type PublicMenu } from '../lib/publicMenus';
 import { endPersonalChallenge } from '../lib/personalChallenges';
 import type { TeacherExercise, TeacherMenu } from '../lib/teacherContent';
 import { audio } from '../lib/audio';
+import { haptics } from '../lib/haptics';
 import { pickTeacherContentHighlights } from '../lib/teacherExerciseMetadata';
 import { useAppStore } from '../store/useAppStore';
 import type { FuwafuwaMilestoneEvent } from '../store/useAppStore';
@@ -47,6 +49,7 @@ import {
 import { useHomeChallenges } from './home/hooks/useHomeChallenges';
 import {
     usePersonalChallenges,
+    type PersonalChallengeCompletionNotice,
     type PersonalChallengeProgressItem,
 } from './home/hooks/usePersonalChallenges';
 import { useHomeSessions } from './home/hooks/useHomeSessions';
@@ -95,11 +98,13 @@ export const HomeScreen: React.FC = () => {
     const [editingPersonalChallenge, setEditingPersonalChallenge] = useState<PersonalChallengeProgressItem | null>(null);
     const [personalChallengeSeed, setPersonalChallengeSeed] = useState<PersonalChallengeCreateSeed | null>(null);
     const [personalFormOpen, setPersonalFormOpen] = useState(false);
+    const [personalChallengeToastMessage, setPersonalChallengeToastMessage] = useState<string | null>(null);
     const [customChallengeExercises, setCustomChallengeExercises] = useState<CustomExercise[]>([]);
     const [customChallengeMenus, setCustomChallengeMenus] = useState<MenuGroup[]>([]);
     const lastSoloVisitKeyRef = useRef('');
     const lastFamilyVisitKeyRef = useRef('');
     const magicDeliveryTimerRef = useRef<number | null>(null);
+    const currentTabRef = useRef(currentTab);
 
     const { allSessions, activeUsers, targetSeconds, perUserMagic, displaySeconds } = useHomeSessions({
         users,
@@ -110,6 +115,10 @@ export const HomeScreen: React.FC = () => {
         recommendedExercises,
         ambientCue,
     } = useHomePublicDiscovery();
+
+    useEffect(() => {
+        currentTabRef.current = currentTab;
+    }, [currentTab]);
 
     useEffect(() => {
         if (users.length === 0) {
@@ -226,6 +235,29 @@ export const HomeScreen: React.FC = () => {
     } = usePersonalChallenges({
         users,
         sessionUserIds,
+        onChallengeCompleted: useCallback((notice: PersonalChallengeCompletionNotice) => {
+            if (currentTabRef.current !== 'home') {
+                return;
+            }
+
+            const resultLine = notice.rewardStars > 0
+                ? `「${notice.title}」をクリアして ほしを1こ もらったよ`
+                : `「${notice.title}」をクリアしたよ`;
+            setPersonalChallengeToastMessage(
+                notice.memberName
+                    ? `${notice.memberName}が${resultLine}`
+                    : resultLine,
+            );
+            haptics.success();
+            audio.playSuccess();
+            lazyConfetti().then((confetti) => confetti({
+                particleCount: 36,
+                spread: 64,
+                startVelocity: 24,
+                origin: { y: 0.78 },
+                colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'],
+            }));
+        }, []),
     });
     const loadCustomChallengeTargets = useCallback(async () => {
         const [menus, exercises] = await Promise.all([
@@ -788,6 +820,11 @@ export const HomeScreen: React.FC = () => {
                     setSelectedPublicExercise(null);
                     startSessionWithExercises([exerciseId]);
                 }}
+            />
+
+            <Toast
+                message={personalChallengeToastMessage}
+                onClose={() => setPersonalChallengeToastMessage(null)}
             />
         </div>
     );

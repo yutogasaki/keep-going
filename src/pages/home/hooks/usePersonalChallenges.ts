@@ -21,9 +21,18 @@ export interface PersonalChallengeProgressItem {
     canEditSetup: boolean;
 }
 
+export interface PersonalChallengeCompletionNotice {
+    challengeId: string;
+    title: string;
+    memberId: string;
+    memberName: string | null;
+    rewardStars: number;
+}
+
 interface UsePersonalChallengesParams {
     users: UserProfileStore[];
     sessionUserIds: string[];
+    onChallengeCompleted?: (notice: PersonalChallengeCompletionNotice) => void;
 }
 
 interface PersonalChallengeBuckets {
@@ -44,6 +53,7 @@ function byUpdatedAtDesc(
 export function usePersonalChallenges({
     users,
     sessionUserIds,
+    onChallengeCompleted,
 }: UsePersonalChallengesParams): PersonalChallengeBuckets {
     const [activeChallenges, setActiveChallenges] = useState<PersonalChallengeProgressItem[]>([]);
     const [todayDoneChallenges, setTodayDoneChallenges] = useState<PersonalChallengeProgressItem[]>([]);
@@ -105,9 +115,17 @@ export function usePersonalChallenges({
                         completedAt,
                         rewardGrantedAt: challenge.rewardGrantedAt ?? completedAt,
                     });
-                    if (!challenge.rewardGrantedAt) {
+                    const rewardStars = challenge.rewardGrantedAt ? 0 : 1;
+                    if (rewardStars > 0) {
                         addChallengeStars(challenge.memberId, 1);
                     }
+                    onChallengeCompleted?.({
+                        challengeId: challenge.id,
+                        title: challenge.title,
+                        memberId: challenge.memberId,
+                        memberName: usersById.get(challenge.memberId)?.name ?? null,
+                        rewardStars,
+                    });
                     mutated = true;
                 } catch (error) {
                     console.warn('[personalChallenges] completePersonalChallenge failed:', error);
@@ -161,7 +179,7 @@ export function usePersonalChallenges({
             todayDoneChallenges: nextTodayDone.sort((left, right) => byUpdatedAtDesc(left.challenge, right.challenge)),
             pastChallenges: nextPast.sort((left, right) => byUpdatedAtDesc(left.challenge, right.challenge)),
         };
-    }, [addChallengeStars, usersById, visibleUserIds]);
+    }, [addChallengeStars, onChallengeCompleted, usersById, visibleUserIds]);
 
     const loadChallenges = useCallback(() => {
         let cancelled = false;
