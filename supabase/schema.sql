@@ -144,6 +144,19 @@ create table challenge_completions (
   unique(challenge_id, account_id, member_id)
 );
 
+create table challenge_enrollments (
+  id uuid primary key default gen_random_uuid(),
+  challenge_id uuid references challenges not null,
+  account_id uuid references auth.users not null,
+  member_id uuid not null,
+  joined_at timestamptz not null default now(),
+  effective_start_date text not null,
+  effective_end_date text not null,
+  created_at timestamptz default now(),
+  constraint challenge_enrollments_window_check check (effective_end_date >= effective_start_date),
+  unique(challenge_id, account_id, member_id)
+);
+
 -- 公開メニュー（メニュー共有機能）
 create table public_menus (
   id uuid primary key default gen_random_uuid(),
@@ -165,6 +178,7 @@ create index idx_sessions_date on sessions (account_id, date);
 create index idx_user_roles_role on user_roles (role);
 create index idx_challenges_dates on challenges (start_date, end_date);
 create index idx_challenge_completions_account on challenge_completions (account_id);
+create index idx_challenge_enrollments_account on challenge_enrollments (account_id);
 create index idx_public_menus_downloads on public_menus (download_count desc);
 
 -- RLS
@@ -176,6 +190,7 @@ alter table app_settings enable row level security;
 alter table user_roles enable row level security;
 alter table challenges enable row level security;
 alter table challenge_completions enable row level security;
+alter table challenge_enrollments enable row level security;
 alter table public_menus enable row level security;
 
 create policy "Users can manage own data" on family_members
@@ -199,6 +214,11 @@ create policy "Teachers can manage challenges" on challenges
 create policy "Users can manage own completions" on challenge_completions
   for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
 create policy "Teachers can read all completions" on challenge_completions
+  for select using (is_teacher());
+
+create policy "Users can manage own enrollments" on challenge_enrollments
+  for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
+create policy "Teachers can read all enrollments" on challenge_enrollments
   for select using (is_teacher());
 
 -- public_menus: 全員が読める、自分のだけ書き込み・削除可

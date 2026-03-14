@@ -173,6 +173,7 @@ export async function clearAllData(): Promise<void> {
 }
 
 const CLOUD_TABLES_TO_CLEAR = [
+    'challenge_enrollments',
     'challenge_completions',
     'exercise_downloads',
     'public_exercises',

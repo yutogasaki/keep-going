@@ -58,6 +58,22 @@ export interface ChallengeCompletion {
     completedAt: string;
 }
 
+export interface ChallengeEnrollment {
+    id: string;
+    challengeId: string;
+    accountId: string;
+    memberId: string;
+    joinedAt: string;
+    effectiveStartDate: string;
+    effectiveEndDate: string;
+    createdAt: string;
+}
+
+export interface ChallengeEnrollmentState {
+    joinedChallengeIds: Record<string, string[]>;
+    challengeEnrollmentWindows: Record<string, Record<string, ChallengeProgressWindow>>;
+}
+
 export interface ChallengeWriteInput {
     title: string;
     summary: string | null;
@@ -149,6 +165,21 @@ function mapChallenge(row: Database['public']['Tables']['challenges']['Row']): C
         tier: normalizeTier(row.tier),
         iconEmoji: row.icon_emoji ?? null,
         classLevels: row.class_levels ?? [],
+        createdAt: row.created_at,
+    };
+}
+
+function mapChallengeEnrollment(
+    row: Database['public']['Tables']['challenge_enrollments']['Row'],
+): ChallengeEnrollment {
+    return {
+        id: row.id,
+        challengeId: row.challenge_id,
+        accountId: row.account_id,
+        memberId: row.member_id,
+        joinedAt: row.joined_at,
+        effectiveStartDate: row.effective_start_date,
+        effectiveEndDate: row.effective_end_date,
         createdAt: row.created_at,
     };
 }
@@ -325,6 +356,32 @@ export function getChallengeDeadlineLabel(
         : getChallengeInviteWindowLabel(challenge);
 }
 
+export function buildChallengeEnrollmentState(
+    enrollments: ChallengeEnrollment[],
+): ChallengeEnrollmentState {
+    const joinedChallengeIds: Record<string, string[]> = {};
+    const challengeEnrollmentWindows: Record<string, Record<string, ChallengeProgressWindow>> = {};
+
+    for (const enrollment of enrollments) {
+        joinedChallengeIds[enrollment.memberId] = [
+            ...(joinedChallengeIds[enrollment.memberId] ?? []),
+            enrollment.challengeId,
+        ];
+        challengeEnrollmentWindows[enrollment.memberId] = {
+            ...(challengeEnrollmentWindows[enrollment.memberId] ?? {}),
+            [enrollment.challengeId]: {
+                startDate: enrollment.effectiveStartDate,
+                endDate: enrollment.effectiveEndDate,
+            },
+        };
+    }
+
+    return {
+        joinedChallengeIds,
+        challengeEnrollmentWindows,
+    };
+}
+
 function normalizeChallengeText(value: string | null | undefined): string | null {
     const normalized = value?.trim();
     return normalized ? normalized : null;
@@ -467,6 +524,45 @@ export async function fetchMyCompletions(): Promise<ChallengeCompletion[]> {
         memberId: row.member_id,
         completedAt: row.completed_at,
     }));
+}
+
+export async function fetchMyEnrollments(): Promise<ChallengeEnrollment[]> {
+    if (!supabase) return [];
+    const accountId = getAccountId();
+    if (!accountId) return [];
+
+    const { data, error } = await supabase
+        .from('challenge_enrollments')
+        .select('*')
+        .eq('account_id', accountId);
+
+    if (error) {
+        console.warn('[challenges] fetchMyEnrollments failed:', error);
+        return [];
+    }
+
+    return (data ?? []).map(mapChallengeEnrollment);
+}
+
+export async function markChallengeJoined(
+    challengeId: string,
+    memberId: string,
+    effectiveWindow: ChallengeProgressWindow,
+): Promise<void> {
+    if (!supabase) return;
+    const accountId = getAccountId();
+    if (!accountId) return;
+
+    const { error } = await supabase.from('challenge_enrollments').upsert({
+        challenge_id: challengeId,
+        account_id: accountId,
+        member_id: memberId,
+        joined_at: new Date().toISOString(),
+        effective_start_date: effectiveWindow.startDate,
+        effective_end_date: effectiveWindow.endDate,
+    }, { onConflict: 'challenge_id,account_id,member_id' });
+
+    if (error) throw error;
 }
 
 export async function markChallengeComplete(

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    buildChallengeEnrollmentState,
     countChallengeProgress,
     getChallengeCardText,
     getChallengeDescriptionText,
@@ -291,5 +292,34 @@ describe('challenge text helpers', () => {
         expect(getChallengeGoalLabel(challenge, '前後開脚')).toBe('前後開脚を5日');
         expect(getChallengeProgressLabel(challenge, 3)).toBe('3 / 5日');
         expect(getChallengeInviteWindowLabel(challenge)).toBe('参加すると 今日から7日');
+    });
+});
+
+describe('buildChallengeEnrollmentState', () => {
+    it('converts enrollments into per-user joined ids and windows', () => {
+        expect(buildChallengeEnrollmentState([
+            {
+                id: 'enroll-1',
+                challengeId: 'challenge-a',
+                accountId: 'account-1',
+                memberId: 'user-1',
+                joinedAt: '2026-03-14T00:00:00Z',
+                effectiveStartDate: '2026-03-14',
+                effectiveEndDate: '2026-03-20',
+                createdAt: '2026-03-14T00:00:00Z',
+            },
+        ])).toEqual({
+            joinedChallengeIds: {
+                'user-1': ['challenge-a'],
+            },
+            challengeEnrollmentWindows: {
+                'user-1': {
+                    'challenge-a': {
+                        startDate: '2026-03-14',
+                        endDate: '2026-03-20',
+                    },
+                },
+            },
+        });
     });
 });

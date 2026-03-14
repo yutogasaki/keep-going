@@ -240,6 +240,35 @@ do $$ begin
 exception when duplicate_object then null;
 end $$;
 
+create table if not exists challenge_enrollments (
+  id uuid primary key default gen_random_uuid(),
+  challenge_id uuid references challenges not null,
+  account_id uuid references auth.users not null,
+  member_id uuid not null,
+  joined_at timestamptz not null default now(),
+  effective_start_date text not null,
+  effective_end_date text not null,
+  created_at timestamptz default now(),
+  constraint challenge_enrollments_window_check check (effective_end_date >= effective_start_date),
+  unique (challenge_id, account_id, member_id)
+);
+
+create index if not exists idx_challenge_enrollments_account on challenge_enrollments (account_id);
+
+alter table challenge_enrollments enable row level security;
+
+do $$ begin
+  create policy "Users can manage own enrollments" on challenge_enrollments
+    for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create policy "Teachers can read all enrollments" on challenge_enrollments
+    for select using (is_teacher());
+exception when duplicate_object then null;
+end $$;
+
 -- ─── テーブル作成（RPCより先に） ──────────────────────
 
 -- ダウンロード記録テーブル

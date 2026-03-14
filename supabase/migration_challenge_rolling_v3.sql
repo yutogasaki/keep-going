@@ -43,3 +43,33 @@ do $$ begin
     check (required_days is null or required_days >= 1);
 exception when duplicate_object then null;
 end $$;
+
+create table if not exists public.challenge_enrollments (
+  id uuid primary key default gen_random_uuid(),
+  challenge_id uuid references public.challenges not null,
+  account_id uuid references auth.users not null,
+  member_id uuid not null,
+  joined_at timestamptz not null default now(),
+  effective_start_date text not null,
+  effective_end_date text not null,
+  created_at timestamptz default now(),
+  constraint challenge_enrollments_window_check check (effective_end_date >= effective_start_date),
+  unique (challenge_id, account_id, member_id)
+);
+
+create index if not exists idx_challenge_enrollments_account
+  on public.challenge_enrollments (account_id);
+
+alter table public.challenge_enrollments enable row level security;
+
+do $$ begin
+  create policy "Users can manage own enrollments" on public.challenge_enrollments
+    for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create policy "Teachers can read all enrollments" on public.challenge_enrollments
+    for select using (public.is_teacher());
+exception when duplicate_object then null;
+end $$;

@@ -93,6 +93,7 @@ beforeEach(() => {
         users: [createUser('u1')],
         sessionUserIds: ['u1'],
         joinedChallengeIds: { u1: ['challenge-a'] },
+        challengeEnrollmentWindows: {},
         onboardingCompleted: true,
         soundVolume: 0.35,
         ttsEnabled: false,
@@ -111,6 +112,7 @@ describe('pullAndMerge', () => {
             exercises: [],
             groups: [],
             settings: null,
+            challengeEnrollments: [],
         });
 
         const result = await pullAndMerge('account-1');
@@ -121,6 +123,7 @@ describe('pullAndMerge', () => {
             users: [expect.objectContaining({ id: 'u1' })],
             sessionUserIds: ['u1'],
             joinedChallengeIds: { u1: ['challenge-a'] },
+            challengeEnrollmentWindows: {},
             onboardingCompleted: true,
             soundVolume: 0.35,
             ttsEnabled: false,
@@ -148,6 +151,7 @@ describe('pullAndMerge', () => {
                 notifications_enabled: false,
                 notification_time: '19:45',
             } as never,
+            challengeEnrollments: [],
         });
 
         const result = await pullAndMerge('account-1');
@@ -157,6 +161,7 @@ describe('pullAndMerge', () => {
         expect(mockedSetRegisteredStoreState).toHaveBeenCalledWith(expect.objectContaining({
             users: [expect.objectContaining({ id: 'u1' })],
             sessionUserIds: ['u1'],
+            challengeEnrollmentWindows: {},
             onboardingCompleted: true,
             soundVolume: 0.8,
             ttsEnabled: true,

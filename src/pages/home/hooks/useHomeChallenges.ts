@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     fetchActiveChallenges,
+    fetchMyEnrollments,
     fetchMyCompletions,
     fetchPastChallenges,
+    buildChallengeEnrollmentState,
     type Challenge,
     type ChallengeCompletion,
 } from '../../../lib/challenges';
 import { fetchTeacherExercises, type TeacherExercise } from '../../../lib/teacherContent';
-import type { UserProfileStore } from '../../../store/useAppStore';
+import { useAppStore, type UserProfileStore } from '../../../store/useAppStore';
 
 interface UseHomeChallengesParams {
     users: UserProfileStore[];
@@ -20,13 +22,23 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
     const [completions, setCompletions] = useState<ChallengeCompletion[]>([]);
     const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
     const [pastExpanded, setPastExpanded] = useState(false);
+    const hydrateChallengeEnrollmentState = useAppStore((state) => state.hydrateChallengeEnrollmentState);
 
     const loadChallenges = useCallback(() => {
         fetchActiveChallenges().then(setChallenges).catch(console.warn);
         fetchPastChallenges().then(setPastChallenges).catch(console.warn);
         fetchMyCompletions().then(setCompletions).catch(console.warn);
+        fetchMyEnrollments()
+            .then((enrollments) => {
+                const enrollmentState = buildChallengeEnrollmentState(enrollments);
+                hydrateChallengeEnrollmentState(
+                    enrollmentState.joinedChallengeIds,
+                    enrollmentState.challengeEnrollmentWindows,
+                );
+            })
+            .catch(console.warn);
         fetchTeacherExercises().then(setTeacherExercises).catch(console.warn);
-    }, []);
+    }, [hydrateChallengeEnrollmentState]);
 
     useEffect(() => {
         loadChallenges();

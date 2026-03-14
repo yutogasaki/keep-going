@@ -17,6 +17,7 @@ import {
     getChallengePeriodLabel,
     getChallengeProgressLabel,
     getChallengeTargetLabel,
+    markChallengeJoined,
 } from '../lib/challenges';
 import type { ChallengeProgressWindow } from '../lib/challenge-engine';
 
@@ -94,7 +95,18 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
             ? createRollingChallengeWindow(challenge)
             : null;
 
-        activeUserIds.forEach((userId) => joinChallenge(userId, challenge.id, nextWindow));
+        activeUserIds.forEach((userId) => {
+            joinChallenge(userId, challenge.id, nextWindow);
+
+            const effectiveWindow = nextWindow ?? {
+                startDate: challenge.startDate,
+                endDate: challenge.endDate,
+            };
+
+            markChallengeJoined(challenge.id, userId, effectiveWindow).catch((error) => {
+                console.warn('[challenges] markChallengeJoined failed:', error);
+            });
+        });
         setDetailOpen(false);
     };
 

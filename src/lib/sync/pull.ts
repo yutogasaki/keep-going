@@ -135,7 +135,8 @@ function hasSnapshotData(snapshot: CloudSyncSnapshot): boolean {
         snapshot.sessions.length > 0 ||
         snapshot.exercises.length > 0 ||
         snapshot.groups.length > 0 ||
-        snapshot.settings != null
+        snapshot.settings != null ||
+        snapshot.challengeEnrollments.length > 0
     );
 }
 
@@ -195,6 +196,7 @@ export async function pullAndMerge(
                 localState,
                 users,
                 settings: snapshot.settings,
+                challengeEnrollments: snapshot.challengeEnrollments,
             });
 
             setRegisteredStoreState({
@@ -202,6 +204,7 @@ export async function pullAndMerge(
                 users,
                 sessionUserIds: restoredState.sessionUserIds,
                 joinedChallengeIds: restoredState.joinedChallengeIds,
+                challengeEnrollmentWindows: restoredState.challengeEnrollmentWindows,
                 onboardingCompleted: restoredState.onboardingCompleted,
             });
         } else if (snapshot.settings) {

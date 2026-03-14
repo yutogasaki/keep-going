@@ -48,6 +48,7 @@ describe('pull store state helpers', () => {
         expect(state.joinedChallengeIds).toEqual({
             u1: ['challenge-a'],
         });
+        expect(state.challengeEnrollmentWindows).toEqual({});
         expect(state.onboardingCompleted).toBe(true);
         expect(state.soundVolume).toBe(0.8);
     });
@@ -62,6 +63,7 @@ describe('pull store state helpers', () => {
         });
 
         expect(state.sessionUserIds).toEqual(['u1']);
+        expect(state.challengeEnrollmentWindows).toEqual({});
         expect(state.onboardingCompleted).toBe(true);
     });
 
@@ -86,6 +88,7 @@ describe('pull store state helpers', () => {
 
         expect(state.sessionUserIds).toEqual([]);
         expect(state.joinedChallengeIds).toEqual({});
+        expect(state.challengeEnrollmentWindows).toEqual({});
         expect(state.onboardingCompleted).toBe(false);
         expect(state.ttsEnabled).toBe(true);
     });
@@ -124,6 +127,7 @@ describe('pull store state helpers', () => {
             u1: ['challenge-a'],
             u2: ['challenge-b'],
         });
+        expect(state.challengeEnrollmentWindows).toEqual({});
         expect(state.onboardingCompleted).toBe(true);
         expect(state.soundVolume).toBe(0.4);
         expect(state.ttsEnabled).toBe(false);
@@ -163,6 +167,44 @@ describe('pull store state helpers', () => {
             hapticEnabled: false,
             notificationsEnabled: true,
             notificationTime: '20:15',
+        });
+    });
+
+    it('prefers cloud challenge enrollments over local joined data when available', () => {
+        const state = buildRestoredStoreState({
+            localState: {
+                joinedChallengeIds: {
+                    u1: ['local-challenge'],
+                },
+                challengeEnrollmentWindows: {
+                    u1: {
+                        'local-challenge': { startDate: '2026-03-01', endDate: '2026-03-07' },
+                    },
+                },
+            },
+            users: [createUser('u1')],
+            settings: null,
+            challengeEnrollments: [
+                {
+                    id: 'enroll-1',
+                    challengeId: 'cloud-challenge',
+                    accountId: 'account-1',
+                    memberId: 'u1',
+                    joinedAt: '2026-03-10T00:00:00Z',
+                    effectiveStartDate: '2026-03-10',
+                    effectiveEndDate: '2026-03-16',
+                    createdAt: '2026-03-10T00:00:00Z',
+                },
+            ],
+        });
+
+        expect(state.joinedChallengeIds).toEqual({
+            u1: ['cloud-challenge'],
+        });
+        expect(state.challengeEnrollmentWindows).toEqual({
+            u1: {
+                'cloud-challenge': { startDate: '2026-03-10', endDate: '2026-03-16' },
+            },
         });
     });
 });

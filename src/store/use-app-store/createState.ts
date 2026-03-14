@@ -303,6 +303,10 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
 
     joinedChallengeIds: {},
     challengeEnrollmentWindows: {},
+    hydrateChallengeEnrollmentState: (joinedChallengeIds, challengeEnrollmentWindows) => set({
+        joinedChallengeIds,
+        challengeEnrollmentWindows,
+    }),
     joinChallenge: (userId, challengeId, effectiveWindow) => set((state) => {
         const joinedForUser = state.joinedChallengeIds[userId] || [];
         if (joinedForUser.includes(challengeId)) {

@@ -248,6 +248,29 @@ export interface Database {
                 Update: Partial<Database['public']['Tables']['challenge_completions']['Insert']>;
                 Relationships: [];
             };
+            challenge_enrollments: {
+                Row: {
+                    id: string;
+                    challenge_id: string;
+                    account_id: string;
+                    member_id: string;
+                    joined_at: string;
+                    effective_start_date: string;
+                    effective_end_date: string;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    challenge_id: string;
+                    account_id: string;
+                    member_id: string;
+                    joined_at?: string;
+                    effective_start_date: string;
+                    effective_end_date: string;
+                };
+                Update: Partial<Database['public']['Tables']['challenge_enrollments']['Insert']>;
+                Relationships: [];
+            };
             public_menus: {
                 Row: {
                     id: string;

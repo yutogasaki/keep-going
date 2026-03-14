@@ -4,6 +4,7 @@ import { useAppStore } from '../../../store/useAppStore';
 export const ChallengeDebugSection: React.FC = () => {
     const users = useAppStore((state) => state.users);
     const joinedChallengeIds = useAppStore((state) => state.joinedChallengeIds);
+    const challengeEnrollmentWindows = useAppStore((state) => state.challengeEnrollmentWindows);
 
     return (
         <div style={{ marginTop: '12px', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '12px' }}>
@@ -12,14 +13,19 @@ export const ChallengeDebugSection: React.FC = () => {
                 {Object.entries(joinedChallengeIds).map(([userId, challengeIds]) => {
                     const user = users.find((item) => item.id === userId);
                     return challengeIds.length > 0 ? (
-                        <div key={userId}>{user?.name || userId.slice(0, 6)}: {challengeIds.length}件</div>
+                        <div key={userId}>
+                            {user?.name || userId.slice(0, 6)}: {challengeIds.length}件
+                            {Object.keys(challengeEnrollmentWindows[userId] ?? {}).length > 0
+                                ? ` / window ${Object.keys(challengeEnrollmentWindows[userId] ?? {}).length}件`
+                                : ''}
+                        </div>
                     ) : null;
                 })}
                 {Object.values(joinedChallengeIds).every((challengeIds) => challengeIds.length === 0) && '参加なし'}
             </div>
             <button
                 onClick={() => {
-                    useAppStore.setState({ joinedChallengeIds: {} });
+                    useAppStore.setState({ joinedChallengeIds: {}, challengeEnrollmentWindows: {} });
                 }}
                 style={{
                     padding: '4px 12px',

@@ -160,5 +160,9 @@ export interface AppState {
 
     joinedChallengeIds: Record<string, string[]>;
     challengeEnrollmentWindows: Record<string, Record<string, ChallengeEnrollmentWindow>>;
+    hydrateChallengeEnrollmentState: (
+        joinedChallengeIds: Record<string, string[]>,
+        challengeEnrollmentWindows: Record<string, Record<string, ChallengeEnrollmentWindow>>,
+    ) => void;
     joinChallenge: (userId: string, challengeId: string, effectiveWindow?: ChallengeEnrollmentWindow | null) => void;
 }
