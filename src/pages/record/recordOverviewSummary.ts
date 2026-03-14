@@ -290,9 +290,15 @@ export function buildRecordSuggestionSummary({
 }): RecordSuggestionSummary {
     const dates = new Set(Array.from({ length: 14 }, (_, index) => getDateKeyOffset(-(13 - index))));
     const recentSessions = sessions.filter((session) => dates.has(session.date));
+    const availablePlacements = ACTIONABLE_PLACEMENTS.filter((placement) =>
+        Array.from(exerciseMap.values()).some((exercise) => exercise.placement === placement),
+    );
+    const preferredDefaultPlacement = availablePlacements.includes('stretch')
+        ? 'stretch'
+        : availablePlacements[0] ?? 'stretch';
     const placementCounts = new Map<ExercisePlacement, number>();
 
-    for (const placement of ACTIONABLE_PLACEMENTS) {
+    for (const placement of availablePlacements) {
         placementCounts.set(placement, 0);
     }
 
@@ -311,7 +317,7 @@ export function buildRecordSuggestionSummary({
             title: 'まずはひとつ、どう？',
             body: 'はじめやすい ストレッチからでも いいよ',
             ctaLabel: 'みてみる',
-            suggestedPlacement: 'stretch',
+            suggestedPlacement: preferredDefaultPlacement,
         };
     }
 
@@ -326,7 +332,7 @@ export function buildRecordSuggestionSummary({
         });
     const suggestedPlacement = sortedSuggestedPlacements.length > 0
         ? sortedSuggestedPlacements[0][0]
-        : 'core';
+        : preferredDefaultPlacement;
 
     switch (suggestedPlacement) {
     case 'stretch':

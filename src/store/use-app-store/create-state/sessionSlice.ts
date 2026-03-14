@@ -7,6 +7,9 @@ type SessionSlice = Pick<
     | 'currentTab'
     | 'previousTab'
     | 'setTab'
+    | 'menuOpenIntent'
+    | 'openMenuWithIntent'
+    | 'clearMenuOpenIntent'
     | 'isInSession'
     | 'sessionExerciseIds'
     | 'sessionSourceMenuId'
@@ -76,6 +79,15 @@ export function createSessionSlice(set: AppStateSet, get: AppStateGet): SessionS
             const previousTab = get().currentTab;
             set({ currentTab: tab, previousTab });
         },
+        menuOpenIntent: null,
+        openMenuWithIntent: (intent) => set({
+            menuOpenIntent: {
+                tab: intent.tab,
+                placement: intent.placement ?? null,
+                requestId: Date.now(),
+            },
+        }),
+        clearMenuOpenIntent: () => set({ menuOpenIntent: null }),
         isInSession: false,
         sessionExerciseIds: null,
         sessionSourceMenuId: null,

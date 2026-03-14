@@ -44,6 +44,7 @@ export const RecordPage: React.FC = () => {
     const currentTab = useAppStore((state) => state.currentTab);
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const setTab = useAppStore((state) => state.setTab);
+    const openMenuWithIntent = useAppStore((state) => state.openMenuWithIntent);
     const sessionUserIdSet = useMemo(() => new Set(sessionUserIds), [sessionUserIds]);
     const isPageActive = currentTab === 'record';
     const todayKey = getTodayKey();
@@ -306,7 +307,13 @@ export const RecordPage: React.FC = () => {
                                 suggestion={suggestion}
                                 topExercises={topExercises}
                                 historySections={historySections}
-                                onSuggestionClick={() => setTab('menu')}
+                                onSuggestionClick={() => {
+                                    openMenuWithIntent({
+                                        tab: 'individual',
+                                        placement: suggestion.suggestedPlacement,
+                                    });
+                                    setTab('menu');
+                                }}
                             />
                         ) : (
                             <AlbumTabContent

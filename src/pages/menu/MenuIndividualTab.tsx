@@ -49,6 +49,8 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
     onUnpublishExercise,
     onOpenPublicExerciseBrowser,
     onStartHybridSession,
+    focusCategory,
+    focusRequestId,
 }) => {
     const selectionEnabled = Boolean(onStartHybridSession);
     const [selectionMode, setSelectionMode] = useState(false);
@@ -165,6 +167,17 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
             setOrigin('all');
         }
     }, [availableOrigins, origin]);
+
+    useEffect(() => {
+        if (!focusCategory) {
+            return;
+        }
+
+        setCategory(focusCategory);
+        setOrigin('all');
+        setShowAll(false);
+        setExpandedId(null);
+    }, [focusCategory, focusRequestId]);
 
     // Reset showAll when filters change
     useEffect(() => {
