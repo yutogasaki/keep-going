@@ -21,6 +21,7 @@ export type ChallengeTier = 'small' | 'big';
 export type ChallengeRewardKind = 'star' | 'medal';
 export type ChallengeWindowType = 'calendar' | 'rolling';
 export type ChallengeGoalType = 'total_count' | 'active_day';
+export type ChallengePublishMode = 'seasonal' | 'always_on';
 
 export interface Challenge {
     id: string;
@@ -41,6 +42,9 @@ export interface Challenge {
     windowDays: number | null;
     requiredDays: number | null;
     dailyMinimumMinutes: number | null;
+    publishMode: ChallengePublishMode;
+    publishStartDate: string | null;
+    publishEndDate: string | null;
     createdBy: string;
     rewardKind: ChallengeRewardKind;
     rewardValue: number;
@@ -93,6 +97,9 @@ export interface ChallengeWriteInput {
     windowDays: number | null;
     requiredDays: number | null;
     dailyMinimumMinutes: number | null;
+    publishMode: ChallengePublishMode;
+    publishStartDate: string | null;
+    publishEndDate: string | null;
     createdBy?: string;
     rewardKind: ChallengeRewardKind;
     rewardValue: number;
@@ -135,12 +142,17 @@ function normalizeGoalType(value: string | null | undefined): ChallengeGoalType 
     return value === 'active_day' ? 'active_day' : 'total_count';
 }
 
+function normalizePublishMode(value: string | null | undefined): ChallengePublishMode {
+    return value === 'always_on' ? 'always_on' : 'seasonal';
+}
+
 function mapChallenge(row: Database['public']['Tables']['challenges']['Row']): Challenge {
     const challengeType = normalizeChallengeType(row.challenge_type);
     const rewardKind = normalizeRewardKind(row.reward_kind);
     const rewardValue = row.reward_value ?? row.reward_fuwafuwa_type ?? 0;
     const exerciseId = row.target_exercise_id ?? row.exercise_id;
     const goalType = normalizeGoalType(row.goal_type);
+    const publishMode = normalizePublishMode(row.publish_mode);
 
     return {
         id: row.id,
@@ -163,6 +175,13 @@ function mapChallenge(row: Database['public']['Tables']['challenges']['Row']): C
             ? (row.required_days ?? row.target_count)
             : (row.required_days ?? null),
         dailyMinimumMinutes: row.daily_minimum_minutes ?? null,
+        publishMode,
+        publishStartDate: publishMode === 'seasonal'
+            ? (row.publish_start_date ?? row.start_date)
+            : (row.publish_start_date ?? null),
+        publishEndDate: publishMode === 'seasonal'
+            ? (row.publish_end_date ?? row.end_date)
+            : (row.publish_end_date ?? null),
         createdBy: row.created_by,
         rewardKind,
         rewardValue,
@@ -209,6 +228,13 @@ function toChallengeRowBase(input: ChallengeWriteInput) {
         required_days: input.goalType === 'active_day' ? input.requiredDays : null,
         daily_minimum_minutes: input.goalType === 'active_day' && input.challengeType === 'duration'
             ? input.dailyMinimumMinutes
+            : null,
+        publish_mode: input.publishMode,
+        publish_start_date: input.publishMode === 'seasonal'
+            ? (input.publishStartDate ?? input.startDate)
+            : null,
+        publish_end_date: input.publishMode === 'seasonal'
+            ? (input.publishEndDate ?? input.endDate)
             : null,
         created_by: input.createdBy ?? '',
         reward_kind: input.rewardKind,
@@ -342,6 +368,40 @@ export function getChallengePeriodLabel(
     return `${window.startDate} 〜 ${window.endDate}`;
 }
 
+export function getChallengePublishWindow(
+    challenge: Pick<Challenge, 'publishMode' | 'publishStartDate' | 'publishEndDate' | 'startDate' | 'endDate'>,
+): ChallengeProgressWindow | null {
+    if (challenge.publishMode === 'always_on') {
+        return null;
+    }
+
+    return {
+        startDate: challenge.publishStartDate ?? challenge.startDate,
+        endDate: challenge.publishEndDate ?? challenge.endDate,
+    };
+}
+
+export function getChallengePublishLabel(
+    challenge: Pick<Challenge, 'publishMode' | 'publishStartDate' | 'publishEndDate' | 'startDate' | 'endDate'>,
+): string {
+    if (challenge.publishMode === 'always_on') {
+        return 'いつでも表示';
+    }
+
+    const publishWindow = getChallengePublishWindow(challenge);
+    if (!publishWindow) {
+        return 'いつでも表示';
+    }
+
+    const [startYear, startMonth, startDay] = publishWindow.startDate.split('-');
+    const [, endMonth, endDay] = publishWindow.endDate.split('-');
+    void startYear;
+
+    return startMonth === endMonth
+        ? `${Number(endMonth)}/${Number(endDay)}まで表示`
+        : `${Number(startMonth)}/${Number(startDay)}〜${Number(endMonth)}/${Number(endDay)}に表示`;
+}
+
 export function getChallengeInviteWindowLabel(
     challenge: Pick<Challenge, 'startDate' | 'endDate' | 'windowDays' | 'windowType'>,
 ): string {
@@ -372,6 +432,54 @@ export function getChallengeDeadlineLabel(
     return challenge.windowType === 'rolling'
         ? `あと${daysLeft}日`
         : getChallengeInviteWindowLabel(challenge);
+}
+
+export function isChallengePublishedOnDate(
+    challenge: Pick<Challenge, 'publishMode' | 'publishStartDate' | 'publishEndDate' | 'startDate' | 'endDate'>,
+    date: string,
+): boolean {
+    if (challenge.publishMode === 'always_on') {
+        return true;
+    }
+
+    const publishWindow = getChallengePublishWindow(challenge);
+    if (!publishWindow) {
+        return true;
+    }
+
+    return publishWindow.startDate <= date && publishWindow.endDate >= date;
+}
+
+export function isChallengeDoneForToday(
+    challenge: Pick<Challenge, 'goalType' | 'dailyCap'>,
+    todayProgress: number,
+): boolean {
+    if (challenge.goalType === 'active_day') {
+        return todayProgress >= 1;
+    }
+
+    return todayProgress >= Math.max(1, challenge.dailyCap);
+}
+
+export function isChallengeFinishedOverall(
+    activeUserIds: string[],
+    completedUserIds: Set<string>,
+): boolean {
+    return activeUserIds.length > 0
+        && activeUserIds.every((userId) => completedUserIds.has(userId));
+}
+
+export function isChallengePastForUsers(
+    challenge: Pick<Challenge, 'startDate' | 'endDate' | 'windowDays' | 'windowType'>,
+    today: string,
+    effectiveWindow?: ChallengeProgressWindow | null,
+): boolean {
+    if (challenge.windowType === 'rolling' && !effectiveWindow) {
+        return false;
+    }
+
+    const activeWindow = getChallengeActiveWindow(challenge, effectiveWindow);
+    return activeWindow.endDate < today;
 }
 
 export function buildChallengeEnrollmentState(
@@ -610,6 +718,25 @@ export async function countChallengeProgress(
     const sessions = await getAllSessions();
     const window = getChallengeActiveWindow(challenge, effectiveWindow);
 
+    return countChallengeProgressInWindow(challenge, userIds, window, sessions);
+}
+
+export async function countChallengeProgressInCustomWindow(
+    challenge: Challenge,
+    userIds: string[],
+    window: ChallengeProgressWindow,
+): Promise<number> {
+    const sessions = await getAllSessions();
+
+    return countChallengeProgressInWindow(challenge, userIds, window, sessions);
+}
+
+function countChallengeProgressInWindow(
+    challenge: Challenge,
+    userIds: string[],
+    window: ChallengeProgressWindow,
+    sessions: Awaited<ReturnType<typeof getAllSessions>>,
+): number {
     return countChallengeProgressFromSessions({
         challengeType: challenge.challengeType,
         exerciseId: challenge.exerciseId,

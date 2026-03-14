@@ -249,14 +249,21 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
     const dateError = values.startDate && values.endDate && values.endDate < values.startDate
         ? '終了日は開始日より後にしてください'
         : '';
+    const publishDateError = values.publishMode === 'seasonal'
+        && values.publishStartDate
+        && values.publishEndDate
+        && values.publishEndDate < values.publishStartDate
+        ? '表示終了日は表示開始日より後にしてください'
+        : '';
 
     const isDurationChallenge = values.challengeType === 'duration';
     const hasError = !values.title.trim()
-        || (values.windowType === 'rolling'
-            ? values.requiredDays < 1 || values.windowDays < 1 || values.requiredDays > values.windowDays
+        || (values.goalType === 'active_day'
+            ? values.requiredDays < 1 || (values.windowType === 'rolling' ? values.windowDays < 1 || values.requiredDays > values.windowDays : false)
             : values.targetCount < 1 || values.dailyCap < 1)
         || (isDurationChallenge && values.dailyMinimumMinutes < 1)
         || !!dateError
+        || !!publishDateError
         || (values.challengeType === 'exercise' && !hasExerciseTarget)
         || (values.challengeType === 'menu' && !hasMenuTarget);
 
@@ -376,27 +383,24 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                             },
                         ] as const).map((option) => {
                             const selected = values.windowType === option.id;
-                            const disabled = isDurationChallenge && option.id === 'calendar';
                             return (
                                 <button
                                     key={option.id}
                                     type="button"
-                                    disabled={disabled}
                                     onClick={() => {
-                                        if (disabled) {
-                                            return;
-                                        }
-
                                         const nextWindowType = option.id;
-                                        const basePatch = nextWindowType === 'calendar'
+                                        const nextGoalType: ChallengeFormValues['goalType'] = isDurationChallenge
+                                            ? 'active_day'
+                                            : (nextWindowType === 'rolling' ? 'active_day' : 'total_count');
+                                        const basePatch: Partial<ChallengeFormValues> = nextWindowType === 'calendar'
                                             ? {
                                                 windowType: 'calendar' as const,
-                                                goalType: 'total_count' as const,
+                                                goalType: nextGoalType,
                                                 dailyCap: Math.max(1, values.dailyCap || 1),
                                             }
                                             : {
                                                 windowType: 'rolling' as const,
-                                                goalType: 'active_day' as const,
+                                                goalType: nextGoalType,
                                                 dailyCap: 1,
                                             };
 
@@ -415,17 +419,17 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                             ...applyDurationPreset({
                                                 durationPreset: values.durationPreset,
                                                 windowType: nextWindowType,
+                                                goalType: nextGoalType,
                                                 startDate: values.startDate,
                                                 windowDays: values.windowDays,
+                                                publishMode: values.publishMode,
+                                                publishStartDate: values.publishStartDate,
+                                                publishEndDate: values.publishEndDate,
                                             }, values.durationPreset),
                                         });
                                     }}
                                     style={{
                                         ...optionButtonBaseStyle,
-                                        ...(disabled ? {
-                                            opacity: 0.5,
-                                            cursor: 'not-allowed',
-                                        } : null),
                                         ...(selected ? {
                                             border: '2px solid #2BBAA0',
                                             background: '#E8F8F0',
@@ -456,7 +460,7 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
 
                 {isDurationChallenge ? (
                     <div style={fieldHintStyle}>
-                        時間チャレンジは、参加してから毎日できた日数を数える方式だけにしています。
+                        時間チャレンジは、期間で数える形と、参加した人ごとに毎日数える形の両方を作れます。
                     </div>
                 ) : null}
             </Section>
@@ -483,7 +487,6 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                         if (option.id === 'duration') {
                                             onChange({
                                                 challengeType: 'duration',
-                                                windowType: 'rolling',
                                                 goalType: 'active_day',
                                                 dailyCap: 1,
                                                 dailyMinimumMinutes: Math.max(1, values.dailyMinimumMinutes || 3),
@@ -738,13 +741,13 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                 )}
 
                 <div style={metricGridStyle}>
-                    {values.windowType === 'rolling' ? (
+                    {values.goalType === 'active_day' ? (
                         <>
                             <Field label="必要な日数" hint={isDurationChallenge ? '1日の目標時間を満たした日を、何日集めたらクリアかを決めます。' : '対象をやった日を何日集めたらクリアかを決めます。'}>
                                 <input
                                     type="number"
                                     min={1}
-                                    max={Math.max(1, values.windowDays)}
+                                    max={values.windowType === 'rolling' ? Math.max(1, values.windowDays) : undefined}
                                     value={values.requiredDays}
                                     onChange={(event) => onChange({
                                         requiredDays: Number(event.target.value),
@@ -791,14 +794,14 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                     )}
                 </div>
 
-                {values.windowType === 'rolling' ? (
+                {values.goalType === 'active_day' ? (
                     <>
                         <div style={fieldHintStyle}>
                             {isDurationChallenge
                                 ? `1日達成は、その日の合計ストレッチ時間が ${Math.max(1, values.dailyMinimumMinutes)}分以上のときにカウントされます。休憩は含みません。`
                                 : '1日達成は、その日に対象の種目かメニューを1回以上やるとカウントされます。'}
                         </div>
-                        {values.requiredDays > values.windowDays ? (
+                        {values.windowType === 'rolling' && values.requiredDays > values.windowDays ? (
                             <div style={{ ...fieldHintStyle, color: COLOR.danger, fontWeight: 700 }}>
                                 必要な日数はチャレンジ日数以下にしてください。
                             </div>
@@ -830,8 +833,12 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                         onChange(applyDurationPreset({
                                             durationPreset: values.durationPreset,
                                             windowType: values.windowType,
+                                            goalType: values.goalType,
                                             startDate: values.startDate,
                                             windowDays: values.windowDays,
+                                            publishMode: values.publishMode,
+                                            publishStartDate: values.publishStartDate,
+                                            publishEndDate: values.publishEndDate,
                                         }, option.id));
                                     }}
                                     style={{
@@ -900,27 +907,35 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                     style={inputStyle}
                                 />
                             </Field>
-                        ) : null}
-
-                        <Field label="開始日">
-                            <input
-                                type="date"
-                                value={values.startDate}
-                                onChange={(event) => onChange({ startDate: event.target.value })}
-                                style={inputStyle}
-                            />
-                        </Field>
-                        <Field label="終了日">
-                            <input
-                                type="date"
-                                value={values.endDate}
-                                onChange={(event) => onChange({ endDate: event.target.value })}
-                                style={{
-                                    ...inputStyle,
-                                    ...(dateError ? { border: '1px solid #E17055' } : {}),
-                                }}
-                            />
-                        </Field>
+                        ) : (
+                            <>
+                                <Field label="開始日">
+                                    <input
+                                        type="date"
+                                        value={values.startDate}
+                                        onChange={(event) => onChange({
+                                            startDate: event.target.value,
+                                            ...(values.publishMode === 'seasonal' ? { publishStartDate: event.target.value } : {}),
+                                        })}
+                                        style={inputStyle}
+                                    />
+                                </Field>
+                                <Field label="終了日">
+                                    <input
+                                        type="date"
+                                        value={values.endDate}
+                                        onChange={(event) => onChange({
+                                            endDate: event.target.value,
+                                            ...(values.publishMode === 'seasonal' ? { publishEndDate: event.target.value } : {}),
+                                        })}
+                                        style={{
+                                            ...inputStyle,
+                                            ...(dateError ? { border: '1px solid #E17055' } : {}),
+                                        }}
+                                    />
+                                </Field>
+                            </>
+                        )}
                     </div>
                 ) : null}
 
@@ -932,6 +947,118 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                         fontWeight: 700,
                     }}>
                         {dateError}
+                    </div>
+                ) : null}
+            </Section>
+
+            <Section
+                title="ホームでの見せ方"
+                description="今だけ出すか、いつでも出しておくかを決めます。"
+            >
+                <Field label="掲載方法">
+                    <div style={optionGridStyle}>
+                        {([
+                            { id: 'seasonal', label: '今だけ出す', description: '表示する期間を決める' },
+                            { id: 'always_on', label: 'いつでも出す', description: '定番やはじめて用に置いておく' },
+                        ] as const).map((option) => {
+                            const selected = values.publishMode === option.id;
+                            return (
+                                <button
+                                    key={option.id}
+                                    type="button"
+                                    onClick={() => onChange({
+                                        publishMode: option.id,
+                                        ...(option.id === 'seasonal'
+                                            ? {
+                                                publishStartDate: values.publishStartDate || values.startDate,
+                                                publishEndDate: values.publishEndDate || values.endDate,
+                                            }
+                                            : {}),
+                                    })}
+                                    style={{
+                                        ...optionButtonBaseStyle,
+                                        ...(selected ? {
+                                            border: '2px solid #2BBAA0',
+                                            background: '#E8F8F0',
+                                        } : null),
+                                    }}
+                                >
+                                    <span style={{
+                                        fontFamily: FONT.body,
+                                        fontSize: FONT_SIZE.sm,
+                                        fontWeight: 800,
+                                        color: COLOR.dark,
+                                    }}>
+                                        {option.label}
+                                    </span>
+                                    <span style={{
+                                        fontFamily: FONT.body,
+                                        fontSize: FONT_SIZE.xs + 1,
+                                        color: COLOR.muted,
+                                        lineHeight: 1.5,
+                                    }}>
+                                        {option.description}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </Field>
+
+                {values.publishMode === 'seasonal' ? (
+                    <div style={metricGridStyle}>
+                        <Field label="表示開始日">
+                            <input
+                                type="date"
+                                value={values.publishStartDate}
+                                onChange={(event) => onChange({ publishStartDate: event.target.value })}
+                                style={inputStyle}
+                            />
+                        </Field>
+                        <Field label="表示終了日">
+                            <input
+                                type="date"
+                                value={values.publishEndDate}
+                                onChange={(event) => onChange({ publishEndDate: event.target.value })}
+                                style={{
+                                    ...inputStyle,
+                                    ...(publishDateError ? { border: '1px solid #E17055' } : {}),
+                                }}
+                            />
+                        </Field>
+                    </div>
+                ) : (
+                    <div style={selectionPreviewStyle}>
+                        <div style={previewIconStyle}>∞</div>
+                        <div style={{ minWidth: 0 }}>
+                            <div style={{
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.sm,
+                                fontWeight: 800,
+                                color: COLOR.dark,
+                            }}>
+                                いつでもチャレンジ
+                            </div>
+                            <div style={{
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.xs + 1,
+                                color: COLOR.muted,
+                                lineHeight: 1.6,
+                            }}>
+                                定番やはじめて用として、ホームに出し続けます。
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {publishDateError ? (
+                    <div style={{
+                        fontFamily: FONT.body,
+                        fontSize: FONT_SIZE.xs + 1,
+                        color: COLOR.danger,
+                        fontWeight: 700,
+                    }}>
+                        {publishDateError}
                     </div>
                 ) : null}
             </Section>

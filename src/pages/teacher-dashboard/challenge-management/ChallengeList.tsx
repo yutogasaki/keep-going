@@ -8,6 +8,7 @@ import {
     getChallengeDailyCapLabel,
     getChallengeGoalLabel,
     getChallengeInviteWindowLabel,
+    getChallengePublishLabel,
     getChallengeRewardLabel,
     getChallengeTargetLabel,
     type Challenge,
@@ -128,6 +129,14 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                     {getChallengeDailyCapLabel(challenge)} ・
                                     {getChallengeRewardLabel(challenge)} ・
                                     {windowLabel}
+                                </div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 11,
+                                    color: '#94A3B8',
+                                    marginTop: 2,
+                                }}>
+                                    {getChallengePublishLabel(challenge)}
                                 </div>
                                 {cardText && (
                                     <div style={{

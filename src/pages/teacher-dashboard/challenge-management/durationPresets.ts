@@ -68,7 +68,7 @@ export function inferDurationPresetFromChallenge(challenge: Challenge): Challeng
 }
 
 export function applyDurationPreset(
-    values: Pick<ChallengeFormValues, 'durationPreset' | 'windowType' | 'startDate' | 'windowDays'>,
+    values: Pick<ChallengeFormValues, 'durationPreset' | 'windowType' | 'goalType' | 'startDate' | 'windowDays' | 'publishMode' | 'publishStartDate' | 'publishEndDate'>,
     preset: ChallengeDurationPreset,
 ): Partial<ChallengeFormValues> {
     const days = resolveChallengeDurationDays(preset);
@@ -80,7 +80,7 @@ export function applyDurationPreset(
     const endDate = shiftDateKey(baseStartDate, days - 1);
     const recommendedGoal = getRecommendedChallengeGoal(days);
 
-    if (values.windowType === 'rolling') {
+    if (values.goalType === 'active_day') {
         return {
             durationPreset: preset,
             windowDays: days,
@@ -88,6 +88,8 @@ export function applyDurationPreset(
             targetCount: Math.min(recommendedGoal, days),
             startDate: baseStartDate,
             endDate,
+            publishStartDate: values.publishMode === 'seasonal' ? baseStartDate : values.publishStartDate,
+            publishEndDate: values.publishMode === 'seasonal' ? endDate : values.publishEndDate,
         };
     }
 
@@ -95,6 +97,8 @@ export function applyDurationPreset(
         durationPreset: preset,
         startDate: baseStartDate,
         endDate,
+        publishStartDate: values.publishMode === 'seasonal' ? baseStartDate : values.publishStartDate,
+        publishEndDate: values.publishMode === 'seasonal' ? endDate : values.publishEndDate,
         targetCount: recommendedGoal,
         dailyCap: 1,
     };
@@ -102,7 +106,7 @@ export function applyDurationPreset(
 
 export function getDurationPresetSummary(values: Pick<ChallengeFormValues, 'windowType' | 'startDate' | 'endDate' | 'windowDays'>): string {
     if (values.windowType === 'rolling') {
-        return `参加した人は ${values.windowDays}日チャレンジ。ホームには ${values.startDate} 〜 ${values.endDate} に表示されます。`;
+        return `参加した人は ${values.windowDays}日チャレンジです。`;
     }
 
     return `${values.startDate} 〜 ${values.endDate} の期間で進みます。`;

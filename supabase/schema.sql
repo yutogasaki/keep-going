@@ -116,6 +116,9 @@ create table challenges (
   window_days int,
   required_days int,
   daily_minimum_minutes int,
+  publish_mode text not null default 'seasonal',
+  publish_start_date text,
+  publish_end_date text,
   created_by text not null,
   reward_fuwafuwa_type int not null,
   reward_kind text not null default 'medal',
@@ -133,6 +136,15 @@ create table challenges (
   constraint challenges_window_days_check check (window_days is null or window_days >= 1),
   constraint challenges_required_days_check check (required_days is null or required_days >= 1),
   constraint challenges_daily_minimum_minutes_check check (daily_minimum_minutes is null or daily_minimum_minutes >= 1),
+  constraint challenges_publish_mode_check check (publish_mode in ('seasonal', 'always_on')),
+  constraint challenges_publish_window_check check (
+    publish_mode = 'always_on'
+    or (
+      publish_start_date is not null
+      and publish_end_date is not null
+      and publish_end_date >= publish_start_date
+    )
+  ),
   constraint challenges_reward_kind_check check (reward_kind in ('star', 'medal')),
   constraint challenges_reward_value_check check (reward_value >= 0),
   constraint challenges_tier_check check (tier in ('small', 'big'))

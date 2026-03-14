@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-    fetchActiveChallenges,
+    countChallengeProgressInCustomWindow,
+    fetchAllChallenges,
     fetchMyEnrollments,
     fetchMyCompletions,
-    fetchPastChallenges,
     buildChallengeEnrollmentState,
+    getChallengeActiveWindow,
+    isChallengeDoneForToday,
+    isChallengeFinishedOverall,
+    isChallengePastForUsers,
+    isChallengePublishedOnDate,
     type Challenge,
     type ChallengeCompletion,
 } from '../../../lib/challenges';
+import { getTodayKey } from '../../../lib/db';
 import { fetchTeacherExercises, type TeacherExercise } from '../../../lib/teacherContent';
 import { useAppStore, type UserProfileStore } from '../../../store/useAppStore';
 
@@ -17,16 +23,19 @@ interface UseHomeChallengesParams {
 }
 
 export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesParams) {
-    const [challenges, setChallenges] = useState<Challenge[]>([]);
+    const [allChallenges, setAllChallenges] = useState<Challenge[]>([]);
+    const [filteredChallenges, setFilteredChallenges] = useState<Challenge[]>([]);
+    const [todayDoneChallenges, setTodayDoneChallenges] = useState<Challenge[]>([]);
     const [pastChallenges, setPastChallenges] = useState<Challenge[]>([]);
     const [completions, setCompletions] = useState<ChallengeCompletion[]>([]);
     const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
     const [pastExpanded, setPastExpanded] = useState(false);
     const hydrateChallengeEnrollmentState = useAppStore((state) => state.hydrateChallengeEnrollmentState);
+    const joinedChallengeIds = useAppStore((state) => state.joinedChallengeIds);
+    const challengeEnrollmentWindows = useAppStore((state) => state.challengeEnrollmentWindows);
 
     const loadChallenges = useCallback(() => {
-        fetchActiveChallenges().then(setChallenges).catch(console.warn);
-        fetchPastChallenges().then(setPastChallenges).catch(console.warn);
+        fetchAllChallenges().then(setAllChallenges).catch(console.warn);
         fetchMyCompletions().then(setCompletions).catch(console.warn);
         fetchMyEnrollments()
             .then((enrollments) => {
@@ -44,7 +53,18 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
         loadChallenges();
     }, [loadChallenges]);
 
-    const filteredChallenges = useMemo(() => {
+    useEffect(() => {
+        const handleSessionSaved = () => {
+            loadChallenges();
+        };
+
+        window.addEventListener('sessionSaved', handleSessionSaved);
+        return () => {
+            window.removeEventListener('sessionSaved', handleSessionSaved);
+        };
+    }, [loadChallenges]);
+
+    const classMatchedChallenges = useMemo(() => {
         const activeClassLevels = new Set<string>();
 
         for (const userId of sessionUserIds) {
@@ -54,14 +74,104 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
             }
         }
 
-        return challenges.filter((challenge) => (
+        return allChallenges.filter((challenge) => (
             challenge.classLevels.length === 0
             || challenge.classLevels.some((classLevel) => activeClassLevels.has(classLevel))
         ));
-    }, [challenges, sessionUserIds, users]);
+    }, [allChallenges, sessionUserIds, users]);
+
+    const activeUserIds = useMemo(
+        () => (sessionUserIds.length > 0 ? sessionUserIds : users.map((user) => user.id)),
+        [sessionUserIds, users],
+    );
+
+    useEffect(() => {
+        let cancelled = false;
+        const today = getTodayKey();
+
+        const computeBuckets = async () => {
+            const nextAvailable: Challenge[] = [];
+            const nextTodayDone: Challenge[] = [];
+            const nextPast: Challenge[] = [];
+
+            for (const challenge of classMatchedChallenges) {
+                const completedUserIds = new Set(
+                    completions
+                        .filter((completion) => completion.challengeId === challenge.id)
+                        .map((completion) => completion.memberId),
+                );
+                const finishedOverall = isChallengeFinishedOverall(activeUserIds, completedUserIds);
+                const joined = activeUserIds.some((userId) => (joinedChallengeIds[userId] || []).includes(challenge.id));
+                const effectiveWindow = activeUserIds
+                    .map((userId) => challengeEnrollmentWindows[userId]?.[challenge.id] ?? null)
+                    .find((window): window is NonNullable<typeof window> => Boolean(window)) ?? null;
+
+                if (finishedOverall || isChallengePastForUsers(challenge, today, effectiveWindow)) {
+                    nextPast.push(challenge);
+                    continue;
+                }
+
+                if (!isChallengePublishedOnDate(challenge, today)) {
+                    continue;
+                }
+
+                if (!joined) {
+                    nextAvailable.push(challenge);
+                    continue;
+                }
+
+                const activeWindow = getChallengeActiveWindow(challenge, effectiveWindow);
+                if (activeWindow.startDate > today) {
+                    nextAvailable.push(challenge);
+                    continue;
+                }
+
+                const todayProgress = await countChallengeProgressInCustomWindow(
+                    challenge,
+                    activeUserIds,
+                    { startDate: today, endDate: today },
+                );
+
+                if (isChallengeDoneForToday(challenge, todayProgress)) {
+                    nextTodayDone.push(challenge);
+                    continue;
+                }
+
+                nextAvailable.push(challenge);
+            }
+
+            if (cancelled) {
+                return;
+            }
+
+            setFilteredChallenges(nextAvailable);
+            setTodayDoneChallenges(nextTodayDone);
+            setPastChallenges(nextPast);
+        };
+
+        computeBuckets().catch((error) => {
+            console.warn('[home] Failed to bucket challenges:', error);
+            if (!cancelled) {
+                setFilteredChallenges(classMatchedChallenges);
+                setTodayDoneChallenges([]);
+                setPastChallenges([]);
+            }
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [
+        activeUserIds,
+        challengeEnrollmentWindows,
+        classMatchedChallenges,
+        completions,
+        joinedChallengeIds,
+    ]);
 
     return {
         filteredChallenges,
+        todayDoneChallenges,
         pastChallenges,
         completions,
         teacherExercises,

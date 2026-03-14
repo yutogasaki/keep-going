@@ -84,13 +84,15 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
         setSubmitting(true);
         const trimmedTitle = formValues.title.trim();
         const trimmedDescription = formValues.description.trim();
-        const windowType = formValues.challengeType === 'duration' ? 'rolling' : formValues.windowType;
-        const goalType = formValues.challengeType === 'duration'
+        const windowType = formValues.windowType;
+        const goalType = formValues.challengeType === 'duration' || windowType === 'rolling'
             ? 'active_day'
-            : (windowType === 'rolling' ? 'active_day' : formValues.goalType);
+            : formValues.goalType;
         const targetCount = goalType === 'active_day' ? formValues.requiredDays : formValues.targetCount;
         const dailyCap = goalType === 'active_day' ? 1 : formValues.dailyCap;
         const countUnit = formValues.challengeType === 'menu' ? 'menu_completion' : 'exercise_completion';
+        const publishStartDate = formValues.publishMode === 'seasonal' ? formValues.publishStartDate : null;
+        const publishEndDate = formValues.publishMode === 'seasonal' ? formValues.publishEndDate : null;
 
         try {
             if (editingId) {
@@ -112,6 +114,9 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                     windowDays: windowType === 'rolling' ? formValues.windowDays : null,
                     requiredDays: goalType === 'active_day' ? formValues.requiredDays : null,
                     dailyMinimumMinutes: formValues.challengeType === 'duration' ? formValues.dailyMinimumMinutes : null,
+                    publishMode: formValues.publishMode,
+                    publishStartDate,
+                    publishEndDate,
                     rewardKind: formValues.rewardKind,
                     rewardValue: formValues.rewardValue,
                     tier: formValues.tier,
@@ -137,6 +142,9 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                     windowDays: windowType === 'rolling' ? formValues.windowDays : null,
                     requiredDays: goalType === 'active_day' ? formValues.requiredDays : null,
                     dailyMinimumMinutes: formValues.challengeType === 'duration' ? formValues.dailyMinimumMinutes : null,
+                    publishMode: formValues.publishMode,
+                    publishStartDate,
+                    publishEndDate,
                     createdBy: teacherEmail,
                     rewardKind: formValues.rewardKind,
                     rewardValue: formValues.rewardValue,

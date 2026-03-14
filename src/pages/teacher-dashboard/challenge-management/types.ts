@@ -1,4 +1,5 @@
 export type ChallengeDurationPreset = 'week' | 'two_weeks' | 'month' | 'custom';
+export type ChallengePublishMode = 'seasonal' | 'always_on';
 
 export interface ChallengeFormValues {
     title: string;
@@ -17,6 +18,9 @@ export interface ChallengeFormValues {
     requiredDays: number;
     startDate: string;
     endDate: string;
+    publishMode: ChallengePublishMode;
+    publishStartDate: string;
+    publishEndDate: string;
     tier: 'small' | 'big';
     rewardKind: 'star' | 'medal';
     rewardValue: number;

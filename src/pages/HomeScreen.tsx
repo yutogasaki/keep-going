@@ -185,6 +185,7 @@ export const HomeScreen: React.FC = () => {
 
     const {
         filteredChallenges,
+        todayDoneChallenges,
         pastChallenges,
         completions,
         teacherExercises,
@@ -508,6 +509,7 @@ export const HomeScreen: React.FC = () => {
 
                 <HomeChallengesAndMenus
                     filteredChallenges={filteredChallenges}
+                    todayDoneChallenges={todayDoneChallenges}
                     pastChallenges={pastChallenges}
                     completions={completions}
                     recommendedMenus={recommendedMenus}

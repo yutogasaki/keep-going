@@ -193,6 +193,9 @@ export interface Database {
                     window_days: number | null;
                     required_days: number | null;
                     daily_minimum_minutes: number | null;
+                    publish_mode: string | null;
+                    publish_start_date: string | null;
+                    publish_end_date: string | null;
                     created_by: string;
                     reward_fuwafuwa_type: number;
                     reward_kind: string | null;
@@ -222,6 +225,9 @@ export interface Database {
                     window_days?: number | null;
                     required_days?: number | null;
                     daily_minimum_minutes?: number | null;
+                    publish_mode?: string | null;
+                    publish_start_date?: string | null;
+                    publish_end_date?: string | null;
                     created_by: string;
                     reward_fuwafuwa_type: number;
                     reward_kind?: string | null;

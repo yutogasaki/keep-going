@@ -12,6 +12,7 @@ import type { TeacherExercise, TeacherMenu } from '../../lib/teacherContent';
 
 interface HomeChallengesAndMenusProps {
     filteredChallenges: Challenge[];
+    todayDoneChallenges: Challenge[];
     pastChallenges: Challenge[];
     completions: ChallengeCompletion[];
     recommendedMenus: PublicMenu[];
@@ -36,6 +37,7 @@ interface HomeChallengesAndMenusProps {
 
 export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
     filteredChallenges,
+    todayDoneChallenges,
     pastChallenges,
     completions,
     recommendedMenus,
@@ -59,7 +61,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
 }) => {
     return (
         <>
-            {filteredChallenges.length > 0 && (
+            {(filteredChallenges.length > 0 || todayDoneChallenges.length > 0) && (
                 <div
                     id="home-challenges-section"
                     style={{
@@ -91,6 +93,30 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                             onCompleted={onChallengesUpdated}
                         />
                     ))}
+                    {todayDoneChallenges.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: filteredChallenges.length > 0 ? 2 : 0 }}>
+                            <span
+                                style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    color: '#94A3B8',
+                                    padding: '4px 4px 0',
+                                }}
+                            >
+                                きょうできたチャレンジ
+                            </span>
+                            {todayDoneChallenges.map((challenge) => (
+                                <ChallengeCard
+                                    key={challenge.id}
+                                    challenge={challenge}
+                                    completions={completions}
+                                    teacherExercises={teacherExercises}
+                                    onCompleted={onChallengesUpdated}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -99,7 +125,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                     style={{
                         width: '100%',
                         padding: '0 16px',
-                        marginTop: filteredChallenges.length > 0 ? 10 : 20,
+                        marginTop: filteredChallenges.length > 0 || todayDoneChallenges.length > 0 ? 10 : 20,
                     }}
                 >
                     <button

@@ -202,6 +202,27 @@ exception when duplicate_column then null;
 end $$;
 
 do $$ begin
+  alter table challenges add column publish_mode text not null default 'seasonal';
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table challenges add column publish_start_date text;
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
+  alter table challenges add column publish_end_date text;
+exception when duplicate_column then null;
+end $$;
+
+update challenges
+set
+  publish_start_date = coalesce(publish_start_date, start_date),
+  publish_end_date = coalesce(publish_end_date, end_date)
+where publish_mode = 'seasonal';
+
+do $$ begin
   alter table challenges drop constraint challenges_type_check;
 exception when undefined_object then null;
 end $$;
@@ -259,6 +280,25 @@ end $$;
 do $$ begin
   alter table challenges add constraint challenges_daily_minimum_minutes_check
     check (daily_minimum_minutes is null or daily_minimum_minutes >= 1);
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  alter table challenges add constraint challenges_publish_mode_check
+    check (publish_mode in ('seasonal', 'always_on'));
+exception when duplicate_object then null;
+end $$;
+
+do $$ begin
+  alter table challenges add constraint challenges_publish_window_check
+    check (
+      publish_mode = 'always_on'
+      or (
+        publish_start_date is not null
+        and publish_end_date is not null
+        and publish_end_date >= publish_start_date
+      )
+    );
 exception when duplicate_object then null;
 end $$;
 
