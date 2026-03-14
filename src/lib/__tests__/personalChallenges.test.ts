@@ -4,6 +4,8 @@ import type { Database } from '../supabase-types';
 import {
     countPersonalChallengeProgress,
     createPersonalChallengeWindow,
+    getRemainingPersonalChallengeSlots,
+    isPersonalChallengeLimitReached,
     mapPersonalChallenge,
     toPersonalChallengeEngineInput,
     toPersonalChallengeInsertRow,
@@ -128,6 +130,14 @@ describe('personalChallenges helpers', () => {
             startDate: '2026-03-14',
             endDate: '2026-03-20',
         });
+    });
+
+    it('calculates personal challenge slots against the active limit', () => {
+        expect(getRemainingPersonalChallengeSlots(0)).toBe(3);
+        expect(getRemainingPersonalChallengeSlots(2)).toBe(1);
+        expect(getRemainingPersonalChallengeSlots(4)).toBe(0);
+        expect(isPersonalChallengeLimitReached(2)).toBe(false);
+        expect(isPersonalChallengeLimitReached(3)).toBe(true);
     });
 });
 

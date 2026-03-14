@@ -4,6 +4,11 @@ import { getPresetsForClass, type MenuGroup } from '../data/menuGroups';
 import type { CustomExercise } from '../lib/db';
 import {
     createPersonalChallenge,
+    fetchMyActivePersonalChallengeCount,
+    getRemainingPersonalChallengeSlots,
+    isPersonalChallengeLimitReached,
+    PERSONAL_CHALLENGE_ACTIVE_LIMIT,
+    PERSONAL_CHALLENGE_LIMIT_REACHED_ERROR,
     updatePersonalChallengeMeta,
     updatePersonalChallengeSetup,
 } from '../lib/personalChallenges';
@@ -80,6 +85,9 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
     const [description, setDescription] = useState('');
     const [iconEmoji, setIconEmoji] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [activeChallengeCount, setActiveChallengeCount] = useState(0);
+    const [activeCountLoading, setActiveCountLoading] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
 
     const resolveFirstExerciseId = useCallback((source: ExerciseSource): string => {
         if (source === 'teacher') {
@@ -173,12 +181,48 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
         teacherMenus,
     ]);
 
+    useEffect(() => {
+        if (!open || !member || isEditing) {
+            setActiveChallengeCount(0);
+            setActiveCountLoading(false);
+            return;
+        }
+
+        let cancelled = false;
+        setActiveCountLoading(true);
+        setSaveError(null);
+
+        fetchMyActivePersonalChallengeCount(member.id)
+            .then((count) => {
+                if (!cancelled) {
+                    setActiveChallengeCount(count);
+                }
+            })
+            .catch((error) => {
+                console.warn('[personalChallenges] active count load failed:', error);
+                if (!cancelled) {
+                    setActiveChallengeCount(0);
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setActiveCountLoading(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isEditing, member, open]);
+
     const selectedPreset = PERSONAL_CHALLENGE_PRESET_OPTIONS.find((option) => option.id === presetId)
         ?? PERSONAL_CHALLENGE_PRESET_OPTIONS[0];
     const selectedTargetMissing = challengeType === 'exercise'
         ? !exerciseId
         : !targetMenuId;
-    const submitDisabled = !member || submitting || selectedTargetMissing;
+    const limitReached = !isEditing && isPersonalChallengeLimitReached(activeChallengeCount);
+    const remainingSlots = getRemainingPersonalChallengeSlots(activeChallengeCount);
+    const submitDisabled = !member || submitting || selectedTargetMissing || (!isEditing && (activeCountLoading || limitReached));
 
     const handleSubmit = async () => {
         if (!member || submitDisabled) {
@@ -201,6 +245,7 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
         });
 
         setSubmitting(true);
+        setSaveError(null);
         try {
             if (initialItem) {
                 if (canEditSetup) {
@@ -249,6 +294,12 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
             onClose();
         } catch (error) {
             console.warn('[personalChallenges] save failed:', error);
+            if (error instanceof Error && error.message === PERSONAL_CHALLENGE_LIMIT_REACHED_ERROR) {
+                setSaveError(`いまは${PERSONAL_CHALLENGE_ACTIVE_LIMIT}つ進めているよ。どれか終わったら新しくつくれるよ。`);
+                setActiveChallengeCount(PERSONAL_CHALLENGE_ACTIVE_LIMIT);
+            } else {
+                setSaveError('ほぞんに失敗したよ。もう一度ためしてみてね。');
+            }
         } finally {
             setSubmitting(false);
         }
@@ -483,8 +534,24 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
 
                 <div style={summaryCardStyle}>
                     <div style={{ fontWeight: 800, color: COLOR.dark }}>ほし 1こ</div>
-                    <div style={{ marginTop: 4 }}>軽い目標だけど、1日では終わらないように 7日以上から選べるよ。</div>
+                    <div style={{ marginTop: 4 }}>
+                        {isEditing
+                            ? '軽い目標だけど、1日では終わらないように 7日以上から選べるよ。'
+                            : activeCountLoading
+                                ? 'いま進めているチャレンジ数を確認しているよ。'
+                                : limitReached
+                                    ? `いまは${PERSONAL_CHALLENGE_ACTIVE_LIMIT}つ進めているよ。どれか終わったら新しくつくれるよ。`
+                                    : remainingSlots === PERSONAL_CHALLENGE_ACTIVE_LIMIT
+                                        ? `軽い目標だけど、1日では終わらないように 7日以上から選べるよ。${PERSONAL_CHALLENGE_ACTIVE_LIMIT}つまで進められるよ。`
+                                        : `いま進められるのは あと${remainingSlots}つ。${PERSONAL_CHALLENGE_ACTIVE_LIMIT}つまで同時に進められるよ。`}
+                    </div>
                 </div>
+
+                {saveError ? (
+                    <div style={errorCardStyle}>
+                        {saveError}
+                    </div>
+                ) : null}
 
                 <div style={{ display: 'grid', gap: SPACE.sm }}>
                     <button
@@ -727,6 +794,18 @@ const summaryCardStyle: React.CSSProperties = {
     fontFamily: FONT.body,
     fontSize: FONT_SIZE.sm,
     color: COLOR.text,
+};
+
+const errorCardStyle: React.CSSProperties = {
+    padding: SPACE.md,
+    borderRadius: RADIUS.lg,
+    background: 'rgba(255, 237, 235, 0.86)',
+    border: '1px solid rgba(225, 112, 85, 0.24)',
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.sm,
+    color: '#C0392B',
+    lineHeight: 1.7,
+    fontWeight: 700,
 };
 
 const primaryButtonStyle: React.CSSProperties = {

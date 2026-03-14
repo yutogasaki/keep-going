@@ -14,6 +14,8 @@ import type { Database } from './supabase-types';
 import { getAccountId } from './sync/authState';
 
 export type PersonalChallengeStatus = 'active' | 'completed' | 'ended_manual' | 'ended_expired';
+export const PERSONAL_CHALLENGE_ACTIVE_LIMIT = 3;
+export const PERSONAL_CHALLENGE_LIMIT_REACHED_ERROR = 'PERSONAL_CHALLENGE_LIMIT_REACHED';
 
 export interface PersonalChallenge {
     id: string;
@@ -150,6 +152,14 @@ export function getPersonalChallengeGoalTarget(
     return challenge.goalType === 'active_day'
         ? Math.max(1, challenge.requiredDays ?? challenge.targetCount)
         : Math.max(1, challenge.targetCount);
+}
+
+export function isPersonalChallengeLimitReached(activeCount: number): boolean {
+    return activeCount >= PERSONAL_CHALLENGE_ACTIVE_LIMIT;
+}
+
+export function getRemainingPersonalChallengeSlots(activeCount: number): number {
+    return Math.max(PERSONAL_CHALLENGE_ACTIVE_LIMIT - activeCount, 0);
 }
 
 export function getPersonalChallengeDaysLeft(
@@ -348,6 +358,26 @@ export async function fetchMyActivePersonalChallenges(): Promise<PersonalChallen
     return (data ?? []).map(mapPersonalChallenge);
 }
 
+export async function fetchMyActivePersonalChallengeCount(memberId: string): Promise<number> {
+    if (!supabase) return 0;
+    const accountId = getAccountId();
+    if (!accountId) return 0;
+
+    const { count, error } = await supabase
+        .from('personal_challenges')
+        .select('id', { count: 'exact', head: true })
+        .eq('account_id', accountId)
+        .eq('member_id', memberId)
+        .eq('status', 'active');
+
+    if (error) {
+        console.warn('[personalChallenges] fetchMyActivePersonalChallengeCount failed:', error);
+        return 0;
+    }
+
+    return Math.max(count ?? 0, 0);
+}
+
 export async function fetchMyPastPersonalChallenges(limit = 20): Promise<PersonalChallenge[]> {
     if (!supabase) return [];
     const accountId = getAccountId();
@@ -375,6 +405,11 @@ export async function createPersonalChallenge(
     if (!supabase) return null;
     const accountId = getAccountId();
     if (!accountId) return null;
+
+    const activeCount = await fetchMyActivePersonalChallengeCount(input.memberId);
+    if (isPersonalChallengeLimitReached(activeCount)) {
+        throw new Error(PERSONAL_CHALLENGE_LIMIT_REACHED_ERROR);
+    }
 
     const { data, error } = await supabase
         .from('personal_challenges')
