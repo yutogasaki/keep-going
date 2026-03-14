@@ -56,6 +56,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
 
     const hasTeacherLive = teacherActiveChallenges.length > 0 || teacherTodayDoneChallenges.length > 0;
     const hasPersonalLive = personalActiveChallenges.length > 0 || personalTodayDoneChallenges.length > 0;
+    const hasPersonalAny = hasPersonalLive || personalPastChallenges.length > 0;
 
     const tabCounts = useMemo(() => ({
         active: teacherActiveChallenges.length + teacherTodayDoneChallenges.length + personalActiveChallenges.length + personalTodayDoneChallenges.length,
@@ -195,37 +196,69 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                 {tab === 'self' ? (
                     <div style={stackStyle}>
                         {!canCreatePersonalChallenge ? (
-                            <EmptyState text="じぶんチャレンジは ひとりでえらんでいる時につくれるよ" />
+                            <InfoNotice text="じぶんチャレンジは ひとりでえらんでいる時につくれるよ" />
                         ) : null}
-                        <CardGroup title="じぶんチャレンジ">
-                            {personalLoading ? <EmptyState text="読み込み中..." /> : null}
-                            {personalActiveChallenges.map((item) => (
-                                <PersonalChallengeCard
-                                    key={item.challenge.id}
-                                    item={item}
-                                    teacherExercises={teacherExercises}
-                                    teacherMenus={teacherMenus}
-                                    customExercises={customExercises}
-                                    customMenus={customMenus}
-                                    onOpenDetail={() => onOpenPersonalChallenge(item)}
-                                />
-                            ))}
-                            {personalTodayDoneChallenges.map((item) => (
-                                <PersonalChallengeCard
-                                    key={item.challenge.id}
-                                    item={item}
-                                    teacherExercises={teacherExercises}
-                                    teacherMenus={teacherMenus}
-                                    customExercises={customExercises}
-                                    customMenus={customMenus}
-                                    onOpenDetail={() => onOpenPersonalChallenge(item)}
-                                    variant="today_done"
-                                />
-                            ))}
-                            {!personalLoading && personalActiveChallenges.length === 0 && personalTodayDoneChallenges.length === 0 && personalPastChallenges.length === 0 ? (
+                        {personalActiveChallenges.length > 0 ? (
+                            <CardGroup title="いまやるチャレンジ">
+                                {personalActiveChallenges.map((item) => (
+                                    <PersonalChallengeCard
+                                        key={item.challenge.id}
+                                        item={item}
+                                        teacherExercises={teacherExercises}
+                                        teacherMenus={teacherMenus}
+                                        customExercises={customExercises}
+                                        customMenus={customMenus}
+                                        onOpenDetail={() => onOpenPersonalChallenge(item)}
+                                    />
+                                ))}
+                            </CardGroup>
+                        ) : null}
+
+                        {personalTodayDoneChallenges.length > 0 ? (
+                            <CardGroup title="きょうできたチャレンジ">
+                                {personalTodayDoneChallenges.map((item) => (
+                                    <PersonalChallengeCard
+                                        key={item.challenge.id}
+                                        item={item}
+                                        teacherExercises={teacherExercises}
+                                        teacherMenus={teacherMenus}
+                                        customExercises={customExercises}
+                                        customMenus={customMenus}
+                                        onOpenDetail={() => onOpenPersonalChallenge(item)}
+                                        variant="today_done"
+                                    />
+                                ))}
+                            </CardGroup>
+                        ) : null}
+
+                        {personalPastChallenges.length > 0 ? (
+                            <CardGroup title="おわったじぶんチャレンジ">
+                                {personalPastChallenges.map((item) => (
+                                    <PersonalChallengeCard
+                                        key={item.challenge.id}
+                                        item={item}
+                                        teacherExercises={teacherExercises}
+                                        teacherMenus={teacherMenus}
+                                        customExercises={customExercises}
+                                        customMenus={customMenus}
+                                        onOpenDetail={() => onOpenPersonalChallenge(item)}
+                                        variant="past"
+                                    />
+                                ))}
+                            </CardGroup>
+                        ) : null}
+
+                        {personalLoading ? (
+                            <CardGroup title="じぶんチャレンジ">
+                                <EmptyState text="読み込み中..." />
+                            </CardGroup>
+                        ) : null}
+
+                        {!personalLoading && !hasPersonalAny ? (
+                            <CardGroup title="じぶんチャレンジ">
                                 <EmptyState text="じぶんで ちいさな目標をつくれるよ" />
-                            ) : null}
-                        </CardGroup>
+                            </CardGroup>
+                        ) : null}
                     </div>
                 ) : null}
 
@@ -309,6 +342,14 @@ function HubTabButton({
 function EmptyState({ text }: { text: string }) {
     return (
         <div style={emptyStateStyle}>
+            {text}
+        </div>
+    );
+}
+
+function InfoNotice({ text }: { text: string }) {
+    return (
+        <div style={infoNoticeStyle}>
             {text}
         </div>
     );
@@ -401,5 +442,16 @@ const emptyStateStyle: React.CSSProperties = {
     fontFamily: FONT.body,
     fontSize: FONT_SIZE.sm,
     color: COLOR.muted,
+    lineHeight: 1.7,
+};
+
+const infoNoticeStyle: React.CSSProperties = {
+    padding: '14px 16px',
+    borderRadius: RADIUS.lg,
+    background: 'rgba(43,186,160,0.1)',
+    border: '1px solid rgba(43,186,160,0.2)',
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.sm,
+    color: COLOR.primaryDark,
     lineHeight: 1.7,
 };
