@@ -267,9 +267,9 @@ export const TodayHeroCard: React.FC<TodayHeroCardProps> = ({ summary }) => {
             ? `あと${summary.remainingMinutes}分で きょうのまる`
             : 'きょうのまるまで できたね';
     const summaryChips = [
-        `${summary.minutes}分`,
-        `${summary.sessionCount}回`,
-        summary.sessionCount === 0 ? 'これから' : `${summary.exerciseCount}種目`,
+        { label: 'じかん', value: `${summary.minutes}分` },
+        { label: 'かいすう', value: `${summary.sessionCount}回` },
+        { label: 'しゅもく', value: `${summary.exerciseCount}種目` },
     ];
 
     return (
@@ -410,20 +410,39 @@ export const TodayHeroCard: React.FC<TodayHeroCardProps> = ({ summary }) => {
                 >
                     {summaryChips.map((chip) => (
                         <div
-                            key={chip}
+                            key={chip.label}
                             style={{
                                 padding: '10px 8px',
                                 borderRadius: RADIUS.xl,
                                 background: 'rgba(255,255,255,0.6)',
                                 border: '1px solid rgba(255,255,255,0.7)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 2,
+                                alignItems: 'center',
                                 textAlign: 'center',
-                                fontFamily: FONT.body,
-                                fontSize: FONT_SIZE.sm,
-                                fontWeight: 800,
-                                color: COLOR.primaryDark,
                             }}
                         >
-                            {chip}
+                            <span
+                                style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.md,
+                                    fontWeight: 800,
+                                    color: COLOR.primaryDark,
+                                }}
+                            >
+                                {chip.value}
+                            </span>
+                            <span
+                                style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.xs + 1,
+                                    fontWeight: 700,
+                                    color: COLOR.muted,
+                                }}
+                            >
+                                {chip.label}
+                            </span>
                         </div>
                     ))}
                 </div>
