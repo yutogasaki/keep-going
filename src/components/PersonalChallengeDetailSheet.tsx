@@ -3,6 +3,7 @@ import { Calendar, Flag, Sparkles, Target } from 'lucide-react';
 import type { MenuGroup } from '../data/menuGroups';
 import type { CustomExercise } from '../lib/db';
 import { Modal } from './Modal';
+import { canDeletePersonalChallenge } from '../lib/personalChallenges';
 import type { TeacherExercise, TeacherMenu } from '../lib/teacherContent';
 import type { PersonalChallengeProgressItem } from '../pages/home/hooks/usePersonalChallenges';
 import {
@@ -25,6 +26,7 @@ interface PersonalChallengeDetailSheetProps {
     onClose: () => void;
     onEdit: () => void;
     onEnd: () => void;
+    onDelete: () => void;
 }
 
 export const PersonalChallengeDetailSheet: React.FC<PersonalChallengeDetailSheetProps> = ({
@@ -37,6 +39,7 @@ export const PersonalChallengeDetailSheet: React.FC<PersonalChallengeDetailSheet
     onClose,
     onEdit,
     onEnd,
+    onDelete,
 }) => {
     if (!item) {
         return null;
@@ -50,6 +53,7 @@ export const PersonalChallengeDetailSheet: React.FC<PersonalChallengeDetailSheet
     const deadlineLabel = getPersonalChallengeDeadlineLabel(challenge);
     const statusLabel = getPersonalChallengeStatusLabel(challenge.status);
     const isActive = challenge.status === 'active';
+    const canDelete = canDeletePersonalChallenge(challenge, progress);
 
     return (
         <Modal
@@ -141,7 +145,9 @@ export const PersonalChallengeDetailSheet: React.FC<PersonalChallengeDetailSheet
                             ? 'またやりたくなったら、新しくつくれるよ。'
                             : challenge.status === 'ended_expired'
                                 ? '期間が終わったよ。また気分がのったらつくろう。'
-                                : 'その日の対象を1回できたら、1日ぶん進みます。'}
+                                : canDelete
+                                    ? 'まだ進んでいないので、作りまちがえた時は削除できます。'
+                                    : 'その日の対象を1回できたら、1日ぶん進みます。'}
                 </div>
 
                 {isActive ? (
@@ -153,13 +159,23 @@ export const PersonalChallengeDetailSheet: React.FC<PersonalChallengeDetailSheet
                         >
                             {canEditSetup ? 'へんしゅうする' : 'タイトルをなおす'}
                         </button>
-                        <button
-                            type="button"
-                            onClick={onEnd}
-                            style={secondaryButtonStyle}
-                        >
-                            ここまでにする
-                        </button>
+                        {canDelete ? (
+                            <button
+                                type="button"
+                                onClick={onDelete}
+                                style={dangerButtonStyle}
+                            >
+                                作りなおすために削除する
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={onEnd}
+                                style={secondaryButtonStyle}
+                            >
+                                ここまでにする
+                            </button>
+                        )}
                     </div>
                 ) : null}
             </div>
@@ -238,6 +254,19 @@ const secondaryButtonStyle: React.CSSProperties = {
     border: '1px solid rgba(0,0,0,0.08)',
     background: 'rgba(255,255,255,0.7)',
     color: COLOR.text,
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.md,
+    fontWeight: 700,
+    cursor: 'pointer',
+};
+
+const dangerButtonStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '12px 0',
+    borderRadius: RADIUS.lg,
+    border: '1px solid rgba(225, 112, 85, 0.24)',
+    background: 'rgba(225, 112, 85, 0.08)',
+    color: COLOR.danger,
     fontFamily: FONT.body,
     fontSize: FONT_SIZE.md,
     fontWeight: 700,

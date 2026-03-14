@@ -129,7 +129,7 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                 <div style={{ display: 'grid', gap: SPACE.sm }}>
                     <DetailRow icon={<Target size={15} />} label="対象" value={goalLabel} />
                     <DetailRow icon={<Sparkles size={15} />} label={challenge.goalType === 'active_day' ? '数え方' : '1日上限'} value={getChallengeDailyCapLabel(challenge)} />
-                    <DetailRow icon={<Trophy size={15} />} label="報酬" value={getChallengeRewardLabel(challenge)} />
+                    <DetailRow icon={<Trophy size={15} />} label="ごほうび" value={getChallengeRewardLabel(challenge)} />
                     <DetailRow icon={<Calendar size={15} />} label="期間" value={periodLabel} />
                 </div>
 

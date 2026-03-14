@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getAllSessions, type SessionRecord } from '../db';
 import type { Database } from '../supabase-types';
 import {
+    canDeletePersonalChallenge,
     countPersonalChallengeProgress,
     createPersonalChallengeWindow,
     getRemainingPersonalChallengeSlots,
@@ -138,6 +139,17 @@ describe('personalChallenges helpers', () => {
         expect(getRemainingPersonalChallengeSlots(4)).toBe(0);
         expect(isPersonalChallengeLimitReached(2)).toBe(false);
         expect(isPersonalChallengeLimitReached(3)).toBe(true);
+    });
+
+    it('allows deleting only before progress starts', () => {
+        const challenge = mapPersonalChallenge(makePersonalChallengeRow());
+
+        expect(canDeletePersonalChallenge(challenge, 0)).toBe(true);
+        expect(canDeletePersonalChallenge(challenge, 1)).toBe(false);
+        expect(canDeletePersonalChallenge({
+            ...challenge,
+            status: 'completed',
+        }, 0)).toBe(false);
     });
 });
 

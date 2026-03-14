@@ -1,33 +1,124 @@
 import React from 'react';
 import { Loader2, Pencil, Trash2 } from 'lucide-react';
+import { countChallengeProgressFromSessions } from '../../../lib/challenge-engine';
 import { getTodayKey } from '../../../lib/db';
 import { CLASS_EMOJI, EXERCISES } from '../../../data/exercises';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
 import {
+    getChallengeActiveWindow,
     getChallengeCardText,
     getChallengeDailyCapLabel,
     getChallengeGoalLabel,
     getChallengeInviteWindowLabel,
+    getChallengeProgressLabel,
     getChallengePublishLabel,
     getChallengeRewardLabel,
     getChallengeTargetLabel,
     type Challenge,
+    type ChallengeCompletion,
+    type ChallengeEnrollment,
 } from '../../../lib/challenges';
+import type { StudentSession } from '../../../lib/teacher';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
 import { getTeacherVisibilityLabel } from '../../../lib/teacherExerciseMetadata';
 
 interface ChallengeListProps {
     loading: boolean;
     challenges: Challenge[];
+    challengeCompletions: ChallengeCompletion[];
+    challengeEnrollments: ChallengeEnrollment[];
+    memberNameMap: ReadonlyMap<string, string>;
+    sessionsByMemberId: ReadonlyMap<string, StudentSession[]>;
     teacherMenus: TeacherMenu[];
     teacherExercises: TeacherExercise[];
     onEdit: (challenge: Challenge) => void;
     onDelete: (challengeId: string) => void;
 }
 
+interface ParticipantStatusItem {
+    memberId: string;
+    name: string;
+    progressLabel: string;
+    subLabel: string;
+    completed: boolean;
+    progress: number;
+    completedAt: string | null;
+}
+
+function buildParticipantStatusItems(
+    challenge: Challenge,
+    completions: ChallengeCompletion[],
+    enrollments: ChallengeEnrollment[],
+    memberNameMap: ReadonlyMap<string, string>,
+    sessionsByMemberId: ReadonlyMap<string, StudentSession[]>,
+): ParticipantStatusItem[] {
+    const completionMap = new Map(
+        completions
+            .filter((completion) => completion.challengeId === challenge.id)
+            .map((completion) => [completion.memberId, completion]),
+    );
+    const enrollmentMap = new Map(
+        enrollments
+            .filter((enrollment) => enrollment.challengeId === challenge.id)
+            .map((enrollment) => [enrollment.memberId, enrollment]),
+    );
+    const participantIds = new Set<string>([
+        ...completionMap.keys(),
+        ...enrollmentMap.keys(),
+    ]);
+
+    const items = [...participantIds].map((memberId) => {
+        const completion = completionMap.get(memberId) ?? null;
+        const enrollment = enrollmentMap.get(memberId) ?? null;
+        const effectiveWindow = enrollment
+            ? {
+                startDate: enrollment.effectiveStartDate,
+                endDate: enrollment.effectiveEndDate,
+            }
+            : null;
+        const sessions = sessionsByMemberId.get(memberId) ?? [];
+        const progress = countChallengeProgressFromSessions(
+            challenge,
+            sessions,
+            [memberId],
+            getChallengeActiveWindow(challenge, effectiveWindow),
+        );
+        const completed = completion !== null;
+
+        return {
+            memberId,
+            name: memberNameMap.get(memberId) ?? '生徒',
+            progressLabel: completed ? 'クリア' : getChallengeProgressLabel(challenge, progress),
+            subLabel: completed ? 'ごほうびゲット' : progress > 0 ? '参加中' : '参加したよ',
+            completed,
+            progress,
+            completedAt: completion?.completedAt ?? null,
+        };
+    });
+
+    items.sort((left, right) => {
+        if (left.completed !== right.completed) {
+            return Number(left.completed) - Number(right.completed);
+        }
+        if (!left.completed && left.progress !== right.progress) {
+            return right.progress - left.progress;
+        }
+        if (left.completed && right.completed && left.completedAt !== right.completedAt) {
+            return (right.completedAt ?? '').localeCompare(left.completedAt ?? '');
+        }
+        return left.name.localeCompare(right.name, 'ja');
+    });
+
+    return items;
+}
+
 export const ChallengeList: React.FC<ChallengeListProps> = ({
     loading,
     challenges,
+    challengeCompletions,
+    challengeEnrollments,
+    memberNameMap,
+    sessionsByMemberId,
     teacherMenus,
     teacherExercises,
     onEdit,
@@ -84,6 +175,16 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                 const cardText = getChallengeCardText(challenge);
                 const goalLabel = getChallengeGoalLabel(challenge, targetLabel);
                 const windowLabel = getChallengeInviteWindowLabel(challenge);
+                const participantStatuses = buildParticipantStatusItems(
+                    challenge,
+                    challengeCompletions,
+                    challengeEnrollments,
+                    memberNameMap,
+                    sessionsByMemberId,
+                );
+                const completedCount = participantStatuses.filter((item) => item.completed).length;
+                const visibleParticipants = participantStatuses.slice(0, 6);
+                const hiddenParticipantCount = Math.max(0, participantStatuses.length - visibleParticipants.length);
 
                 return (
                     <div key={challenge.id} className="card" style={{
@@ -138,6 +239,17 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                 }}>
                                     {getChallengePublishLabel(challenge)}
                                 </div>
+                                <div style={{
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 11,
+                                    color: '#52606D',
+                                    marginTop: 4,
+                                    fontWeight: 700,
+                                }}>
+                                    {participantStatuses.length > 0
+                                        ? `参加 ${participantStatuses.length}人 ・ クリア ${completedCount}人`
+                                        : 'まだ参加している人はいません'}
+                                </div>
                                 {cardText && (
                                     <div style={{
                                         fontFamily: "'Noto Sans JP', sans-serif",
@@ -148,6 +260,53 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                         {cardText}
                                     </div>
                                 )}
+                                {participantStatuses.length > 0 ? (
+                                    <div style={{
+                                        display: 'flex',
+                                        gap: 6,
+                                        flexWrap: 'wrap',
+                                        marginTop: 6,
+                                    }}>
+                                        {visibleParticipants.map((item) => (
+                                            <span
+                                                key={`${challenge.id}-${item.memberId}`}
+                                                style={{
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontSize: 10,
+                                                    fontWeight: 700,
+                                                    color: item.completed ? '#1E7F6D' : item.progress > 0 ? '#0984E3' : '#636E72',
+                                                    background: item.completed
+                                                        ? '#E8F8F0'
+                                                        : item.progress > 0
+                                                            ? 'rgba(9, 132, 227, 0.10)'
+                                                            : '#F0F3F5',
+                                                    borderRadius: 999,
+                                                    padding: '4px 8px',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: 4,
+                                                }}
+                                                title={`${item.name} ${item.progressLabel} (${item.subLabel})`}
+                                            >
+                                                <span>{item.name}</span>
+                                                <span style={{ opacity: 0.8 }}>{item.progressLabel}</span>
+                                            </span>
+                                        ))}
+                                        {hiddenParticipantCount > 0 ? (
+                                            <span style={{
+                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                fontSize: 10,
+                                                fontWeight: 700,
+                                                color: '#8395A7',
+                                                background: '#F0F3F5',
+                                                borderRadius: 999,
+                                                padding: '4px 8px',
+                                            }}>
+                                                +{hiddenParticipantCount}人
+                                            </span>
+                                        ) : null}
+                                    </div>
+                                ) : null}
                                 <div style={{
                                     display: 'flex',
                                     gap: 4,
@@ -219,6 +378,16 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                         </span>
                                     ) : null}
                                 </div>
+                                {participantStatuses.length > 0 ? (
+                                    <div style={{
+                                        marginTop: 6,
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 10,
+                                        color: '#8395A7',
+                                    }}>
+                                        {`${participantStatuses[0].name} は ${participantStatuses[0].progressLabel} ・ ${participantStatuses[0].subLabel}`}
+                                    </div>
+                                ) : null}
                             </div>
                             <button
                                 onClick={() => onEdit(challenge)}

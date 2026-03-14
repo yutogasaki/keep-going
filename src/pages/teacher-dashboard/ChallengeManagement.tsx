@@ -3,6 +3,8 @@ import {
     createChallenge,
     deleteChallenge,
     type Challenge,
+    type ChallengeCompletion,
+    type ChallengeEnrollment,
     updateChallenge,
 } from '../../lib/challenges';
 import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
@@ -10,6 +12,7 @@ import { ChallengeFormCard } from './challenge-management/ChallengeFormCard';
 import { ChallengeList } from './challenge-management/ChallengeList';
 import { CreateChallengeButton } from './challenge-management/CreateChallengeButton';
 import { fetchTeacherExercises, fetchTeacherMenus, type TeacherExercise, type TeacherMenu } from '../../lib/teacherContent';
+import type { StudentSession } from '../../lib/teacher';
 import {
     createChallengeFormValuesFromChallenge,
     createDefaultChallengeFormValues,
@@ -18,6 +21,10 @@ import type { ChallengeFormValues } from './challenge-management/types';
 
 interface ChallengeManagementProps {
     challenges: Challenge[];
+    challengeCompletions: ChallengeCompletion[];
+    challengeEnrollments: ChallengeEnrollment[];
+    memberNameMap: ReadonlyMap<string, string>;
+    sessionsByMemberId: ReadonlyMap<string, StudentSession[]>;
     loading: boolean;
     showCreateForm: boolean;
     setShowCreateForm: (show: boolean) => void;
@@ -28,6 +35,10 @@ interface ChallengeManagementProps {
 
 export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
     challenges,
+    challengeCompletions,
+    challengeEnrollments,
+    memberNameMap,
+    sessionsByMemberId,
     loading,
     showCreateForm,
     setShowCreateForm,
@@ -236,6 +247,10 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
             <ChallengeList
                 loading={loading}
                 challenges={challenges}
+                challengeCompletions={challengeCompletions}
+                challengeEnrollments={challengeEnrollments}
+                memberNameMap={memberNameMap}
+                sessionsByMemberId={sessionsByMemberId}
                 teacherMenus={teacherMenus}
                 teacherExercises={teacherExercises}
                 onEdit={startEdit}

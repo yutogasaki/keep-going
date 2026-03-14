@@ -2,6 +2,7 @@ import { supabase } from './supabase';
 import { formatDateKey } from './db';
 import { calculateStreak } from './teacher';
 import type { StudentMember, StudentSession } from './teacher';
+import type { SessionMenuSource } from '../store/use-app-store/types';
 
 // ─── Types ───────────────────────────────────────────
 
@@ -20,6 +21,12 @@ export interface AdminAccountSummary {
     suspended: boolean;
 }
 
+function normalizeSessionMenuSource(value: string | null | undefined): SessionMenuSource | null {
+    return value === 'preset' || value === 'teacher' || value === 'custom' || value === 'public'
+        ? value
+        : null;
+}
+
 // ─── Fetch all accounts (developer only) ─────────────
 
 export async function fetchAllAccountsForAdmin(): Promise<AdminAccountSummary[]> {
@@ -29,7 +36,7 @@ export async function fetchAllAccountsForAdmin(): Promise<AdminAccountSummary[]>
         supabase.from('family_members').select('id, account_id, name, class_level, avatar_url, created_at'),
         supabase
             .from('sessions')
-            .select('id, account_id, date, started_at, total_seconds, user_ids')
+            .select('id, account_id, date, started_at, total_seconds, exercise_ids, planned_exercise_ids, skipped_ids, user_ids, source_menu_id, source_menu_source')
             .order('date', { ascending: false })
             .limit(10000),
         supabase.from('app_settings').select('account_id, suspended'),
@@ -77,7 +84,12 @@ export async function fetchAllAccountsForAdmin(): Promise<AdminAccountSummary[]>
                 date: s.date,
                 startedAt: s.started_at,
                 totalSeconds: s.total_seconds,
+                exerciseIds: s.exercise_ids ?? [],
+                plannedExerciseIds: s.planned_exercise_ids ?? [],
+                skippedIds: s.skipped_ids ?? [],
                 userIds: (s.user_ids as string[]) ?? [],
+                sourceMenuId: s.source_menu_id ?? null,
+                sourceMenuSource: normalizeSessionMenuSource(s.source_menu_source),
             })),
             streak,
             totalSessions: acctSessions.length,

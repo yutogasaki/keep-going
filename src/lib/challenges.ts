@@ -658,6 +658,27 @@ export async function fetchMyCompletions(): Promise<ChallengeCompletion[]> {
     }));
 }
 
+export async function fetchTeacherChallengeCompletions(): Promise<ChallengeCompletion[]> {
+    if (!supabase) return [];
+
+    const { data, error } = await supabase
+        .from('challenge_completions')
+        .select('*');
+
+    if (error) {
+        console.warn('[challenges] fetchTeacherChallengeCompletions failed:', error);
+        return [];
+    }
+
+    return (data ?? []).map((row) => ({
+        id: row.id,
+        challengeId: row.challenge_id,
+        accountId: row.account_id,
+        memberId: row.member_id,
+        completedAt: row.completed_at,
+    }));
+}
+
 export async function fetchMyEnrollments(): Promise<ChallengeEnrollment[]> {
     if (!supabase) return [];
     const accountId = getAccountId();
@@ -670,6 +691,21 @@ export async function fetchMyEnrollments(): Promise<ChallengeEnrollment[]> {
 
     if (error) {
         console.warn('[challenges] fetchMyEnrollments failed:', error);
+        return [];
+    }
+
+    return (data ?? []).map(mapChallengeEnrollment);
+}
+
+export async function fetchTeacherChallengeEnrollments(): Promise<ChallengeEnrollment[]> {
+    if (!supabase) return [];
+
+    const { data, error } = await supabase
+        .from('challenge_enrollments')
+        .select('*');
+
+    if (error) {
+        console.warn('[challenges] fetchTeacherChallengeEnrollments failed:', error);
         return [];
     }
 

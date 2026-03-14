@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import type { Database } from './supabase-types';
 import { calculateStreak, type SessionRecord } from './db';
+import type { SessionMenuSource } from '../store/use-app-store/types';
 
 // Re-export so existing callers (TeacherDashboard, AccountCard) don't need to change imports
 export { calculateStreak };
@@ -19,7 +20,12 @@ export interface StudentSession {
     date: string;
     startedAt: string;
     totalSeconds: number;
+    exerciseIds: string[];
+    plannedExerciseIds?: string[];
+    skippedIds: string[];
     userIds: string[];
+    sourceMenuId?: string | null;
+    sourceMenuSource?: SessionMenuSource | null;
 }
 
 export interface StudentSummary {
@@ -38,8 +44,13 @@ export interface LocalStudentMemberSnapshot {
     avatarUrl?: string;
 }
 
-export interface LocalStudentSessionSnapshot extends Pick<SessionRecord, 'id' | 'date' | 'startedAt' | 'totalSeconds'> {
+export interface LocalStudentSessionSnapshot extends Pick<
+    SessionRecord,
+    'id' | 'date' | 'startedAt' | 'totalSeconds' | 'exerciseIds' | 'plannedExerciseIds' | 'skippedIds'
+> {
     userIds?: string[];
+    sourceMenuId?: string | null;
+    sourceMenuSource?: SessionMenuSource | null;
 }
 
 // ─── Fetch all students ──────────────────────────────
@@ -53,7 +64,17 @@ type TeacherFamilyMemberRow = Pick<
 
 type TeacherSessionRow = Pick<
     Database['public']['Tables']['sessions']['Row'],
-    'id' | 'account_id' | 'date' | 'started_at' | 'total_seconds' | 'user_ids'
+    | 'id'
+    | 'account_id'
+    | 'date'
+    | 'started_at'
+    | 'total_seconds'
+    | 'exercise_ids'
+    | 'planned_exercise_ids'
+    | 'skipped_ids'
+    | 'user_ids'
+    | 'source_menu_id'
+    | 'source_menu_source'
 >;
 
 type TeacherAppSettingsRow = Pick<
@@ -65,6 +86,12 @@ interface FetchAllStudentsOptions {
     currentAccountId?: string | null;
     localMembers?: LocalStudentMemberSnapshot[];
     localSessions?: LocalStudentSessionSnapshot[];
+}
+
+function normalizeSessionMenuSource(value: string | null | undefined): SessionMenuSource | null {
+    return value === 'preset' || value === 'teacher' || value === 'custom' || value === 'public'
+        ? value
+        : null;
 }
 
 function sortTeacherSessions<T extends Pick<TeacherSessionRow, 'date' | 'started_at'>>(sessions: T[]): T[] {
@@ -107,7 +134,12 @@ function buildStudentSummary(
             date: session.date,
             startedAt: session.started_at,
             totalSeconds: session.total_seconds,
+            exerciseIds: session.exercise_ids ?? [],
+            plannedExerciseIds: session.planned_exercise_ids ?? [],
+            skippedIds: session.skipped_ids ?? [],
             userIds: session.user_ids ?? [],
+            sourceMenuId: session.source_menu_id ?? null,
+            sourceMenuSource: normalizeSessionMenuSource(session.source_menu_source),
         })),
         streak,
         totalSessions: sortedSessions.length,
@@ -155,7 +187,7 @@ async function fetchTeacherSessions(): Promise<TeacherSessionRow[]> {
     return fetchAllPages((from, to) =>
         client
             .from('sessions')
-            .select('id, account_id, date, started_at, total_seconds, user_ids')
+            .select('id, account_id, date, started_at, total_seconds, exercise_ids, planned_exercise_ids, skipped_ids, user_ids, source_menu_id, source_menu_source')
             .order('date', { ascending: false })
             .order('started_at', { ascending: false })
             .range(from, to)
@@ -245,7 +277,12 @@ export async function fetchAllStudents(options: FetchAllStudentsOptions = {}): P
             date: session.date,
             started_at: session.startedAt,
             total_seconds: session.totalSeconds,
+            exercise_ids: session.exerciseIds ?? [],
+            planned_exercise_ids: session.plannedExerciseIds ?? [],
+            skipped_ids: session.skippedIds ?? [],
             user_ids: session.userIds ?? [],
+            source_menu_id: session.sourceMenuId ?? null,
+            source_menu_source: session.sourceMenuSource ?? null,
         }));
 
         if (localMembers.length > 0) {

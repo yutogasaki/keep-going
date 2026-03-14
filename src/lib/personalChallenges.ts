@@ -170,6 +170,13 @@ export function getPersonalChallengeDaysLeft(
     return getChallengeDaysLeft(challenge.effectiveEndDate, now);
 }
 
+export function canDeletePersonalChallenge(
+    challenge: Pick<PersonalChallenge, 'status'>,
+    progress: number,
+): boolean {
+    return challenge.status === 'active' && progress === 0;
+}
+
 export function toPersonalChallengeEngineInput(challenge: PersonalChallenge) {
     return {
         challengeType: challenge.challengeType,
@@ -473,6 +480,24 @@ export async function endPersonalChallenge(
         ended_at: endedAt,
         updated_at: new Date().toISOString(),
     });
+}
+
+export async function deletePersonalChallenge(id: string): Promise<void> {
+    if (!supabase) {
+        throw new Error(PERSONAL_CHALLENGE_ACCOUNT_REQUIRED_ERROR);
+    }
+    const accountId = getAccountId();
+    if (!accountId) {
+        throw new Error(PERSONAL_CHALLENGE_ACCOUNT_REQUIRED_ERROR);
+    }
+
+    const { error } = await supabase
+        .from('personal_challenges')
+        .delete()
+        .eq('id', id)
+        .eq('account_id', accountId);
+
+    if (error) throw error;
 }
 
 export async function countPersonalChallengeProgress(challenge: PersonalChallenge): Promise<number> {

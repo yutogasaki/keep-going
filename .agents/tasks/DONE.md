@@ -9,6 +9,12 @@
 - public detail から作る時は一度 import して `もらったメニュー / もらった種目` として扱い、ホーム / 一覧 / 詳細カードでも target 名と絵文字が崩れないよう custom target 解決を追加した
 - `npx tsc --noEmit`、`npm run build`、対象 vitest、Playwright smoke で `detail -> form` 導線を確認した
 
+## 2026-03-14: チャレンジ管理の見え方を改善
+- 先生ダッシュボードのチャレンジ一覧で、参加人数・クリア人数・参加中メンバーの進みぐあいを見えるようにした
+- teacher / developer 向けの session snapshot を exercise / menu 判定に足りる形へ広げ、先生画面から `3 / 5日` などの状況を出せるようにした
+- `じぶんチャレンジ` は進捗 0 のときだけ削除できるようにし、先生チャレンジ詳細の `報酬` 文言は `ごほうび` に寄せた
+- `npx tsc --noEmit`、対象 vitest、`npm run build` を通した
+
 ## 2026-03-14: チャレンジ拡張の仕様整理
 - 先生チャレンジと `じぶんチャレンジ` を同じ計算基盤で扱う方針、`参加 = 開始` / `作成 = 開始`、`種目 / メニュー` 両対応、じぶん報酬 `ほし1こ固定` を仕様・backlog・task queue に反映した
 - UI / Logic / Operation のチャレンジ仕様書へ rolling / active_day とクラウド保存前提の拡張メモを追記し、`npm run governance:check` で terminology drift なしを確認した

@@ -3,7 +3,14 @@ import { RefreshCw, Settings, Trophy, Users } from 'lucide-react';
 import { fetchAllStudents, calculateStreak, type StudentSummary } from '../lib/teacher';
 import { getAllSessions, getTodayKey, getDateKeyOffset } from '../lib/db';
 import { CLASS_LEVELS } from '../data/exercises';
-import { fetchAllChallenges, type Challenge } from '../lib/challenges';
+import {
+    fetchAllChallenges,
+    fetchTeacherChallengeCompletions,
+    fetchTeacherChallengeEnrollments,
+    type Challenge,
+    type ChallengeCompletion,
+    type ChallengeEnrollment,
+} from '../lib/challenges';
 import { useAuth } from '../contexts/AuthContext';
 import { ChallengeManagement } from './teacher-dashboard/ChallengeManagement';
 import { StudentsSection } from './teacher-dashboard/StudentsSection';
@@ -34,6 +41,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
     const hasAutoExpandedClassRef = useRef(false);
 
     const [challenges, setChallenges] = useState<Challenge[]>([]);
+    const [challengeCompletions, setChallengeCompletions] = useState<ChallengeCompletion[]>([]);
+    const [challengeEnrollments, setChallengeEnrollments] = useState<ChallengeEnrollment[]>([]);
     const [challengesLoading, setChallengesLoading] = useState(false);
     const [showCreateForm, setShowCreateForm] = useState(false);
 
@@ -65,8 +74,14 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
     const loadChallenges = useCallback(async () => {
         setChallengesLoading(true);
         try {
-            const data = await fetchAllChallenges();
-            setChallenges(data);
+            const [challengeRows, completionRows, enrollmentRows] = await Promise.all([
+                fetchAllChallenges(),
+                fetchTeacherChallengeCompletions(),
+                fetchTeacherChallengeEnrollments(),
+            ]);
+            setChallenges(challengeRows);
+            setChallengeCompletions(completionRows);
+            setChallengeEnrollments(enrollmentRows);
         } catch (err) {
             console.warn('[teacher] Failed to load challenges:', err);
         } finally {
@@ -81,10 +96,16 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
     useEffect(() => {
         const handleSessionSaved = () => {
             void load();
+            if (activeTab === 'challenges') {
+                void loadChallenges();
+            }
         };
         const handleVisibility = () => {
             if (document.visibilityState === 'visible') {
                 void load();
+                if (activeTab === 'challenges') {
+                    void loadChallenges();
+                }
             }
         };
 
@@ -95,7 +116,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
             window.removeEventListener('sessionSaved', handleSessionSaved);
             document.removeEventListener('visibilitychange', handleVisibility);
         };
-    }, [load]);
+    }, [activeTab, load, loadChallenges]);
 
     useEffect(() => {
         if (activeTab === 'challenges') {
@@ -148,6 +169,16 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
         }
         return [...groups.entries()].filter(([, list]) => list.length > 0);
     }, [individualStudents]);
+
+    const challengeMemberNameMap = useMemo(
+        () => new Map(individualStudents.map((student) => [student.memberId, student.name])),
+        [individualStudents],
+    );
+
+    const challengeSessionsByMemberId = useMemo(
+        () => new Map(individualStudents.map((student) => [student.memberId, student.sessions])),
+        [individualStudents],
+    );
 
     const today = getTodayKey();
     const activeToday = individualStudents.filter((s) => s.lastActiveDate === today).length;
@@ -212,7 +243,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
         }
         : activeTab === 'challenges'
             ? () => {
-                void loadChallenges();
+                void Promise.all([load(), loadChallenges()]);
             }
             : undefined;
 
@@ -290,6 +321,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
             {activeTab === 'challenges' && (
                 <ChallengeManagement
                     challenges={challenges}
+                    challengeCompletions={challengeCompletions}
+                    challengeEnrollments={challengeEnrollments}
+                    memberNameMap={challengeMemberNameMap}
+                    sessionsByMemberId={challengeSessionsByMemberId}
                     loading={challengesLoading}
                     showCreateForm={showCreateForm}
                     setShowCreateForm={setShowCreateForm}

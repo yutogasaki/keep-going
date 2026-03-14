@@ -5,6 +5,7 @@ import { PageHeader } from '../components/PageHeader';
 import { PublicExerciseBrowser } from '../components/PublicExerciseBrowser';
 import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
 import { ScreenScaffold } from '../components/ScreenScaffold';
+import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { ExerciseDetailSheet } from '../components/ExerciseDetailSheet';
 import { MenuDetailSheet } from '../components/MenuDetailSheet';
 import { PersonalChallengeDetailSheet } from '../components/PersonalChallengeDetailSheet';
@@ -20,7 +21,11 @@ import { getCustomGroups } from '../lib/customGroups';
 import { getCustomExercises, type CustomExercise } from '../lib/db';
 import { type PublicExercise } from '../lib/publicExercises';
 import { type PublicMenu } from '../lib/publicMenus';
-import { endPersonalChallenge } from '../lib/personalChallenges';
+import {
+    canDeletePersonalChallenge,
+    deletePersonalChallenge,
+    endPersonalChallenge,
+} from '../lib/personalChallenges';
 import type { TeacherExercise, TeacherMenu } from '../lib/teacherContent';
 import { audio } from '../lib/audio';
 import { haptics } from '../lib/haptics';
@@ -99,6 +104,8 @@ export const HomeScreen: React.FC = () => {
     const [personalChallengeSeed, setPersonalChallengeSeed] = useState<PersonalChallengeCreateSeed | null>(null);
     const [personalFormOpen, setPersonalFormOpen] = useState(false);
     const [personalChallengeToastMessage, setPersonalChallengeToastMessage] = useState<string | null>(null);
+    const [personalChallengeDeleteOpen, setPersonalChallengeDeleteOpen] = useState(false);
+    const [deletingPersonalChallenge, setDeletingPersonalChallenge] = useState(false);
     const [customChallengeExercises, setCustomChallengeExercises] = useState<CustomExercise[]>([]);
     const [customChallengeMenus, setCustomChallengeMenus] = useState<MenuGroup[]>([]);
     const lastSoloVisitKeyRef = useRef('');
@@ -583,6 +590,35 @@ export const HomeScreen: React.FC = () => {
         }
     }, [reloadPersonalChallenges, selectedPersonalChallenge]);
 
+    const handlePromptDeletePersonalChallenge = useCallback(() => {
+        if (!selectedPersonalChallenge) {
+            return;
+        }
+        setPersonalChallengeDeleteOpen(true);
+    }, [selectedPersonalChallenge]);
+
+    const handleDeletePersonalChallenge = useCallback(async () => {
+        if (!selectedPersonalChallenge) {
+            return;
+        }
+        if (!canDeletePersonalChallenge(selectedPersonalChallenge.challenge, selectedPersonalChallenge.progress)) {
+            setPersonalChallengeDeleteOpen(false);
+            return;
+        }
+
+        setDeletingPersonalChallenge(true);
+        try {
+            await deletePersonalChallenge(selectedPersonalChallenge.challenge.id);
+            setPersonalChallengeDeleteOpen(false);
+            setSelectedPersonalChallenge(null);
+            reloadPersonalChallenges();
+        } catch (error) {
+            console.warn('[personalChallenges] delete failed:', error);
+        } finally {
+            setDeletingPersonalChallenge(false);
+        }
+    }, [reloadPersonalChallenges, selectedPersonalChallenge]);
+
     return (
         <div
             style={{
@@ -734,6 +770,21 @@ export const HomeScreen: React.FC = () => {
                 onClose={() => setSelectedPersonalChallenge(null)}
                 onEdit={handleEditPersonalChallenge}
                 onEnd={handleEndPersonalChallenge}
+                onDelete={handlePromptDeletePersonalChallenge}
+            />
+
+            <ConfirmDeleteModal
+                open={personalChallengeDeleteOpen}
+                title="じぶんチャレンジを削除"
+                message={`「${selectedPersonalChallenge?.challenge.title ?? ''}」を削除しますか？まだ進んでいないチャレンジだけ削除できます。`}
+                onCancel={() => {
+                    if (deletingPersonalChallenge) {
+                        return;
+                    }
+                    setPersonalChallengeDeleteOpen(false);
+                }}
+                onConfirm={handleDeletePersonalChallenge}
+                loading={deletingPersonalChallenge}
             />
 
             <PersonalChallengeFormSheet
