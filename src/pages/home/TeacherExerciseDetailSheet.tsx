@@ -13,6 +13,7 @@ interface TeacherExerciseDetailSheetProps {
     onClose: () => void;
     onOpenMenuTab: () => void;
     onStart: (exercise: TeacherExercise) => void;
+    onCreatePersonalChallenge?: (exercise: TeacherExercise) => void;
 }
 
 export const TeacherExerciseDetailSheet: React.FC<TeacherExerciseDetailSheetProps> = ({
@@ -20,6 +21,7 @@ export const TeacherExerciseDetailSheet: React.FC<TeacherExerciseDetailSheetProp
     onClose,
     onOpenMenuTab,
     onStart,
+    onCreatePersonalChallenge,
 }) => {
     const isNew = exercise ? isTeacherContentNew(exercise.createdAt) : false;
 
@@ -158,34 +160,45 @@ export const TeacherExerciseDetailSheet: React.FC<TeacherExerciseDetailSheetProp
                         <div
                             style={{
                                 padding: '14px 20px calc(18px + env(safe-area-inset-bottom, 16px))',
-                                display: 'flex',
+                                display: 'grid',
                                 gap: 10,
                                 borderTop: `1px solid ${COLOR.border}`,
                                 background: COLOR.white,
                             }}
                         >
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    onClose();
-                                    onOpenMenuTab();
-                                }}
-                                style={secondaryButtonStyle}
-                            >
-                                メニューへ
-                                <ChevronRight size={16} />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    onClose();
-                                    onStart(exercise);
-                                }}
-                                style={primaryButtonStyle}
-                            >
-                                <Play size={16} fill="white" />
-                                はじめる
-                            </button>
+                            {onCreatePersonalChallenge ? (
+                                <button
+                                    type="button"
+                                    onClick={() => onCreatePersonalChallenge(exercise)}
+                                    style={challengeShortcutButtonStyle}
+                                >
+                                    この種目で じぶんチャレンジをつくる
+                                </button>
+                            ) : null}
+                            <div style={{ display: 'flex', gap: 10 }}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        onClose();
+                                        onOpenMenuTab();
+                                    }}
+                                    style={secondaryButtonStyle}
+                                >
+                                    メニューへ
+                                    <ChevronRight size={16} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        onClose();
+                                        onStart(exercise);
+                                    }}
+                                    style={primaryButtonStyle}
+                                >
+                                    <Play size={16} fill="white" />
+                                    はじめる
+                                </button>
+                            </div>
                         </div>
                     </motion.div>
                 </motion.div>
@@ -341,4 +354,17 @@ const primaryButtonStyle: React.CSSProperties = {
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
+};
+
+const challengeShortcutButtonStyle: React.CSSProperties = {
+    width: '100%',
+    minHeight: 48,
+    borderRadius: RADIUS.lg,
+    border: '1px solid rgba(9, 132, 227, 0.16)',
+    background: 'linear-gradient(135deg, #F4F9FF, #EEF6FF)',
+    color: '#0A6CC4',
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.sm,
+    fontWeight: 800,
+    cursor: 'pointer',
 };

@@ -503,6 +503,28 @@ export const HomeScreen: React.FC = () => {
         openPersonalChallengeForm(seed);
     }, [loadCustomChallengeTargets, openPersonalChallengeForm]);
 
+    const handleCreatePersonalChallengeFromTeacherMenu = useCallback((menu: TeacherMenu) => {
+        setSelectedTeacherMenu(null);
+        openPersonalChallengeForm({
+            challengeType: 'menu',
+            menuSource: 'teacher',
+            targetMenuId: menu.id,
+            description: menu.description ?? '',
+            iconEmoji: menu.emoji,
+        });
+    }, [openPersonalChallengeForm]);
+
+    const handleCreatePersonalChallengeFromTeacherExercise = useCallback((exercise: TeacherExercise) => {
+        setSelectedTeacherExercise(null);
+        openPersonalChallengeForm({
+            challengeType: 'exercise',
+            exerciseSource: 'teacher',
+            exerciseId: exercise.id,
+            description: exercise.description ?? '',
+            iconEmoji: exercise.emoji,
+        });
+    }, [openPersonalChallengeForm]);
+
     const handleEditPersonalChallenge = useCallback(() => {
         if (!selectedPersonalChallenge) {
             return;
@@ -713,6 +735,7 @@ export const HomeScreen: React.FC = () => {
                 exerciseMap={teacherMenuExerciseMap}
                 onClose={() => setSelectedTeacherMenu(null)}
                 onOpenMenuTab={() => setTab('menu')}
+                onCreatePersonalChallenge={canCreatePersonalChallenge ? handleCreatePersonalChallengeFromTeacherMenu : undefined}
                 onStart={(menu) => {
                     startSessionWithExercises(menu.exerciseIds, {
                         sourceMenuId: menu.id,
@@ -726,6 +749,7 @@ export const HomeScreen: React.FC = () => {
                 exercise={selectedTeacherExercise}
                 onClose={() => setSelectedTeacherExercise(null)}
                 onOpenMenuTab={() => setTab('menu')}
+                onCreatePersonalChallenge={canCreatePersonalChallenge ? handleCreatePersonalChallengeFromTeacherExercise : undefined}
                 onStart={(exercise) => {
                     startSessionWithExercises([exercise.id]);
                 }}
