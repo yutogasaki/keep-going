@@ -22,6 +22,7 @@ function makeChallenge(overrides: Partial<Challenge> = {}): Challenge {
         goalType: 'total_count',
         windowDays: null,
         requiredDays: null,
+        dailyMinimumMinutes: null,
         createdBy: 'teacher-1',
         rewardKind: 'medal',
         rewardValue: 1,

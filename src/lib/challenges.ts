@@ -14,7 +14,7 @@ import { getAccountId } from './sync/authState';
 import type { TeacherExercise } from './teacherContent';
 import { CANONICAL_TERMS } from './terminology';
 
-export type ChallengeType = 'exercise' | 'menu';
+export type ChallengeType = 'exercise' | 'menu' | 'duration';
 export type ChallengeMenuSource = 'teacher' | 'preset';
 export type ChallengeCountUnit = 'exercise_completion' | 'menu_completion';
 export type ChallengeTier = 'small' | 'big';
@@ -40,6 +40,7 @@ export interface Challenge {
     goalType: ChallengeGoalType;
     windowDays: number | null;
     requiredDays: number | null;
+    dailyMinimumMinutes: number | null;
     createdBy: string;
     rewardKind: ChallengeRewardKind;
     rewardValue: number;
@@ -91,6 +92,7 @@ export interface ChallengeWriteInput {
     goalType: ChallengeGoalType;
     windowDays: number | null;
     requiredDays: number | null;
+    dailyMinimumMinutes: number | null;
     createdBy?: string;
     rewardKind: ChallengeRewardKind;
     rewardValue: number;
@@ -100,11 +102,13 @@ export interface ChallengeWriteInput {
 }
 
 function normalizeChallengeType(value: string | null | undefined): ChallengeType {
-    return value === 'menu' ? 'menu' : 'exercise';
+    return value === 'menu' || value === 'duration' ? value : 'exercise';
 }
 
 function normalizeMenuSource(value: string | null | undefined): ChallengeMenuSource | null {
-    return value === 'teacher' || value === 'preset' ? value : null;
+    return value === 'teacher' || value === 'preset'
+        ? value
+        : null;
 }
 
 function normalizeCountUnit(value: string | null | undefined, challengeType: ChallengeType): ChallengeCountUnit {
@@ -158,6 +162,7 @@ function mapChallenge(row: Database['public']['Tables']['challenges']['Row']): C
         requiredDays: goalType === 'active_day'
             ? (row.required_days ?? row.target_count)
             : (row.required_days ?? null),
+        dailyMinimumMinutes: row.daily_minimum_minutes ?? null,
         createdBy: row.created_by,
         rewardKind,
         rewardValue,
@@ -202,6 +207,9 @@ function toChallengeRowBase(input: ChallengeWriteInput) {
         goal_type: input.goalType,
         window_days: input.windowType === 'rolling' ? input.windowDays : null,
         required_days: input.goalType === 'active_day' ? input.requiredDays : null,
+        daily_minimum_minutes: input.goalType === 'active_day' && input.challengeType === 'duration'
+            ? input.dailyMinimumMinutes
+            : null,
         created_by: input.createdBy ?? '',
         reward_kind: input.rewardKind,
         reward_value: rewardValue,
@@ -234,10 +242,18 @@ export function getChallengeExercise(challenge: Challenge, teacherExercises: Tea
 }
 
 export function getChallengeEmoji(challenge: Challenge, teacherExercises: TeacherExercise[] = []): string {
+    if (challenge.challengeType === 'duration') {
+        return challenge.iconEmoji ?? '⏱️';
+    }
+
     return challenge.iconEmoji ?? getChallengeExercise(challenge, teacherExercises)?.emoji ?? '🎯';
 }
 
 export function getChallengeTargetLabel(challenge: Challenge, teacherExercises: TeacherExercise[] = []): string {
+    if (challenge.challengeType === 'duration') {
+        return `1日${Math.max(1, challenge.dailyMinimumMinutes ?? 3)}分以上`;
+    }
+
     if (challenge.challengeType === 'menu') {
         if (challenge.menuSource === 'preset' && challenge.targetMenuId) {
             return PRESET_GROUPS.find((group) => group.id === challenge.targetMenuId)?.name ?? CANONICAL_TERMS.menu;
@@ -287,7 +303,9 @@ export function getChallengeProgressLabel(
 
 export function getChallengeDailyCapLabel(challenge: Challenge): string {
     if (challenge.goalType === 'active_day') {
-        return '1日1回でカウント';
+        return challenge.challengeType === 'duration'
+            ? '休憩をのぞいた時間でカウント'
+            : '1日1回でカウント';
     }
 
     return `1日 ${challenge.dailyCap}回まで`;
@@ -605,5 +623,6 @@ export async function countChallengeProgress(
         windowType: challenge.windowType,
         goalType: challenge.goalType,
         windowDays: challenge.windowDays,
+        dailyMinimumMinutes: challenge.dailyMinimumMinutes,
     }, sessions, userIds, window);
 }

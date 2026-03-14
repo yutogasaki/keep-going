@@ -24,6 +24,7 @@ function makeChallenge(overrides: Partial<ChallengeEngineInput> = {}): Challenge
         windowType: 'calendar',
         goalType: 'total_count',
         windowDays: null,
+        dailyMinimumMinutes: null,
         ...overrides,
     };
 }
@@ -122,6 +123,61 @@ describe('challenge-engine', () => {
                     userIds: ['u1'],
                     sourceMenuId: 'preset-basic',
                     sourceMenuSource: 'preset',
+                },
+            ]),
+            ['u1'],
+            { startDate: '2026-03-01', endDate: '2026-03-31' },
+        );
+
+        expect(progress).toBe(1);
+    });
+
+    it('counts active-day progress from per-day session minutes for duration challenges', () => {
+        const progress = countChallengeProgressFromSessions(
+            makeChallenge({
+                challengeType: 'duration',
+                exerciseId: null,
+                targetMenuId: null,
+                menuSource: null,
+                goalType: 'active_day',
+                dailyMinimumMinutes: 3,
+            }),
+            asSessions([
+                {
+                    id: 'd1',
+                    date: '2026-03-05',
+                    startedAt: '2026-03-05T08:00:00Z',
+                    totalSeconds: 120,
+                    exerciseIds: ['S01'],
+                    skippedIds: [],
+                    userIds: ['u1'],
+                },
+                {
+                    id: 'd2',
+                    date: '2026-03-05',
+                    startedAt: '2026-03-05T09:00:00Z',
+                    totalSeconds: 90,
+                    exerciseIds: ['S02'],
+                    skippedIds: [],
+                    userIds: ['u1'],
+                },
+                {
+                    id: 'd3',
+                    date: '2026-03-06',
+                    startedAt: '2026-03-06T08:00:00Z',
+                    totalSeconds: 150,
+                    exerciseIds: ['S01'],
+                    skippedIds: [],
+                    userIds: ['u1'],
+                },
+                {
+                    id: 'd4',
+                    date: '2026-03-07',
+                    startedAt: '2026-03-07T08:00:00Z',
+                    totalSeconds: 180,
+                    exerciseIds: ['S01'],
+                    skippedIds: [],
+                    userIds: ['u2'],
                 },
             ]),
             ['u1'],

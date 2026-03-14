@@ -250,10 +250,12 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
         ? '終了日は開始日より後にしてください'
         : '';
 
+    const isDurationChallenge = values.challengeType === 'duration';
     const hasError = !values.title.trim()
         || (values.windowType === 'rolling'
             ? values.requiredDays < 1 || values.windowDays < 1 || values.requiredDays > values.windowDays
             : values.targetCount < 1 || values.dailyCap < 1)
+        || (isDurationChallenge && values.dailyMinimumMinutes < 1)
         || !!dateError
         || (values.challengeType === 'exercise' && !hasExerciseTarget)
         || (values.challengeType === 'menu' && !hasMenuTarget);
@@ -374,11 +376,17 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                             },
                         ] as const).map((option) => {
                             const selected = values.windowType === option.id;
+                            const disabled = isDurationChallenge && option.id === 'calendar';
                             return (
                                 <button
                                     key={option.id}
                                     type="button"
+                                    disabled={disabled}
                                     onClick={() => {
+                                        if (disabled) {
+                                            return;
+                                        }
+
                                         const nextWindowType = option.id;
                                         const basePatch = nextWindowType === 'calendar'
                                             ? {
@@ -414,6 +422,10 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                     }}
                                     style={{
                                         ...optionButtonBaseStyle,
+                                        ...(disabled ? {
+                                            opacity: 0.5,
+                                            cursor: 'not-allowed',
+                                        } : null),
                                         ...(selected ? {
                                             border: '2px solid #2BBAA0',
                                             background: '#E8F8F0',
@@ -441,6 +453,12 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                         })}
                     </div>
                 </Field>
+
+                {isDurationChallenge ? (
+                    <div style={fieldHintStyle}>
+                        時間チャレンジは、参加してから毎日できた日数を数える方式だけにしています。
+                    </div>
+                ) : null}
             </Section>
 
             <Section title="対象" description="何をカウントするチャレンジかを決めます。">
@@ -449,6 +467,7 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                         {([
                             { id: 'exercise', label: '種目チャレンジ', description: '1つの種目を回数で数える' },
                             { id: 'menu', label: 'メニューチャレンジ', description: '1つのメニュー完走を数える' },
+                            { id: 'duration', label: '時間チャレンジ', description: 'その日の合計時間が足りた日数を数える' },
                         ] as const).map((option) => {
                             const selected = values.challengeType === option.id;
                             return (
@@ -458,6 +477,19 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                     onClick={() => {
                                         if (option.id === 'exercise') {
                                             onChange({ challengeType: 'exercise' });
+                                            return;
+                                        }
+
+                                        if (option.id === 'duration') {
+                                            onChange({
+                                                challengeType: 'duration',
+                                                windowType: 'rolling',
+                                                goalType: 'active_day',
+                                                dailyCap: 1,
+                                                dailyMinimumMinutes: Math.max(1, values.dailyMinimumMinutes || 3),
+                                                requiredDays: Math.max(1, values.requiredDays || 5),
+                                                targetCount: Math.max(1, values.requiredDays || 5),
+                                            });
                                             return;
                                         }
 
@@ -498,7 +530,31 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                     </div>
                 </Field>
 
-                {values.challengeType === 'exercise' ? (
+                {values.challengeType === 'duration' ? (
+                    <Field label="1日の目標時間" hint="休憩をのぞいたストレッチ時間が、この分数以上の日を1日達成として数えます。">
+                        <div style={selectionPreviewStyle}>
+                            <div style={previewIconStyle}>⏱️</div>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.sm,
+                                    fontWeight: 800,
+                                    color: COLOR.dark,
+                                }}>
+                                    1日 {Math.max(1, values.dailyMinimumMinutes)}分以上
+                                </div>
+                                <div style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.xs + 1,
+                                    color: COLOR.muted,
+                                    lineHeight: 1.6,
+                                }}>
+                                    休憩時間は含みません。1日に何回やっても、条件を超えたら1日分だけカウントされます。
+                                </div>
+                            </div>
+                        </div>
+                    </Field>
+                ) : values.challengeType === 'exercise' ? (
                     <Field label={CANONICAL_TERMS.exercise} hint="標準種目か先生の種目を選べます。">
                         <div style={segmentedRowStyle}>
                             {([
@@ -683,19 +739,33 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
 
                 <div style={metricGridStyle}>
                     {values.windowType === 'rolling' ? (
-                        <Field label="必要な日数" hint="対象をやった日を何日集めたらクリアかを決めます。">
-                            <input
-                                type="number"
-                                min={1}
-                                max={Math.max(1, values.windowDays)}
-                                value={values.requiredDays}
-                                onChange={(event) => onChange({
-                                    requiredDays: Number(event.target.value),
-                                    targetCount: Number(event.target.value),
-                                })}
-                                style={inputStyle}
-                            />
-                        </Field>
+                        <>
+                            <Field label="必要な日数" hint={isDurationChallenge ? '1日の目標時間を満たした日を、何日集めたらクリアかを決めます。' : '対象をやった日を何日集めたらクリアかを決めます。'}>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={Math.max(1, values.windowDays)}
+                                    value={values.requiredDays}
+                                    onChange={(event) => onChange({
+                                        requiredDays: Number(event.target.value),
+                                        targetCount: Number(event.target.value),
+                                    })}
+                                    style={inputStyle}
+                                />
+                            </Field>
+
+                            {isDurationChallenge ? (
+                                <Field label="1日の目標時間" hint="休憩をのぞいた合計時間です。">
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        value={values.dailyMinimumMinutes}
+                                        onChange={(event) => onChange({ dailyMinimumMinutes: Number(event.target.value) })}
+                                        style={inputStyle}
+                                    />
+                                </Field>
+                            ) : null}
+                        </>
                     ) : (
                         <>
                             <Field label="目標回数" hint="クリアまでに必要な合計回数です。">
@@ -724,7 +794,9 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                 {values.windowType === 'rolling' ? (
                     <>
                         <div style={fieldHintStyle}>
-                            1日達成は、その日に対象の種目かメニューを1回以上やるとカウントされます。
+                            {isDurationChallenge
+                                ? `1日達成は、その日の合計ストレッチ時間が ${Math.max(1, values.dailyMinimumMinutes)}分以上のときにカウントされます。休憩は含みません。`
+                                : '1日達成は、その日に対象の種目かメニューを1回以上やるとカウントされます。'}
                         </div>
                         {values.requiredDays > values.windowDays ? (
                             <div style={{ ...fieldHintStyle, color: COLOR.danger, fontWeight: 700 }}>

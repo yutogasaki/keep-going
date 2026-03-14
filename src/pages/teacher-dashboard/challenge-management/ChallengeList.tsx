@@ -5,9 +5,11 @@ import { CLASS_EMOJI, EXERCISES } from '../../../data/exercises';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
 import {
     getChallengeCardText,
+    getChallengeDailyCapLabel,
     getChallengeGoalLabel,
     getChallengeInviteWindowLabel,
     getChallengeRewardLabel,
+    getChallengeTargetLabel,
     type Challenge,
 } from '../../../lib/challenges';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
@@ -70,8 +72,12 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                     : null;
                 const targetLabel = challenge.challengeType === 'menu'
                     ? (challenge.menuSource === 'preset' ? presetMenu?.name : teacherMenu?.name) ?? challenge.targetMenuId ?? 'メニュー'
-                    : (exercise?.name ?? challenge.exerciseId ?? '種目');
-                const targetMetadata = challenge.challengeType === 'menu' ? teacherMenu : teacherExerciseMap.get(challenge.exerciseId ?? '');
+                    : getChallengeTargetLabel(challenge, teacherExercises);
+                const targetMetadata = challenge.challengeType === 'menu'
+                    ? teacherMenu
+                    : challenge.challengeType === 'exercise'
+                        ? teacherExerciseMap.get(challenge.exerciseId ?? '')
+                        : null;
                 const isActive = challenge.startDate <= today && challenge.endDate >= today;
                 const isPast = challenge.endDate < today;
                 const cardText = getChallengeCardText(challenge);
@@ -119,7 +125,7 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                     marginTop: 2,
                                 }}>
                                     {goalLabel} ・
-                                    {challenge.goalType === 'active_day' ? '1日1回でカウント' : `${challenge.dailyCap}回/日`} ・
+                                    {getChallengeDailyCapLabel(challenge)} ・
                                     {getChallengeRewardLabel(challenge)} ・
                                     {windowLabel}
                                 </div>

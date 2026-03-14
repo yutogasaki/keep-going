@@ -43,6 +43,7 @@ function makeChallenge(overrides: Partial<Challenge> = {}): Challenge {
         goalType: 'total_count',
         windowDays: null,
         requiredDays: null,
+        dailyMinimumMinutes: null,
         createdBy: 'teacher@example.com',
         rewardKind: 'star',
         rewardValue: 3,
@@ -235,6 +236,49 @@ describe('countChallengeProgress', () => {
 
         expect(progress).toBe(2);
     });
+
+    it('counts active days from total minutes for duration challenges', async () => {
+        mockedGetAllSessions.mockResolvedValue(asSessions([
+            {
+                id: 's1',
+                date: '2026-03-05',
+                startedAt: '2026-03-05T10:00:00Z',
+                totalSeconds: 120,
+                exerciseIds: ['S01'],
+                skippedIds: [],
+                userIds: ['u1'],
+            },
+            {
+                id: 's2',
+                date: '2026-03-05',
+                startedAt: '2026-03-05T11:00:00Z',
+                totalSeconds: 90,
+                exerciseIds: ['S02'],
+                skippedIds: [],
+                userIds: ['u1'],
+            },
+            {
+                id: 's3',
+                date: '2026-03-06',
+                startedAt: '2026-03-06T10:00:00Z',
+                totalSeconds: 120,
+                exerciseIds: ['S01'],
+                skippedIds: [],
+                userIds: ['u1'],
+            },
+        ]));
+
+        const progress = await countChallengeProgress(makeChallenge({
+            challengeType: 'duration',
+            exerciseId: null,
+            goalType: 'active_day',
+            requiredDays: 5,
+            targetCount: 5,
+            dailyMinimumMinutes: 3,
+        }), ['u1']);
+
+        expect(progress).toBe(1);
+    });
 });
 
 describe('getChallengeRewardLabel', () => {
@@ -292,6 +336,18 @@ describe('challenge text helpers', () => {
         expect(getChallengeGoalLabel(challenge, '前後開脚')).toBe('前後開脚を5日');
         expect(getChallengeProgressLabel(challenge, 3)).toBe('3 / 5日');
         expect(getChallengeInviteWindowLabel(challenge)).toBe('参加すると 今日から7日');
+    });
+
+    it('formats duration-based active-day labels', () => {
+        const challenge = makeChallenge({
+            challengeType: 'duration',
+            goalType: 'active_day',
+            requiredDays: 5,
+            targetCount: 5,
+            dailyMinimumMinutes: 3,
+        });
+
+        expect(getChallengeGoalLabel(challenge, '1日3分以上')).toBe('1日3分以上を5日');
     });
 });
 

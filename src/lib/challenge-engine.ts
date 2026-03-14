@@ -4,8 +4,8 @@ import { getSessionExerciseCounts, hasCompletedPlannedExercises } from './sessio
 
 export type ChallengeWindowType = 'calendar' | 'rolling';
 export type ChallengeGoalType = 'total_count' | 'active_day';
-export type ChallengeType = 'exercise' | 'menu';
-export type ChallengeMenuSource = 'teacher' | 'preset';
+export type ChallengeType = 'exercise' | 'menu' | 'duration';
+export type ChallengeMenuSource = 'teacher' | 'preset' | 'custom' | 'public';
 export type ChallengeCountUnit = 'exercise_completion' | 'menu_completion';
 
 export interface ChallengeEngineInput {
@@ -21,6 +21,7 @@ export interface ChallengeEngineInput {
     windowType: ChallengeWindowType;
     goalType: ChallengeGoalType;
     windowDays: number | null;
+    dailyMinimumMinutes: number | null;
 }
 
 export interface ChallengeProgressWindow {
@@ -84,6 +85,20 @@ export function countChallengeProgressFromSessions(
     window: ChallengeProgressWindow,
 ): number {
     if (challenge.goalType === 'active_day') {
+        if (challenge.challengeType === 'duration') {
+            const thresholdSeconds = Math.max(1, challenge.dailyMinimumMinutes ?? 1) * 60;
+            const secondsByDate = new Map<string, number>();
+
+            for (const session of sessions) {
+                if (!sessionMatchesWindow(session, window)) continue;
+                if (!sessionMatchesUsers(session, userIds)) continue;
+
+                secondsByDate.set(session.date, (secondsByDate.get(session.date) ?? 0) + session.totalSeconds);
+            }
+
+            return [...secondsByDate.values()].filter((seconds) => seconds >= thresholdSeconds).length;
+        }
+
         const activeDays = new Set<string>();
 
         for (const session of sessions) {

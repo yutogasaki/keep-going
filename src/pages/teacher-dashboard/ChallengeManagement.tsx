@@ -84,9 +84,13 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
         setSubmitting(true);
         const trimmedTitle = formValues.title.trim();
         const trimmedDescription = formValues.description.trim();
-        const goalType = formValues.windowType === 'rolling' ? 'active_day' : formValues.goalType;
+        const windowType = formValues.challengeType === 'duration' ? 'rolling' : formValues.windowType;
+        const goalType = formValues.challengeType === 'duration'
+            ? 'active_day'
+            : (windowType === 'rolling' ? 'active_day' : formValues.goalType);
         const targetCount = goalType === 'active_day' ? formValues.requiredDays : formValues.targetCount;
         const dailyCap = goalType === 'active_day' ? 1 : formValues.dailyCap;
+        const countUnit = formValues.challengeType === 'menu' ? 'menu_completion' : 'exercise_completion';
 
         try {
             if (editingId) {
@@ -100,13 +104,14 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                     menuSource: formValues.challengeType === 'menu' ? formValues.menuSource : null,
                     targetCount,
                     dailyCap,
-                    countUnit: formValues.challengeType === 'menu' ? 'menu_completion' : 'exercise_completion',
+                    countUnit,
                     startDate: formValues.startDate,
                     endDate: formValues.endDate,
-                    windowType: formValues.windowType,
+                    windowType,
                     goalType,
-                    windowDays: formValues.windowType === 'rolling' ? formValues.windowDays : null,
+                    windowDays: windowType === 'rolling' ? formValues.windowDays : null,
                     requiredDays: goalType === 'active_day' ? formValues.requiredDays : null,
+                    dailyMinimumMinutes: formValues.challengeType === 'duration' ? formValues.dailyMinimumMinutes : null,
                     rewardKind: formValues.rewardKind,
                     rewardValue: formValues.rewardValue,
                     tier: formValues.tier,
@@ -124,13 +129,14 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                     menuSource: formValues.challengeType === 'menu' ? formValues.menuSource : null,
                     targetCount,
                     dailyCap,
-                    countUnit: formValues.challengeType === 'menu' ? 'menu_completion' : 'exercise_completion',
+                    countUnit,
                     startDate: formValues.startDate,
                     endDate: formValues.endDate,
-                    windowType: formValues.windowType,
+                    windowType,
                     goalType,
-                    windowDays: formValues.windowType === 'rolling' ? formValues.windowDays : null,
+                    windowDays: windowType === 'rolling' ? formValues.windowDays : null,
                     requiredDays: goalType === 'active_day' ? formValues.requiredDays : null,
+                    dailyMinimumMinutes: formValues.challengeType === 'duration' ? formValues.dailyMinimumMinutes : null,
                     createdBy: teacherEmail,
                     rewardKind: formValues.rewardKind,
                     rewardValue: formValues.rewardValue,
