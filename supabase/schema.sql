@@ -1,5 +1,7 @@
 -- KeepGoing Supabase Schema
--- Run this in the Supabase SQL Editor (Dashboard > SQL Editor)
+-- Empty database bootstrap only.
+-- 既存の Supabase プロジェクトには流さないでください。
+-- 既存環境の更新は `supabase/deploy.sql` か個別 migration を使います。
 
 -- 家族メンバー（ローカルの UserProfileStore に対応）
 create table family_members (

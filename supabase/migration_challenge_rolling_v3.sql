@@ -1,4 +1,6 @@
 -- Challenge rolling / active-day support
+-- Run this on an existing KeepGoing database.
+-- 新規DBの初期構築ではなく、既存環境の差分適用用です。
 
 do $$ begin
   alter table public.challenges add column window_type text not null default 'calendar';
