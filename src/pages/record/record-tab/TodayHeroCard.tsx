@@ -266,6 +266,11 @@ export const TodayHeroCard: React.FC<TodayHeroCardProps> = ({ summary }) => {
         : summary.remainingMinutes > 0
             ? `あと${summary.remainingMinutes}分で きょうのまる`
             : 'きょうのまるまで できたね';
+    const summaryChips = [
+        `${summary.minutes}分`,
+        `${summary.sessionCount}回`,
+        summary.sessionCount === 0 ? 'これから' : `${summary.exerciseCount}種目`,
+    ];
 
     return (
         <motion.section
@@ -287,25 +292,71 @@ export const TodayHeroCard: React.FC<TodayHeroCardProps> = ({ summary }) => {
             <div
                 className="card"
                 style={{
+                    position: 'relative',
                     background: 'linear-gradient(160deg, rgba(255,255,255,0.9), rgba(232,248,240,0.82) 58%, rgba(255,245,240,0.86))',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: SPACE.lg,
+                    gap: SPACE.md,
                     overflow: 'hidden',
+                    padding: '20px 18px 18px',
                 }}
             >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'center' }}>
+                <div
+                    aria-hidden="true"
+                    style={{
+                        position: 'absolute',
+                        top: -24,
+                        right: -32,
+                        width: 130,
+                        height: 130,
+                        borderRadius: RADIUS.circle,
+                        background: 'radial-gradient(circle, rgba(43,186,160,0.22), rgba(43,186,160,0))',
+                        pointerEvents: 'none',
+                    }}
+                />
+                <div
+                    aria-hidden="true"
+                    style={{
+                        position: 'absolute',
+                        bottom: -44,
+                        left: -30,
+                        width: 150,
+                        height: 150,
+                        borderRadius: RADIUS.circle,
+                        background: 'radial-gradient(circle, rgba(232,67,147,0.1), rgba(232,67,147,0))',
+                        pointerEvents: 'none',
+                    }}
+                />
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', textAlign: 'center' }}>
+                    <div
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '6px 12px',
+                            borderRadius: RADIUS.full,
+                            background: 'rgba(255,255,255,0.72)',
+                            color: COLOR.primaryDark,
+                            fontFamily: FONT.body,
+                            fontSize: FONT_SIZE.xs + 1,
+                            fontWeight: 800,
+                            letterSpacing: 0.8,
+                        }}
+                    >
+                        きょうのきろく
+                    </div>
                     <div
                         style={{
                             fontFamily: FONT.body,
-                            fontSize: FONT_SIZE.lg,
+                            fontSize: 28,
                             fontWeight: 800,
                             color: COLOR.dark,
+                            lineHeight: 1.2,
                         }}
                     >
                         きょうはここまで
                     </div>
-                    <TodayProgressFigure progressPercent={summary.progressPercent} />
                 </div>
 
                 <div
@@ -317,6 +368,7 @@ export const TodayHeroCard: React.FC<TodayHeroCardProps> = ({ summary }) => {
                         textAlign: 'center',
                     }}
                 >
+                    <TodayProgressFigure progressPercent={summary.progressPercent} />
                     <div
                         style={{
                             fontFamily: FONT.body,
@@ -347,6 +399,33 @@ export const TodayHeroCard: React.FC<TodayHeroCardProps> = ({ summary }) => {
                     >
                         {remainingLine}
                     </div>
+                </div>
+
+                <div
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                        gap: 10,
+                    }}
+                >
+                    {summaryChips.map((chip) => (
+                        <div
+                            key={chip}
+                            style={{
+                                padding: '10px 8px',
+                                borderRadius: RADIUS.xl,
+                                background: 'rgba(255,255,255,0.6)',
+                                border: '1px solid rgba(255,255,255,0.7)',
+                                textAlign: 'center',
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.sm,
+                                fontWeight: 800,
+                                color: COLOR.primaryDark,
+                            }}
+                        >
+                            {chip}
+                        </div>
+                    ))}
                 </div>
 
                 <TodaySessionTimeline sessionTimes={summary.sessionTimes} />
