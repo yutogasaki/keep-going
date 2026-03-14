@@ -1,4 +1,5 @@
 import type { ClassLevel } from '../../data/exercises';
+import type { ExercisePlacement } from '../../data/exercisePlacement';
 
 export interface PastFuwafuwaRecord {
     id: string;
@@ -52,6 +53,13 @@ export interface UserProfileStore {
 
 export type TabId = 'home' | 'record' | 'menu' | 'settings';
 export type SessionKind = 'auto' | 'fixed' | 'hybrid' | 'teacher-preview';
+export type MenuTabId = 'group' | 'individual';
+
+export interface MenuOpenIntent {
+    tab: MenuTabId;
+    placement: ExercisePlacement | null;
+    requestId: number;
+}
 
 export interface SessionDraft {
     kind: 'auto';
@@ -78,6 +86,9 @@ export interface AppState {
     currentTab: TabId;
     previousTab: TabId;
     setTab: (tab: TabId) => void;
+    menuOpenIntent: MenuOpenIntent | null;
+    openMenuWithIntent: (intent: { tab: MenuTabId; placement?: ExercisePlacement | null }) => void;
+    clearMenuOpenIntent: () => void;
 
     sessionUserIds: string[];
     setSessionUserIds: (ids: string[]) => void;

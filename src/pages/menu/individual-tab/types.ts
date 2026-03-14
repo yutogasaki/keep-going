@@ -1,4 +1,5 @@
 import type { Exercise } from '../../../data/exercises';
+import type { ExercisePlacement } from '../../../data/exercisePlacement';
 import type { CustomExercise } from '../../../lib/db';
 import type { PublicExercise } from '../../../lib/publicExercises';
 import type { MenuUsageStats } from '../menu-page/useMenuUsageStats';
@@ -28,4 +29,6 @@ export interface MenuIndividualTabProps {
     onPublishExercise?: (exercise: CustomExercise) => void;
     onUnpublishExercise?: (exercise: CustomExercise) => void;
     onOpenPublicExerciseBrowser?: () => void;
+    focusCategory?: ExercisePlacement | null;
+    focusRequestId?: number;
 }

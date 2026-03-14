@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
 import { PublicExerciseBrowser } from '../components/PublicExerciseBrowser';
 import { PageHeader } from '../components/PageHeader';
@@ -6,6 +6,7 @@ import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { ScreenScaffold } from '../components/ScreenScaffold';
 import { Toast } from '../components/Toast';
+import type { ExercisePlacement } from '../data/exercisePlacement';
 import { useAppStore } from '../store/useAppStore';
 import { CustomMenuModal } from './menu/CustomMenuModal';
 import { CreateGroupView } from './menu/CreateGroupView';
@@ -18,13 +19,18 @@ import { useMenuUsageStats } from './menu/menu-page/useMenuUsageStats';
 
 export const MenuPage: React.FC = () => {
     const users = useAppStore((state) => state.users);
+    const currentTab = useAppStore((state) => state.currentTab);
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const startSessionWithExercises = useAppStore((state) => state.startSessionWithExercises);
     const startHybridSession = useAppStore((state) => state.startHybridSession);
     const updateUserSettings = useAppStore((state) => state.updateUserSettings);
+    const menuOpenIntent = useAppStore((state) => state.menuOpenIntent);
+    const clearMenuOpenIntent = useAppStore((state) => state.clearMenuOpenIntent);
 
     const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
     const [deleteExId, setDeleteExId] = useState<string | null>(null);
+    const [focusedPlacement, setFocusedPlacement] = useState<ExercisePlacement | null>(null);
+    const [focusRequestId, setFocusRequestId] = useState(0);
     const usageStats = useMenuUsageStats();
 
     const {
@@ -94,6 +100,17 @@ export const MenuPage: React.FC = () => {
         startHybridSession,
         updateUserSettings,
     });
+
+    useEffect(() => {
+        if (currentTab !== 'menu' || !menuOpenIntent) {
+            return;
+        }
+
+        setTab(menuOpenIntent.tab);
+        setFocusedPlacement(menuOpenIntent.placement);
+        setFocusRequestId(menuOpenIntent.requestId);
+        clearMenuOpenIntent();
+    }, [clearMenuOpenIntent, currentTab, menuOpenIntent, setTab]);
 
     if (showCreateGroup || editGroup) {
         const publishedId = editGroup ? findPublishedMenu(editGroup)?.id : undefined;
@@ -188,6 +205,8 @@ export const MenuPage: React.FC = () => {
                         onUnpublishExercise={handleUnpublishExercise}
                         onOpenPublicExerciseBrowser={() => setShowPublicExerciseBrowser(true)}
                         onStartHybridSession={handleStartHybridSession}
+                        focusCategory={focusedPlacement}
+                        focusRequestId={focusRequestId}
                     />
                 )}
             </ScreenScaffold>

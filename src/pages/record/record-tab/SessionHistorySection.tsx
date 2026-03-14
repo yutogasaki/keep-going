@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { CalendarDays, ChevronRight, Clock3 } from 'lucide-react';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../../lib/styles';
 import type { RecordHistoryAccordionSection } from '../recordOverviewSummary';
 import { formatDate } from '../recordUtils';
@@ -13,6 +13,32 @@ interface SessionHistorySectionProps {
 function formatDuration(totalSeconds: number): string {
     const minutes = Math.floor(totalSeconds / 60);
     return `${minutes}分`;
+}
+
+function getSectionHint(section: RecordHistoryAccordionSection): string {
+    switch (section.id) {
+    case 'today':
+        return 'きょうの足あと';
+    case 'thisWeek':
+        return '今週のまとまり';
+    case 'lastWeek':
+    default:
+        return '先週のまとまり';
+    }
+}
+
+function getSessionBadgeLabel(
+    item: RecordHistoryAccordionSection['days'][number]['items'][number],
+): string | null {
+    if (item.sessionLabel === 'みんなで') {
+        return 'みんなで！';
+    }
+
+    if (item.userNames.length > 1) {
+        return item.userNames.join('・');
+    }
+
+    return null;
 }
 
 export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
@@ -73,7 +99,9 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
                         style={{
                             padding: 0,
                             overflow: 'hidden',
-                            background: 'linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,250,252,0.92))',
+                            background: expanded
+                                ? 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(244,249,255,0.92))'
+                                : 'linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,250,252,0.92))',
                         }}
                     >
                         <button
@@ -92,36 +120,76 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
                                 textAlign: 'left',
                             }}
                         >
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                <span
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                                <div
                                     style={{
-                                        fontFamily: FONT.body,
-                                        fontSize: FONT_SIZE.lg,
-                                        fontWeight: 800,
-                                        color: COLOR.dark,
+                                        width: 38,
+                                        height: 38,
+                                        borderRadius: RADIUS['2xl'],
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        background: expanded
+                                            ? 'rgba(43, 186, 160, 0.12)'
+                                            : 'rgba(131, 149, 167, 0.12)',
+                                        color: expanded ? COLOR.primaryDark : COLOR.muted,
+                                        flexShrink: 0,
                                     }}
                                 >
-                                    {section.label}
-                                </span>
+                                    <CalendarDays size={18} />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+                                    <span
+                                        style={{
+                                            fontFamily: FONT.body,
+                                            fontSize: FONT_SIZE.lg,
+                                            fontWeight: 800,
+                                            color: COLOR.dark,
+                                        }}
+                                    >
+                                        {section.label}
+                                    </span>
+                                    <span
+                                        style={{
+                                            fontFamily: FONT.body,
+                                            fontSize: FONT_SIZE.sm,
+                                            color: COLOR.muted,
+                                        }}
+                                    >
+                                        {getSectionHint(section)}
+                                    </span>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                                 <span
                                     style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        padding: '6px 10px',
+                                        borderRadius: RADIUS.full,
+                                        background: expanded
+                                            ? 'rgba(43, 186, 160, 0.12)'
+                                            : 'rgba(255,255,255,0.75)',
+                                        color: expanded ? COLOR.primaryDark : COLOR.muted,
                                         fontFamily: FONT.body,
-                                        fontSize: FONT_SIZE.sm,
-                                        color: COLOR.muted,
+                                        fontSize: FONT_SIZE.xs + 1,
+                                        fontWeight: 800,
+                                        whiteSpace: 'nowrap',
                                     }}
                                 >
                                     {section.summaryLine}
                                 </span>
+                                <ChevronRight
+                                    size={18}
+                                    color={COLOR.light}
+                                    style={{
+                                        transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                                        transition: 'transform 0.2s ease',
+                                        flexShrink: 0,
+                                    }}
+                                />
                             </div>
-                            <ChevronRight
-                                size={18}
-                                color={COLOR.light}
-                                style={{
-                                    transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)',
-                                    transition: 'transform 0.2s ease',
-                                    flexShrink: 0,
-                                }}
-                            />
                         </button>
 
                         <AnimatePresence initial={false}>
@@ -160,19 +228,44 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
                                                 style={{
                                                     display: 'flex',
                                                     flexDirection: 'column',
-                                                    gap: 8,
+                                                    gap: 10,
+                                                    padding: '12px',
+                                                    borderRadius: RADIUS['2xl'],
+                                                    background: 'rgba(255,255,255,0.62)',
+                                                    border: '1px solid rgba(255,255,255,0.72)',
                                                 }}
                                             >
-                                                {section.id !== 'today' && (
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        gap: 10,
+                                                        flexWrap: 'wrap',
+                                                    }}
+                                                >
                                                     <div
                                                         style={{
                                                             display: 'flex',
                                                             alignItems: 'center',
-                                                            justifyContent: 'space-between',
-                                                            gap: 10,
-                                                            paddingTop: 4,
+                                                            gap: 8,
                                                         }}
                                                     >
+                                                        <span
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                width: 28,
+                                                                height: 28,
+                                                                borderRadius: RADIUS.circle,
+                                                                background: 'rgba(43, 186, 160, 0.12)',
+                                                                color: COLOR.primaryDark,
+                                                                flexShrink: 0,
+                                                            }}
+                                                        >
+                                                            <Clock3 size={14} />
+                                                        </span>
                                                         <span
                                                             style={{
                                                                 fontFamily: FONT.heading,
@@ -181,19 +274,27 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
                                                                 color: COLOR.dark,
                                                             }}
                                                         >
-                                                            {formatDate(day.date)}
-                                                        </span>
-                                                        <span
-                                                            style={{
-                                                                fontFamily: FONT.body,
-                                                                fontSize: FONT_SIZE.xs + 1,
-                                                                color: COLOR.light,
-                                                            }}
-                                                        >
-                                                            {day.sessionCount}回 / {formatDuration(day.totalSeconds)}
+                                                            {section.id === 'today' ? '今日の足あと' : formatDate(day.date)}
                                                         </span>
                                                     </div>
-                                                )}
+                                                    <span
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            padding: '5px 9px',
+                                                            borderRadius: RADIUS.full,
+                                                            background: 'rgba(255,255,255,0.74)',
+                                                            fontFamily: FONT.body,
+                                                            fontSize: FONT_SIZE.xs + 1,
+                                                            fontWeight: 800,
+                                                            color: COLOR.muted,
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        {day.sessionCount}回 / {formatDuration(day.totalSeconds)}
+                                                    </span>
+                                                </div>
 
                                                 <div
                                                     style={{
@@ -203,79 +304,164 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
                                                     }}
                                                 >
                                                     {day.items.map((item) => (
-                                                        <div
+                                                        <motion.div
                                                             key={item.id}
+                                                            layout
                                                             style={{
-                                                                display: 'grid',
-                                                                gridTemplateColumns: '56px 1fr auto',
-                                                                gap: 12,
-                                                                alignItems: 'center',
+                                                                display: 'flex',
+                                                                flexDirection: 'column',
+                                                                gap: 10,
                                                                 padding: '12px 14px',
                                                                 borderRadius: RADIUS.xl,
-                                                                background: 'rgba(255,255,255,0.6)',
+                                                                background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(250,252,255,0.92))',
+                                                                border: '1px solid rgba(233, 239, 244, 0.9)',
                                                             }}
                                                         >
-                                                            <span
-                                                                style={{
-                                                                    fontFamily: FONT.heading,
-                                                                    fontSize: FONT_SIZE.sm + 1,
-                                                                    fontWeight: 700,
-                                                                    color: COLOR.dark,
-                                                                }}
-                                                            >
-                                                                {new Date(item.startedAt).toLocaleTimeString('ja-JP', {
-                                                                    hour: '2-digit',
-                                                                    minute: '2-digit',
-                                                                })}
-                                                            </span>
                                                             <div
                                                                 style={{
                                                                     display: 'flex',
-                                                                    flexDirection: 'column',
-                                                                    gap: 2,
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'space-between',
+                                                                    gap: 10,
+                                                                    flexWrap: 'wrap',
                                                                 }}
                                                             >
-                                                                <span
+                                                                <div
                                                                     style={{
-                                                                        fontFamily: FONT.body,
-                                                                        fontSize: FONT_SIZE.md,
-                                                                        fontWeight: 700,
-                                                                        color: COLOR.dark,
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 8,
+                                                                        flexWrap: 'wrap',
                                                                     }}
                                                                 >
-                                                                    {formatDuration(item.totalSeconds)} / {item.completedTotal}種目
-                                                                </span>
-                                                                {item.sessionLabel === 'みんなで' && (
                                                                     <span
                                                                         style={{
+                                                                            fontFamily: FONT.heading,
+                                                                            fontSize: FONT_SIZE.sm + 1,
+                                                                            fontWeight: 700,
+                                                                            color: COLOR.dark,
+                                                                        }}
+                                                                    >
+                                                                        {new Date(item.startedAt).toLocaleTimeString('ja-JP', {
+                                                                            hour: '2-digit',
+                                                                            minute: '2-digit',
+                                                                        })}
+                                                                    </span>
+                                                                    {getSessionBadgeLabel(item) && (
+                                                                        <span
+                                                                            style={{
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                padding: '4px 8px',
+                                                                                borderRadius: RADIUS.full,
+                                                                                background: item.sessionLabel === 'みんなで'
+                                                                                    ? 'rgba(9,132,227,0.12)'
+                                                                                    : 'rgba(43,186,160,0.1)',
+                                                                                color: item.sessionLabel === 'みんなで' ? COLOR.info : COLOR.primaryDark,
+                                                                                fontFamily: FONT.body,
+                                                                                fontSize: FONT_SIZE.xs + 1,
+                                                                                fontWeight: 800,
+                                                                            }}
+                                                                        >
+                                                                            {getSessionBadgeLabel(item)}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <div
+                                                                    style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 6,
+                                                                        flexWrap: 'wrap',
+                                                                    }}
+                                                                >
+                                                                    <span
+                                                                        style={{
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            padding: '4px 8px',
+                                                                            borderRadius: RADIUS.full,
+                                                                            background: 'rgba(255,245,240,0.95)',
+                                                                            color: COLOR.dark,
+                                                                            fontFamily: FONT.body,
+                                                                            fontSize: FONT_SIZE.xs + 1,
+                                                                            fontWeight: 800,
+                                                                        }}
+                                                                    >
+                                                                        {formatDuration(item.totalSeconds)}
+                                                                    </span>
+                                                                    <span
+                                                                        style={{
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            padding: '4px 8px',
+                                                                            borderRadius: RADIUS.full,
+                                                                            background: 'rgba(232,248,240,0.95)',
+                                                                            color: COLOR.primaryDark,
+                                                                            fontFamily: FONT.body,
+                                                                            fontSize: FONT_SIZE.xs + 1,
+                                                                            fontWeight: 800,
+                                                                        }}
+                                                                    >
+                                                                        {item.completedTotal}種目
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            <div
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 8,
+                                                                    flexWrap: 'wrap',
+                                                                }}
+                                                            >
+                                                                {(item.completedExercises.length > 0
+                                                                    ? item.completedExercises.slice(0, 2)
+                                                                    : [{ id: 'fallback', name: 'ストレッチ', emoji: '🪄', count: 0 }]
+                                                                ).map((exercise) => (
+                                                                    <span
+                                                                        key={exercise.id}
+                                                                        style={{
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            gap: 6,
+                                                                            padding: '5px 9px',
+                                                                            borderRadius: RADIUS.full,
+                                                                            background: 'rgba(245,248,251,0.95)',
+                                                                            fontSize: FONT_SIZE.xs + 1,
+                                                                            fontWeight: 700,
+                                                                            color: COLOR.text,
+                                                                        }}
+                                                                    >
+                                                                        <span style={{ fontSize: 14 }}>{exercise.emoji}</span>
+                                                                        {exercise.name}
+                                                                    </span>
+                                                                ))}
+                                                                {item.completedExercises.length > 2 && (
+                                                                    <span
+                                                                        style={{
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            padding: '5px 9px',
+                                                                            borderRadius: RADIUS.full,
+                                                                            background: 'rgba(255,255,255,0.94)',
+                                                                            border: '1px solid rgba(233, 239, 244, 0.95)',
                                                                             fontFamily: FONT.body,
                                                                             fontSize: FONT_SIZE.xs + 1,
                                                                             fontWeight: 700,
-                                                                            color: COLOR.info,
+                                                                            color: COLOR.muted,
                                                                         }}
                                                                     >
-                                                                        みんなで！
+                                                                        +{item.completedExercises.length - 2}
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <div
-                                                                style={{
-                                                                    display: 'inline-flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    padding: '4px 8px',
-                                                                    borderRadius: RADIUS.full,
-                                                                    background: 'rgba(43, 186, 160, 0.1)',
-                                                                    color: COLOR.primaryDark,
-                                                                    fontFamily: FONT.body,
-                                                                    fontSize: FONT_SIZE.xs + 1,
-                                                                    fontWeight: 800,
-                                                                    whiteSpace: 'nowrap',
-                                                                }}
-                                                            >
-                                                                {item.completedExercises[0]?.name ?? 'ストレッチ'}
-                                                            </div>
-                                                        </div>
+                                                        </motion.div>
                                                     ))}
                                                 </div>
                                             </div>

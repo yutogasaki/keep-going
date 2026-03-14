@@ -125,6 +125,15 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
         const previousTab = get().currentTab;
         set({ currentTab: tab, previousTab });
     },
+    menuOpenIntent: null,
+    openMenuWithIntent: (intent) => set({
+        menuOpenIntent: {
+            tab: intent.tab,
+            placement: intent.placement ?? null,
+            requestId: Date.now(),
+        },
+    }),
+    clearMenuOpenIntent: () => set({ menuOpenIntent: null }),
 
     isInSession: false,
     sessionExerciseIds: null,

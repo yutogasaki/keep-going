@@ -142,4 +142,25 @@ describe('recordOverviewSummary', () => {
         expect(suggestion.body).toBe('はじめやすい ストレッチからでも いいよ');
         expect(suggestion.suggestedPlacement).toBe('stretch');
     });
+
+    it('does not suggest unavailable placements', () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(2026, 2, 14, 10, 0, 0));
+
+        const exerciseMapWithoutBarre = new Map([
+            ['S01', { name: '開脚', emoji: '🦵', placement: 'stretch' as const }],
+            ['S04', { name: 'ブリッジ', emoji: '🌈', placement: 'core' as const }],
+            ['S09', { name: '深呼吸', emoji: '🌬️', placement: 'ending' as const }],
+        ]);
+
+        const suggestion = buildRecordSuggestionSummary({
+            sessions: [
+                createSession({ id: 'recent', date: '2026-03-14', exerciseIds: ['S01', 'S09'] }),
+            ],
+            exerciseMap: exerciseMapWithoutBarre,
+        });
+
+        expect(suggestion.title).toBe('体幹をひとつ、どう？');
+        expect(suggestion.suggestedPlacement).toBe('core');
+    });
 });
