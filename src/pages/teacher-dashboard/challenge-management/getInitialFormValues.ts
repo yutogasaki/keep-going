@@ -2,6 +2,7 @@ import type { Challenge } from '../../../lib/challenges';
 import type { ChallengeFormValues } from './types';
 import { getDefaultDateRange } from './getDefaultDateRange';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
+import { inferDurationPresetFromChallenge } from './durationPresets';
 
 export function createDefaultChallengeFormValues(): ChallengeFormValues {
     const { startDate, endDate } = getDefaultDateRange();
@@ -11,10 +12,11 @@ export function createDefaultChallengeFormValues(): ChallengeFormValues {
         challengeType: 'exercise',
         windowType: 'calendar',
         goalType: 'total_count',
+        durationPreset: 'week',
         exerciseId: 'S01',
         targetMenuId: PRESET_GROUPS[0]?.id ?? '',
         menuSource: 'preset',
-        targetCount: 20,
+        targetCount: 5,
         dailyCap: 1,
         windowDays: 7,
         requiredDays: 5,
@@ -35,6 +37,7 @@ export function createChallengeFormValuesFromChallenge(challenge: Challenge): Ch
         challengeType: challenge.challengeType,
         windowType: challenge.windowType,
         goalType: challenge.goalType,
+        durationPreset: inferDurationPresetFromChallenge(challenge),
         exerciseId: challenge.exerciseId ?? 'S01',
         targetMenuId: challenge.targetMenuId ?? PRESET_GROUPS[0]?.id ?? '',
         menuSource: challenge.menuSource ?? 'preset',

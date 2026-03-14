@@ -1,9 +1,12 @@
+export type ChallengeDurationPreset = 'week' | 'two_weeks' | 'month' | 'custom';
+
 export interface ChallengeFormValues {
     title: string;
     description: string;
     challengeType: 'exercise' | 'menu';
     windowType: 'calendar' | 'rolling';
     goalType: 'total_count' | 'active_day';
+    durationPreset: ChallengeDurationPreset;
     exerciseId: string;
     targetMenuId: string;
     menuSource: 'preset' | 'teacher';

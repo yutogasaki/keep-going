@@ -7,6 +7,11 @@ import { sortTeacherContentByRecommendation } from '../../../lib/teacherExercise
 import { CANONICAL_TERMS } from '../../../lib/terminology';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../../lib/styles';
 import type { ChallengeFormValues } from './types';
+import {
+    applyDurationPreset,
+    CHALLENGE_DURATION_PRESET_OPTIONS,
+    getDurationPresetSummary,
+} from './durationPresets';
 
 interface ChallengeFormCardProps {
     values: ChallengeFormValues;
@@ -306,6 +311,8 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
 
     const selectedExercisePreview = exerciseSource === 'teacher' ? selectedTeacherExercise : selectedStandardExercise;
     const selectedMenuPreview = values.menuSource === 'teacher' ? selectedTeacherMenu : selectedPresetMenu;
+    const isCustomDuration = values.durationPreset === 'custom';
+    const durationSummary = getDurationPresetSummary(values);
 
     return (
         <div className="card" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -371,23 +378,40 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                                 <button
                                     key={option.id}
                                     type="button"
-                                    onClick={() => onChange(
-                                        option.id === 'calendar'
+                                    onClick={() => {
+                                        const nextWindowType = option.id;
+                                        const basePatch = nextWindowType === 'calendar'
                                             ? {
-                                                windowType: 'calendar',
-                                                goalType: 'total_count',
-                                                targetCount: Math.max(1, values.targetCount || 20),
+                                                windowType: 'calendar' as const,
+                                                goalType: 'total_count' as const,
                                                 dailyCap: Math.max(1, values.dailyCap || 1),
                                             }
                                             : {
-                                                windowType: 'rolling',
-                                                goalType: 'active_day',
-                                                windowDays: Math.max(1, values.windowDays || 7),
-                                                requiredDays: Math.max(1, values.requiredDays || 5),
-                                                targetCount: Math.max(1, values.requiredDays || 5),
+                                                windowType: 'rolling' as const,
+                                                goalType: 'active_day' as const,
                                                 dailyCap: 1,
-                                            },
-                                    )}
+                                            };
+
+                                        if (values.durationPreset === 'custom') {
+                                            onChange({
+                                                ...basePatch,
+                                                targetCount: nextWindowType === 'rolling'
+                                                    ? Math.max(1, values.requiredDays || 5)
+                                                    : Math.max(1, values.targetCount || 5),
+                                            });
+                                            return;
+                                        }
+
+                                        onChange({
+                                            ...basePatch,
+                                            ...applyDurationPreset({
+                                                durationPreset: values.durationPreset,
+                                                windowType: nextWindowType,
+                                                startDate: values.startDate,
+                                                windowDays: values.windowDays,
+                                            }, values.durationPreset),
+                                        });
+                                    }}
                                     style={{
                                         ...optionButtonBaseStyle,
                                         ...(selected ? {
@@ -659,31 +683,19 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
 
                 <div style={metricGridStyle}>
                     {values.windowType === 'rolling' ? (
-                        <>
-                            <Field label="チャレンジ日数" hint="参加した日から数える日数です。">
-                                <input
-                                    type="number"
-                                    min={1}
-                                    value={values.windowDays}
-                                    onChange={(event) => onChange({ windowDays: Number(event.target.value) })}
-                                    style={inputStyle}
-                                />
-                            </Field>
-
-                            <Field label="必要な日数" hint="対象をやった日を何日集めたらクリアかを決めます。">
-                                <input
-                                    type="number"
-                                    min={1}
-                                    max={Math.max(1, values.windowDays)}
-                                    value={values.requiredDays}
-                                    onChange={(event) => onChange({
-                                        requiredDays: Number(event.target.value),
-                                        targetCount: Number(event.target.value),
-                                    })}
-                                    style={inputStyle}
-                                />
-                            </Field>
-                        </>
+                        <Field label="必要な日数" hint="対象をやった日を何日集めたらクリアかを決めます。">
+                            <input
+                                type="number"
+                                min={1}
+                                max={Math.max(1, values.windowDays)}
+                                value={values.requiredDays}
+                                onChange={(event) => onChange({
+                                    requiredDays: Number(event.target.value),
+                                    targetCount: Number(event.target.value),
+                                })}
+                                style={inputStyle}
+                            />
+                        </Field>
                     ) : (
                         <>
                             <Field label="目標回数" hint="クリアまでに必要な合計回数です。">
@@ -726,30 +738,119 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
             <Section
                 title="期間"
                 description={values.windowType === 'rolling'
-                    ? 'ホームに表示して参加できる期間を決めます。参加後の進捗は、参加した日から別で数えます。'
-                    : 'いつからいつまで表示するかを決めます。'}
+                    ? 'まずはおすすめの期間を選ぶだけで作れます。細かく決めたいときだけカスタムを開きます。'
+                    : 'まずはおすすめの期間を選ぶだけで作れます。開始日や終了日を細かく決めたいときだけカスタムを開きます。'}
             >
-                <div style={metricGridStyle}>
-                    <Field label="開始日">
-                        <input
-                            type="date"
-                            value={values.startDate}
-                            onChange={(event) => onChange({ startDate: event.target.value })}
-                            style={inputStyle}
-                        />
-                    </Field>
-                    <Field label="終了日">
-                        <input
-                            type="date"
-                            value={values.endDate}
-                            onChange={(event) => onChange({ endDate: event.target.value })}
-                            style={{
-                                ...inputStyle,
-                                ...(dateError ? { border: '1px solid #E17055' } : {}),
-                            }}
-                        />
-                    </Field>
-                </div>
+                <Field label="期間プリセット">
+                    <div style={optionGridStyle}>
+                        {CHALLENGE_DURATION_PRESET_OPTIONS.map((option) => {
+                            const selected = values.durationPreset === option.id;
+                            return (
+                                <button
+                                    key={option.id}
+                                    type="button"
+                                    onClick={() => {
+                                        if (option.id === 'custom') {
+                                            onChange({ durationPreset: 'custom' });
+                                            return;
+                                        }
+
+                                        onChange(applyDurationPreset({
+                                            durationPreset: values.durationPreset,
+                                            windowType: values.windowType,
+                                            startDate: values.startDate,
+                                            windowDays: values.windowDays,
+                                        }, option.id));
+                                    }}
+                                    style={{
+                                        ...optionButtonBaseStyle,
+                                        ...(selected ? {
+                                            border: '2px solid #2BBAA0',
+                                            background: '#E8F8F0',
+                                        } : null),
+                                    }}
+                                >
+                                    <span style={{
+                                        fontFamily: FONT.body,
+                                        fontSize: FONT_SIZE.sm,
+                                        fontWeight: 800,
+                                        color: COLOR.dark,
+                                    }}>
+                                        {option.label}
+                                    </span>
+                                    <span style={{
+                                        fontFamily: FONT.body,
+                                        fontSize: FONT_SIZE.xs + 1,
+                                        color: COLOR.muted,
+                                        lineHeight: 1.5,
+                                    }}>
+                                        {option.description}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </Field>
+
+                {!isCustomDuration ? (
+                    <div style={selectionPreviewStyle}>
+                        <div style={previewIconStyle}>🗓️</div>
+                        <div style={{ minWidth: 0 }}>
+                            <div style={{
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.sm,
+                                fontWeight: 800,
+                                color: COLOR.dark,
+                            }}>
+                                {values.durationPreset === 'week' ? '1週間' : values.durationPreset === 'two_weeks' ? '2週間' : '1ヶ月'}で作成
+                            </div>
+                            <div style={{
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.xs + 1,
+                                color: COLOR.muted,
+                                lineHeight: 1.6,
+                            }}>
+                                {durationSummary}
+                            </div>
+                        </div>
+                    </div>
+                ) : null}
+
+                {isCustomDuration ? (
+                    <div style={metricGridStyle}>
+                        {values.windowType === 'rolling' ? (
+                            <Field label="チャレンジ日数">
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={values.windowDays}
+                                    onChange={(event) => onChange({ windowDays: Number(event.target.value) })}
+                                    style={inputStyle}
+                                />
+                            </Field>
+                        ) : null}
+
+                        <Field label="開始日">
+                            <input
+                                type="date"
+                                value={values.startDate}
+                                onChange={(event) => onChange({ startDate: event.target.value })}
+                                style={inputStyle}
+                            />
+                        </Field>
+                        <Field label="終了日">
+                            <input
+                                type="date"
+                                value={values.endDate}
+                                onChange={(event) => onChange({ endDate: event.target.value })}
+                                style={{
+                                    ...inputStyle,
+                                    ...(dateError ? { border: '1px solid #E17055' } : {}),
+                                }}
+                            />
+                        </Field>
+                    </div>
+                ) : null}
 
                 {dateError ? (
                     <div style={{
