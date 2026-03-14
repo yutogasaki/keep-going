@@ -2,6 +2,7 @@ import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Play, Star } from 'lucide-react';
 import { isRestExercise, type Exercise } from '../../../data/exercises';
+import type { PersonalChallengeCreateSeed } from '../../../components/PersonalChallengeFormSheet';
 import { getExercisePlacementLabel } from '../../../data/exercisePlacement';
 import { ExerciseIcon } from '../../../components/ExerciseIcon';
 import { getTeacherExerciseVisibilityLabel } from '../../../lib/teacherExerciseMetadata';
@@ -27,6 +28,7 @@ interface StandardExerciseCardProps {
     onToggleExpand: (exerciseId: string) => void;
     onToggleSelect?: (exerciseId: string) => void;
     onStartExercise: (exerciseId: string) => void;
+    onCreatePersonalChallenge?: (seed: PersonalChallengeCreateSeed) => void;
 }
 
 function getInternalLabel(internal: Exercise['internal']): string | null {
@@ -49,6 +51,7 @@ export const StandardExerciseCard: React.FC<StandardExerciseCardProps> = ({
     onToggleExpand,
     onToggleSelect,
     onStartExercise,
+    onCreatePersonalChallenge,
 }) => {
     const internalLabel = getInternalLabel(exercise.internal);
     const isRest = isRestExercise(exercise);
@@ -183,7 +186,7 @@ export const StandardExerciseCard: React.FC<StandardExerciseCardProps> = ({
 
                 {!selectionMode ? (
                     <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                        {exercise.description ? (
+                        {exercise.description || onCreatePersonalChallenge ? (
                             <button
                                 onClick={(event) => {
                                     event.stopPropagation();
@@ -215,7 +218,7 @@ export const StandardExerciseCard: React.FC<StandardExerciseCardProps> = ({
             </div>
 
             <AnimatePresence>
-                {!selectionMode && expanded && exercise.description ? (
+                {!selectionMode && expanded && (exercise.description || onCreatePersonalChallenge) ? (
                     <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
@@ -224,16 +227,49 @@ export const StandardExerciseCard: React.FC<StandardExerciseCardProps> = ({
                         style={{ overflow: 'hidden', borderTop: '1px solid rgba(0,0,0,0.05)' }}
                     >
                         <div style={{ padding: '10px 16px 12px' }}>
-                            <p
-                                style={{
-                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                    fontSize: 12,
-                                    color: '#8395A7',
-                                    margin: 0,
-                                }}
-                            >
-                                {exercise.description}
-                            </p>
+                            {exercise.description ? (
+                                <p
+                                    style={{
+                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                        fontSize: 12,
+                                        color: '#8395A7',
+                                        margin: 0,
+                                    }}
+                                >
+                                    {exercise.description}
+                                </p>
+                            ) : null}
+                            {onCreatePersonalChallenge ? (
+                                <div style={{ marginTop: exercise.description ? 10 : 0 }}>
+                                    <button
+                                        type="button"
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            onCreatePersonalChallenge({
+                                                challengeType: 'exercise',
+                                                exerciseSource: exercise.origin === 'teacher' ? 'teacher' : 'standard',
+                                                exerciseId: exercise.id,
+                                                description: exercise.description ?? '',
+                                                iconEmoji: exercise.emoji,
+                                            });
+                                        }}
+                                        style={{
+                                            width: '100%',
+                                            minHeight: 40,
+                                            borderRadius: 10,
+                                            border: '1px solid rgba(43,186,160,0.16)',
+                                            background: 'linear-gradient(135deg, #F8FFFD, #F0FBF7)',
+                                            color: '#1E7F6D',
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 12,
+                                            fontWeight: 800,
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        この種目で じぶんチャレンジをつくる
+                                    </button>
+                                </div>
+                            ) : null}
                         </div>
                     </motion.div>
                 ) : null}

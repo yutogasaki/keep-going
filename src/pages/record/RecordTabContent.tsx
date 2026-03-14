@@ -15,6 +15,8 @@ export const RecordTabContent: React.FC<RecordTabContentProps> = ({
     topExercises,
     historySections,
     onSuggestionClick,
+    canCreatePersonalChallenge,
+    onCreatePersonalChallengeFromExercise,
 }) => {
     return (
         <motion.div
@@ -28,7 +30,11 @@ export const RecordTabContent: React.FC<RecordTabContentProps> = ({
             <TodayHeroCard summary={todaySummary} />
             <RecordSuggestionCard suggestion={suggestion} onClick={onSuggestionClick} />
             <TwoWeekTrendSection summary={twoWeekSummary} />
-            <TopExercisesSection topExercises={topExercises} />
+            <TopExercisesSection
+                topExercises={topExercises}
+                canCreatePersonalChallenge={canCreatePersonalChallenge}
+                onCreatePersonalChallenge={onCreatePersonalChallengeFromExercise}
+            />
             <SessionHistorySection loading={loading} sections={historySections} />
         </motion.div>
     );

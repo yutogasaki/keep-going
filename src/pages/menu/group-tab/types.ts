@@ -1,6 +1,7 @@
 import type { ExercisePlacement } from '../../../data/exercisePlacement';
 import type { MenuGroup } from '../../../data/menuGroups';
 import type { PublicMenu } from '../../../lib/publicMenus';
+import type { PersonalChallengeCreateSeed } from '../../../components/PersonalChallengeFormSheet';
 import type { MenuUsageStats } from '../menu-page/useMenuUsageStats';
 
 export interface MenuGroupTabProps {
@@ -26,4 +27,5 @@ export interface MenuGroupTabProps {
     onOpenPublicBrowser: () => void;
     teacherMenuIds?: Set<string>;
     isNewTeacherContent?: (id: string) => boolean;
+    onCreatePersonalChallenge?: (seed: PersonalChallengeCreateSeed) => void;
 }

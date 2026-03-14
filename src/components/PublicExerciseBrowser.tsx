@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2 } from 'lucide-react';
+import type { PersonalChallengeCreateSeed } from './PersonalChallengeFormSheet';
 import { dedupeExercisesByIdentity } from '../lib/publicExerciseUtils';
 import { fetchPopularExercises, type PublicExercise } from '../lib/publicExercises';
 import { ExerciseDetailSheet } from './ExerciseDetailSheet';
@@ -14,9 +15,15 @@ interface PublicExerciseBrowserProps {
     open: boolean;
     onClose: () => void;
     onImported?: () => void;
+    onCreatePersonalChallenge?: (seed: PersonalChallengeCreateSeed) => void | Promise<void>;
 }
 
-export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ open, onClose, onImported }) => {
+export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({
+    open,
+    onClose,
+    onImported,
+    onCreatePersonalChallenge,
+}) => {
     const [exercises, setExercises] = useState<PublicExercise[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -191,6 +198,7 @@ export const PublicExerciseBrowser: React.FC<PublicExerciseBrowserProps> = ({ op
                 exercise={selectedExercise}
                 onClose={() => setSelectedExercise(null)}
                 onImported={onImported}
+                onCreatePersonalChallenge={onCreatePersonalChallenge}
                 onTry={handleTry}
             />
         </>

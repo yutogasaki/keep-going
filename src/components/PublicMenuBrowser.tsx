@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2 } from 'lucide-react';
+import type { PersonalChallengeCreateSeed } from './PersonalChallengeFormSheet';
 import { dedupeMenusByIdentity, fetchPopularMenus, type PublicMenu } from '../lib/publicMenus';
 import { MenuDetailSheet } from './MenuDetailSheet';
 import { useAppStore } from '../store/useAppStore';
@@ -13,9 +14,15 @@ interface PublicMenuBrowserProps {
     open: boolean;
     onClose: () => void;
     onImported?: () => void;
+    onCreatePersonalChallenge?: (seed: PersonalChallengeCreateSeed) => void | Promise<void>;
 }
 
-export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onClose, onImported }) => {
+export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({
+    open,
+    onClose,
+    onImported,
+    onCreatePersonalChallenge,
+}) => {
     const [menus, setMenus] = useState<PublicMenu[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
@@ -198,6 +205,7 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({ open, onCl
                 menu={selectedMenu}
                 onClose={() => setSelectedMenu(null)}
                 onImported={onImported}
+                onCreatePersonalChallenge={onCreatePersonalChallenge}
                 onTry={handleTry}
             />
         </>

@@ -14,4 +14,6 @@ export interface RecordTabContentProps {
     topExercises: RecordTopExerciseChip[];
     historySections: RecordHistoryAccordionSection[];
     onSuggestionClick: () => void;
+    canCreatePersonalChallenge?: boolean;
+    onCreatePersonalChallengeFromExercise?: (exercise: RecordTopExerciseChip) => void;
 }

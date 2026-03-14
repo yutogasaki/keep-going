@@ -13,6 +13,7 @@ export interface RecordExerciseDisplayInfo {
     name: string;
     emoji: string;
     placement?: ExercisePlacement;
+    source?: 'standard' | 'teacher' | 'custom';
 }
 
 export interface TodayRecordSummary {
@@ -56,6 +57,7 @@ export interface RecordTopExerciseChip {
     name: string;
     emoji: string;
     count: number;
+    exerciseSource?: 'standard' | 'teacher' | 'custom';
 }
 
 export interface RecordHistoryAccordionSection {
@@ -382,20 +384,24 @@ export function buildTopExerciseChips({
         }
     }
 
-    return Array.from(counts.entries())
-        .map(([id, count]) => {
-            const info = exerciseMap.get(id);
-            if (!info) {
-                return null;
-            }
-            return {
-                id,
-                name: info.name,
-                emoji: info.emoji,
-                count,
-            };
-        })
-        .filter((item): item is RecordTopExerciseChip => item !== null)
+    const chips: RecordTopExerciseChip[] = [];
+
+    for (const [id, count] of Array.from(counts.entries())) {
+        const info = exerciseMap.get(id);
+        if (!info) {
+            continue;
+        }
+
+        chips.push({
+            id,
+            name: info.name,
+            emoji: info.emoji,
+            count,
+            exerciseSource: info.source ?? 'standard',
+        });
+    }
+
+    return chips
         .sort((a, b) => {
             if (b.count !== a.count) {
                 return b.count - a.count;

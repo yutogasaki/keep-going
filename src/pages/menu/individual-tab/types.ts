@@ -1,5 +1,6 @@
 import type { Exercise } from '../../../data/exercises';
 import type { ExercisePlacement } from '../../../data/exercisePlacement';
+import type { PersonalChallengeCreateSeed } from '../../../components/PersonalChallengeFormSheet';
 import type { CustomExercise } from '../../../lib/db';
 import type { PublicExercise } from '../../../lib/publicExercises';
 import type { MenuUsageStats } from '../menu-page/useMenuUsageStats';
@@ -31,4 +32,5 @@ export interface MenuIndividualTabProps {
     onOpenPublicExerciseBrowser?: () => void;
     focusCategory?: ExercisePlacement | null;
     focusRequestId?: number;
+    onCreatePersonalChallenge?: (seed: PersonalChallengeCreateSeed) => void;
 }

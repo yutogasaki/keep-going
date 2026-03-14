@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
 import { PublicExerciseBrowser } from '../components/PublicExerciseBrowser';
+import {
+    PersonalChallengeFormSheet,
+    type PersonalChallengeCreateSeed,
+} from '../components/PersonalChallengeFormSheet';
 import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
@@ -31,6 +35,8 @@ export const MenuPage: React.FC = () => {
     const [deleteExId, setDeleteExId] = useState<string | null>(null);
     const [focusedPlacement, setFocusedPlacement] = useState<ExercisePlacement | null>(null);
     const [focusRequestId, setFocusRequestId] = useState(0);
+    const [personalChallengeSeed, setPersonalChallengeSeed] = useState<PersonalChallengeCreateSeed | null>(null);
+    const [personalChallengeFormOpen, setPersonalChallengeFormOpen] = useState(false);
     const usageStats = useMenuUsageStats();
 
     const {
@@ -79,6 +85,7 @@ export const MenuPage: React.FC = () => {
         handleStartCustomExercise,
         handleStartHybridSession,
         teacherExercises,
+        teacherMenus,
         teacherExerciseIds,
         teacherMenuIds,
         teacherExcludedExerciseIds,
@@ -100,6 +107,17 @@ export const MenuPage: React.FC = () => {
         startHybridSession,
         updateUserSettings,
     });
+
+    const canCreatePersonalChallenge = !isTogetherMode && currentUsers.length === 1;
+    const personalChallengeMember = canCreatePersonalChallenge ? currentUsers[0] ?? null : null;
+
+    const openPersonalChallengeForm = (seed: PersonalChallengeCreateSeed) => {
+        if (!canCreatePersonalChallenge) {
+            return;
+        }
+        setPersonalChallengeSeed(seed);
+        setPersonalChallengeFormOpen(true);
+    };
 
     useEffect(() => {
         if (currentTab !== 'menu' || !menuOpenIntent) {
@@ -181,6 +199,7 @@ export const MenuPage: React.FC = () => {
                         onOpenPublicBrowser={() => setShowPublicBrowser(true)}
                         teacherMenuIds={teacherMenuIds}
                         isNewTeacherContent={isNewTeacherContent}
+                        onCreatePersonalChallenge={canCreatePersonalChallenge ? openPersonalChallengeForm : undefined}
                     />
                 )}
 
@@ -207,6 +226,7 @@ export const MenuPage: React.FC = () => {
                         onStartHybridSession={handleStartHybridSession}
                         focusCategory={focusedPlacement}
                         focusRequestId={focusRequestId}
+                        onCreatePersonalChallenge={canCreatePersonalChallenge ? openPersonalChallengeForm : undefined}
                     />
                 )}
             </ScreenScaffold>
@@ -232,12 +252,39 @@ export const MenuPage: React.FC = () => {
                 open={showPublicBrowser}
                 onClose={() => setShowPublicBrowser(false)}
                 onImported={loadCustomData}
+                onCreatePersonalChallenge={canCreatePersonalChallenge ? async (seed) => {
+                    await loadCustomData();
+                    setShowPublicBrowser(false);
+                    openPersonalChallengeForm(seed);
+                } : undefined}
             />
 
             <PublicExerciseBrowser
                 open={showPublicExerciseBrowser}
                 onClose={() => setShowPublicExerciseBrowser(false)}
                 onImported={loadCustomData}
+                onCreatePersonalChallenge={canCreatePersonalChallenge ? async (seed) => {
+                    await loadCustomData();
+                    setShowPublicExerciseBrowser(false);
+                    openPersonalChallengeForm(seed);
+                } : undefined}
+            />
+
+            <PersonalChallengeFormSheet
+                open={personalChallengeFormOpen}
+                member={personalChallengeMember}
+                teacherExercises={teacherExercises}
+                teacherMenus={teacherMenus}
+                customExercises={customExercises}
+                customMenus={customGroups}
+                initialSeed={personalChallengeSeed}
+                onClose={() => {
+                    setPersonalChallengeFormOpen(false);
+                    setPersonalChallengeSeed(null);
+                }}
+                onSaved={() => {
+                    setPersonalChallengeSeed(null);
+                }}
             />
 
             <ConfirmDeleteModal

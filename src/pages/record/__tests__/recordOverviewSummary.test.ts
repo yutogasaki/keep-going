@@ -104,9 +104,9 @@ describe('recordOverviewSummary', () => {
         expect(suggestion.targetTab).toBe('group');
 
         expect(topExercises).toEqual([
-            { id: 'S01', name: '開脚', emoji: '🦵', count: 4 },
-            { id: 'S02', name: '前屈', emoji: '🙇', count: 3 },
-            { id: 'S99', name: '深呼吸', emoji: '🌬️', count: 1 },
+            { id: 'S01', name: '開脚', emoji: '🦵', count: 4, exerciseSource: 'standard' },
+            { id: 'S02', name: '前屈', emoji: '🙇', count: 3, exerciseSource: 'standard' },
+            { id: 'S99', name: '深呼吸', emoji: '🌬️', count: 1, exerciseSource: 'standard' },
         ]);
     });
 

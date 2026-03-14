@@ -224,6 +224,7 @@ export function useMenuPageData({
         handleStartCustomExercise,
         handleStartHybridSession,
         teacherExercises: teacherContent.teacherExercises,
+        teacherMenus: teacherContent.teacherMenus,
         teacherExerciseIds: teacherContent.teacherExerciseIds,
         teacherMenuIds: teacherContent.teacherMenuIds,
         teacherExcludedExerciseIds: teacherContent.teacherExcludedExerciseIds,

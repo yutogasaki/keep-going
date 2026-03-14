@@ -1,6 +1,7 @@
 import React from 'react';
 import { Download, Edit2, EyeOff, Trash2, Upload } from 'lucide-react';
 import type { MenuGroup } from '../../../data/menuGroups';
+import type { PersonalChallengeCreateSeed } from '../../../components/PersonalChallengeFormSheet';
 import type { GroupCardExerciseSummary } from './groupCardUtils';
 
 interface GroupCardDetailsProps {
@@ -14,6 +15,7 @@ interface GroupCardDetailsProps {
     onDelete?: () => void;
     onPublish?: () => void;
     onUnpublish?: () => void;
+    onCreatePersonalChallenge?: (seed: PersonalChallengeCreateSeed) => void;
 }
 
 interface GroupCardActionButtonProps {
@@ -83,7 +85,14 @@ export const GroupCardDetails: React.FC<GroupCardDetailsProps> = ({
     onDelete,
     onPublish,
     onUnpublish,
+    onCreatePersonalChallenge,
 }) => {
+    const menuSource = group.origin === 'teacher'
+        ? 'teacher'
+        : group.isPreset
+            ? 'preset'
+            : 'custom';
+
     return (
         <div id={detailsId} role="region" aria-label={`${group.name}の詳細`}>
             <div style={{ padding: '10px 16px 12px' }}>
@@ -130,6 +139,23 @@ export const GroupCardDetails: React.FC<GroupCardDetailsProps> = ({
                     >
                         <Download size={11} />
                         {downloadCount}人がつかってるよ
+                    </div>
+                ) : null}
+                {onCreatePersonalChallenge ? (
+                    <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                        <GroupCardActionButton
+                            tone="primary"
+                            label="じぶんチャレンジ"
+                            icon={<Upload size={12} />}
+                            onClick={() => onCreatePersonalChallenge({
+                                challengeType: 'menu',
+                                menuSource,
+                                targetMenuId: group.id,
+                                description: group.description ?? '',
+                                iconEmoji: group.emoji,
+                            })}
+                            ariaLabel={`${group.name}でじぶんチャレンジをつくる`}
+                        />
                     </div>
                 ) : null}
                 {isCustom ? (

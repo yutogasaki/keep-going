@@ -51,6 +51,7 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
     onStartHybridSession,
     focusCategory,
     focusRequestId,
+    onCreatePersonalChallenge,
 }) => {
     const selectionEnabled = Boolean(onStartHybridSession);
     const [selectionMode, setSelectionMode] = useState(false);
@@ -275,6 +276,7 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                                     onToggleExpand={handleToggleExpand}
                                     onToggleSelect={handleToggleSelect}
                                     onStartExercise={onStartExercise}
+                                    onCreatePersonalChallenge={onCreatePersonalChallenge}
                                 />
                             ) : (
                                 <CustomExerciseCard
@@ -295,6 +297,7 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
                                     onStart={onStartCustomExercise}
                                     onPublish={onPublishExercise}
                                     onUnpublish={onUnpublishExercise}
+                                    onCreatePersonalChallenge={onCreatePersonalChallenge}
                                 />
                             ),
                         )}

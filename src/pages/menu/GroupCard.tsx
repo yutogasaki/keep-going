@@ -2,6 +2,7 @@ import React, { useId, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ExercisePlacement } from '../../data/exercisePlacement';
 import type { MenuGroup } from '../../data/menuGroups';
+import type { PersonalChallengeCreateSeed } from '../../components/PersonalChallengeFormSheet';
 import { GroupCardDetails } from './group-card/GroupCardDetails';
 import { GroupCardMainRow } from './group-card/GroupCardMainRow';
 import { buildGroupCardSummary } from './group-card/groupCardUtils';
@@ -21,6 +22,7 @@ interface GroupCardProps {
     downloadCount?: number;
     isTeacher?: boolean;
     isNew?: boolean;
+    onCreatePersonalChallenge?: (seed: PersonalChallengeCreateSeed) => void;
 }
 
 export const GroupCard: React.FC<GroupCardProps> = ({
@@ -38,6 +40,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
     downloadCount,
     isTeacher,
     isNew,
+    onCreatePersonalChallenge,
 }) => {
     const [expanded, setExpanded] = useState(false);
     const detailsId = useId();
@@ -85,6 +88,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
                             onDelete={onDelete}
                             onPublish={onPublish}
                             onUnpublish={onUnpublish}
+                            onCreatePersonalChallenge={onCreatePersonalChallenge}
                         />
                     </motion.div>
                 ) : null}

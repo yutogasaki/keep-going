@@ -1,15 +1,26 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { CalendarDays, Home } from 'lucide-react';
+import {
+    PersonalChallengeFormSheet,
+    type PersonalChallengeCreateSeed,
+} from '../components/PersonalChallengeFormSheet';
+import type { MenuGroup } from '../data/menuGroups';
 import { PageHeader } from '../components/PageHeader';
 import { ScreenScaffold } from '../components/ScreenScaffold';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { SCREEN_PADDING_X } from '../lib/styles';
-import { getAllSessions, getCustomExercises, getTodayKey, type SessionRecord } from '../lib/db';
+import { getCustomGroups } from '../lib/customGroups';
+import { getAllSessions, getCustomExercises, getTodayKey, type CustomExercise, type SessionRecord } from '../lib/db';
 import { subscribeTeacherContentUpdated } from '../lib/teacherContentEvents';
 import { EXERCISES } from '../data/exercises';
 import { getPresetsForClass } from '../data/menuGroups';
-import { fetchTeacherExercises } from '../lib/teacherContent';
+import {
+    fetchTeacherExercises,
+    fetchTeacherMenus,
+    type TeacherExercise,
+    type TeacherMenu,
+} from '../lib/teacherContent';
 import { useAppStore } from '../store/useAppStore';
 import type { ChibifuwaRecord, PastFuwafuwaRecord } from '../store/useAppStore';
 import { getMinClassLevel } from './menu/menuPageUtils';
@@ -20,6 +31,7 @@ import { buildRecordHistoryDays } from './record/recordHistorySummary';
 import {
     buildRecordHistoryAccordionSections,
     buildRecordSuggestionSummary,
+    type RecordTopExerciseChip,
     buildTodayRecordSummary,
     buildTopExerciseChips,
     buildTwoWeekRecordSummary,
@@ -32,6 +44,7 @@ type ExerciseRecordInfo = {
     name: string;
     emoji: string;
     placement?: ExercisePlacement;
+    source?: 'standard' | 'teacher' | 'custom';
 };
 
 export const RecordPage: React.FC = () => {
@@ -41,6 +54,12 @@ export const RecordPage: React.FC = () => {
     const [selectedFuwafuwa, setSelectedFuwafuwa] = useState<PastFuwafuwaRecord | null>(null);
     const [selectedBadge, setSelectedBadge] = useState<ChibifuwaRecord | null>(null);
     const [exerciseMap, setExerciseMap] = useState<Map<string, ExerciseRecordInfo>>(new Map());
+    const [customExercises, setCustomExercises] = useState<CustomExercise[]>([]);
+    const [customMenus, setCustomMenus] = useState<MenuGroup[]>([]);
+    const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
+    const [teacherMenus, setTeacherMenus] = useState<TeacherMenu[]>([]);
+    const [personalChallengeSeed, setPersonalChallengeSeed] = useState<PersonalChallengeCreateSeed | null>(null);
+    const [personalChallengeFormOpen, setPersonalChallengeFormOpen] = useState(false);
 
     const users = useAppStore((state) => state.users);
     const currentTab = useAppStore((state) => state.currentTab);
@@ -55,6 +74,8 @@ export const RecordPage: React.FC = () => {
         () => users.filter((user) => sessionUserIds.includes(user.id)),
         [users, sessionUserIds],
     );
+    const canCreatePersonalChallenge = currentViewUsers.length === 1;
+    const personalChallengeMember = canCreatePersonalChallenge ? currentViewUsers[0] ?? null : null;
     const pastFuwafuwas = useMemo(
         () => currentViewUsers
             .flatMap((user) => user.pastFuwafuwas || [])
@@ -79,35 +100,50 @@ export const RecordPage: React.FC = () => {
                 name: exercise.name,
                 emoji: exercise.emoji,
                 placement: exercise.placement,
+                source: 'standard',
             });
         }
 
-        setExerciseMap(new Map(nextMap));
+        const [
+            nextCustomExercises,
+            nextCustomMenus,
+            nextTeacherExercises,
+            nextTeacherMenus,
+        ] = await Promise.all([
+            getCustomExercises(),
+            getCustomGroups(),
+            fetchTeacherExercises(forceRefresh).catch((error) => {
+                console.warn('Failed to load teacher exercises for record page', error);
+                return [] as TeacherExercise[];
+            }),
+            fetchTeacherMenus(forceRefresh).catch((error) => {
+                console.warn('Failed to load teacher menus for record page', error);
+                return [] as TeacherMenu[];
+            }),
+        ]);
 
-        const customExercises = await getCustomExercises();
-        for (const exercise of customExercises) {
+        for (const exercise of nextCustomExercises) {
             nextMap.set(exercise.id, {
                 name: exercise.name,
                 emoji: exercise.emoji,
                 placement: exercise.placement,
+                source: 'custom',
             });
         }
 
-        setExerciseMap(new Map(nextMap));
-
-        try {
-            const teacherExercises = await fetchTeacherExercises(forceRefresh);
-            for (const exercise of teacherExercises) {
-                nextMap.set(exercise.id, {
-                    name: exercise.name,
-                    emoji: exercise.emoji,
-                    placement: exercise.placement,
-                });
-            }
-        } catch (error) {
-            console.warn('Failed to load teacher exercises for record page', error);
+        for (const exercise of nextTeacherExercises) {
+            nextMap.set(exercise.id, {
+                name: exercise.name,
+                emoji: exercise.emoji,
+                placement: exercise.placement,
+                source: 'teacher',
+            });
         }
 
+        setCustomExercises(nextCustomExercises);
+        setCustomMenus(nextCustomMenus);
+        setTeacherExercises(nextTeacherExercises);
+        setTeacherMenus(nextTeacherMenus);
         setExerciseMap(new Map(nextMap));
     }, []);
 
@@ -244,6 +280,21 @@ export const RecordPage: React.FC = () => {
         [historyDays, todayKey],
     );
 
+    const handleCreatePersonalChallengeFromExercise = useCallback((exercise: RecordTopExerciseChip) => {
+        if (!canCreatePersonalChallenge) {
+            return;
+        }
+
+        setPersonalChallengeSeed({
+            challengeType: 'exercise',
+            exerciseSource: exercise.exerciseSource ?? 'standard',
+            exerciseId: exercise.id,
+            title: `${exercise.name} をつづける`,
+            iconEmoji: exercise.emoji,
+        });
+        setPersonalChallengeFormOpen(true);
+    }, [canCreatePersonalChallenge]);
+
     return (
         <>
             <ScreenScaffold
@@ -318,6 +369,8 @@ export const RecordPage: React.FC = () => {
                                 suggestion={suggestion}
                                 topExercises={topExercises}
                                 historySections={historySections}
+                                canCreatePersonalChallenge={canCreatePersonalChallenge}
+                                onCreatePersonalChallengeFromExercise={handleCreatePersonalChallengeFromExercise}
                                 onSuggestionClick={() => {
                                     openMenuWithIntent({
                                         tab: suggestion.targetTab,
@@ -343,6 +396,23 @@ export const RecordPage: React.FC = () => {
                 selectedBadge={selectedBadge}
                 onCloseFuwafuwa={() => setSelectedFuwafuwa(null)}
                 onCloseBadge={() => setSelectedBadge(null)}
+            />
+
+            <PersonalChallengeFormSheet
+                open={personalChallengeFormOpen}
+                member={personalChallengeMember}
+                teacherExercises={teacherExercises}
+                teacherMenus={teacherMenus}
+                customExercises={customExercises}
+                customMenus={customMenus}
+                initialSeed={personalChallengeSeed}
+                onClose={() => {
+                    setPersonalChallengeFormOpen(false);
+                    setPersonalChallengeSeed(null);
+                }}
+                onSaved={() => {
+                    setPersonalChallengeSeed(null);
+                }}
             />
         </>
     );

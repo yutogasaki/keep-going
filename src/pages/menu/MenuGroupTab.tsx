@@ -35,6 +35,7 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
     onOpenPublicBrowser,
     teacherMenuIds,
     isNewTeacherContent,
+    onCreatePersonalChallenge,
 }) => {
     const [showAll, setShowAll] = useState(false);
     const [origin, setOrigin] = useState<OriginFilterId>('all');
@@ -158,6 +159,7 @@ export const MenuGroupTab: React.FC<MenuGroupTabProps> = ({
                                     downloadCount={published?.downloadCount}
                                     isTeacher={teacherMenuIds?.has(group.id)}
                                     isNew={isNewTeacherContent?.(group.id)}
+                                    onCreatePersonalChallenge={onCreatePersonalChallenge}
                                 />
                             );
                         })}

@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, Download, Edit2, EyeOff, Play, Trash2, Upload } from 'lucide-react';
 import { getExercisePlacementLabel } from '../../../data/exercisePlacement';
 import { ExerciseIcon } from '../../../components/ExerciseIcon';
+import type { PersonalChallengeCreateSeed } from '../../../components/PersonalChallengeFormSheet';
 import type { CustomExercise } from '../../../lib/db';
 import type { PublicExercise } from '../../../lib/publicExercises';
 import { ExerciseSelectionIndicator } from './ExerciseSelectionIndicator';
@@ -32,6 +33,7 @@ interface CustomExerciseCardProps {
     onStart: (exerciseId: string) => void;
     onPublish?: (exercise: CustomExercise) => void;
     onUnpublish?: (exercise: CustomExercise) => void;
+    onCreatePersonalChallenge?: (seed: PersonalChallengeCreateSeed) => void;
 }
 
 export const CustomExerciseCard: React.FC<CustomExerciseCardProps> = ({
@@ -51,6 +53,7 @@ export const CustomExerciseCard: React.FC<CustomExerciseCardProps> = ({
     onStart,
     onPublish,
     onUnpublish,
+    onCreatePersonalChallenge,
 }) => {
     const isPublished = Boolean(publishedExercise);
 
@@ -210,6 +213,33 @@ export const CustomExerciseCard: React.FC<CustomExerciseCardProps> = ({
                             ) : null}
 
                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                {onCreatePersonalChallenge ? (
+                                    <button
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            onCreatePersonalChallenge({
+                                                challengeType: 'exercise',
+                                                exerciseSource: 'custom',
+                                                exerciseId: exercise.id,
+                                                description: exercise.description ?? '',
+                                                iconEmoji: exercise.emoji,
+                                            });
+                                        }}
+                                        style={{
+                                            padding: '6px 12px',
+                                            borderRadius: 8,
+                                            border: '1px solid rgba(43,186,160,0.16)',
+                                            background: 'linear-gradient(135deg, #F8FFFD, #F0FBF7)',
+                                            cursor: 'pointer',
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 12,
+                                            color: '#1E7F6D',
+                                            fontWeight: 800,
+                                        }}
+                                    >
+                                        じぶんチャレンジ
+                                    </button>
+                                ) : null}
                                 <button
                                     onClick={(event) => {
                                         event.stopPropagation();

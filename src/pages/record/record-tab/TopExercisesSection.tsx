@@ -5,9 +5,15 @@ import type { RecordTopExerciseChip } from '../recordOverviewSummary';
 
 interface TopExercisesSectionProps {
     topExercises: RecordTopExerciseChip[];
+    canCreatePersonalChallenge?: boolean;
+    onCreatePersonalChallenge?: (exercise: RecordTopExerciseChip) => void;
 }
 
-export const TopExercisesSection: React.FC<TopExercisesSectionProps> = ({ topExercises }) => {
+export const TopExercisesSection: React.FC<TopExercisesSectionProps> = ({
+    topExercises,
+    canCreatePersonalChallenge = false,
+    onCreatePersonalChallenge,
+}) => {
     if (topExercises.length === 0) {
         return null;
     }
@@ -95,6 +101,25 @@ export const TopExercisesSection: React.FC<TopExercisesSectionProps> = ({ topExe
                         >
                             {exercise.count}回
                         </div>
+                        {canCreatePersonalChallenge && onCreatePersonalChallenge ? (
+                            <button
+                                type="button"
+                                onClick={() => onCreatePersonalChallenge(exercise)}
+                                style={{
+                                    border: '1px solid rgba(43, 186, 160, 0.16)',
+                                    borderRadius: RADIUS.full,
+                                    padding: '6px 10px',
+                                    background: 'linear-gradient(135deg, #F8FFFD, #F0FBF7)',
+                                    color: COLOR.primaryDark,
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.xs + 1,
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                じぶんチャレンジ
+                            </button>
+                        ) : null}
                     </motion.div>
                 ))}
             </div>
