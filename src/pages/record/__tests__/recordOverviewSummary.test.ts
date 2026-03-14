@@ -86,6 +86,7 @@ describe('recordOverviewSummary', () => {
 
         expect(summary.streak).toBe(3);
         expect(summary.activeDays).toBe(5);
+        expect(summary.totalMinutes).toBe(30);
         expect(summary.dominantTimeLine).toBe('会いやすいのは 夕方みたい');
         expect(summary.dominantPlacementLine).toBe('最近は のばす日が多め');
         expect(summary.dots).toHaveLength(14);
@@ -124,5 +125,21 @@ describe('recordOverviewSummary', () => {
         expect(sections[1].days.map((day) => day.date)).toEqual(['2026-03-11']);
         expect(sections[2].days.map((day) => day.date)).toEqual(['2026-03-07']);
         expect(sections[0].summaryLine).toBe('1回 / 6分');
+        expect(sections[1].summaryLine).toBe('1日 / 1回 / 6分');
+        expect(sections[2].summaryLine).toBe('1日 / 1回 / 6分');
+    });
+
+    it('uses a softer suggestion copy before any recent record exists', () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(2026, 2, 14, 10, 0, 0));
+
+        const suggestion = buildRecordSuggestionSummary({
+            sessions: [],
+            exerciseMap,
+        });
+
+        expect(suggestion.title).toBe('まずはひとつ、どう？');
+        expect(suggestion.body).toBe('はじめやすい ストレッチからでも いいよ');
+        expect(suggestion.suggestedPlacement).toBe('stretch');
     });
 });

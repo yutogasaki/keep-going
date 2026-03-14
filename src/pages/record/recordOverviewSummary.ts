@@ -38,6 +38,7 @@ export interface TwoWeekActivityDot {
 export interface TwoWeekRecordSummary {
     streak: number;
     activeDays: number;
+    totalMinutes: number;
     dominantTimeLine: string;
     dominantPlacementLine: string;
     dots: TwoWeekActivityDot[];
@@ -208,7 +209,7 @@ export function buildTodayRecordSummary({
         ),
         remainingMinutes: Math.max(0, Math.ceil((targetSeconds - totalSeconds) / 60)),
         firstSessionTime: sessionTimes[0] ?? null,
-        lastSessionTime: sessionTimes.at(-1) ?? null,
+        lastSessionTime: sessionTimes.length > 0 ? sessionTimes[sessionTimes.length - 1] : null,
         sessionTimes,
         rhythmLine: buildTodayRhythmLine(sortedSessions),
     };
@@ -245,18 +246,22 @@ export function buildTwoWeekRecordSummary({
         }
     }
 
-    const dominantTimeBucket = Array.from(timeBucketCounts.entries())
-        .sort((a, b) => b[1] - a[1])
-        .at(0)?.[0] ?? null;
+    const sortedTimeBuckets = Array.from(timeBucketCounts.entries())
+        .sort((a, b) => b[1] - a[1]);
+    const dominantTimeBucket = sortedTimeBuckets.length > 0 ? sortedTimeBuckets[0][0] : null;
 
-    const dominantPlacement = Array.from(placementCounts.entries())
+    const sortedPlacements = Array.from(placementCounts.entries())
         .filter(([placement]) => placement !== 'rest')
-        .sort((a, b) => b[1] - a[1])
-        .at(0)?.[0] ?? null;
+        .sort((a, b) => b[1] - a[1]);
+    const dominantPlacement = sortedPlacements.length > 0 ? sortedPlacements[0][0] : null;
+    const totalMinutes = Math.floor(
+        Array.from(secondsByDate.values()).reduce((sum, totalSeconds) => sum + totalSeconds, 0) / 60,
+    );
 
     return {
         streak: calculateStreak(sessions),
         activeDays: dates.filter((date) => (secondsByDate.get(date) ?? 0) > 0).length,
+        totalMinutes,
         dominantTimeLine: dominantTimeBucket
             ? `会いやすいのは ${getTimeBucketLabel(dominantTimeBucket)}みたい`
             : '会いやすいじかんは まだこれから',
@@ -285,9 +290,15 @@ export function buildRecordSuggestionSummary({
 }): RecordSuggestionSummary {
     const dates = new Set(Array.from({ length: 14 }, (_, index) => getDateKeyOffset(-(13 - index))));
     const recentSessions = sessions.filter((session) => dates.has(session.date));
+    const availablePlacements = ACTIONABLE_PLACEMENTS.filter((placement) =>
+        Array.from(exerciseMap.values()).some((exercise) => exercise.placement === placement),
+    );
+    const preferredDefaultPlacement = availablePlacements.includes('stretch')
+        ? 'stretch'
+        : availablePlacements[0] ?? 'stretch';
     const placementCounts = new Map<ExercisePlacement, number>();
 
-    for (const placement of ACTIONABLE_PLACEMENTS) {
+    for (const placement of availablePlacements) {
         placementCounts.set(placement, 0);
     }
 
@@ -301,7 +312,16 @@ export function buildRecordSuggestionSummary({
         }
     }
 
-    const suggestedPlacement = Array.from(placementCounts.entries())
+    if (recentSessions.length === 0) {
+        return {
+            title: 'まずはひとつ、どう？',
+            body: 'はじめやすい ストレッチからでも いいよ',
+            ctaLabel: 'みてみる',
+            suggestedPlacement: preferredDefaultPlacement,
+        };
+    }
+
+    const sortedSuggestedPlacements = Array.from(placementCounts.entries())
         .sort((a, b) => {
             if (a[1] !== b[1]) {
                 return a[1] - b[1];
@@ -309,8 +329,10 @@ export function buildRecordSuggestionSummary({
 
             const order = ['core', 'barre', 'ending', 'stretch'];
             return order.indexOf(a[0]) - order.indexOf(b[0]);
-        })
-        .at(0)?.[0] ?? 'core';
+        });
+    const suggestedPlacement = sortedSuggestedPlacements.length > 0
+        ? sortedSuggestedPlacements[0][0]
+        : preferredDefaultPlacement;
 
     switch (suggestedPlacement) {
     case 'stretch':
@@ -405,13 +427,19 @@ export function buildRecordHistoryAccordionSections({
         && compareDateKey(day.date, currentWeekStart) < 0
     ));
 
-    const buildSummaryLine = (days: RecordSessionHistoryDay[]) => {
+    const buildSummaryLine = (
+        days: RecordSessionHistoryDay[],
+        options?: { includeDayCount?: boolean },
+    ) => {
         if (days.length === 0) {
             return 'まだありません';
         }
 
         const totalSessions = days.reduce((sum, day) => sum + day.sessionCount, 0);
         const totalMinutes = Math.floor(days.reduce((sum, day) => sum + day.totalSeconds, 0) / 60);
+        if (options?.includeDayCount) {
+            return `${days.length}日 / ${totalSessions}回 / ${totalMinutes}分`;
+        }
         return `${totalSessions}回 / ${totalMinutes}分`;
     };
 
@@ -427,7 +455,7 @@ export function buildRecordHistoryAccordionSections({
         {
             id: 'thisWeek',
             label: '今週',
-            summaryLine: buildSummaryLine(thisWeekDays),
+            summaryLine: buildSummaryLine(thisWeekDays, { includeDayCount: true }),
             emptyLine: '今週ののこりは まだこれから',
             days: thisWeekDays,
             defaultExpanded: false,
@@ -435,7 +463,7 @@ export function buildRecordHistoryAccordionSections({
         {
             id: 'lastWeek',
             label: '先週',
-            summaryLine: buildSummaryLine(lastWeekDays),
+            summaryLine: buildSummaryLine(lastWeekDays, { includeDayCount: true }),
             emptyLine: '先週のきろくは ありません',
             days: lastWeekDays,
             defaultExpanded: false,

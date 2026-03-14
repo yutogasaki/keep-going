@@ -7,6 +7,20 @@ interface TwoWeekTrendSectionProps {
     summary: TwoWeekRecordSummary;
 }
 
+function getActiveDaysBadge(summary: TwoWeekRecordSummary): string {
+    if (summary.activeDays === 0) {
+        return 'これから';
+    }
+    return `${summary.activeDays}日 / ${summary.totalMinutes}分`;
+}
+
+function getTimeInsight(summary: TwoWeekRecordSummary): string {
+    if (summary.activeDays === 0) {
+        return '会いやすい時間は まだこれから';
+    }
+    return summary.dominantTimeLine.replace('会いやすいのは ', '').replace('みたい', 'に会いやすい');
+}
+
 function getDotColor(level: 0 | 1 | 2 | 3): string {
     switch (level) {
     case 1:
@@ -39,10 +53,9 @@ export const TwoWeekTrendSection: React.FC<TwoWeekTrendSectionProps> = ({ summar
     const streakLine = summary.streak > 0
         ? `${summary.streak}日つづいたよ`
         : 'これから いいながれ';
-    const statCards = [
-        { label: 'つづき', value: streakLine },
-        { label: '会えた日', value: `${summary.activeDays}日` },
-        { label: '会いやすい時間', value: summary.dominantTimeLine.replace('会いやすいのは ', '').replace('みたい', '') },
+    const insightChips = [
+        getTimeInsight(summary),
+        summary.dominantPlacementLine,
     ];
 
     return (
@@ -145,53 +158,8 @@ export const TwoWeekTrendSection: React.FC<TwoWeekTrendSectionProps> = ({ summar
                             fontWeight: 800,
                         }}
                     >
-                        14 DAYS
+                        {getActiveDaysBadge(summary)}
                     </div>
-                </div>
-
-                <div
-                    style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                        gap: 10,
-                    }}
-                >
-                    {statCards.map((card) => (
-                        <div
-                            key={card.label}
-                            style={{
-                                padding: '12px 10px',
-                                borderRadius: RADIUS.xl,
-                                background: 'rgba(255,255,255,0.62)',
-                                border: '1px solid rgba(255,255,255,0.72)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 6,
-                            }}
-                        >
-                            <div
-                                style={{
-                                    fontFamily: FONT.body,
-                                    fontSize: FONT_SIZE.xs + 1,
-                                    fontWeight: 700,
-                                    color: COLOR.muted,
-                                }}
-                            >
-                                {card.label}
-                            </div>
-                            <div
-                                style={{
-                                    fontFamily: FONT.body,
-                                    fontSize: FONT_SIZE.sm,
-                                    fontWeight: 800,
-                                    color: COLOR.dark,
-                                    lineHeight: 1.35,
-                                }}
-                            >
-                                {card.value}
-                            </div>
-                        </div>
-                    ))}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -248,34 +216,32 @@ export const TwoWeekTrendSection: React.FC<TwoWeekTrendSectionProps> = ({ summar
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <div
-                        style={{
-                            fontFamily: FONT.body,
-                            fontSize: FONT_SIZE.md,
-                            color: COLOR.text,
-                        }}
-                    >
-                        この2週間で {summary.activeDays}日会えた
-                    </div>
-                    <div
-                        style={{
-                            fontFamily: FONT.body,
-                            fontSize: FONT_SIZE.md,
-                            color: COLOR.text,
-                        }}
-                    >
-                        {summary.dominantTimeLine}
-                    </div>
-                    <div
-                        style={{
-                            fontFamily: FONT.body,
-                            fontSize: FONT_SIZE.md,
-                            color: COLOR.text,
-                        }}
-                    >
-                        {summary.dominantPlacementLine}
-                    </div>
+                <div
+                    style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 8,
+                    }}
+                >
+                    {insightChips.map((chip) => (
+                        <div
+                            key={chip}
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                padding: '9px 12px',
+                                borderRadius: RADIUS.full,
+                                background: 'rgba(255,255,255,0.62)',
+                                border: '1px solid rgba(255,255,255,0.72)',
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.sm,
+                                fontWeight: 700,
+                                color: COLOR.text,
+                            }}
+                        >
+                            {chip}
+                        </div>
+                    ))}
                 </div>
             </div>
         </motion.section>
