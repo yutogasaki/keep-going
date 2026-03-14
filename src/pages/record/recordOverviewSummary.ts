@@ -208,7 +208,7 @@ export function buildTodayRecordSummary({
         ),
         remainingMinutes: Math.max(0, Math.ceil((targetSeconds - totalSeconds) / 60)),
         firstSessionTime: sessionTimes[0] ?? null,
-        lastSessionTime: sessionTimes.at(-1) ?? null,
+        lastSessionTime: sessionTimes.length > 0 ? sessionTimes[sessionTimes.length - 1] : null,
         sessionTimes,
         rhythmLine: buildTodayRhythmLine(sortedSessions),
     };
@@ -245,14 +245,14 @@ export function buildTwoWeekRecordSummary({
         }
     }
 
-    const dominantTimeBucket = Array.from(timeBucketCounts.entries())
-        .sort((a, b) => b[1] - a[1])
-        .at(0)?.[0] ?? null;
+    const sortedTimeBuckets = Array.from(timeBucketCounts.entries())
+        .sort((a, b) => b[1] - a[1]);
+    const dominantTimeBucket = sortedTimeBuckets.length > 0 ? sortedTimeBuckets[0][0] : null;
 
-    const dominantPlacement = Array.from(placementCounts.entries())
+    const sortedPlacements = Array.from(placementCounts.entries())
         .filter(([placement]) => placement !== 'rest')
-        .sort((a, b) => b[1] - a[1])
-        .at(0)?.[0] ?? null;
+        .sort((a, b) => b[1] - a[1]);
+    const dominantPlacement = sortedPlacements.length > 0 ? sortedPlacements[0][0] : null;
 
     return {
         streak: calculateStreak(sessions),
@@ -301,7 +301,7 @@ export function buildRecordSuggestionSummary({
         }
     }
 
-    const suggestedPlacement = Array.from(placementCounts.entries())
+    const sortedSuggestedPlacements = Array.from(placementCounts.entries())
         .sort((a, b) => {
             if (a[1] !== b[1]) {
                 return a[1] - b[1];
@@ -309,8 +309,10 @@ export function buildRecordSuggestionSummary({
 
             const order = ['core', 'barre', 'ending', 'stretch'];
             return order.indexOf(a[0]) - order.indexOf(b[0]);
-        })
-        .at(0)?.[0] ?? 'core';
+        });
+    const suggestedPlacement = sortedSuggestedPlacements.length > 0
+        ? sortedSuggestedPlacements[0][0]
+        : 'core';
 
     switch (suggestedPlacement) {
     case 'stretch':

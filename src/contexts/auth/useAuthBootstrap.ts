@@ -16,7 +16,9 @@ export function useAuthBootstrap({
     setUser,
 }: UseAuthBootstrapArgs) {
     const retryAuth = useCallback(() => {
-        if (!supabase) {
+        const client = supabase;
+
+        if (!client) {
             setIsLoading(false);
             return;
         }
@@ -24,14 +26,14 @@ export function useAuthBootstrap({
         setAuthError(null);
         setIsLoading(true);
 
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        client.auth.getSession().then(({ data: { session } }) => {
             if (session?.user) {
                 setUser(session.user);
                 setIsLoading(false);
                 return;
             }
 
-            supabase.auth.signInAnonymously().then(({ error }) => {
+            client.auth.signInAnonymously().then(({ error }) => {
                 if (error) {
                     console.warn('[auth] anonymous sign-in failed:', error);
                     setAuthError('サーバーに接続できませんでした');
@@ -48,11 +50,13 @@ export function useAuthBootstrap({
     useEffect(() => {
         retryAuth();
 
-        if (!supabase) {
+        const client = supabase;
+
+        if (!client) {
             return;
         }
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
             const nextUser = session?.user ?? null;
             setUser(nextUser);
             setIsAnonymous(nextUser?.is_anonymous ?? false);
