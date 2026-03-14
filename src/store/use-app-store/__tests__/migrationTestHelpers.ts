@@ -42,6 +42,7 @@ export function makeV5State(overrides: Record<string, any> = {}) {
         bgmEnabled: true,
         hapticEnabled: true,
         dismissedHomeAnnouncementIds: [],
+        challengeEnrollmentWindows: {},
         ...overrides,
     };
 }
@@ -72,6 +73,7 @@ export function makeCurrentState(overrides: Record<string, any> = {}) {
         bgmEnabled: true,
         hapticEnabled: true,
         joinedChallengeIds: {},
+        challengeEnrollmentWindows: {},
         hasSeenSessionControlsHint: false,
         dismissedHomeAnnouncementIds: [],
         homeVisitMemory: {

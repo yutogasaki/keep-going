@@ -22,6 +22,15 @@ describe('persisted state sanitization', () => {
                 'user-1': ['challenge-1', 42, 'challenge-1'],
                 ghost: ['challenge-2'],
             },
+            challengeEnrollmentWindows: {
+                'user-1': {
+                    'challenge-1': { startDate: '2026-03-14', endDate: '2026-03-20' },
+                    'challenge-2': { startDate: 'bad', endDate: '2026-03-20' },
+                },
+                ghost: {
+                    'challenge-3': { startDate: '2026-03-14', endDate: '2026-03-20' },
+                },
+            },
             soundVolume: 9,
             notificationTime: '99:99',
             ttsEnabled: 'yes',
@@ -59,6 +68,11 @@ describe('persisted state sanitization', () => {
         expect(result.sessionUserIds).toEqual(['user-1']);
         expect(result.joinedChallengeIds).toEqual({
             'user-1': ['challenge-1'],
+        });
+        expect(result.challengeEnrollmentWindows).toEqual({
+            'user-1': {
+                'challenge-1': { startDate: '2026-03-14', endDate: '2026-03-20' },
+            },
         });
         expect(result.soundVolume).toBe(1);
         expect(result.notificationTime).toBe('21:00');
@@ -120,6 +134,14 @@ describe('persisted state sanitization', () => {
                 'user-1': ['challenge-1'],
                 ghost: ['challenge-2'],
             },
+            challengeEnrollmentWindows: {
+                'user-1': {
+                    'challenge-1': { startDate: '2026-03-14', endDate: '2026-03-20' },
+                },
+                ghost: {
+                    'challenge-2': { startDate: '2026-03-14', endDate: '2026-03-20' },
+                },
+            },
             sessionDraft: {
                 kind: 'auto',
                 date: '2026-03-07',
@@ -169,6 +191,11 @@ describe('persisted state sanitization', () => {
         expect(result.joinedChallengeIds).toEqual({
             'user-1': ['challenge-1'],
         });
+        expect(result.challengeEnrollmentWindows).toEqual({
+            'user-1': {
+                'challenge-1': { startDate: '2026-03-14', endDate: '2026-03-20' },
+            },
+        });
         expect(result.sessionDraft).toEqual({
             kind: 'auto',
             date: '2026-03-07',
@@ -186,6 +213,7 @@ describe('persisted state sanitization', () => {
 
         expect(result.users).toEqual(state.users);
         expect(result.joinedChallengeIds).toEqual(state.joinedChallengeIds);
+        expect(result.challengeEnrollmentWindows).toEqual(state.challengeEnrollmentWindows);
         expect(result.bgmEnabled).toBe(state.bgmEnabled);
         expect(result.hapticEnabled).toBe(state.hapticEnabled);
         expect(result.hasSeenSessionControlsHint).toBe(state.hasSeenSessionControlsHint);

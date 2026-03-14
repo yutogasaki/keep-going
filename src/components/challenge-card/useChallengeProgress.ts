@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { countChallengeProgress, markChallengeComplete, type Challenge } from '../../lib/challenges';
+import {
+    countChallengeProgress,
+    getChallengeGoalTarget,
+    markChallengeComplete,
+    type Challenge,
+} from '../../lib/challenges';
 import type { ChibifuwaRecord } from '../../store/useAppStore';
+import type { ChallengeProgressWindow } from '../../lib/challenge-engine';
 
 interface UseChallengeProgressParams {
     challenge: Challenge;
@@ -8,6 +14,7 @@ interface UseChallengeProgressParams {
     allCompleted: boolean;
     activeUserIds: string[];
     completedUserIds: Set<string>;
+    effectiveWindow?: ChallengeProgressWindow | null;
     addChibifuwa: (userId: string, record: Omit<ChibifuwaRecord, 'id'>) => void;
     addChallengeStars: (userId: string, amount: number) => void;
     onCompleted: () => void;
@@ -19,6 +26,7 @@ export function useChallengeProgress({
     allCompleted,
     activeUserIds,
     completedUserIds,
+    effectiveWindow,
     addChibifuwa,
     addChallengeStars,
     onCompleted,
@@ -30,7 +38,7 @@ export function useChallengeProgress({
         if (!isJoined) return;
 
         let cancelled = false;
-        countChallengeProgress(challenge, activeUserIds).then((count) => {
+        countChallengeProgress(challenge, activeUserIds, effectiveWindow).then((count) => {
             if (!cancelled) {
                 setProgress(count);
             }
@@ -39,11 +47,12 @@ export function useChallengeProgress({
         return () => {
             cancelled = true;
         };
-    }, [challenge, activeUserIds, isJoined]);
+    }, [challenge, activeUserIds, effectiveWindow, isJoined]);
 
     useEffect(() => {
+        const goalTarget = getChallengeGoalTarget(challenge);
         if (!isJoined) return;
-        if (progress < challenge.targetCount || allCompleted || checkingRef.current) return;
+        if (progress < goalTarget || allCompleted || checkingRef.current) return;
 
         checkingRef.current = true;
         (async () => {

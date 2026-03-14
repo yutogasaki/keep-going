@@ -10,6 +10,7 @@ import {
 import { supabase } from '../supabase';
 import type { Database } from '../supabase-types';
 import type { MenuGroup } from '../../data/menuGroups';
+import type { ChallengeEnrollment } from '../challenges';
 import {
     toLocalCustomExercise,
     toLocalCustomMenuGroup,
@@ -27,6 +28,7 @@ export interface CloudSyncSnapshot {
     exercises: CustomExercise[];
     groups: MenuGroup[];
     settings: CloudAppSettings | null;
+    challengeEnrollments: ChallengeEnrollment[];
 }
 
 function getLocalStateRecord(): LocalStateRecord {
@@ -40,6 +42,7 @@ function createEmptySnapshot(): CloudSyncSnapshot {
         exercises: [],
         groups: [],
         settings: null,
+        challengeEnrollments: [],
     };
 }
 
@@ -48,12 +51,13 @@ export async function fetchCloudSyncSnapshot(accountId: string): Promise<CloudSy
         return createEmptySnapshot();
     }
 
-    const [familyRes, sessionsRes, exercisesRes, groupsRes, settingsRes] = await Promise.all([
+    const [familyRes, sessionsRes, exercisesRes, groupsRes, settingsRes, enrollmentsRes] = await Promise.all([
         supabase.from('family_members').select('*').eq('account_id', accountId),
         supabase.from('sessions').select('*').eq('account_id', accountId),
         supabase.from('custom_exercises').select('*').eq('account_id', accountId),
         supabase.from('menu_groups').select('*').eq('account_id', accountId),
         supabase.from('app_settings').select('*').eq('account_id', accountId).maybeSingle(),
+        supabase.from('challenge_enrollments').select('*').eq('account_id', accountId),
     ]);
 
     if (familyRes.error) throw new Error(`family_members: ${familyRes.error.message}`);
@@ -61,6 +65,7 @@ export async function fetchCloudSyncSnapshot(accountId: string): Promise<CloudSy
     if (exercisesRes.error) throw new Error(`custom_exercises: ${exercisesRes.error.message}`);
     if (groupsRes.error) throw new Error(`menu_groups: ${groupsRes.error.message}`);
     if (settingsRes.error) throw new Error(`app_settings: ${settingsRes.error.message}`);
+    if (enrollmentsRes.error) throw new Error(`challenge_enrollments: ${enrollmentsRes.error.message}`);
 
     return {
         families: familyRes.data ?? [],
@@ -68,6 +73,16 @@ export async function fetchCloudSyncSnapshot(accountId: string): Promise<CloudSy
         exercises: (exercisesRes.data ?? []).map(toLocalCustomExercise),
         groups: (groupsRes.data ?? []).filter((group) => !group.is_preset).map(toLocalCustomMenuGroup),
         settings: settingsRes.data,
+        challengeEnrollments: (enrollmentsRes.data ?? []).map((row) => ({
+            id: row.id,
+            challengeId: row.challenge_id,
+            accountId: row.account_id,
+            memberId: row.member_id,
+            joinedAt: row.joined_at,
+            effectiveStartDate: row.effective_start_date,
+            effectiveEndDate: row.effective_end_date,
+            createdAt: row.created_at,
+        })),
     };
 }
 
@@ -85,6 +100,7 @@ export async function applyCloudSnapshot(snapshot: CloudSyncSnapshot): Promise<v
             localState,
             users,
             settings: snapshot.settings,
+            challengeEnrollments: snapshot.challengeEnrollments,
         }),
     );
 }

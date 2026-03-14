@@ -6,24 +6,24 @@ import type { Challenge } from '../../lib/challenges';
 interface ProgressChallengeCardProps {
     challenge: Challenge;
     emoji: string;
-    targetLabel: string;
-    daysLeft: number;
+    goalLabel: string;
+    deadlineLabel: string;
     ratio: number;
-    progress: number;
+    progressLabel: string;
     allCompleted: boolean;
-    dailyCapLabel: string;
+    dailyRuleLabel: string;
     onOpenDetail: () => void;
 }
 
 export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
     challenge,
     emoji,
-    targetLabel,
-    daysLeft,
+    goalLabel,
+    deadlineLabel,
     ratio,
-    progress,
+    progressLabel,
     allCompleted,
-    dailyCapLabel,
+    dailyRuleLabel,
     onOpenDetail,
 }) => {
     return (
@@ -64,15 +64,15 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
                         gap: 4,
                         flexWrap: 'wrap',
                     }}>
-                        {targetLabel}を{challenge.targetCount}回
+                        {goalLabel}
                         <span style={{ color: '#B2BEC3' }}>|</span>
-                        <span>{dailyCapLabel}</span>
+                        <span>{dailyRuleLabel}</span>
                         <span style={{ color: '#B2BEC3' }}>|</span>
                         <span style={{
-                            color: daysLeft <= 3 ? '#E17055' : '#8395A7',
-                            fontWeight: daysLeft <= 3 ? 700 : 400,
+                            color: deadlineLabel.startsWith('あと') ? '#8395A7' : '#52606D',
+                            fontWeight: deadlineLabel.startsWith('あと') ? 700 : 500,
                         }}>
-                            あと{daysLeft}日
+                            {deadlineLabel}
                         </span>
                     </div>
                 </div>
@@ -110,7 +110,7 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
                 color: allCompleted ? '#B8860B' : '#888',
                 fontWeight: allCompleted ? 700 : 400,
             }}>
-                {allCompleted ? 'クリア！🎉' : `${progress} / ${challenge.targetCount}`}
+                {allCompleted ? 'クリア！🎉' : progressLabel}
             </div>
         </motion.div>
     );

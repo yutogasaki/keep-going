@@ -246,8 +246,9 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
         : '';
 
     const hasError = !values.title.trim()
-        || values.targetCount < 1
-        || values.dailyCap < 1
+        || (values.windowType === 'rolling'
+            ? values.requiredDays < 1 || values.windowDays < 1 || values.requiredDays > values.windowDays
+            : values.targetCount < 1 || values.dailyCap < 1)
         || !!dateError
         || (values.challengeType === 'exercise' && !hasExerciseTarget)
         || (values.challengeType === 'menu' && !hasMenuTarget);
@@ -344,6 +345,77 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                         placeholder="例: 1日1回ゆっくり前後開脚に取り組もう"
                         style={{ ...inputStyle, minHeight: 96, resize: 'vertical' }}
                     />
+                </Field>
+            </Section>
+
+            <Section
+                title="達成の形"
+                description="期間で回数を数えるか、参加してから何日できたかを数えるかを選びます。"
+            >
+                <Field label="チャレンジ方式">
+                    <div style={optionGridStyle}>
+                        {([
+                            {
+                                id: 'calendar',
+                                label: '期間でチャレンジ',
+                                description: '公開中の合計回数を数える、今までの先生チャレンジ',
+                            },
+                            {
+                                id: 'rolling',
+                                label: '毎日チャレンジ',
+                                description: '参加した日から数えて、できた日数を集める',
+                            },
+                        ] as const).map((option) => {
+                            const selected = values.windowType === option.id;
+                            return (
+                                <button
+                                    key={option.id}
+                                    type="button"
+                                    onClick={() => onChange(
+                                        option.id === 'calendar'
+                                            ? {
+                                                windowType: 'calendar',
+                                                goalType: 'total_count',
+                                                targetCount: Math.max(1, values.targetCount || 20),
+                                                dailyCap: Math.max(1, values.dailyCap || 1),
+                                            }
+                                            : {
+                                                windowType: 'rolling',
+                                                goalType: 'active_day',
+                                                windowDays: Math.max(1, values.windowDays || 7),
+                                                requiredDays: Math.max(1, values.requiredDays || 5),
+                                                targetCount: Math.max(1, values.requiredDays || 5),
+                                                dailyCap: 1,
+                                            },
+                                    )}
+                                    style={{
+                                        ...optionButtonBaseStyle,
+                                        ...(selected ? {
+                                            border: '2px solid #2BBAA0',
+                                            background: '#E8F8F0',
+                                        } : null),
+                                    }}
+                                >
+                                    <span style={{
+                                        fontFamily: FONT.body,
+                                        fontSize: FONT_SIZE.sm,
+                                        fontWeight: 800,
+                                        color: COLOR.dark,
+                                    }}>
+                                        {option.label}
+                                    </span>
+                                    <span style={{
+                                        fontFamily: FONT.body,
+                                        fontSize: FONT_SIZE.xs + 1,
+                                        color: COLOR.muted,
+                                        lineHeight: 1.5,
+                                    }}>
+                                        {option.description}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </Field>
             </Section>
 
@@ -586,29 +658,77 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                 )}
 
                 <div style={metricGridStyle}>
-                    <Field label="目標回数" hint="クリアまでに必要な合計回数です。">
-                        <input
-                            type="number"
-                            min={1}
-                            value={values.targetCount}
-                            onChange={(event) => onChange({ targetCount: Number(event.target.value) })}
-                            style={inputStyle}
-                        />
-                    </Field>
+                    {values.windowType === 'rolling' ? (
+                        <>
+                            <Field label="チャレンジ日数" hint="参加した日から数える日数です。">
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={values.windowDays}
+                                    onChange={(event) => onChange({ windowDays: Number(event.target.value) })}
+                                    style={inputStyle}
+                                />
+                            </Field>
 
-                    <Field label="1日上限" hint="1日に増える回数の上限です。">
-                        <input
-                            type="number"
-                            min={1}
-                            value={values.dailyCap}
-                            onChange={(event) => onChange({ dailyCap: Number(event.target.value) })}
-                            style={inputStyle}
-                        />
-                    </Field>
+                            <Field label="必要な日数" hint="対象をやった日を何日集めたらクリアかを決めます。">
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={Math.max(1, values.windowDays)}
+                                    value={values.requiredDays}
+                                    onChange={(event) => onChange({
+                                        requiredDays: Number(event.target.value),
+                                        targetCount: Number(event.target.value),
+                                    })}
+                                    style={inputStyle}
+                                />
+                            </Field>
+                        </>
+                    ) : (
+                        <>
+                            <Field label="目標回数" hint="クリアまでに必要な合計回数です。">
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={values.targetCount}
+                                    onChange={(event) => onChange({ targetCount: Number(event.target.value) })}
+                                    style={inputStyle}
+                                />
+                            </Field>
+
+                            <Field label="1日上限" hint="1日に増える回数の上限です。">
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={values.dailyCap}
+                                    onChange={(event) => onChange({ dailyCap: Number(event.target.value) })}
+                                    style={inputStyle}
+                                />
+                            </Field>
+                        </>
+                    )}
                 </div>
+
+                {values.windowType === 'rolling' ? (
+                    <>
+                        <div style={fieldHintStyle}>
+                            1日達成は、その日に対象の種目かメニューを1回以上やるとカウントされます。
+                        </div>
+                        {values.requiredDays > values.windowDays ? (
+                            <div style={{ ...fieldHintStyle, color: COLOR.danger, fontWeight: 700 }}>
+                                必要な日数はチャレンジ日数以下にしてください。
+                            </div>
+                        ) : null}
+                    </>
+                ) : null}
             </Section>
 
-            <Section title="期間" description="いつからいつまで表示するかを決めます。">
+            <Section
+                title="期間"
+                description={values.windowType === 'rolling'
+                    ? 'ホームに表示して参加できる期間を決めます。参加後の進捗は、参加した日から別で数えます。'
+                    : 'いつからいつまで表示するかを決めます。'}
+            >
                 <div style={metricGridStyle}>
                     <Field label="開始日">
                         <input

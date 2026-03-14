@@ -2,11 +2,15 @@ export interface ChallengeFormValues {
     title: string;
     description: string;
     challengeType: 'exercise' | 'menu';
+    windowType: 'calendar' | 'rolling';
+    goalType: 'total_count' | 'active_day';
     exerciseId: string;
     targetMenuId: string;
     menuSource: 'preset' | 'teacher';
     targetCount: number;
     dailyCap: number;
+    windowDays: number;
+    requiredDays: number;
     startDate: string;
     endDate: string;
     tier: 'small' | 'big';

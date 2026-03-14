@@ -4,12 +4,16 @@ import { Modal } from './Modal';
 import {
     getChallengeDailyCapLabel,
     getChallengeDescriptionText,
+    getChallengeGoalLabel,
     getChallengeEmoji,
     getChallengeHeaderText,
+    getChallengePeriodLabel,
+    getChallengeProgressLabel,
     getChallengeRewardLabel,
     getChallengeTargetLabel,
     type Challenge,
 } from '../lib/challenges';
+import type { ChallengeProgressWindow } from '../lib/challenge-engine';
 import type { TeacherExercise } from '../lib/teacherContent';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../lib/styles';
 
@@ -18,6 +22,7 @@ interface ChallengeDetailSheetProps {
     challenge: Challenge | null;
     teacherExercises?: TeacherExercise[];
     progress: number;
+    effectiveWindow?: ChallengeProgressWindow | null;
     joined: boolean;
     completed: boolean;
     onClose: () => void;
@@ -29,6 +34,7 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
     challenge,
     teacherExercises = [],
     progress,
+    effectiveWindow,
     joined,
     completed,
     onClose,
@@ -40,6 +46,10 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
 
     const headerText = getChallengeHeaderText(challenge);
     const descriptionText = getChallengeDescriptionText(challenge);
+    const targetLabel = getChallengeTargetLabel(challenge, teacherExercises);
+    const goalLabel = getChallengeGoalLabel(challenge, targetLabel);
+    const progressLabel = getChallengeProgressLabel(challenge, progress);
+    const periodLabel = getChallengePeriodLabel(challenge, joined ? effectiveWindow : null);
 
     return (
         <Modal
@@ -117,10 +127,10 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                 )}
 
                 <div style={{ display: 'grid', gap: SPACE.sm }}>
-                    <DetailRow icon={<Target size={15} />} label="対象" value={`${getChallengeTargetLabel(challenge, teacherExercises)}を${challenge.targetCount}回`} />
-                    <DetailRow icon={<Sparkles size={15} />} label="1日上限" value={getChallengeDailyCapLabel(challenge)} />
+                    <DetailRow icon={<Target size={15} />} label="対象" value={goalLabel} />
+                    <DetailRow icon={<Sparkles size={15} />} label={challenge.goalType === 'active_day' ? '数え方' : '1日上限'} value={getChallengeDailyCapLabel(challenge)} />
                     <DetailRow icon={<Trophy size={15} />} label="報酬" value={getChallengeRewardLabel(challenge)} />
-                    <DetailRow icon={<Calendar size={15} />} label="期間" value={`${challenge.startDate} 〜 ${challenge.endDate}`} />
+                    <DetailRow icon={<Calendar size={15} />} label="期間" value={periodLabel} />
                 </div>
 
                 <div
@@ -137,9 +147,11 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                     {completed ? (
                         'クリア済みです。'
                     ) : joined ? (
-                        `いまの進みぐあい: ${progress} / ${challenge.targetCount}`
+                        `いまの進みぐあい: ${progressLabel}`
                     ) : (
-                        '参加すると、自動で回数がカウントされます。'
+                        challenge.windowType === 'rolling'
+                            ? `参加すると、今日から${Math.max(1, challenge.windowDays ?? 7)}日で自動カウントされます。`
+                            : '参加すると、自動で回数がカウントされます。'
                     )}
                 </div>
 

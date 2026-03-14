@@ -224,4 +224,13 @@ describe('modern migrations', () => {
         expect((result as any).ttsRate).toBeUndefined();
         expect((result as any).ttsPitch).toBeUndefined();
     });
+
+    it('v21 initializes missing challengeEnrollmentWindows', () => {
+        const state = makeCurrentState();
+        delete state.challengeEnrollmentWindows;
+
+        const result = migrateAppState(state, 20);
+
+        expect(result.challengeEnrollmentWindows).toEqual({});
+    });
 });

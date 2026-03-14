@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    buildChallengeEnrollmentState,
     countChallengeProgress,
     getChallengeCardText,
     getChallengeDescriptionText,
+    getChallengeGoalLabel,
     getChallengeHeaderText,
+    getChallengeInviteWindowLabel,
+    getChallengeProgressLabel,
     getChallengeRewardLabel,
     type Challenge,
 } from '../challenges';
@@ -35,6 +39,10 @@ function makeChallenge(overrides: Partial<Challenge> = {}): Challenge {
         countUnit: 'exercise_completion',
         startDate: '2026-03-01',
         endDate: '2026-03-31',
+        windowType: 'calendar',
+        goalType: 'total_count',
+        windowDays: null,
+        requiredDays: null,
         createdBy: 'teacher@example.com',
         rewardKind: 'star',
         rewardValue: 3,
@@ -181,6 +189,52 @@ describe('countChallengeProgress', () => {
 
         expect(progress).toBe(1);
     });
+
+    it('counts active days inside an effective rolling window', async () => {
+        mockedGetAllSessions.mockResolvedValue(asSessions([
+            {
+                id: 's1',
+                date: '2026-03-13',
+                startedAt: '2026-03-13T10:00:00Z',
+                totalSeconds: 60,
+                exerciseIds: ['S01'],
+                skippedIds: [],
+                userIds: ['u1'],
+            },
+            {
+                id: 's2',
+                date: '2026-03-14',
+                startedAt: '2026-03-14T10:00:00Z',
+                totalSeconds: 60,
+                exerciseIds: ['S01'],
+                skippedIds: [],
+                userIds: ['u1'],
+            },
+            {
+                id: 's3',
+                date: '2026-03-15',
+                startedAt: '2026-03-15T10:00:00Z',
+                totalSeconds: 60,
+                exerciseIds: ['S01', 'S01'],
+                skippedIds: [],
+                userIds: ['u1'],
+            },
+        ]));
+
+        const progress = await countChallengeProgress(makeChallenge({
+            windowType: 'rolling',
+            goalType: 'active_day',
+            windowDays: 7,
+            requiredDays: 5,
+            targetCount: 5,
+            dailyCap: 1,
+        }), ['u1'], {
+            startDate: '2026-03-14',
+            endDate: '2026-03-20',
+        });
+
+        expect(progress).toBe(2);
+    });
 });
 
 describe('getChallengeRewardLabel', () => {
@@ -224,5 +278,48 @@ describe('challenge text helpers', () => {
             summary: 'ひとこと',
             description: '詳しい説明',
         }))).toBe('詳しい説明');
+    });
+
+    it('formats rolling active-day labels', () => {
+        const challenge = makeChallenge({
+            windowType: 'rolling',
+            goalType: 'active_day',
+            windowDays: 7,
+            requiredDays: 5,
+            targetCount: 5,
+        });
+
+        expect(getChallengeGoalLabel(challenge, '前後開脚')).toBe('前後開脚を5日');
+        expect(getChallengeProgressLabel(challenge, 3)).toBe('3 / 5日');
+        expect(getChallengeInviteWindowLabel(challenge)).toBe('参加すると 今日から7日');
+    });
+});
+
+describe('buildChallengeEnrollmentState', () => {
+    it('converts enrollments into per-user joined ids and windows', () => {
+        expect(buildChallengeEnrollmentState([
+            {
+                id: 'enroll-1',
+                challengeId: 'challenge-a',
+                accountId: 'account-1',
+                memberId: 'user-1',
+                joinedAt: '2026-03-14T00:00:00Z',
+                effectiveStartDate: '2026-03-14',
+                effectiveEndDate: '2026-03-20',
+                createdAt: '2026-03-14T00:00:00Z',
+            },
+        ])).toEqual({
+            joinedChallengeIds: {
+                'user-1': ['challenge-a'],
+            },
+            challengeEnrollmentWindows: {
+                'user-1': {
+                    'challenge-a': {
+                        startDate: '2026-03-14',
+                        endDate: '2026-03-20',
+                    },
+                },
+            },
+        });
     });
 });

@@ -34,6 +34,7 @@ const EMPTY_SNAPSHOT: CloudSyncSnapshot = {
     exercises: [],
     groups: [],
     settings: null,
+    challengeEnrollments: [],
 };
 
 beforeEach(() => {

@@ -3,7 +3,13 @@ import { Loader2, Pencil, Trash2 } from 'lucide-react';
 import { getTodayKey } from '../../../lib/db';
 import { CLASS_EMOJI, EXERCISES } from '../../../data/exercises';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
-import { getChallengeCardText, getChallengeRewardLabel, type Challenge } from '../../../lib/challenges';
+import {
+    getChallengeCardText,
+    getChallengeGoalLabel,
+    getChallengeInviteWindowLabel,
+    getChallengeRewardLabel,
+    type Challenge,
+} from '../../../lib/challenges';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
 import { getTeacherVisibilityLabel } from '../../../lib/teacherExerciseMetadata';
 
@@ -69,6 +75,8 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                 const isActive = challenge.startDate <= today && challenge.endDate >= today;
                 const isPast = challenge.endDate < today;
                 const cardText = getChallengeCardText(challenge);
+                const goalLabel = getChallengeGoalLabel(challenge, targetLabel);
+                const windowLabel = getChallengeInviteWindowLabel(challenge);
 
                 return (
                     <div key={challenge.id} className="card" style={{
@@ -110,10 +118,10 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                     color: '#8395A7',
                                     marginTop: 2,
                                 }}>
-                                    {targetLabel}を{challenge.targetCount}回 ・
-                                    {challenge.dailyCap}回/日 ・
+                                    {goalLabel} ・
+                                    {challenge.goalType === 'active_day' ? '1日1回でカウント' : `${challenge.dailyCap}回/日`} ・
                                     {getChallengeRewardLabel(challenge)} ・
-                                    {challenge.startDate.slice(5).replace('-', '/')} 〜 {challenge.endDate.slice(5).replace('-', '/')}
+                                    {windowLabel}
                                 </div>
                                 {cardText && (
                                     <div style={{

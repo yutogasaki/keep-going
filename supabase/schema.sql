@@ -1,5 +1,7 @@
 -- KeepGoing Supabase Schema
--- Run this in the Supabase SQL Editor (Dashboard > SQL Editor)
+-- Empty database bootstrap only.
+-- 既存の Supabase プロジェクトには流さないでください。
+-- 既存環境の更新は `supabase/deploy.sql` か個別 migration を使います。
 
 -- 家族メンバー（ローカルの UserProfileStore に対応）
 create table family_members (
@@ -109,6 +111,10 @@ create table challenges (
   count_unit text not null default 'exercise_completion',
   start_date text not null,
   end_date text not null,
+  window_type text not null default 'calendar',
+  goal_type text not null default 'total_count',
+  window_days int,
+  required_days int,
   created_by text not null,
   reward_fuwafuwa_type int not null,
   reward_kind text not null default 'medal',
@@ -121,6 +127,10 @@ create table challenges (
   constraint challenges_menu_source_check check (menu_source is null or menu_source in ('teacher', 'preset')),
   constraint challenges_count_unit_check check (count_unit in ('exercise_completion', 'menu_completion')),
   constraint challenges_daily_cap_check check (daily_cap >= 1),
+  constraint challenges_window_type_check check (window_type in ('calendar', 'rolling')),
+  constraint challenges_goal_type_check check (goal_type in ('total_count', 'active_day')),
+  constraint challenges_window_days_check check (window_days is null or window_days >= 1),
+  constraint challenges_required_days_check check (required_days is null or required_days >= 1),
   constraint challenges_reward_kind_check check (reward_kind in ('star', 'medal')),
   constraint challenges_reward_value_check check (reward_value >= 0),
   constraint challenges_tier_check check (tier in ('small', 'big'))
@@ -133,6 +143,19 @@ create table challenge_completions (
   account_id uuid references auth.users not null,
   member_id uuid not null,
   completed_at timestamptz default now(),
+  unique(challenge_id, account_id, member_id)
+);
+
+create table challenge_enrollments (
+  id uuid primary key default gen_random_uuid(),
+  challenge_id uuid references challenges not null,
+  account_id uuid references auth.users not null,
+  member_id uuid not null,
+  joined_at timestamptz not null default now(),
+  effective_start_date text not null,
+  effective_end_date text not null,
+  created_at timestamptz default now(),
+  constraint challenge_enrollments_window_check check (effective_end_date >= effective_start_date),
   unique(challenge_id, account_id, member_id)
 );
 
@@ -157,6 +180,7 @@ create index idx_sessions_date on sessions (account_id, date);
 create index idx_user_roles_role on user_roles (role);
 create index idx_challenges_dates on challenges (start_date, end_date);
 create index idx_challenge_completions_account on challenge_completions (account_id);
+create index idx_challenge_enrollments_account on challenge_enrollments (account_id);
 create index idx_public_menus_downloads on public_menus (download_count desc);
 
 -- RLS
@@ -168,6 +192,7 @@ alter table app_settings enable row level security;
 alter table user_roles enable row level security;
 alter table challenges enable row level security;
 alter table challenge_completions enable row level security;
+alter table challenge_enrollments enable row level security;
 alter table public_menus enable row level security;
 
 create policy "Users can manage own data" on family_members
@@ -191,6 +216,11 @@ create policy "Teachers can manage challenges" on challenges
 create policy "Users can manage own completions" on challenge_completions
   for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
 create policy "Teachers can read all completions" on challenge_completions
+  for select using (is_teacher());
+
+create policy "Users can manage own enrollments" on challenge_enrollments
+  for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
+create policy "Teachers can read all enrollments" on challenge_enrollments
   for select using (is_teacher());
 
 -- public_menus: 全員が読める、自分のだけ書き込み・削除可

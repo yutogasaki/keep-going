@@ -457,7 +457,8 @@
 
 ### 12.1 概要
 
-期間限定の種目達成目標。管理者（先生）が作成し、ユーザーが参加する。進捗はセッション履歴から自動計算される。
+チャレンジは `先生チャレンジ` と `じぶんチャレンジ` を持つ。
+両者は `対象を達成した日` または `期間中の合計実施数` を同じ計算エンジンで扱い、違いは保存先・開始トリガー・報酬の強さに寄せる。
 
 ---
 
@@ -469,14 +470,61 @@
 |--------|------|------|
 | id | uuid | 主キー |
 | title | text | チャレンジ名 |
-| exercise_id | text | 対象種目ID |
-| target_count | int | 目標回数 |
-| start_date | date | 開始日 |
-| end_date | date | 終了日 |
+| challenge_type | text | `exercise` / `menu` |
+| target_exercise_id | text | 対象種目ID |
+| target_menu_id | uuid/text | 対象メニューID |
+| menu_source | text | `preset` / `teacher` |
+| window_type | text | `calendar` / `rolling` |
+| goal_type | text | `total_count` / `active_day` |
+| target_count | int | 回数型の目標回数 |
+| required_days | int | 日数型の必要達成日数 |
+| daily_cap | int | 1日の最大加算回数 |
+| daily_minimum_minutes | int | 日数型の補助条件で使う最小分数。MVP では対象実施ベースを優先し、必要時のみ使う |
+| start_date | date | calendar 型の開始日 |
+| end_date | date | calendar 型の終了日 |
+| window_days | int | rolling 型の継続日数 |
 | created_by | uuid | 作成者のaccount_id |
-| reward_fuwafuwa_type | int | 報酬のちびふわふわタイプ |
+| reward_kind | text | `star` / `medal` |
+| reward_value | int | 報酬量 |
 | class_levels | text[] | 対象クラスレベル（例: `['初級','中級']`） |
 | created_at | timestamptz | 作成日時 |
+
+**`challenge_enrollments`テーブル**：
+
+| カラム | 型 | 説明 |
+|--------|------|------|
+| id | uuid | 主キー |
+| challenge_id | uuid | 先生チャレンジID |
+| account_id | uuid | 参加者のaccount_id |
+| member_id | text | 参加したメンバーID |
+| joined_at | timestamptz | 参加日時 |
+| effective_start_date | date | 実際の開始日 |
+| effective_end_date | date | 実際の終了日 |
+| status | text | `active` / `completed` / `ended_expired` |
+| reward_granted_at | timestamptz | 報酬付与済み時刻 |
+| created_at | timestamptz | 作成日時 |
+
+**`personal_challenges`テーブル**：
+
+| カラム | 型 | 説明 |
+|--------|------|------|
+| id | uuid | 主キー |
+| account_id | uuid | 作成者のaccount_id |
+| member_id | text | 対象メンバーID |
+| title | text | チャレンジ名 |
+| challenge_type | text | `exercise` / `menu` |
+| target_exercise_id | text | 対象種目ID |
+| target_menu_id | uuid/text | 対象メニューID |
+| menu_source | text | `preset` / `teacher` / `custom` / `public` |
+| goal_type | text | MVP では `active_day` を中心に使う |
+| window_days | int | 7 / 14 / 30 など |
+| required_days | int | 必要達成日数 |
+| status | text | `active` / `completed` / `ended_manual` / `ended_expired` |
+| started_at | timestamptz | 作成と同時に入る開始時刻 |
+| effective_end_date | date | 実際の終了日 |
+| reward_granted_at | timestamptz | 報酬付与済み時刻 |
+| created_at | timestamptz | 作成日時 |
+| updated_at | timestamptz | 更新日時 |
 
 **`challenge_completions`テーブル**：
 
@@ -492,23 +540,35 @@
 
 ### 12.3 進捗計算ロジック
 
-- セッション履歴（`sessions.exercise_ids`）からチャレンジ対象種目（`exercise_id`）の実施回数を集計
-- チャレンジ期間内（`start_date` 〜 `end_date`）のセッションのみカウント
-- `target_count` に到達 → 自動的に `challenge_completions` に記録
+- 進捗計算は `calendar` / `rolling`、`total_count` / `active_day` を共通エンジンで扱う
+- **calendar**: `start_date` 〜 `end_date` をそのまま有効期間に使う
+- **rolling**: `joined_at` または `started_at` を基準に `effective_end_date` を決める
+- **total_count**: 対象期間内の対象実施数を合計する。`daily_cap` があれば1日上限をかける
+- **active_day**: 対象期間内で `対象を1回以上やった日` を 1 日として数える
+- 日数型では、同じ日に複数回やっても 1 日として扱う
+- 目標到達時は `status = completed` とし、必要に応じて `challenge_completions` に記録する
 
 ---
 
 ### 12.4 参加ロジック
 
-- ユーザーごとに `joinedChallengeIds: Record<userId, challengeId[]>` をローカル（Zustand persist）で管理
+- 先生チャレンジは `参加 = 開始`
+- rolling 型の先生チャレンジでは、参加時に `challenge_enrollments` を作成し、`effective_start_date / effective_end_date` を固定する
+- calendar 型の先生チャレンジでも参加状態は enrollment で持つ
+- `joinedChallengeIds` は旧ローカル参加記録との互換レイヤとして扱い、参加日時を必要とする処理の正本にはしない
 - みんなでモード時は全アクティブユーザーを一括参加
 - クラスレベルフィルタ: ユーザーの `classLevel` が `challenges.class_levels` に含まれるもののみ表示
+- じぶんチャレンジは `作成 = 開始`
+- じぶんチャレンジは個人モードでのみ作成し、`personal_challenges.started_at` を開始時刻とする
 
 ---
 
 ### 12.5 達成報酬
 
-- 達成時に `reward_fuwafuwa_type` に対応するちびふわふわを `family_members.chibifuwas` 配列に追加
+- 先生チャレンジは `reward_kind` に応じて `ほし` または `ちびふわふわ / メダル` を付与する
+- じぶんチャレンジの報酬は `ほし1こ` に固定する
+- 二重付与防止のため、報酬付与後は `reward_granted_at` を記録する
+- 達成時に `reward_fuwafuwa_type` 相当の報酬がある場合は `family_members.chibifuwas` 配列に追加する
 - ちびふわふわはふわふわ（育成キャラクター）とは別の小さなコレクションアイテム
 
 ---
@@ -594,4 +654,3 @@
 ---
 
 以上
-

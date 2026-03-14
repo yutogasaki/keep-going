@@ -188,6 +188,10 @@ export interface Database {
                     count_unit: string;
                     start_date: string;
                     end_date: string;
+                    window_type: string | null;
+                    goal_type: string | null;
+                    window_days: number | null;
+                    required_days: number | null;
                     created_by: string;
                     reward_fuwafuwa_type: number;
                     reward_kind: string | null;
@@ -212,6 +216,10 @@ export interface Database {
                     count_unit?: string;
                     start_date: string;
                     end_date: string;
+                    window_type?: string | null;
+                    goal_type?: string | null;
+                    window_days?: number | null;
+                    required_days?: number | null;
                     created_by: string;
                     reward_fuwafuwa_type: number;
                     reward_kind?: string | null;
@@ -238,6 +246,29 @@ export interface Database {
                     member_id: string;
                 };
                 Update: Partial<Database['public']['Tables']['challenge_completions']['Insert']>;
+                Relationships: [];
+            };
+            challenge_enrollments: {
+                Row: {
+                    id: string;
+                    challenge_id: string;
+                    account_id: string;
+                    member_id: string;
+                    joined_at: string;
+                    effective_start_date: string;
+                    effective_end_date: string;
+                    created_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    challenge_id: string;
+                    account_id: string;
+                    member_id: string;
+                    joined_at?: string;
+                    effective_start_date: string;
+                    effective_end_date: string;
+                };
+                Update: Partial<Database['public']['Tables']['challenge_enrollments']['Insert']>;
                 Relationships: [];
             };
             public_menus: {

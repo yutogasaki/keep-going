@@ -1,10 +1,16 @@
 import { EXERCISES } from '../data/exercises';
 import { PRESET_GROUPS } from '../data/menuGroups';
 import { getAllSessions, getTodayKey } from './db';
+import {
+    countChallengeProgressFromSessions,
+    getChallengeDaysLeft as getDaysLeftFromWindowEnd,
+    getRollingWindowEndDate,
+    resolveChallengeWindow,
+    type ChallengeProgressWindow,
+} from './challenge-engine';
 import { supabase } from './supabase';
 import type { Database } from './supabase-types';
 import { getAccountId } from './sync/authState';
-import { getSessionExerciseCounts, hasCompletedPlannedExercises } from './sessionRecords';
 import type { TeacherExercise } from './teacherContent';
 import { CANONICAL_TERMS } from './terminology';
 
@@ -13,6 +19,8 @@ export type ChallengeMenuSource = 'teacher' | 'preset';
 export type ChallengeCountUnit = 'exercise_completion' | 'menu_completion';
 export type ChallengeTier = 'small' | 'big';
 export type ChallengeRewardKind = 'star' | 'medal';
+export type ChallengeWindowType = 'calendar' | 'rolling';
+export type ChallengeGoalType = 'total_count' | 'active_day';
 
 export interface Challenge {
     id: string;
@@ -28,6 +36,10 @@ export interface Challenge {
     countUnit: ChallengeCountUnit;
     startDate: string;
     endDate: string;
+    windowType: ChallengeWindowType;
+    goalType: ChallengeGoalType;
+    windowDays: number | null;
+    requiredDays: number | null;
     createdBy: string;
     rewardKind: ChallengeRewardKind;
     rewardValue: number;
@@ -46,6 +58,22 @@ export interface ChallengeCompletion {
     completedAt: string;
 }
 
+export interface ChallengeEnrollment {
+    id: string;
+    challengeId: string;
+    accountId: string;
+    memberId: string;
+    joinedAt: string;
+    effectiveStartDate: string;
+    effectiveEndDate: string;
+    createdAt: string;
+}
+
+export interface ChallengeEnrollmentState {
+    joinedChallengeIds: Record<string, string[]>;
+    challengeEnrollmentWindows: Record<string, Record<string, ChallengeProgressWindow>>;
+}
+
 export interface ChallengeWriteInput {
     title: string;
     summary: string | null;
@@ -59,6 +87,10 @@ export interface ChallengeWriteInput {
     countUnit: ChallengeCountUnit;
     startDate: string;
     endDate: string;
+    windowType: ChallengeWindowType;
+    goalType: ChallengeGoalType;
+    windowDays: number | null;
+    requiredDays: number | null;
     createdBy?: string;
     rewardKind: ChallengeRewardKind;
     rewardValue: number;
@@ -91,11 +123,20 @@ function normalizeTier(value: string | null | undefined): ChallengeTier {
     return value === 'small' ? 'small' : 'big';
 }
 
+function normalizeWindowType(value: string | null | undefined): ChallengeWindowType {
+    return value === 'rolling' ? 'rolling' : 'calendar';
+}
+
+function normalizeGoalType(value: string | null | undefined): ChallengeGoalType {
+    return value === 'active_day' ? 'active_day' : 'total_count';
+}
+
 function mapChallenge(row: Database['public']['Tables']['challenges']['Row']): Challenge {
     const challengeType = normalizeChallengeType(row.challenge_type);
     const rewardKind = normalizeRewardKind(row.reward_kind);
     const rewardValue = row.reward_value ?? row.reward_fuwafuwa_type ?? 0;
     const exerciseId = row.target_exercise_id ?? row.exercise_id;
+    const goalType = normalizeGoalType(row.goal_type);
 
     return {
         id: row.id,
@@ -111,6 +152,12 @@ function mapChallenge(row: Database['public']['Tables']['challenges']['Row']): C
         countUnit: normalizeCountUnit(row.count_unit, challengeType),
         startDate: row.start_date,
         endDate: row.end_date,
+        windowType: normalizeWindowType(row.window_type),
+        goalType,
+        windowDays: row.window_days ?? null,
+        requiredDays: goalType === 'active_day'
+            ? (row.required_days ?? row.target_count)
+            : (row.required_days ?? null),
         createdBy: row.created_by,
         rewardKind,
         rewardValue,
@@ -118,6 +165,21 @@ function mapChallenge(row: Database['public']['Tables']['challenges']['Row']): C
         tier: normalizeTier(row.tier),
         iconEmoji: row.icon_emoji ?? null,
         classLevels: row.class_levels ?? [],
+        createdAt: row.created_at,
+    };
+}
+
+function mapChallengeEnrollment(
+    row: Database['public']['Tables']['challenge_enrollments']['Row'],
+): ChallengeEnrollment {
+    return {
+        id: row.id,
+        challengeId: row.challenge_id,
+        accountId: row.account_id,
+        memberId: row.member_id,
+        joinedAt: row.joined_at,
+        effectiveStartDate: row.effective_start_date,
+        effectiveEndDate: row.effective_end_date,
         createdAt: row.created_at,
     };
 }
@@ -136,6 +198,10 @@ function toChallengeRowBase(input: ChallengeWriteInput) {
         count_unit: input.countUnit,
         start_date: input.startDate,
         end_date: input.endDate,
+        window_type: input.windowType,
+        goal_type: input.goalType,
+        window_days: input.windowType === 'rolling' ? input.windowDays : null,
+        required_days: input.goalType === 'active_day' ? input.requiredDays : null,
         created_by: input.createdBy ?? '',
         reward_kind: input.rewardKind,
         reward_value: rewardValue,
@@ -189,8 +255,131 @@ export function getChallengeRewardLabel(challenge: Challenge): string {
         : 'メダル';
 }
 
+export function getChallengeGoalTarget(
+    challenge: Pick<Challenge, 'goalType' | 'requiredDays' | 'targetCount'>,
+): number {
+    if (challenge.goalType === 'active_day') {
+        return Math.max(1, challenge.requiredDays ?? challenge.targetCount);
+    }
+
+    return Math.max(1, challenge.targetCount);
+}
+
+export function getChallengeGoalLabel(
+    challenge: Pick<Challenge, 'goalType' | 'requiredDays' | 'targetCount'>,
+    targetLabel: string,
+): string {
+    const goalTarget = getChallengeGoalTarget(challenge);
+    return challenge.goalType === 'active_day'
+        ? `${targetLabel}を${goalTarget}日`
+        : `${targetLabel}を${goalTarget}回`;
+}
+
+export function getChallengeProgressLabel(
+    challenge: Pick<Challenge, 'goalType' | 'requiredDays' | 'targetCount'>,
+    progress: number,
+): string {
+    const goalTarget = getChallengeGoalTarget(challenge);
+    return challenge.goalType === 'active_day'
+        ? `${progress} / ${goalTarget}日`
+        : `${progress} / ${goalTarget}回`;
+}
+
 export function getChallengeDailyCapLabel(challenge: Challenge): string {
+    if (challenge.goalType === 'active_day') {
+        return '1日1回でカウント';
+    }
+
     return `1日 ${challenge.dailyCap}回まで`;
+}
+
+export function createRollingChallengeWindow(
+    challenge: Pick<Challenge, 'windowDays'>,
+    startDate = getTodayKey(),
+): ChallengeProgressWindow {
+    const resolvedWindowDays = Math.max(1, challenge.windowDays ?? 7);
+
+    return {
+        startDate,
+        endDate: getRollingWindowEndDate(startDate, resolvedWindowDays),
+    };
+}
+
+export function getChallengeActiveWindow(
+    challenge: Pick<Challenge, 'startDate' | 'endDate' | 'windowDays' | 'windowType'>,
+    effectiveWindow?: ChallengeProgressWindow | null,
+): ChallengeProgressWindow {
+    return resolveChallengeWindow(challenge, effectiveWindow);
+}
+
+export function getChallengePeriodLabel(
+    challenge: Pick<Challenge, 'startDate' | 'endDate' | 'windowDays' | 'windowType'>,
+    effectiveWindow?: ChallengeProgressWindow | null,
+): string {
+    if (challenge.windowType === 'rolling' && !effectiveWindow) {
+        return `参加してから${Math.max(1, challenge.windowDays ?? 7)}日`;
+    }
+
+    const window = getChallengeActiveWindow(challenge, effectiveWindow);
+    return `${window.startDate} 〜 ${window.endDate}`;
+}
+
+export function getChallengeInviteWindowLabel(
+    challenge: Pick<Challenge, 'startDate' | 'endDate' | 'windowDays' | 'windowType'>,
+): string {
+    if (challenge.windowType === 'rolling') {
+        return `参加すると 今日から${Math.max(1, challenge.windowDays ?? 7)}日`;
+    }
+
+    const [startYear, startMonth, startDay] = challenge.startDate.split('-');
+    const [, endMonth, endDay] = challenge.endDate.split('-');
+    void startYear;
+
+    return startMonth === endMonth
+        ? `${Number(endMonth)}/${Number(endDay)}まで`
+        : `${Number(startMonth)}/${Number(startDay)}〜${Number(endMonth)}/${Number(endDay)}`;
+}
+
+export function getChallengeDeadlineLabel(
+    challenge: Pick<Challenge, 'startDate' | 'endDate' | 'windowDays' | 'windowType'>,
+    effectiveWindow?: ChallengeProgressWindow | null,
+    now = new Date(),
+): string {
+    if (challenge.windowType === 'rolling' && !effectiveWindow) {
+        return `参加すると 今日から${Math.max(1, challenge.windowDays ?? 7)}日`;
+    }
+
+    const window = getChallengeActiveWindow(challenge, effectiveWindow);
+    const daysLeft = getDaysLeftFromWindowEnd(window.endDate, now);
+    return challenge.windowType === 'rolling'
+        ? `あと${daysLeft}日`
+        : getChallengeInviteWindowLabel(challenge);
+}
+
+export function buildChallengeEnrollmentState(
+    enrollments: ChallengeEnrollment[],
+): ChallengeEnrollmentState {
+    const joinedChallengeIds: Record<string, string[]> = {};
+    const challengeEnrollmentWindows: Record<string, Record<string, ChallengeProgressWindow>> = {};
+
+    for (const enrollment of enrollments) {
+        joinedChallengeIds[enrollment.memberId] = [
+            ...(joinedChallengeIds[enrollment.memberId] ?? []),
+            enrollment.challengeId,
+        ];
+        challengeEnrollmentWindows[enrollment.memberId] = {
+            ...(challengeEnrollmentWindows[enrollment.memberId] ?? {}),
+            [enrollment.challengeId]: {
+                startDate: enrollment.effectiveStartDate,
+                endDate: enrollment.effectiveEndDate,
+            },
+        };
+    }
+
+    return {
+        joinedChallengeIds,
+        challengeEnrollmentWindows,
+    };
 }
 
 function normalizeChallengeText(value: string | null | undefined): string | null {
@@ -337,6 +526,45 @@ export async function fetchMyCompletions(): Promise<ChallengeCompletion[]> {
     }));
 }
 
+export async function fetchMyEnrollments(): Promise<ChallengeEnrollment[]> {
+    if (!supabase) return [];
+    const accountId = getAccountId();
+    if (!accountId) return [];
+
+    const { data, error } = await supabase
+        .from('challenge_enrollments')
+        .select('*')
+        .eq('account_id', accountId);
+
+    if (error) {
+        console.warn('[challenges] fetchMyEnrollments failed:', error);
+        return [];
+    }
+
+    return (data ?? []).map(mapChallengeEnrollment);
+}
+
+export async function markChallengeJoined(
+    challengeId: string,
+    memberId: string,
+    effectiveWindow: ChallengeProgressWindow,
+): Promise<void> {
+    if (!supabase) return;
+    const accountId = getAccountId();
+    if (!accountId) return;
+
+    const { error } = await supabase.from('challenge_enrollments').upsert({
+        challenge_id: challengeId,
+        account_id: accountId,
+        member_id: memberId,
+        joined_at: new Date().toISOString(),
+        effective_start_date: effectiveWindow.startDate,
+        effective_end_date: effectiveWindow.endDate,
+    }, { onConflict: 'challenge_id,account_id,member_id' });
+
+    if (error) throw error;
+}
+
 export async function markChallengeComplete(
     challengeId: string,
     memberId: string,
@@ -359,64 +587,23 @@ export async function markChallengeComplete(
 export async function countChallengeProgress(
     challenge: Challenge,
     userIds: string[],
+    effectiveWindow?: ChallengeProgressWindow | null,
 ): Promise<number> {
-    if (challenge.challengeType === 'menu') {
-        if (!challenge.targetMenuId || !challenge.menuSource) {
-            return 0;
-        }
-
-        const sessions = await getAllSessions();
-        const targetUserSet = userIds.length > 0 ? new Set(userIds) : null;
-        const countsByDate = new Map<string, number>();
-
-        for (const session of sessions) {
-            if (session.date < challenge.startDate || session.date > challenge.endDate) {
-                continue;
-            }
-
-            if (session.sourceMenuId !== challenge.targetMenuId || session.sourceMenuSource !== challenge.menuSource) {
-                continue;
-            }
-
-            if (!hasCompletedPlannedExercises(session)) {
-                continue;
-            }
-
-            if (targetUserSet && targetUserSet.size > 0) {
-                const sessionUsers = session.userIds ?? [];
-                if (!sessionUsers.some((userId) => targetUserSet.has(userId))) {
-                    continue;
-                }
-            }
-
-            countsByDate.set(session.date, (countsByDate.get(session.date) ?? 0) + 1);
-        }
-
-        return [...countsByDate.values()].reduce((sum, count) => sum + Math.min(count, challenge.dailyCap), 0);
-    }
-
-    if (!challenge.exerciseId) {
-        return 0;
-    }
-
     const sessions = await getAllSessions();
-    const countsByDate = new Map<string, number>();
+    const window = getChallengeActiveWindow(challenge, effectiveWindow);
 
-    for (const session of sessions) {
-        if (session.date < challenge.startDate || session.date > challenge.endDate) continue;
-
-        if (session.userIds && session.userIds.length > 0) {
-            if (!session.userIds.some((uid) => userIds.includes(uid))) continue;
-        }
-
-        const nextCount = (countsByDate.get(session.date) ?? 0) + (getSessionExerciseCounts(session)[challenge.exerciseId] ?? 0);
-        countsByDate.set(session.date, nextCount);
-    }
-
-    let progress = 0;
-    for (const count of countsByDate.values()) {
-        progress += Math.min(count, challenge.dailyCap);
-    }
-
-    return progress;
+    return countChallengeProgressFromSessions({
+        challengeType: challenge.challengeType,
+        exerciseId: challenge.exerciseId,
+        targetMenuId: challenge.targetMenuId,
+        menuSource: challenge.menuSource,
+        targetCount: getChallengeGoalTarget(challenge),
+        dailyCap: challenge.dailyCap,
+        countUnit: challenge.countUnit,
+        startDate: challenge.startDate,
+        endDate: challenge.endDate,
+        windowType: challenge.windowType,
+        goalType: challenge.goalType,
+        windowDays: challenge.windowDays,
+    }, sessions, userIds, window);
 }

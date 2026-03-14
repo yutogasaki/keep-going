@@ -1,11 +1,13 @@
 import type { UserProfileStore } from '../../store/useAppStore';
 import {
     isValidNotificationTime,
+    sanitizeChallengeEnrollmentWindows,
     sanitizeBooleanSetting,
     sanitizeJoinedChallengeIds,
     sanitizeSessionUserIds,
     sanitizeSoundVolume,
 } from '../../store/use-app-store/migrateHelpers';
+import { buildChallengeEnrollmentState, type ChallengeEnrollment } from '../challenges';
 import type { Database } from '../supabase-types';
 
 export type CloudAppSettings = Database['public']['Tables']['app_settings']['Row'];
@@ -43,21 +45,40 @@ function filterJoinedChallengeIds(
     return sanitizeJoinedChallengeIds(localState.joinedChallengeIds, new Set(users.map((user) => user.id)));
 }
 
+function filterChallengeEnrollmentWindows(
+    localState: LocalStateRecord,
+    users: UserProfileStore[],
+): Record<string, Record<string, { startDate: string; endDate: string }>> {
+    return sanitizeChallengeEnrollmentWindows(localState.challengeEnrollmentWindows, new Set(users.map((user) => user.id)));
+}
+
 export function buildRestoredStoreState({
     localState,
     users,
     settings,
+    challengeEnrollments = [],
 }: {
     localState: LocalStateRecord;
     users: UserProfileStore[];
     settings: CloudAppSettings | null;
+    challengeEnrollments?: ChallengeEnrollment[];
 }): Record<string, unknown> {
     const hasUsers = users.length > 0;
+    const localJoinedChallengeIds = filterJoinedChallengeIds(localState, users);
+    const localChallengeEnrollmentWindows = filterChallengeEnrollmentWindows(localState, users);
+    const cloudEnrollmentState = buildChallengeEnrollmentState(challengeEnrollments);
+    const joinedChallengeIds = challengeEnrollments.length > 0
+        ? cloudEnrollmentState.joinedChallengeIds
+        : localJoinedChallengeIds;
+    const challengeEnrollmentWindows = challengeEnrollments.length > 0
+        ? cloudEnrollmentState.challengeEnrollmentWindows
+        : localChallengeEnrollmentWindows;
 
     return {
         users,
         sessionUserIds: deriveSessionUserIds(localState, users),
-        joinedChallengeIds: filterJoinedChallengeIds(localState, users),
+        joinedChallengeIds,
+        challengeEnrollmentWindows,
         onboardingCompleted: hasUsers
             ? settings == null
                 ? true

@@ -16,6 +16,8 @@
 - built-in では `ポイント＆フレックス` を準備、`ゆりかご / どんぐり` をストレッチ、`深呼吸` を 30 秒の `おわり` とし、おまかせは最後を `おわり` で締める。
 - MainLayout は `home / record / menu / settings` を hidden mount で保持するため、teacher dashboard の保存反映は再マウント任せにせず `teacherContentUpdated` event で `メニュー` と `きろく` を再読込する。
 - developer dashboard の運用基準は `新規14日保護`、`非アクティブ14日+`、`休止候補 = 作成日と最終利用の両方が30日超` を正本にする。同一アカウント内の同名 member は `session.user_ids` 未参照なら整理候補として区別するが、端末上の不在は断定せずヒューリスティックとして扱う。
+- チャレンジは `先生` と `じぶん` を別UIで見せつつ、`calendar / rolling` と `total_count / active_day` を同じ計算基盤で扱う方針を正本にする。
+- 先生 rolling チャレンジは `参加 = 開始`、じぶんチャレンジは `作成 = 開始` を正本にし、じぶんチャレンジの報酬は `ほし1こ固定`、`種目 / メニュー` 両対応、軽すぎる条件は日数型プリセットで防ぐ。
 
 ## Engineering
 
@@ -31,4 +33,3 @@
 
 - agent 向け task queue と product backlog を同じファイルに混ぜると、精度と検索性が落ちる。
 - `AGENTS.md` と `CLAUDE.md` に長い重複文書を戻すと、shared guide が形骸化してコンテキスト汚染が再発する。
-
