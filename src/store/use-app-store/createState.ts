@@ -59,6 +59,12 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
     deleteUser: (id) => set((state) => ({
         users: state.users.filter((user) => user.id !== id),
         sessionUserIds: state.sessionUserIds.filter((userId) => userId !== id),
+        joinedChallengeIds: Object.fromEntries(
+            Object.entries(state.joinedChallengeIds).filter(([userId]) => userId !== id),
+        ),
+        challengeEnrollmentWindows: Object.fromEntries(
+            Object.entries(state.challengeEnrollmentWindows).filter(([userId]) => userId !== id),
+        ),
         homeVisitMemory: {
             soloByUserId: Object.fromEntries(
                 Object.entries(state.homeVisitMemory.soloByUserId).filter(([userId]) => userId !== id),
@@ -296,7 +302,8 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
     setActiveMilestoneModal: (activeMilestoneModal) => set({ activeMilestoneModal }),
 
     joinedChallengeIds: {},
-    joinChallenge: (userId, challengeId) => set((state) => {
+    challengeEnrollmentWindows: {},
+    joinChallenge: (userId, challengeId, effectiveWindow) => set((state) => {
         const joinedForUser = state.joinedChallengeIds[userId] || [];
         if (joinedForUser.includes(challengeId)) {
             return state;
@@ -307,6 +314,13 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
                 ...state.joinedChallengeIds,
                 [userId]: [...joinedForUser, challengeId],
             },
+            challengeEnrollmentWindows: effectiveWindow ? {
+                ...state.challengeEnrollmentWindows,
+                [userId]: {
+                    ...(state.challengeEnrollmentWindows[userId] ?? {}),
+                    [challengeId]: effectiveWindow,
+                },
+            } : state.challengeEnrollmentWindows,
         };
     }),
 });

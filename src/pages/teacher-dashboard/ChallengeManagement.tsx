@@ -84,6 +84,9 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
         setSubmitting(true);
         const trimmedTitle = formValues.title.trim();
         const trimmedDescription = formValues.description.trim();
+        const goalType = formValues.windowType === 'rolling' ? 'active_day' : formValues.goalType;
+        const targetCount = goalType === 'active_day' ? formValues.requiredDays : formValues.targetCount;
+        const dailyCap = goalType === 'active_day' ? 1 : formValues.dailyCap;
 
         try {
             if (editingId) {
@@ -95,11 +98,15 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                     exerciseId: formValues.challengeType === 'exercise' ? formValues.exerciseId : null,
                     targetMenuId: formValues.challengeType === 'menu' ? formValues.targetMenuId : null,
                     menuSource: formValues.challengeType === 'menu' ? formValues.menuSource : null,
-                    targetCount: formValues.targetCount,
-                    dailyCap: formValues.dailyCap,
+                    targetCount,
+                    dailyCap,
                     countUnit: formValues.challengeType === 'menu' ? 'menu_completion' : 'exercise_completion',
                     startDate: formValues.startDate,
                     endDate: formValues.endDate,
+                    windowType: formValues.windowType,
+                    goalType,
+                    windowDays: formValues.windowType === 'rolling' ? formValues.windowDays : null,
+                    requiredDays: goalType === 'active_day' ? formValues.requiredDays : null,
                     rewardKind: formValues.rewardKind,
                     rewardValue: formValues.rewardValue,
                     tier: formValues.tier,
@@ -115,11 +122,15 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                     exerciseId: formValues.challengeType === 'exercise' ? formValues.exerciseId : null,
                     targetMenuId: formValues.challengeType === 'menu' ? formValues.targetMenuId : null,
                     menuSource: formValues.challengeType === 'menu' ? formValues.menuSource : null,
-                    targetCount: formValues.targetCount,
-                    dailyCap: formValues.dailyCap,
+                    targetCount,
+                    dailyCap,
                     countUnit: formValues.challengeType === 'menu' ? 'menu_completion' : 'exercise_completion',
                     startDate: formValues.startDate,
                     endDate: formValues.endDate,
+                    windowType: formValues.windowType,
+                    goalType,
+                    windowDays: formValues.windowType === 'rolling' ? formValues.windowDays : null,
+                    requiredDays: goalType === 'active_day' ? formValues.requiredDays : null,
                     createdBy: teacherEmail,
                     rewardKind: formValues.rewardKind,
                     rewardValue: formValues.rewardValue,

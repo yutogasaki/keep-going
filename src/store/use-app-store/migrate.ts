@@ -2,7 +2,7 @@ import { getTodayKey } from '../../lib/db';
 import type { AppState } from './types';
 import { sanitizePersistedState, sanitizeSessionDraft } from './migrateHelpers';
 
-export const APP_STATE_VERSION = 20;
+export const APP_STATE_VERSION = 21;
 
 export type PersistedAppState = Pick<
     AppState,
@@ -24,6 +24,7 @@ export type PersistedAppState = Pick<
     | 'debugActiveDays'
     | 'debugFuwafuwaScale'
     | 'joinedChallengeIds'
+    | 'challengeEnrollmentWindows'
 >;
 
 export const PERSISTED_APP_STATE_KEYS = [
@@ -45,6 +46,7 @@ export const PERSISTED_APP_STATE_KEYS = [
     'debugActiveDays',
     'debugFuwafuwaScale',
     'joinedChallengeIds',
+    'challengeEnrollmentWindows',
 ] as const satisfies ReadonlyArray<keyof PersistedAppState>;
 
 export function migrateAppState(persistedState: any, version: number): AppState {
@@ -223,6 +225,10 @@ export function migrateAppState(persistedState: any, version: number): AppState 
             soloByUserId: {},
             familyByUserSet: {},
         };
+    }
+
+    if (version < 21) {
+        state.challengeEnrollmentWindows = state.challengeEnrollmentWindows ?? {};
     }
 
     sanitizePersistedState(state as Record<string, unknown>);

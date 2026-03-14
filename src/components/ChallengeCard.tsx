@@ -4,10 +4,21 @@ import { ChallengeDetailSheet } from './ChallengeDetailSheet';
 import { ExpiredChallengeCard } from './challenge-card/ExpiredChallengeCard';
 import { InviteChallengeCard } from './challenge-card/InviteChallengeCard';
 import { ProgressChallengeCard } from './challenge-card/ProgressChallengeCard';
-import { getChallengeDateLabel, getChallengeDaysLeft } from './challenge-card/challengeCardUtils';
 import { useChallengeProgress } from './challenge-card/useChallengeProgress';
 import type { ChallengeCardProps } from './challenge-card/types';
-import { getChallengeDailyCapLabel, getChallengeEmoji, getChallengeTargetLabel } from '../lib/challenges';
+import {
+    createRollingChallengeWindow,
+    getChallengeDailyCapLabel,
+    getChallengeDeadlineLabel,
+    getChallengeEmoji,
+    getChallengeGoalLabel,
+    getChallengeGoalTarget,
+    getChallengeInviteWindowLabel,
+    getChallengePeriodLabel,
+    getChallengeProgressLabel,
+    getChallengeTargetLabel,
+} from '../lib/challenges';
+import type { ChallengeProgressWindow } from '../lib/challenge-engine';
 
 export const ChallengeCard: React.FC<ChallengeCardProps> = ({
     challenge,
@@ -22,6 +33,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
     const addChibifuwa = useAppStore((state) => state.addChibifuwa);
     const addChallengeStars = useAppStore((state) => state.addChallengeStars);
     const joinedChallengeIds = useAppStore((state) => state.joinedChallengeIds);
+    const challengeEnrollmentWindows = useAppStore((state) => state.challengeEnrollmentWindows);
     const joinChallenge = useAppStore((state) => state.joinChallenge);
 
     const activeUserIds = useMemo(
@@ -44,12 +56,24 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
 
     const allCompleted = activeUserIds.every((userId) => completedUserIds.has(userId));
 
+    const effectiveWindow = useMemo<ChallengeProgressWindow | null>(() => {
+        for (const userId of activeUserIds) {
+            const window = challengeEnrollmentWindows[userId]?.[challenge.id];
+            if (window) {
+                return window;
+            }
+        }
+
+        return null;
+    }, [activeUserIds, challenge.id, challengeEnrollmentWindows]);
+
     const progress = useChallengeProgress({
         challenge,
         isJoined,
         allCompleted,
         activeUserIds,
         completedUserIds,
+        effectiveWindow,
         addChibifuwa,
         addChallengeStars,
         onCompleted,
@@ -57,12 +81,20 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
 
     const emoji = getChallengeEmoji(challenge, teacherExercises);
     const targetLabel = getChallengeTargetLabel(challenge, teacherExercises);
-    const ratio = Math.min(progress / challenge.targetCount, 1);
-
-    const dateLabel = getChallengeDateLabel(challenge.startDate, challenge.endDate);
-    const daysLeft = getChallengeDaysLeft(challenge.endDate);
+    const goalTarget = getChallengeGoalTarget(challenge);
+    const ratio = Math.min(progress / goalTarget, 1);
+    const goalLabel = getChallengeGoalLabel(challenge, targetLabel);
+    const progressLabel = getChallengeProgressLabel(challenge, progress);
+    const dailyRuleLabel = getChallengeDailyCapLabel(challenge);
+    const inviteWindowLabel = getChallengeInviteWindowLabel(challenge);
+    const activeWindowLabel = getChallengePeriodLabel(challenge, effectiveWindow);
+    const deadlineLabel = getChallengeDeadlineLabel(challenge, effectiveWindow);
     const handleJoin = () => {
-        activeUserIds.forEach((userId) => joinChallenge(userId, challenge.id));
+        const nextWindow = challenge.windowType === 'rolling'
+            ? createRollingChallengeWindow(challenge)
+            : null;
+
+        activeUserIds.forEach((userId) => joinChallenge(userId, challenge.id, nextWindow));
         setDetailOpen(false);
     };
 
@@ -74,10 +106,10 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
                 <ExpiredChallengeCard
                     challenge={challenge}
                     emoji={emoji}
-                    targetLabel={targetLabel}
-                    dateLabel={dateLabel}
+                    goalLabel={goalLabel}
+                    periodLabel={activeWindowLabel}
                     wasCompleted={wasCompleted}
-                    dailyCapLabel={getChallengeDailyCapLabel(challenge)}
+                    dailyRuleLabel={dailyRuleLabel}
                     onOpenDetail={() => setDetailOpen(true)}
                 />
                 <ChallengeDetailSheet
@@ -85,6 +117,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
                     challenge={challenge}
                     teacherExercises={teacherExercises}
                     progress={progress}
+                    effectiveWindow={effectiveWindow}
                     joined={isJoined}
                     completed={wasCompleted}
                     onClose={() => setDetailOpen(false)}
@@ -100,9 +133,9 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
                 <InviteChallengeCard
                     challenge={challenge}
                     emoji={emoji}
-                    targetLabel={targetLabel}
-                    dateLabel={dateLabel}
-                    dailyCapLabel={getChallengeDailyCapLabel(challenge)}
+                    goalLabel={goalLabel}
+                    periodLabel={inviteWindowLabel}
+                    dailyRuleLabel={dailyRuleLabel}
                     onJoin={handleJoin}
                     onOpenDetail={() => setDetailOpen(true)}
                 />
@@ -111,6 +144,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
                     challenge={challenge}
                     teacherExercises={teacherExercises}
                     progress={progress}
+                    effectiveWindow={effectiveWindow}
                     joined={false}
                     completed={false}
                     onClose={() => setDetailOpen(false)}
@@ -125,12 +159,12 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
             <ProgressChallengeCard
                 challenge={challenge}
                 emoji={emoji}
-                targetLabel={targetLabel}
-                daysLeft={daysLeft}
+                goalLabel={goalLabel}
+                deadlineLabel={deadlineLabel}
                 ratio={ratio}
-                progress={progress}
+                progressLabel={progressLabel}
                 allCompleted={allCompleted}
-                dailyCapLabel={getChallengeDailyCapLabel(challenge)}
+                dailyRuleLabel={dailyRuleLabel}
                 onOpenDetail={() => setDetailOpen(true)}
             />
             <ChallengeDetailSheet
@@ -138,6 +172,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
                 challenge={challenge}
                 teacherExercises={teacherExercises}
                 progress={progress}
+                effectiveWindow={effectiveWindow}
                 joined
                 completed={allCompleted}
                 onClose={() => setDetailOpen(false)}

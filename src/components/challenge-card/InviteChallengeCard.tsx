@@ -8,9 +8,9 @@ import { CLASS_EMOJI } from '../../data/exercises';
 interface InviteChallengeCardProps {
     challenge: Challenge;
     emoji: string;
-    targetLabel: string;
-    dateLabel: string;
-    dailyCapLabel: string;
+    goalLabel: string;
+    periodLabel: string;
+    dailyRuleLabel: string;
     onJoin: () => void;
     onOpenDetail: () => void;
 }
@@ -18,9 +18,9 @@ interface InviteChallengeCardProps {
 export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
     challenge,
     emoji,
-    targetLabel,
-    dateLabel,
-    dailyCapLabel,
+    goalLabel,
+    periodLabel,
+    dailyRuleLabel,
     onJoin,
     onOpenDetail,
 }) => {
@@ -66,13 +66,13 @@ export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
                         )}
                         <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                             <Target size={12} color="#2BBAA0" />
-                            {targetLabel}を{challenge.targetCount}回
+                            {goalLabel}
                         </span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                             <Calendar size={12} color="#8395A7" />
-                            {dateLabel}
+                            {periodLabel}
                         </span>
-                        <span style={{ color: '#6B7280' }}>{dailyCapLabel}</span>
+                        <span style={{ color: '#6B7280' }}>{dailyRuleLabel}</span>
                     </div>
                     {challenge.classLevels.length > 0 && (
                         <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 4 }}>

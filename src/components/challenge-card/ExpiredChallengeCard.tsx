@@ -6,20 +6,20 @@ import type { Challenge } from '../../lib/challenges';
 interface ExpiredChallengeCardProps {
     challenge: Challenge;
     emoji: string;
-    targetLabel: string;
-    dateLabel: string;
+    goalLabel: string;
+    periodLabel: string;
     wasCompleted: boolean;
-    dailyCapLabel: string;
+    dailyRuleLabel: string;
     onOpenDetail: () => void;
 }
 
 export const ExpiredChallengeCard: React.FC<ExpiredChallengeCardProps> = ({
     challenge,
     emoji,
-    targetLabel,
-    dateLabel,
+    goalLabel,
+    periodLabel,
     wasCompleted,
-    dailyCapLabel,
+    dailyRuleLabel,
     onOpenDetail,
 }) => {
     return (
@@ -61,11 +61,11 @@ export const ExpiredChallengeCard: React.FC<ExpiredChallengeCardProps> = ({
                         gap: 4,
                         flexWrap: 'wrap',
                     }}>
-                        {targetLabel}を{challenge.targetCount}回
+                        {goalLabel}
                         <span style={{ color: '#ccc' }}>|</span>
-                        {dailyCapLabel}
+                        {dailyRuleLabel}
                         <span style={{ color: '#ccc' }}>|</span>
-                        <span>{dateLabel}</span>
+                        <span>{periodLabel}</span>
                     </div>
                 </div>
                 {wasCompleted ? (

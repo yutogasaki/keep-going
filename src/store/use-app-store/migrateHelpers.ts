@@ -1,6 +1,7 @@
 import { getTodayKey } from '../../lib/db';
 import type {
     AppState,
+    ChallengeEnrollmentWindow,
     ChibifuwaRecord,
     HomeVisitMemory,
     PastFuwafuwaRecord,
@@ -252,6 +253,61 @@ export function sanitizeJoinedChallengeIds(
     return result;
 }
 
+function sanitizeChallengeEnrollmentWindow(value: unknown): ChallengeEnrollmentWindow | null {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return null;
+    }
+
+    const candidate = value as Record<string, unknown>;
+    if (typeof candidate.startDate !== 'string' || typeof candidate.endDate !== 'string') {
+        return null;
+    }
+
+    const startDate = candidate.startDate.trim();
+    const endDate = candidate.endDate.trim();
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate) || endDate < startDate) {
+        return null;
+    }
+
+    return { startDate, endDate };
+}
+
+export function sanitizeChallengeEnrollmentWindows(
+    value: unknown,
+    validUserIds: Set<string>,
+): Record<string, Record<string, ChallengeEnrollmentWindow>> {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        return {};
+    }
+
+    const result: Record<string, Record<string, ChallengeEnrollmentWindow>> = {};
+
+    for (const [userId, rawChallengeMap] of Object.entries(value as Record<string, unknown>)) {
+        if (!validUserIds.has(userId) || !rawChallengeMap || typeof rawChallengeMap !== 'object' || Array.isArray(rawChallengeMap)) {
+            continue;
+        }
+
+        const challengeMap: Record<string, ChallengeEnrollmentWindow> = {};
+        for (const [challengeId, rawWindow] of Object.entries(rawChallengeMap as Record<string, unknown>)) {
+            if (typeof challengeId !== 'string' || challengeId.length === 0) {
+                continue;
+            }
+
+            const window = sanitizeChallengeEnrollmentWindow(rawWindow);
+            if (window) {
+                challengeMap[challengeId] = window;
+            }
+        }
+
+        if (Object.keys(challengeMap).length > 0) {
+            result[userId] = challengeMap;
+        }
+    }
+
+    return result;
+}
+
 function sanitizeTimestampRecord(value: unknown): Record<string, string> {
     if (!value || typeof value !== 'object' || Array.isArray(value)) {
         return {};
@@ -351,6 +407,10 @@ export function sanitizePersistedState(state: Record<string, unknown>): void {
     state.debugActiveDays = sanitizeNullableNumber(state.debugActiveDays);
     state.debugFuwafuwaScale = sanitizeNullableNumber(state.debugFuwafuwaScale);
     state.joinedChallengeIds = sanitizeJoinedChallengeIds(state.joinedChallengeIds, validUserIdSet);
+    state.challengeEnrollmentWindows = sanitizeChallengeEnrollmentWindows(
+        state.challengeEnrollmentWindows,
+        validUserIdSet,
+    );
     state.homeVisitMemory = sanitizeHomeVisitMemory(state.homeVisitMemory, validUserIdSet);
     state.sessionUserIds = sanitizeSessionUserIds(state.sessionUserIds, validUserIds);
     state.sessionDraft = sanitizeSessionDraft(state.sessionDraft, validUserIdSet);

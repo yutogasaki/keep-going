@@ -188,6 +188,10 @@ export interface Database {
                     count_unit: string;
                     start_date: string;
                     end_date: string;
+                    window_type: string | null;
+                    goal_type: string | null;
+                    window_days: number | null;
+                    required_days: number | null;
                     created_by: string;
                     reward_fuwafuwa_type: number;
                     reward_kind: string | null;
@@ -212,6 +216,10 @@ export interface Database {
                     count_unit?: string;
                     start_date: string;
                     end_date: string;
+                    window_type?: string | null;
+                    goal_type?: string | null;
+                    window_days?: number | null;
+                    required_days?: number | null;
                     created_by: string;
                     reward_fuwafuwa_type: number;
                     reward_kind?: string | null;

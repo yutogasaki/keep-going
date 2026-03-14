@@ -22,6 +22,11 @@ export interface HomeVisitMemory {
     familyByUserSet: Record<string, string>;
 }
 
+export interface ChallengeEnrollmentWindow {
+    startDate: string;
+    endDate: string;
+}
+
 export type FuwafuwaMilestoneKind = 'egg' | 'fairy' | 'adult';
 
 export interface FuwafuwaMilestoneEvent {
@@ -154,5 +159,6 @@ export interface AppState {
     setActiveMilestoneModal: (modal: FuwafuwaMilestoneEvent | null) => void;
 
     joinedChallengeIds: Record<string, string[]>;
-    joinChallenge: (userId: string, challengeId: string) => void;
+    challengeEnrollmentWindows: Record<string, Record<string, ChallengeEnrollmentWindow>>;
+    joinChallenge: (userId: string, challengeId: string, effectiveWindow?: ChallengeEnrollmentWindow | null) => void;
 }
