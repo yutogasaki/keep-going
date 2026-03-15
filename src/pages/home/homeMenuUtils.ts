@@ -1,7 +1,11 @@
 import { getExercisePlacementLabel } from '../../data/exercisePlacement';
-import { EXERCISES } from '../../data/exercises';
 import type { PublicExercise } from '../../lib/publicExercises';
 import type { PublicMenu } from '../../lib/publicMenuTypes';
+import {
+    buildPublicMenuExercisePreview as buildPublicMenuPreviewText,
+    getPublicMenuDiscoverableExercises,
+    getPublicMenuMinutes as getResolvedPublicMenuMinutes,
+} from '../../lib/publicMenuUtils';
 import type { TeacherExercise, TeacherMenu } from '../../lib/teacherContent';
 import { isTeacherContentNew } from '../../lib/teacherExerciseMetadata';
 import type { MenuGroup } from '../../data/menuGroups';
@@ -101,7 +105,7 @@ export function pickTeacherExerciseDiscovery(
 }
 
 export function getPublicMenuBadgeLabel(menu: PublicMenu, now = Date.now()): string | null {
-    if (menu.customExerciseData.length > 0) {
+    if (getPublicMenuDiscoverableExercises(menu).length > 0) {
         return 'みんなの種目あり';
     }
 
@@ -117,29 +121,11 @@ export function getPublicMenuBadgeLabel(menu: PublicMenu, now = Date.now()): str
 }
 
 export function buildPublicMenuExercisePreview(menu: PublicMenu, limit = 3): string {
-    const resolveExercise = (id: string) =>
-        EXERCISES.find((exercise) => exercise.id === id)
-        ?? menu.customExerciseData.find((exercise) => exercise.id === id);
-
-    const names = menu.exerciseIds
-        .slice(0, limit)
-        .map((id) => resolveExercise(id)?.name ?? id);
-    const remaining = menu.exerciseIds.length - limit;
-
-    return `${names.join('、')}${remaining > 0 ? `、+${remaining}` : ''}`;
+    return buildPublicMenuPreviewText(menu, limit);
 }
 
 export function getPublicMenuMinutes(menu: PublicMenu): number {
-    const resolveExercise = (id: string) =>
-        EXERCISES.find((exercise) => exercise.id === id)
-        ?? menu.customExerciseData.find((exercise) => exercise.id === id);
-
-    const totalSec = menu.exerciseIds.reduce(
-        (sum, id) => sum + (resolveExercise(id)?.sec ?? 0),
-        0,
-    );
-
-    return Math.ceil(totalSec / 60);
+    return getResolvedPublicMenuMinutes(menu);
 }
 
 export function buildFeaturedExerciseCopy(exercise: PublicExercise): string {

@@ -140,6 +140,12 @@ do $$ begin
 exception when duplicate_column then null;
 end $$;
 
+-- public_menus に inline menu item 用カラム追加
+do $$ begin
+  alter table public_menus add column menu_items jsonb not null default '[]';
+exception when duplicate_column then null;
+end $$;
+
 -- menu_groups に inline menu item 用カラム追加
 do $$ begin
   alter table menu_groups add column menu_items jsonb not null default '[]';

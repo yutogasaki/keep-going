@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { buildMenuGroupItemsFromExerciseIds } from '../../data/menuGroups';
 import {
     buildPublicMenuExercisePreview,
     getPublicMenuBadgeLabel,
@@ -15,6 +16,7 @@ describe('homeMenuUtils', () => {
             emoji: '🌍',
             description: '',
             exerciseIds: ['custom-1', 'S01'],
+            items: buildMenuGroupItemsFromExerciseIds(['custom-1', 'S01']),
             customExerciseData: [
                 {
                     id: 'custom-1',
@@ -56,6 +58,7 @@ describe('homeMenuUtils', () => {
             emoji: '🌸',
             description: '',
             exerciseIds: ['S01', 'S02', 'S03', 'S04'],
+            items: buildMenuGroupItemsFromExerciseIds(['S01', 'S02', 'S03', 'S04']),
             customExerciseData: [],
             authorName: 'すず',
             accountId: 'account-2',

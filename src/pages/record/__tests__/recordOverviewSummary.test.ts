@@ -194,6 +194,40 @@ describe('recordOverviewSummary', () => {
         expect(suggestion.targetTab).toBe('group');
     });
 
+    it('rounds sub-minute record displays up to one minute', () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(2026, 2, 14, 10, 0, 0));
+
+        const sessions = [
+            createSession({
+                id: 'short',
+                date: '2026-03-14',
+                totalSeconds: 30,
+                exerciseIds: ['S01'],
+            }),
+        ];
+
+        const todaySummary = buildTodayRecordSummary({
+            todaySessions: sessions,
+            targetMinutes: 10,
+        });
+        const trendSummary = buildTwoWeekRecordSummary({ sessions, exerciseMap });
+        const historyDays = buildRecordHistoryDays({
+            groupedEntries: [['2026-03-14', sessions]],
+            exerciseMap,
+            userNameMap,
+        });
+        const sections = buildRecordHistoryAccordionSections({
+            historyDays,
+            todayKey: '2026-03-14',
+        });
+
+        expect(todaySummary.minutes).toBe(1);
+        expect(trendSummary.totalMinutes).toBe(1);
+        expect(trendSummary.dots[trendSummary.dots.length - 1]?.minutes).toBe(1);
+        expect(sections[0].summaryLine).toBe('1回 / 1分');
+    });
+
     it('suggests a familiar menu after today is already enough', () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date(2026, 2, 14, 10, 0, 0));

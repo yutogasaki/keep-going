@@ -12,6 +12,7 @@ import {
     type RecordSessionHistoryDay,
 } from './recordHistorySummary';
 import type { ExercisePlacement } from '../../data/exercisePlacement';
+import { toDisplayMinutes } from './recordUtils';
 
 export type RecordExerciseDisplayInfo = ExerciseDisplayInfo;
 
@@ -200,7 +201,7 @@ export function buildTodayRecordSummary({
 
     return {
         progressPercent,
-        minutes: Math.floor(totalSeconds / 60),
+        minutes: toDisplayMinutes(totalSeconds),
         sessionCount: todaySessions.length,
         exerciseCount: todaySessions.reduce(
             (sum, session) => sum + getSessionCompletedExerciseTotal(session),
@@ -256,8 +257,8 @@ export function buildTwoWeekRecordSummary({
         .filter(([placement]) => placement !== 'rest')
         .sort((a, b) => b[1] - a[1]);
     const dominantPlacement = sortedPlacements.length > 0 ? sortedPlacements[0][0] : null;
-    const totalMinutes = Math.floor(
-        Array.from(secondsByDate.values()).reduce((sum, totalSeconds) => sum + totalSeconds, 0) / 60,
+    const totalMinutes = toDisplayMinutes(
+        Array.from(secondsByDate.values()).reduce((sum, totalSeconds) => sum + totalSeconds, 0),
     );
 
     return {
@@ -271,7 +272,7 @@ export function buildTwoWeekRecordSummary({
         dots: dates.map((date) => {
             const parsed = parseDateKey(date);
             const weekdayIndex = parsed?.getDay() ?? 0;
-            const minutes = Math.floor((secondsByDate.get(date) ?? 0) / 60);
+            const minutes = toDisplayMinutes(secondsByDate.get(date) ?? 0);
             return {
                 date,
                 label: WEEKDAY_LABELS[weekdayIndex],
@@ -446,7 +447,7 @@ export function buildRecordHistoryAccordionSections({
         }
 
         const totalSessions = days.reduce((sum, day) => sum + day.sessionCount, 0);
-        const totalMinutes = Math.floor(days.reduce((sum, day) => sum + day.totalSeconds, 0) / 60);
+        const totalMinutes = toDisplayMinutes(days.reduce((sum, day) => sum + day.totalSeconds, 0));
         if (options?.includeDayCount) {
             return `${days.length}日 / ${totalSessions}回 / ${totalMinutes}分`;
         }

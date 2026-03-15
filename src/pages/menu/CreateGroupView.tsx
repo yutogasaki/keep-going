@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { EXERCISES, getExercisesByClass, type ClassLevel } from '../../data/exercises';
 import {
     getMenuGroupItems,
-    hasInlineMenuItems,
     type MenuGroup,
     type MenuGroupItem,
 } from '../../data/menuGroups';
@@ -14,6 +13,7 @@ import { getAccountId } from '../../lib/sync';
 import type { TeacherExercise } from '../../lib/teacherContent';
 import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
 import { EditorShell, getEditorSubmitButtonStyle } from '../../components/editor/EditorShell';
+import { SingleExerciseEditor } from './SingleExerciseEditor';
 import { EmojiSelectorCard } from './create-group/EmojiSelectorCard';
 import { ExercisePickerList, type ExercisePickerSection, type PickerExercise, type PickerOrigin } from './create-group/ExercisePickerList';
 import { MenuItemsCard } from './create-group/MenuItemsCard';
@@ -75,6 +75,7 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
     const [pendingGroup, setPendingGroup] = useState<MenuGroup | null>(null);
     const [showQuickAdd, setShowQuickAdd] = useState(false);
     const [editingInlineItemId, setEditingInlineItemId] = useState<string | null>(null);
+    const [editingPendingExerciseId, setEditingPendingExerciseId] = useState<string | null>(null);
     const [quickAddDraft, setQuickAddDraft] = useState<QuickAddDraft>({
         name: '',
         sec: 30,
@@ -84,11 +85,6 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
 
     const isLoggedIn = !!getAccountId();
     const isEditing = !!initial;
-    const hasInlineItems = useMemo(
-        () => items.some((item) => item.kind === 'inline_only'),
-        [items],
-    );
-
     const builtInExercises = useMemo(
         () => getExercisesByClass(classLevel as ClassLevel),
         [classLevel],
@@ -171,12 +167,6 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
         [items],
     );
 
-    useEffect(() => {
-        if (hasInlineItems) {
-            setIsPublic(false);
-        }
-    }, [hasInlineItems]);
-
     const addExercise = (exerciseId: string) => {
         setItems((previous) => [
             ...previous,
@@ -194,7 +184,14 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
     });
 
     const addPendingCustomExercise = (exercise: CustomExercise) => {
-        setPendingCustomExercises((previous) => [...previous, exercise]);
+        setPendingCustomExercises((previous) => {
+            const existingIndex = previous.findIndex((candidate) => candidate.id === exercise.id);
+            if (existingIndex === -1) {
+                return [...previous, exercise];
+            }
+
+            return previous.map((candidate) => candidate.id === exercise.id ? exercise : candidate);
+        });
     };
 
     const removeUnusedPendingCustomExercise = (exerciseId: string, nextItems: MenuGroupItem[]) => {
@@ -220,7 +217,7 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
         }));
     };
 
-    const addQuickItem = () => {
+    const addQuickItem = (options?: { openEditor?: boolean }) => {
         const trimmedName = quickAddDraft.name.trim();
         if (!trimmedName || !Number.isFinite(quickAddDraft.sec) || quickAddDraft.sec <= 0) {
             return;
@@ -237,6 +234,9 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
                     exerciseId: pendingExercise.id,
                 },
             ]);
+            if (options?.openEditor) {
+                setEditingPendingExerciseId(pendingExercise.id);
+            }
         } else {
             const inlineItem: MenuGroupItem = {
                 id: `inline-menu-${crypto.randomUUID()}`,
@@ -257,7 +257,7 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
         }));
     };
 
-    const promoteInlineItem = (itemId: string) => {
+    const promoteInlineItem = (itemId: string, options?: { openEditor?: boolean }) => {
         const target = items.find((item) => item.id === itemId);
         if (!target || target.kind !== 'inline_only') {
             return;
@@ -280,6 +280,9 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
             };
         }));
         setEditingInlineItemId(null);
+        if (options?.openEditor) {
+            setEditingPendingExerciseId(pendingExercise.id);
+        }
     };
 
     const removeItemAtIndex = (index: number) => {
@@ -316,7 +319,7 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
 
             await saveCustomGroup(group);
 
-            if (isPublic && !hasInlineMenuItems(group) && !isEditing && isLoggedIn && authorName) {
+            if (isPublic && !isEditing && isLoggedIn && authorName) {
                 try {
                     await publishMenu(group, authorName);
                 } catch (error) {
@@ -325,16 +328,6 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
             }
 
             if (isEditing && publishedMenuId && isLoggedIn && authorName) {
-                if (hasInlineMenuItems(group)) {
-                    try {
-                        await unpublishMenu(publishedMenuId);
-                    } catch (error) {
-                        console.warn('[CreateGroupView] inline unpublish failed:', error);
-                    }
-                    onSave();
-                    return;
-                }
-
                 // Show confirmation modal instead of native confirm()
                 setPendingGroup(group);
                 setShowRepublishConfirm(true);
@@ -370,6 +363,31 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
         onSave();
     };
 
+    const editingPendingExercise = editingPendingExerciseId
+        ? pendingCustomExercises.find((exercise) => exercise.id === editingPendingExerciseId) ?? null
+        : null;
+
+    if (editingPendingExercise) {
+        return (
+            <SingleExerciseEditor
+                initial={editingPendingExercise}
+                currentUserId={currentUserId}
+                authorName={authorName}
+                submitLabel="メニューにもどる"
+                onSaveExercise={(exercise) => {
+                    addPendingCustomExercise(exercise);
+                    setEditingPendingExerciseId(null);
+                }}
+                onSave={() => {
+                    setEditingPendingExerciseId(null);
+                }}
+                onCancel={() => {
+                    setEditingPendingExerciseId(null);
+                }}
+            />
+        );
+    }
+
     return (
         <EditorShell
             title={isEditing ? 'へんしゅう' : 'じぶんでつくる'}
@@ -392,6 +410,7 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
                 items={items}
                 minutes={minutes}
                 allExercises={allExercises}
+                editableExerciseIds={pendingCustomExercises.map((exercise) => exercise.id)}
                 editingInlineItemId={editingInlineItemId}
                 quickAddDraft={quickAddDraft}
                 showQuickAdd={showQuickAdd}
@@ -404,6 +423,7 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
                 onOpenInlineEditor={setEditingInlineItemId}
                 onUpdateInlineItem={updateInlineItem}
                 onPromoteInlineItem={promoteInlineItem}
+                onEditExercise={setEditingPendingExerciseId}
             />
 
             <ExercisePickerList
@@ -417,10 +437,7 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
                 <PublishToggleCard
                     isPublic={isPublic}
                     onToggle={() => setIsPublic((previous) => !previous)}
-                    disabled={hasInlineItems}
-                    subtitle={hasInlineItems
-                        ? 'このメニューだけの項目がある間は公開できません'
-                        : '他の人がこのメニューをもらえるようになります'}
+                    subtitle="他の人がこのメニューをもらえるようになります"
                 />
             )}
 

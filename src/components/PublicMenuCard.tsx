@@ -1,7 +1,10 @@
 import React from 'react';
 import { Clock, Download } from 'lucide-react';
-import { EXERCISES } from '../data/exercises';
 import { type PublicMenu } from '../lib/publicMenus';
+import {
+    buildPublicMenuExercisePreview,
+    getPublicMenuMinutes,
+} from '../lib/publicMenuUtils';
 import { CANONICAL_TERMS } from '../lib/terminology';
 import {
     publicCatalogBodyTextStyle,
@@ -20,18 +23,8 @@ interface PublicMenuCardProps {
 }
 
 export const PublicMenuCard: React.FC<PublicMenuCardProps> = ({ menu, onTap }) => {
-    const resolveExercise = (id: string) =>
-        EXERCISES.find((exercise) => exercise.id === id)
-        ?? menu.customExerciseData?.find((exercise) => exercise.id === id);
-    const exerciseNames = menu.exerciseIds
-        .slice(0, 3)
-        .map((id) => resolveExercise(id)?.name ?? id);
-    const remaining = menu.exerciseIds.length - 3;
-    const totalSec = menu.exerciseIds.reduce(
-        (sum, id) => sum + (resolveExercise(id)?.sec ?? 0),
-        0,
-    );
-    const minutes = Math.ceil(totalSec / 60);
+    const preview = buildPublicMenuExercisePreview(menu, 3);
+    const minutes = getPublicMenuMinutes(menu);
 
     return (
         <button
@@ -51,7 +44,7 @@ export const PublicMenuCard: React.FC<PublicMenuCardProps> = ({ menu, onTap }) =
             </div>
 
             <div style={publicCatalogBodyTextStyle}>
-                {exerciseNames.join('、')}{remaining > 0 ? `、+${remaining}` : ''}
+                {preview}
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>

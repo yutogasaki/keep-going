@@ -14,16 +14,18 @@ interface MenuItemsCardProps {
     items: MenuGroupItem[];
     minutes: number;
     allExercises?: PickerExercise[];
+    editableExerciseIds: string[];
     editingInlineItemId: string | null;
     quickAddDraft: QuickAddDraft;
     showQuickAdd: boolean;
     onQuickAddDraftChange: (updates: Partial<QuickAddDraft>) => void;
     onShowQuickAdd: (show: boolean) => void;
-    onAddQuickItem: () => void;
+    onAddQuickItem: (options?: { openEditor?: boolean }) => void;
     onRemoveAtIndex: (index: number) => void;
     onOpenInlineEditor: (itemId: string | null) => void;
     onUpdateInlineItem: (itemId: string, updates: { name?: string; sec?: number }) => void;
-    onPromoteInlineItem: (itemId: string) => void;
+    onPromoteInlineItem: (itemId: string, options?: { openEditor?: boolean }) => void;
+    onEditExercise: (exerciseId: string) => void;
 }
 
 function fieldStyle() {
@@ -44,6 +46,7 @@ export const MenuItemsCard: React.FC<MenuItemsCardProps> = ({
     items,
     minutes,
     allExercises,
+    editableExerciseIds,
     editingInlineItemId,
     quickAddDraft,
     showQuickAdd,
@@ -54,6 +57,7 @@ export const MenuItemsCard: React.FC<MenuItemsCardProps> = ({
     onOpenInlineEditor,
     onUpdateInlineItem,
     onPromoteInlineItem,
+    onEditExercise,
 }) => {
     const resolveExercise = (item: MenuGroupItem) => {
         if (item.kind === 'inline_only') {
@@ -139,6 +143,8 @@ export const MenuItemsCard: React.FC<MenuItemsCardProps> = ({
 
                         const isInline = item.kind === 'inline_only';
                         const isEditing = editingInlineItemId === item.id;
+                        const canEditExercise = item.kind === 'exercise_ref'
+                            && editableExerciseIds.includes(item.exerciseId);
 
                         return (
                             <div
@@ -204,9 +210,33 @@ export const MenuItemsCard: React.FC<MenuItemsCardProps> = ({
                                             color: '#98A6AF',
                                             marginTop: 4,
                                         }}>
-                                            {isInline ? 'この画面で編集できます' : '内容は種目で編集'}
+                                            {isInline
+                                                ? 'この画面で編集できます'
+                                                : canEditExercise
+                                                    ? 'くわしく編集できます'
+                                                    : '内容は種目で編集'}
                                         </div>
                                     </button>
+                                    {canEditExercise ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => onEditExercise(item.exerciseId)}
+                                            style={{
+                                                padding: '9px 10px',
+                                                borderRadius: 12,
+                                                border: 'none',
+                                                background: 'rgba(43, 186, 160, 0.12)',
+                                                color: '#2B7A6E',
+                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                fontSize: 12,
+                                                fontWeight: 700,
+                                                cursor: 'pointer',
+                                                flexShrink: 0,
+                                            }}
+                                        >
+                                            くわしく編集
+                                        </button>
+                                    ) : null}
                                     <motion.button
                                         type="button"
                                         whileTap={{ scale: 0.94 }}
@@ -288,6 +318,23 @@ export const MenuItemsCard: React.FC<MenuItemsCardProps> = ({
                                                 }}
                                             >
                                                 じぶん種目にする
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => onPromoteInlineItem(item.id, { openEditor: true })}
+                                                style={{
+                                                    padding: '10px 12px',
+                                                    borderRadius: 12,
+                                                    border: 'none',
+                                                    background: '#FFB74D',
+                                                    color: '#7A4500',
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontSize: 12,
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                じぶん種目にして編集
                                             </button>
                                             <button
                                                 type="button"
@@ -432,7 +479,7 @@ export const MenuItemsCard: React.FC<MenuItemsCardProps> = ({
                             </button>
                             <button
                                 type="button"
-                                onClick={onAddQuickItem}
+                                onClick={() => onAddQuickItem({ openEditor: quickAddDraft.saveAsCustom })}
                                 style={{
                                     padding: '10px 12px',
                                     borderRadius: 12,
@@ -445,7 +492,7 @@ export const MenuItemsCard: React.FC<MenuItemsCardProps> = ({
                                     cursor: 'pointer',
                                 }}
                             >
-                                追加
+                                {quickAddDraft.saveAsCustom ? '追加して編集' : '追加'}
                             </button>
                         </div>
                     </div>

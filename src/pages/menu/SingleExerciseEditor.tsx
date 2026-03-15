@@ -21,11 +21,21 @@ interface SingleExerciseEditorProps {
     initial?: CustomExercise | null;
     currentUserId?: string;
     authorName?: string;
+    submitLabel?: string;
+    onSaveExercise?: (exercise: CustomExercise) => Promise<void> | void;
     onSave: () => void;
     onCancel: () => void;
 }
 
-export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ initial, currentUserId, authorName, onSave, onCancel }) => {
+export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({
+    initial,
+    currentUserId,
+    authorName,
+    submitLabel,
+    onSaveExercise,
+    onSave,
+    onCancel,
+}) => {
     const [name, setName] = useState(initial?.name || '');
     const [emoji, setEmoji] = useState(initial?.emoji || '🌸');
     const [sec, setSec] = useState<number>(initial?.sec || 30);
@@ -60,9 +70,13 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                 description: description.trim() || undefined,
                 creatorId: currentUserId,
             };
-            await saveCustomExercise(ex);
+            if (onSaveExercise) {
+                await onSaveExercise(ex);
+            } else {
+                await saveCustomExercise(ex);
+            }
 
-            if (isPublic && !isEditing && isLoggedIn && authorName) {
+            if (!onSaveExercise && isPublic && !isEditing && isLoggedIn && authorName) {
                 try {
                     await publishExercise(ex, authorName);
                 } catch (e) {
@@ -276,7 +290,7 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({ init
                 disabled={!name.trim() || saving}
                 style={getEditorSubmitButtonStyle(Boolean(name.trim()) && !saving)}
             >
-                {saving ? 'ほぞん中...' : initial ? 'ほぞん' : 'つくる！'}
+                {saving ? 'ほぞん中...' : submitLabel ?? (initial ? 'ほぞん' : 'つくる！')}
             </motion.button>
         </EditorShell>
     );

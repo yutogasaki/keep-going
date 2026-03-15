@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { buildMenuGroupItemsFromExerciseIds } from '../../data/menuGroups';
 import type { PublicMenu } from '../publicMenuTypes';
 import {
     createPublicMenuDedupKey,
@@ -7,12 +8,15 @@ import {
 } from '../publicMenuUtils';
 
 function createMenu(overrides: Partial<PublicMenu> & Pick<PublicMenu, 'id' | 'name' | 'exerciseIds'>): PublicMenu {
+    const exerciseIds = overrides.exerciseIds;
+
     return {
         id: overrides.id,
         name: overrides.name,
         emoji: overrides.emoji ?? '🌸',
         description: overrides.description ?? '',
-        exerciseIds: overrides.exerciseIds,
+        exerciseIds,
+        items: overrides.items ?? buildMenuGroupItemsFromExerciseIds(exerciseIds),
         customExerciseData: overrides.customExerciseData ?? [],
         authorName: overrides.authorName ?? 'teacher',
         accountId: overrides.accountId ?? 'account-1',
@@ -25,7 +29,7 @@ describe('publicMenuUtils', () => {
     it('creates a stable dedupe key from menu identity', () => {
         const menu = createMenu({ id: 'menu-1', name: 'おはよう', exerciseIds: ['S01', 'S02'] });
 
-        expect(createPublicMenuDedupKey(menu)).toBe('おはよう|S01,S02');
+        expect(createPublicMenuDedupKey(menu)).toBe('おはよう|exercise:S01,exercise:S02');
     });
 
     it('dedupes menus by name and exercise order while keeping the first match', () => {
@@ -74,5 +78,38 @@ describe('publicMenuUtils', () => {
                 now,
             ).map((menu) => menu.id),
         ).toEqual(['menu-trending', 'menu-newest', 'menu-popular']);
+    });
+
+    it('dedupes inline items by visible identity even if generated ids differ', () => {
+        const first = createMenu({
+            id: 'menu-1',
+            name: 'フリー',
+            exerciseIds: ['inline-a'],
+            items: [{
+                id: 'inline-a',
+                kind: 'inline_only',
+                name: 'おへやジャンプ',
+                sec: 30,
+                emoji: '✨',
+                placement: 'stretch',
+                internal: 'single',
+            }],
+        });
+        const duplicate = createMenu({
+            id: 'menu-2',
+            name: 'フリー',
+            exerciseIds: ['inline-b'],
+            items: [{
+                id: 'inline-b',
+                kind: 'inline_only',
+                name: 'おへやジャンプ',
+                sec: 30,
+                emoji: '✨',
+                placement: 'stretch',
+                internal: 'single',
+            }],
+        });
+
+        expect(dedupeMenusByIdentity([first, duplicate])).toEqual([first]);
     });
 });

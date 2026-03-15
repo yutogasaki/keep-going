@@ -400,6 +400,7 @@ export interface Database {
                     emoji: string;
                     description: string | null;
                     exercise_ids: string[];
+                    menu_items: unknown[];
                     author_name: string;
                     account_id: string;
                     download_count: number;
@@ -412,6 +413,7 @@ export interface Database {
                     emoji: string;
                     description?: string | null;
                     exercise_ids?: string[];
+                    menu_items?: unknown[];
                     author_name: string;
                     account_id: string;
                     download_count?: number;

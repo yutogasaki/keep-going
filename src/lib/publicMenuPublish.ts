@@ -1,4 +1,8 @@
-import type { MenuGroup } from '../data/menuGroups';
+import {
+    getMenuGroupItems,
+    type MenuGroup,
+    type MenuGroupItem,
+} from '../data/menuGroups';
 import { EXERCISES } from '../data/exercises';
 import { getCustomExercises, type CustomExercise } from './db';
 import { fetchMyPublishedExercises, publishExercise, unpublishExercise } from './publicExercises';
@@ -19,7 +23,12 @@ function matchesExerciseDefinition(
 }
 
 async function getMenuCustomExerciseData(menu: MenuGroup): Promise<CustomExerciseData[]> {
-    const uniqueCustomIds = [...new Set(menu.exerciseIds.filter((id) => !builtInExerciseIds.has(id)))];
+    const uniqueCustomIds = [...new Set(
+        getMenuGroupItems(menu)
+            .filter((item): item is Extract<MenuGroupItem, { kind: 'exercise_ref' }> => item.kind === 'exercise_ref')
+            .map((item) => item.exerciseId)
+            .filter((id) => !builtInExerciseIds.has(id)),
+    )];
     if (uniqueCustomIds.length === 0) {
         return [];
     }
@@ -78,6 +87,7 @@ export async function publishMenu(menu: MenuGroup, authorName: string): Promise<
         return;
     }
 
+    const menuItems = getMenuGroupItems(menu);
     const customExerciseData = await getMenuCustomExerciseData(menu);
     await ensurePublishedCustomExercises(customExerciseData, authorName);
 
@@ -85,7 +95,8 @@ export async function publishMenu(menu: MenuGroup, authorName: string): Promise<
         name: menu.name,
         emoji: menu.emoji,
         description: menu.description,
-        exercise_ids: menu.exerciseIds,
+        exercise_ids: menuItems.map((item) => item.id),
+        menu_items: menuItems,
         custom_exercise_data: customExerciseData,
         author_name: authorName,
         account_id: accountId,
@@ -140,4 +151,3 @@ export async function unpublishMenu(id: string): Promise<void> {
         console.warn('[unpublishMenu] auto-unpublish exercises failed:', error);
     }
 }
-

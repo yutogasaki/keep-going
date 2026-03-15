@@ -6,3 +6,11 @@ export function formatDate(dateStr: string): string {
     const weekday = weekdays[date.getDay()];
     return `${month}/${day} (${weekday})`;
 }
+
+export function toDisplayMinutes(totalSeconds: number): number {
+    if (totalSeconds <= 0) {
+        return 0;
+    }
+
+    return Math.ceil(totalSeconds / 60);
+}

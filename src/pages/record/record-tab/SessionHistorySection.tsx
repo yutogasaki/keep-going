@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../../lib/styles';
 import type { RecordHistoryAccordionSection } from '../recordOverviewSummary';
-import { formatDate } from '../recordUtils';
+import { formatDate, toDisplayMinutes } from '../recordUtils';
 
 interface SessionHistorySectionProps {
     loading: boolean;
@@ -11,7 +11,7 @@ interface SessionHistorySectionProps {
 }
 
 function formatDuration(totalSeconds: number): string {
-    const minutes = Math.floor(totalSeconds / 60);
+    const minutes = toDisplayMinutes(totalSeconds);
     return `${minutes}分`;
 }
 

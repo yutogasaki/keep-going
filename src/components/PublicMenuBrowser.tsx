@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2 } from 'lucide-react';
 import type { PersonalChallengeCreateSeed } from './PersonalChallengeFormSheet';
 import { dedupeMenusByIdentity, fetchPopularMenus, type PublicMenu } from '../lib/publicMenus';
+import { resolvePublicMenuToSessionPlannedItems } from '../lib/publicMenuUtils';
 import { MenuDetailSheet } from './MenuDetailSheet';
 import { useAppStore } from '../store/useAppStore';
 import { Z } from '../lib/styles';
@@ -27,7 +28,7 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [selectedMenu, setSelectedMenu] = useState<PublicMenu | null>(null);
-    const startSessionWithExercises = useAppStore(s => s.startSessionWithExercises);
+    const startSessionWithPlan = useAppStore(s => s.startSessionWithPlan);
 
     useEffect(() => {
         if (!open) return;
@@ -44,12 +45,12 @@ export const PublicMenuBrowser: React.FC<PublicMenuBrowserProps> = ({
     }, [open]);
 
     const handleTry = (
-        exerciseIds: string[],
+        menu: PublicMenu,
         metadata: { menuId: string; menuName: string; menuSource: 'public' },
     ) => {
         setSelectedMenu(null);
         onClose();
-        startSessionWithExercises(exerciseIds, {
+        startSessionWithPlan(resolvePublicMenuToSessionPlannedItems(menu), {
             sourceMenuId: metadata.menuId,
             sourceMenuSource: metadata.menuSource,
             sourceMenuName: metadata.menuName,

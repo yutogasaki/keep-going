@@ -1,3 +1,4 @@
+import type { MenuGroupItem } from '../data/menuGroups';
 import type { CustomExercise } from './db';
 import type { Database } from './supabase-types';
 
@@ -18,6 +19,7 @@ export interface PublicMenu {
     emoji: string;
     description: string;
     exerciseIds: string[];
+    items: MenuGroupItem[];
     customExerciseData: CustomExerciseData[];
     authorName: string;
     accountId: string;

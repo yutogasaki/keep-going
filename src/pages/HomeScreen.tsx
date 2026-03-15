@@ -29,6 +29,7 @@ import {
 import type { TeacherExercise, TeacherMenu } from '../lib/teacherContent';
 import { audio } from '../lib/audio';
 import { haptics } from '../lib/haptics';
+import { resolvePublicMenuToSessionPlannedItems } from '../lib/publicMenuUtils';
 import { pickTeacherContentHighlights } from '../lib/teacherExerciseMetadata';
 import { useAppStore } from '../store/useAppStore';
 import type { FuwafuwaMilestoneEvent } from '../store/useAppStore';
@@ -79,6 +80,7 @@ export const HomeScreen: React.FC = () => {
     const setActiveMilestoneModal = useAppStore((state) => state.setActiveMilestoneModal);
     const consumeUserMagicEnergy = useAppStore((state) => state.consumeUserMagicEnergy);
     const startSessionWithExercises = useAppStore((state) => state.startSessionWithExercises);
+    const startSessionWithPlan = useAppStore((state) => state.startSessionWithPlan);
     const joinedChallengeIds = useAppStore((state) => state.joinedChallengeIds);
     const dismissedHomeAnnouncementIds = useAppStore((state) => state.dismissedHomeAnnouncementIds);
     const dismissHomeAnnouncement = useAppStore((state) => state.dismissHomeAnnouncement);
@@ -905,9 +907,9 @@ export const HomeScreen: React.FC = () => {
                     void loadCustomChallengeTargets();
                 }}
                 onCreatePersonalChallenge={handleCreatePersonalChallengeFromPublicMenu}
-                onTry={(exerciseIds, metadata) => {
+                onTry={(menu, metadata) => {
                     setSelectedPublicMenu(null);
-                    startSessionWithExercises(exerciseIds, {
+                    startSessionWithPlan(resolvePublicMenuToSessionPlannedItems(menu), {
                         sourceMenuId: metadata.menuId,
                         sourceMenuSource: metadata.menuSource,
                         sourceMenuName: metadata.menuName,

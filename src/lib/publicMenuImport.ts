@@ -1,5 +1,5 @@
 import { EXERCISES } from '../data/exercises';
-import type { MenuGroup } from '../data/menuGroups';
+import type { MenuGroup, MenuGroupItem } from '../data/menuGroups';
 import { saveCustomGroup } from './customGroups';
 import { getCustomExercises, saveCustomExercise } from './db';
 import type { PublicMenu } from './publicMenuTypes';
@@ -54,11 +54,21 @@ function createImportedMenu(
     publicMenu: PublicMenu,
     idRemap: Map<string, string>,
 ): MenuGroup {
-    const remappedExerciseIds = publicMenu.exerciseIds.map((exerciseId) => {
-        if (builtInExerciseIds.has(exerciseId)) {
-            return exerciseId;
+    const remappedItems: MenuGroupItem[] = publicMenu.items.map((item) => {
+        if (item.kind === 'inline_only') {
+            return item;
         }
-        return idRemap.get(exerciseId) ?? exerciseId;
+
+        if (builtInExerciseIds.has(item.exerciseId)) {
+            return item;
+        }
+
+        const remappedId = idRemap.get(item.exerciseId) ?? item.exerciseId;
+        return {
+            ...item,
+            id: remappedId,
+            exerciseId: remappedId,
+        };
     });
 
     return {
@@ -66,7 +76,8 @@ function createImportedMenu(
         name: publicMenu.name,
         emoji: publicMenu.emoji,
         description: `${publicMenu.authorName}さんのメニュー`,
-        exerciseIds: remappedExerciseIds,
+        exerciseIds: remappedItems.map((item) => item.id),
+        items: remappedItems,
         isPreset: false,
     };
 }

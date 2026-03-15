@@ -1,15 +1,19 @@
 import { describe, expect, it } from 'vitest';
+import { buildMenuGroupItemsFromExerciseIds } from '../../data/menuGroups';
 import type { PublicExercise } from '../../lib/publicExercises';
 import type { PublicMenu } from '../../lib/publicMenuTypes';
 import { pickHomeAmbientCue } from './homeAmbientUtils';
 
 function makeMenu(overrides: Partial<PublicMenu> = {}): PublicMenu {
+    const exerciseIds = overrides.exerciseIds ?? ['S01'];
+
     return {
         id: 'menu-1',
         name: 'みんなのメニュー',
         emoji: '🌸',
         description: '',
-        exerciseIds: ['S01'],
+        exerciseIds,
+        items: overrides.items ?? buildMenuGroupItemsFromExerciseIds(exerciseIds),
         customExerciseData: [],
         authorName: 'だれか',
         accountId: 'account-1',
@@ -46,6 +50,7 @@ describe('pickHomeAmbientCue', () => {
         expect(pickHomeAmbientCue([
             makeMenu({
                 createdAt: '2026-02-01T00:00:00.000Z',
+                exerciseIds: ['custom-1'],
                 customExerciseData: [{
                     id: 'custom-1',
                     name: 'じぶんのしゅもく',

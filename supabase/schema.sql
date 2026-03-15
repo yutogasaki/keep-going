@@ -253,6 +253,7 @@ create table public_menus (
   emoji text not null,
   description text,
   exercise_ids jsonb not null default '[]',
+  menu_items jsonb not null default '[]',
   custom_exercise_data jsonb default '[]',
   author_name text not null,
   account_id uuid references auth.users not null,

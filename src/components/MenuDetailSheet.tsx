@@ -8,13 +8,18 @@ import {
     type PublicMenu,
     importMenu,
 } from '../lib/publicMenus';
-import { EXERCISES } from '../data/exercises';
+import {
+    getPublicMenuDiscoverableExercises,
+    getPublicMenuItemCount,
+    getPublicMenuMinutes,
+    resolvePublicMenuDisplayItems,
+} from '../lib/publicMenuUtils';
 import { Z } from '../lib/styles';
 
 interface MenuDetailSheetProps {
     menu: PublicMenu | null;
     onClose: () => void;
-    onTry: (exerciseIds: string[], metadata: { menuId: string; menuName: string; menuSource: 'public' }) => void;
+    onTry: (menu: PublicMenu, metadata: { menuId: string; menuName: string; menuSource: 'public' }) => void;
     onImported?: () => void;
     onCreatePersonalChallenge?: (seed: PersonalChallengeCreateSeed) => void | Promise<void>;
 }
@@ -53,7 +58,7 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({
     const handleTry = () => {
         if (!menu) return;
         onClose();
-        onTry(menu.exerciseIds, {
+        onTry(menu, {
             menuId: menu.id,
             menuName: menu.name,
             menuSource: 'public',
@@ -93,16 +98,10 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({
         setImporting(false);
     }, [menu?.id]);
 
-    const discoverableExercises = menu
-        ? menu.customExerciseData.filter((exercise) => menu.exerciseIds.includes(exercise.id))
-        : [];
-
-    const totalSec = menu ? menu.exerciseIds.reduce((total, id) => {
-        const exercise = EXERCISES.find((item) => item.id === id)
-            ?? menu.customExerciseData?.find((item) => item.id === id);
-        return total + (exercise?.sec || 0);
-    }, 0) : 0;
-    const minutes = Math.ceil(totalSec / 60);
+    const discoverableExercises = menu ? getPublicMenuDiscoverableExercises(menu) : [];
+    const displayItems = menu ? resolvePublicMenuDisplayItems(menu) : [];
+    const minutes = menu ? getPublicMenuMinutes(menu) : 0;
+    const itemCount = menu ? getPublicMenuItemCount(menu) : 0;
 
     return createPortal(
         <AnimatePresence>
@@ -218,7 +217,7 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({
                             >
                                 <MetaCard label="人気" value={`${menu.downloadCount}回`} icon="📥" />
                                 <MetaCard label="時間" value={`約${minutes}分`} icon={<Clock size={14} />} />
-                                <MetaCard label="種目" value={`${menu.exerciseIds.length}こ`} icon="🧩" />
+                                <MetaCard label="種目" value={`${itemCount}こ`} icon="🧩" />
                             </div>
 
                             {menu.description ? (
@@ -278,17 +277,13 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({
                                     marginBottom: 8,
                                 }}
                             >
-                                しゅもく（{menu.exerciseIds.length}）
+                                しゅもく（{itemCount}）
                             </div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                {menu.exerciseIds.map((id, index) => {
-                                    const exercise = EXERCISES.find((item) => item.id === id)
-                                        ?? menu.customExerciseData?.find((item) => item.id === id);
-                                    if (!exercise) return null;
-
+                                {displayItems.map((item, index) => {
                                     return (
                                         <span
-                                            key={`${id}-${index}`}
+                                            key={`${item.id}-${index}`}
                                             style={{
                                                 padding: '8px 12px',
                                                 borderRadius: 999,
@@ -299,7 +294,8 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({
                                                 color: '#2D3436',
                                             }}
                                         >
-                                            {exercise.emoji} {exercise.name}
+                                            {item.emoji} {item.name}
+                                            {item.kind === 'inline_only' ? ' このメニューだけ' : ''}
                                         </span>
                                     );
                                 })}
