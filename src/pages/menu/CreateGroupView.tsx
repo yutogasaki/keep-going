@@ -248,7 +248,6 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
                 internal: DEFAULT_INLINE_INTERNAL,
             };
             setItems((previous) => [...previous, inlineItem]);
-            setEditingInlineItemId(inlineItem.id);
         }
 
         setQuickAddDraft((previous) => ({
