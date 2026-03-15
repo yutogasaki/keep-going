@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { DurationSecondsPicker } from '../../../components/DurationSecondsPicker';
 import { getExerciseById } from '../../../data/exercises';
 import type { MenuGroupItem } from '../../../data/menuGroups';
 import type { PickerExercise } from './ExercisePickerList';
@@ -292,13 +293,10 @@ export const MenuItemsCard: React.FC<MenuItemsCardProps> = ({
                                             }}>
                                                 時間
                                             </div>
-                                            <input
-                                                type="number"
-                                                min={5}
-                                                step={5}
+                                            <DurationSecondsPicker
                                                 value={item.sec}
-                                                onChange={(event) => onUpdateInlineItem(item.id, { sec: Number(event.target.value) })}
-                                                style={fieldStyle()}
+                                                onChange={(seconds) => onUpdateInlineItem(item.id, { sec: seconds })}
+                                                compact
                                             />
                                         </div>
                                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -429,13 +427,18 @@ export const MenuItemsCard: React.FC<MenuItemsCardProps> = ({
                             onChange={(event) => onQuickAddDraftChange({ name: event.target.value })}
                             style={fieldStyle()}
                         />
-                        <input
-                            type="number"
-                            min={5}
-                            step={5}
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            color: '#52606D',
+                        }}>
+                            時間
+                        </div>
+                        <DurationSecondsPicker
                             value={quickAddDraft.sec}
-                            onChange={(event) => onQuickAddDraftChange({ sec: Number(event.target.value) })}
-                            style={fieldStyle()}
+                            onChange={(seconds) => onQuickAddDraftChange({ sec: seconds })}
+                            compact
                         />
                         <label style={{
                             display: 'flex',

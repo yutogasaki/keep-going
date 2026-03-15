@@ -6,6 +6,7 @@ import {
     editorLabelStyle,
     getEditorSubmitButtonStyle,
 } from '../../components/editor/EditorShell';
+import { DurationSecondsPicker } from '../../components/DurationSecondsPicker';
 import {
     EXERCISE_PLACEMENTS,
     getExercisePlacementLabel,
@@ -157,30 +158,10 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({
             </EditorSection>
 
             <EditorSection label="時間（秒）">
-                <div style={{ display: 'flex', gap: 10 }}>
-                    {[15, 30, 60, 120].map(s => (
-                        <motion.button
-                            key={s}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => setSec(s)}
-                            style={{
-                                flex: 1,
-                                padding: '12px 0',
-                                borderRadius: 12,
-                                border: sec === s ? '2px solid #2BBAA0' : '2px solid transparent',
-                                background: sec === s ? 'rgba(43,186,160,0.08)' : '#F8F9FA',
-                                cursor: 'pointer',
-                                fontFamily: "'Outfit', sans-serif",
-                                fontSize: 16,
-                                fontWeight: 700,
-                                color: sec === s ? '#2BBAA0' : '#8395A7',
-                                transition: 'all 0.2s',
-                            }}
-                        >
-                            {s}秒
-                        </motion.button>
-                    ))}
-                </div>
+                <DurationSecondsPicker
+                    value={sec}
+                    onChange={setSec}
+                />
             </EditorSection>
 
             <EditorSection label="どこに入れる？">
