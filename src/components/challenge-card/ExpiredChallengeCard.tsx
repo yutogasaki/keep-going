@@ -9,6 +9,7 @@ interface ExpiredChallengeCardProps {
     goalLabel: string;
     periodLabel: string;
     wasCompleted: boolean;
+    canRetry: boolean;
     dailyRuleLabel: string;
     onOpenDetail: () => void;
 }
@@ -19,6 +20,7 @@ export const ExpiredChallengeCard: React.FC<ExpiredChallengeCardProps> = ({
     goalLabel,
     periodLabel,
     wasCompleted,
+    canRetry,
     dailyRuleLabel,
     onOpenDetail,
 }) => {
@@ -67,17 +69,39 @@ export const ExpiredChallengeCard: React.FC<ExpiredChallengeCardProps> = ({
                         <span style={{ color: '#ccc' }}>|</span>
                         <span>{periodLabel}</span>
                     </div>
+                    {canRetry && (
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 10,
+                            color: '#6B7280',
+                            marginTop: 4,
+                        }}>
+                            いつでもチャレンジだから、またやりたくなったら新しい期間ではじめられるよ
+                        </div>
+                    )}
                 </div>
                 {wasCompleted ? (
-                    <Trophy size={18} color="#FFD700" />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Trophy size={18} color="#FFD700" />
+                        {canRetry ? (
+                            <span style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 10,
+                                color: '#B8860B',
+                                fontWeight: 700,
+                            }}>
+                                またできる
+                            </span>
+                        ) : null}
+                    </div>
                 ) : (
                     <span style={{
                         fontFamily: "'Noto Sans JP', sans-serif",
                         fontSize: 10,
-                        color: '#B2BEC3',
+                        color: canRetry ? '#7F8C8D' : '#B2BEC3',
                         fontWeight: 600,
                     }}>
-                        みかんりょう
+                        {canRetry ? 'またできる' : 'みかんりょう'}
                     </span>
                 )}
             </div>

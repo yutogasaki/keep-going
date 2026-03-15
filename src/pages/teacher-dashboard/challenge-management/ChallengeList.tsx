@@ -44,10 +44,26 @@ interface ParticipantStatusItem {
     name: string;
     progressLabel: string;
     subLabel: string;
+    attemptLabel: string;
+    windowLabel: string;
     completed: boolean;
     progress: number;
     completedAt: string | null;
     attemptNo: number;
+}
+
+function formatDateLabel(date: string | null | undefined, suffix: string): string {
+    if (!date) {
+        return suffix;
+    }
+
+    const [year, month, day] = date.split('-');
+    void year;
+    if (!month || !day) {
+        return `${date}${suffix}`;
+    }
+
+    return `${Number(month)}/${Number(day)}${suffix}`;
 }
 
 function buildParticipantStatusItems(
@@ -103,19 +119,27 @@ function buildParticipantStatusItems(
         const attemptNo = latestAttempt?.attemptNo ?? 1;
         const baseProgressLabel = completed ? 'クリア' : getChallengeProgressLabel(challenge, progress);
         const progressLabel = attemptNo > 1 ? `${attemptNo}回目・${baseProgressLabel}` : baseProgressLabel;
+        const attemptLabel = attemptNo > 1 ? `${attemptNo}回目` : '1回目';
         const subLabel = completed
             ? (attemptNo > 1 ? 'もう一回クリア' : 'ごほうびゲット')
+            : latestAttempt?.status === 'expired'
+                ? '期間が終わった'
             : attemptNo > 1
                 ? '再挑戦中'
                 : progress > 0
                     ? '参加中'
                     : '参加したよ';
+        const windowLabel = completed
+            ? formatDateLabel((completion?.completedAt ?? latestAttempt?.completedAt ?? null)?.split('T')[0] ?? null, 'にクリア')
+            : formatDateLabel(effectiveWindow?.endDate ?? null, 'まで');
 
         return {
             memberId,
             name: memberNameMap.get(memberId) ?? '生徒',
             progressLabel,
             subLabel,
+            attemptLabel,
+            windowLabel,
             completed,
             progress,
             completedAt: completion?.completedAt ?? null,
@@ -308,35 +332,83 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                 )}
                                 {participantStatuses.length > 0 ? (
                                     <div style={{
-                                        display: 'flex',
+                                        display: 'grid',
                                         gap: 6,
-                                        flexWrap: 'wrap',
                                         marginTop: 6,
                                     }}>
                                         {visibleParticipants.map((item) => (
-                                            <span
+                                            <div
                                                 key={`${challenge.id}-${item.memberId}`}
                                                 style={{
-                                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                                    fontSize: 10,
-                                                    fontWeight: 700,
-                                                    color: item.completed ? '#1E7F6D' : item.progress > 0 ? '#0984E3' : '#636E72',
+                                                    display: 'grid',
+                                                    gridTemplateColumns: 'minmax(0, 1fr) auto',
+                                                    gap: 6,
+                                                    alignItems: 'center',
+                                                    padding: '7px 9px',
+                                                    borderRadius: 10,
                                                     background: item.completed
                                                         ? '#E8F8F0'
-                                                        : item.progress > 0
-                                                            ? 'rgba(9, 132, 227, 0.10)'
-                                                            : '#F0F3F5',
-                                                    borderRadius: 999,
-                                                    padding: '4px 8px',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    gap: 4,
+                                                        : item.subLabel === '期間が終わった'
+                                                            ? '#F5F5F5'
+                                                            : item.progress > 0
+                                                                ? 'rgba(9, 132, 227, 0.08)'
+                                                                : '#F8FAFC',
                                                 }}
-                                                title={`${item.name} ${item.progressLabel} (${item.subLabel})`}
                                             >
-                                                <span>{item.name}</span>
-                                                <span style={{ opacity: 0.8 }}>{item.progressLabel}</span>
-                                            </span>
+                                                <div style={{ minWidth: 0 }}>
+                                                    <div style={{
+                                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                                        fontSize: 11,
+                                                        fontWeight: 700,
+                                                        color: '#2D3436',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 6,
+                                                        flexWrap: 'wrap',
+                                                    }}>
+                                                        <span>{item.name}</span>
+                                                        <span style={{
+                                                            fontSize: 10,
+                                                            padding: '1px 6px',
+                                                            borderRadius: 999,
+                                                            background: '#FFFFFF',
+                                                            color: '#52606D',
+                                                            border: '1px solid rgba(0,0,0,0.05)',
+                                                        }}>
+                                                            {item.attemptLabel}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{
+                                                        fontFamily: "'Noto Sans JP', sans-serif",
+                                                        fontSize: 10,
+                                                        color: '#6B7280',
+                                                        marginTop: 2,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 6,
+                                                        flexWrap: 'wrap',
+                                                    }}>
+                                                        <span>{item.subLabel}</span>
+                                                        <span style={{ color: '#CBD5E1' }}>•</span>
+                                                        <span>{item.windowLabel}</span>
+                                                    </div>
+                                                </div>
+                                                <div style={{
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontSize: 11,
+                                                    fontWeight: 700,
+                                                    color: item.completed
+                                                        ? '#1E7F6D'
+                                                        : item.subLabel === '期間が終わった'
+                                                            ? '#94A3B8'
+                                                            : item.progress > 0
+                                                                ? '#0984E3'
+                                                                : '#636E72',
+                                                    whiteSpace: 'nowrap',
+                                                }}>
+                                                    {item.progressLabel}
+                                                </div>
+                                            </div>
                                         ))}
                                         {hiddenParticipantCount > 0 ? (
                                             <span style={{
@@ -431,7 +503,7 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                         fontSize: 10,
                                         color: '#8395A7',
                                     }}>
-                                        {`${participantStatuses[0].name} は ${participantStatuses[0].progressLabel} ・ ${participantStatuses[0].subLabel}`}
+                                        {`${participantStatuses[0].name} は ${participantStatuses[0].attemptLabel}で ${participantStatuses[0].progressLabel} ・ ${participantStatuses[0].windowLabel}`}
                                     </div>
                                 ) : null}
                             </div>

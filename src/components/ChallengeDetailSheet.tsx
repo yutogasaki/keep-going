@@ -151,9 +151,13 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                     }}
                 >
                     {completed ? (
-                        canRetry ? 'クリア済みです。またやりたくなったら、もう一度できます。' : 'クリア済みです。'
+                        canRetry
+                            ? 'クリアしたよ。いつでもチャレンジだから、またやりたくなったら新しい期間でもう一度できます。'
+                            : 'クリア済みです。'
                     ) : expired ? (
-                        canRetry ? '期間が終わったよ。もう一度やると、新しい期間ではじめられるよ。' : '期間が終わったよ。'
+                        canRetry
+                            ? '今回はここまで。いつでもチャレンジだから、もう一度やると新しい期間ではじめられるよ。'
+                            : '期間が終わったよ。'
                     ) : joined ? (
                         `いまの進みぐあい: ${progressLabel}`
                     ) : (
@@ -162,6 +166,23 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                             : '参加すると、自動で回数がカウントされます。'
                     )}
                 </div>
+                {canRetry && (
+                    <div
+                        style={{
+                            padding: SPACE.md,
+                            borderRadius: RADIUS.lg,
+                            background: 'rgba(43, 186, 160, 0.08)',
+                            border: '1px solid rgba(43, 186, 160, 0.12)',
+                            fontFamily: FONT.body,
+                            fontSize: FONT_SIZE.xs,
+                            color: COLOR.text,
+                            lineHeight: 1.7,
+                        }}
+                    >
+                        いつでもチャレンジは、期間が終わっても新しい期間でもう一度できます。
+                        ごほうびは最初にクリアした1回ぶんだけです。
+                    </div>
+                )}
 
                 {!completed && !joined && (
                     <button
@@ -200,7 +221,7 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                             cursor: 'pointer',
                         }}
                     >
-                        もう一度やる
+                        新しい期間でもう一度やる
                     </button>
                 )}
             </div>

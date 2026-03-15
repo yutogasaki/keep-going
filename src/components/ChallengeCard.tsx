@@ -148,6 +148,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
                     goalLabel={goalLabel}
                     periodLabel={activeWindowLabel}
                     wasCompleted={wasCompleted}
+                    canRetry={canRetry}
                     dailyRuleLabel={dailyRuleLabel}
                     onOpenDetail={() => setDetailOpen(true)}
                 />
