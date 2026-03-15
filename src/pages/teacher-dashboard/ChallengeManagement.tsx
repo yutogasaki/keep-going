@@ -33,6 +33,7 @@ interface ChallengeManagementProps {
     teacherEmail: string;
     onCreated: () => void;
     onDeleted: () => void;
+    onOpenStudentRecord: (memberId: string) => void;
 }
 
 export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
@@ -48,6 +49,7 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
     teacherEmail,
     onCreated,
     onDeleted,
+    onOpenStudentRecord,
 }) => {
     const [formValues, setFormValues] = useState<ChallengeFormValues>(() => createDefaultChallengeFormValues());
     const [submitting, setSubmitting] = useState(false);
@@ -257,6 +259,7 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                 sessionsByMemberId={sessionsByMemberId}
                 teacherMenus={teacherMenus}
                 teacherExercises={teacherExercises}
+                onOpenStudentRecord={onOpenStudentRecord}
                 onEdit={startEdit}
                 onDelete={(id) => setDeleteTargetId(id)}
             />

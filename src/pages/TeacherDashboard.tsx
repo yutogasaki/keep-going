@@ -184,6 +184,10 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
         () => new Map(individualStudents.map((student) => [student.memberId, student.sessions])),
         [individualStudents],
     );
+    const challengeStudentByMemberId = useMemo(
+        () => new Map(individualStudents.map((student) => [student.memberId, student])),
+        [individualStudents],
+    );
 
     const today = getTodayKey();
     const activeToday = individualStudents.filter((s) => s.lastActiveDate === today).length;
@@ -235,6 +239,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
     const handleToggleStudent = useCallback((studentId: string) => {
         setExpandedStudent((current) => (current === studentId ? null : studentId));
     }, []);
+
+    const handleOpenStudentRecord = useCallback((memberId: string) => {
+        const student = challengeStudentByMemberId.get(memberId);
+        setActiveTab('students');
+        if (student) {
+            setExpandedClass(student.classLevel);
+            setExpandedStudent(memberId);
+        }
+    }, [challengeStudentByMemberId]);
 
     const isRefreshing = activeTab === 'students'
         ? loading
@@ -337,6 +350,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                     teacherEmail={user?.email ?? ''}
                     onCreated={loadChallenges}
                     onDeleted={loadChallenges}
+                    onOpenStudentRecord={handleOpenStudentRecord}
                 />
             )}
 

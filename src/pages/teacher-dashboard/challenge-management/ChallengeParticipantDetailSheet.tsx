@@ -30,6 +30,7 @@ interface ChallengeParticipantDetailSheetProps {
     open: boolean;
     challenge: Challenge | null;
     participant: ChallengeParticipantDetailData | null;
+    onOpenStudentRecord?: (memberId: string) => void;
     onClose: () => void;
 }
 
@@ -37,6 +38,7 @@ export const ChallengeParticipantDetailSheet: React.FC<ChallengeParticipantDetai
     open,
     challenge,
     participant,
+    onOpenStudentRecord,
     onClose,
 }) => {
     if (!challenge || !participant) {
@@ -89,6 +91,26 @@ export const ChallengeParticipantDetailSheet: React.FC<ChallengeParticipantDetai
                         <DetailRow icon={<Calendar size={15} />} label="今の期間" value={participant.latestWindowLabel} />
                         <DetailRow icon={<Target size={15} />} label="最近クリア" value={participant.previousClearLabel ?? 'まだないよ'} />
                     </div>
+                    {onOpenStudentRecord ? (
+                        <button
+                            type="button"
+                            onClick={() => onOpenStudentRecord(participant.memberId)}
+                            style={{
+                                width: '100%',
+                                padding: '11px 0',
+                                borderRadius: RADIUS.lg,
+                                border: '1px solid rgba(9,132,227,0.18)',
+                                background: 'rgba(255,255,255,0.82)',
+                                color: COLOR.info,
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.sm,
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                            }}
+                        >
+                            生徒一覧で記録を見る
+                        </button>
+                    ) : null}
                 </div>
 
                 <div style={panelStyle}>

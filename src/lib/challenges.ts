@@ -438,12 +438,12 @@ export function getChallengePublishLabel(
     challenge: Pick<Challenge, 'publishMode' | 'publishStartDate' | 'publishEndDate' | 'startDate' | 'endDate'>,
 ): string {
     if (challenge.publishMode === 'always_on') {
-        return 'いつでも表示';
+        return 'いつでもチャレンジ';
     }
 
     const publishWindow = getChallengePublishWindow(challenge);
     if (!publishWindow) {
-        return 'いつでも表示';
+        return 'いつでもチャレンジ';
     }
 
     const [startYear, startMonth, startDay] = publishWindow.startDate.split('-');
@@ -451,8 +451,8 @@ export function getChallengePublishLabel(
     void startYear;
 
     return startMonth === endMonth
-        ? `${Number(endMonth)}/${Number(endDay)}まで表示`
-        : `${Number(startMonth)}/${Number(startDay)}〜${Number(endMonth)}/${Number(endDay)}に表示`;
+        ? `${Number(endMonth)}/${Number(endDay)}までの今だけチャレンジ`
+        : `${Number(startMonth)}/${Number(startDay)}〜${Number(endMonth)}/${Number(endDay)}の今だけチャレンジ`;
 }
 
 export function getChallengeInviteWindowLabel(

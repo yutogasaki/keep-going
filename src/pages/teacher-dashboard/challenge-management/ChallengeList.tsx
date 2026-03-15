@@ -40,6 +40,7 @@ interface ChallengeListProps {
     sessionsByMemberId: ReadonlyMap<string, StudentSession[]>;
     teacherMenus: TeacherMenu[];
     teacherExercises: TeacherExercise[];
+    onOpenStudentRecord: (memberId: string) => void;
     onEdit: (challenge: Challenge) => void;
     onDelete: (challengeId: string) => void;
 }
@@ -263,6 +264,7 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
     sessionsByMemberId,
     teacherMenus,
     teacherExercises,
+    onOpenStudentRecord,
     onEdit,
     onDelete,
 }) => {
@@ -519,17 +521,29 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                             </button>
                                         ))}
                                         {hiddenParticipantCount > 0 ? (
-                                            <span style={{
-                                                fontFamily: "'Noto Sans JP', sans-serif",
-                                                fontSize: 10,
-                                                fontWeight: 700,
-                                                color: '#8395A7',
-                                                background: '#F0F3F5',
-                                                borderRadius: 999,
-                                                padding: '4px 8px',
-                                            }}>
-                                                +{hiddenParticipantCount}人
-                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    const nextParticipant = participantStatuses[visibleParticipants.length];
+                                                    if (!nextParticipant) return;
+                                                    setSelectedChallenge(challenge);
+                                                    setSelectedParticipant(participantDetailsByMemberId.get(nextParticipant.memberId) ?? null);
+                                                }}
+                                                style={{
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontSize: 10,
+                                                    fontWeight: 700,
+                                                    color: '#8395A7',
+                                                    background: '#F0F3F5',
+                                                    borderRadius: 999,
+                                                    padding: '4px 8px',
+                                                    border: 'none',
+                                                    cursor: 'pointer',
+                                                    justifySelf: 'start',
+                                                }}
+                                            >
+                                                +{hiddenParticipantCount}人 つづきを見る
+                                            </button>
                                         ) : null}
                                     </div>
                                 ) : null}
@@ -659,6 +673,11 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                 open={selectedParticipant !== null}
                 challenge={selectedChallenge}
                 participant={selectedParticipant}
+                onOpenStudentRecord={(memberId) => {
+                    onOpenStudentRecord(memberId);
+                    setSelectedParticipant(null);
+                    setSelectedChallenge(null);
+                }}
                 onClose={() => {
                     setSelectedParticipant(null);
                     setSelectedChallenge(null);
