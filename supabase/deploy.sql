@@ -109,6 +109,11 @@ exception when duplicate_column then null;
 end $$;
 
 do $$ begin
+  alter table sessions add column planned_items jsonb not null default '[]';
+exception when duplicate_column then null;
+end $$;
+
+do $$ begin
   alter table sessions add column source_menu_id text;
 exception when duplicate_column then null;
 end $$;
@@ -132,6 +137,12 @@ end $$;
 -- public_menus に custom_exercise_data カラム追加
 do $$ begin
   alter table public_menus add column custom_exercise_data jsonb default '[]';
+exception when duplicate_column then null;
+end $$;
+
+-- menu_groups に inline menu item 用カラム追加
+do $$ begin
+  alter table menu_groups add column menu_items jsonb not null default '[]';
 exception when duplicate_column then null;
 end $$;
 
