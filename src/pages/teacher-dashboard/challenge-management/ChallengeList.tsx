@@ -1,5 +1,5 @@
-import React from 'react';
-import { Loader2, Pencil, Trash2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronRight, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { countChallengeProgressFromSessions } from '../../../lib/challenge-engine';
 import { getTodayKey } from '../../../lib/db';
 import { CLASS_EMOJI, EXERCISES } from '../../../data/exercises';
@@ -24,6 +24,11 @@ import {
 import type { StudentSession } from '../../../lib/teacher';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
 import { getTeacherVisibilityLabel } from '../../../lib/teacherExerciseMetadata';
+import {
+    ChallengeParticipantDetailSheet,
+    type ChallengeParticipantAttemptDetail,
+    type ChallengeParticipantDetailData,
+} from './ChallengeParticipantDetailSheet';
 
 interface ChallengeListProps {
     loading: boolean;
@@ -50,6 +55,31 @@ interface ParticipantStatusItem {
     progress: number;
     completedAt: string | null;
     attemptNo: number;
+}
+
+function formatDateRangeLabel(startDate: string | null | undefined, endDate: string | null | undefined): string {
+    if (!startDate || !endDate) {
+        return '期間を確認中';
+    }
+
+    const [, startMonth, startDay] = startDate.split('-');
+    const [, endMonth, endDay] = endDate.split('-');
+    if (!startMonth || !startDay || !endMonth || !endDay) {
+        return `${startDate} 〜 ${endDate}`;
+    }
+
+    return startMonth === endMonth
+        ? `${Number(startMonth)}/${Number(startDay)}〜${Number(endDay)}`
+        : `${Number(startMonth)}/${Number(startDay)}〜${Number(endMonth)}/${Number(endDay)}`;
+}
+
+function formatCompletedAtLabel(completedAt: string | null): string | null {
+    if (!completedAt) {
+        return null;
+    }
+
+    const [datePart] = completedAt.split('T');
+    return formatDateLabel(datePart, 'にクリア');
 }
 
 function formatDateLabel(date: string | null | undefined, suffix: string): string {
@@ -163,6 +193,66 @@ function buildParticipantStatusItems(
     return items;
 }
 
+function buildParticipantDetail(
+    challenge: Challenge,
+    memberId: string,
+    participantStatuses: ParticipantStatusItem[],
+    challengeAttempts: ChallengeAttempt[],
+): ChallengeParticipantDetailData | null {
+    const participant = participantStatuses.find((item) => item.memberId === memberId) ?? null;
+    if (!participant) {
+        return null;
+    }
+
+    const attempts = challengeAttempts
+        .filter((attempt) => attempt.challengeId === challenge.id && attempt.memberId === memberId)
+        .sort((left, right) => right.attemptNo - left.attemptNo);
+
+    const attemptDetails: ChallengeParticipantAttemptDetail[] = attempts.map((attempt, index) => {
+        const statusLabel = attempt.status === 'completed'
+            ? 'クリア'
+            : attempt.status === 'expired'
+                ? '期間が終わった'
+                : '進めているよ';
+        const progressLabel = index === 0 ? participant.progressLabel : statusLabel;
+        return {
+            id: attempt.id,
+            attemptLabel: attempt.attemptNo > 1 ? `${attempt.attemptNo}回目の挑戦` : '1回目の挑戦',
+            statusLabel,
+            progressLabel,
+            periodLabel: `${formatDateRangeLabel(attempt.effectiveStartDate, attempt.effectiveEndDate)} の期間`,
+            completedLabel: formatCompletedAtLabel(attempt.completedAt),
+            isLatest: index === 0,
+        };
+    });
+
+    const previousCompletedAttempt = attempts.find((attempt) => attempt.status === 'completed');
+
+    return {
+        memberId: participant.memberId,
+        name: participant.name,
+        challengeTitle: challenge.title,
+        latestAttemptLabel: participant.attemptLabel,
+        latestStatusLabel: participant.subLabel,
+        latestProgressLabel: participant.progressLabel,
+        latestWindowLabel: participant.windowLabel,
+        previousClearLabel: previousCompletedAttempt?.completedAt
+            ? formatCompletedAtLabel(previousCompletedAttempt.completedAt)
+            : null,
+        attempts: attemptDetails.length > 0
+            ? attemptDetails
+            : [{
+                id: `${challenge.id}-${memberId}-legacy`,
+                attemptLabel: participant.attemptLabel,
+                statusLabel: participant.subLabel,
+                progressLabel: participant.progressLabel,
+                periodLabel: participant.windowLabel,
+                completedLabel: participant.completedAt ? formatCompletedAtLabel(participant.completedAt) : null,
+                isLatest: true,
+            }],
+    };
+}
+
 export const ChallengeList: React.FC<ChallengeListProps> = ({
     loading,
     challenges,
@@ -179,6 +269,8 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
     const today = getTodayKey();
     const teacherMenuMap = new Map(teacherMenus.map((menu) => [menu.id, menu]));
     const teacherExerciseMap = new Map(teacherExercises.map((exercise) => [exercise.id, exercise]));
+    const [selectedParticipant, setSelectedParticipant] = useState<ChallengeParticipantDetailData | null>(null);
+    const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
 
     if (loading) {
         return (
@@ -241,6 +333,12 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                 const completedCount = participantStatuses.filter((item) => item.completed).length;
                 const visibleParticipants = participantStatuses.slice(0, 6);
                 const hiddenParticipantCount = Math.max(0, participantStatuses.length - visibleParticipants.length);
+                const participantDetailsByMemberId = new Map(
+                    participantStatuses.map((item) => [
+                        item.memberId,
+                        buildParticipantDetail(challenge, item.memberId, participantStatuses, challengeAttempts),
+                    ]),
+                );
 
                 return (
                     <div key={challenge.id} className="card" style={{
@@ -337,11 +435,16 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                         marginTop: 6,
                                     }}>
                                         {visibleParticipants.map((item) => (
-                                            <div
+                                            <button
+                                                type="button"
                                                 key={`${challenge.id}-${item.memberId}`}
+                                                onClick={() => {
+                                                    setSelectedChallenge(challenge);
+                                                    setSelectedParticipant(participantDetailsByMemberId.get(item.memberId) ?? null);
+                                                }}
                                                 style={{
                                                     display: 'grid',
-                                                    gridTemplateColumns: 'minmax(0, 1fr) auto',
+                                                    gridTemplateColumns: 'minmax(0, 1fr) auto auto',
                                                     gap: 6,
                                                     alignItems: 'center',
                                                     padding: '7px 9px',
@@ -350,9 +453,13 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                                         ? '#E8F8F0'
                                                         : item.subLabel === '期間が終わった'
                                                             ? '#F5F5F5'
-                                                            : item.progress > 0
-                                                                ? 'rgba(9, 132, 227, 0.08)'
-                                                                : '#F8FAFC',
+                                                                : item.progress > 0
+                                                                    ? 'rgba(9, 132, 227, 0.08)'
+                                                                    : '#F8FAFC',
+                                                    border: 'none',
+                                                    width: '100%',
+                                                    textAlign: 'left',
+                                                    cursor: 'pointer',
                                                 }}
                                             >
                                                 <div style={{ minWidth: 0 }}>
@@ -408,7 +515,8 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                                 }}>
                                                     {item.progressLabel}
                                                 </div>
-                                            </div>
+                                                <ChevronRight size={14} color="#94A3B8" />
+                                            </button>
                                         ))}
                                         {hiddenParticipantCount > 0 ? (
                                             <span style={{
@@ -547,6 +655,15 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                     </div>
                 );
             })}
+            <ChallengeParticipantDetailSheet
+                open={selectedParticipant !== null}
+                challenge={selectedChallenge}
+                participant={selectedParticipant}
+                onClose={() => {
+                    setSelectedParticipant(null);
+                    setSelectedChallenge(null);
+                }}
+            />
         </>
     );
 };
