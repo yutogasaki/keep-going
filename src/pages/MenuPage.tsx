@@ -26,6 +26,7 @@ export const MenuPage: React.FC = () => {
     const currentTab = useAppStore((state) => state.currentTab);
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const startSessionWithExercises = useAppStore((state) => state.startSessionWithExercises);
+    const startSessionWithPlan = useAppStore((state) => state.startSessionWithPlan);
     const startHybridSession = useAppStore((state) => state.startHybridSession);
     const updateUserSettings = useAppStore((state) => state.updateUserSettings);
     const menuOpenIntent = useAppStore((state) => state.menuOpenIntent);
@@ -104,6 +105,7 @@ export const MenuPage: React.FC = () => {
         users,
         sessionUserIds,
         startSessionWithExercises,
+        startSessionWithPlan,
         startHybridSession,
         updateUserSettings,
     });

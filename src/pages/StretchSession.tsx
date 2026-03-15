@@ -22,6 +22,7 @@ export const StretchSession: React.FC = () => {
     const users = useAppStore((state) => state.users);
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const sessionExerciseIds = useAppStore((state) => state.sessionExerciseIds);
+    const sessionPlannedItems = useAppStore((state) => state.sessionPlannedItems);
     const sessionSourceMenuId = useAppStore((state) => state.sessionSourceMenuId);
     const sessionSourceMenuSource = useAppStore((state) => state.sessionSourceMenuSource);
     const sessionSourceMenuName = useAppStore((state) => state.sessionSourceMenuName);
@@ -40,6 +41,7 @@ export const StretchSession: React.FC = () => {
         users,
         sessionUserIds,
         sessionExerciseIds,
+        sessionPlannedItems,
         sessionHybridMode,
     });
     const [startedAt] = useState(() => new Date().toISOString());
@@ -102,6 +104,7 @@ export const StretchSession: React.FC = () => {
         sessionKind,
         sessionDraftSetter: setSessionDraft,
         sessionExerciseIds,
+        sessionPlannedItems,
         sessionExercises,
         sessionSourceMenuId,
         sessionSourceMenuSource,

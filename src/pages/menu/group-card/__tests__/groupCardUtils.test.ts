@@ -65,4 +65,32 @@ describe('groupCardUtils', () => {
             exerciseCount: 0,
         });
     });
+
+    it('includes inline-only menu items in the summary', () => {
+        const group: MenuGroup = {
+            id: 'group-3',
+            name: 'inline check',
+            emoji: '✨',
+            description: 'inline',
+            exerciseIds: ['S01', 'inline-1'],
+            items: [
+                { id: 'S01', kind: 'exercise_ref', exerciseId: 'S01' },
+                {
+                    id: 'inline-1',
+                    kind: 'inline_only',
+                    name: 'その場ジャンプ',
+                    sec: 30,
+                    emoji: '✨',
+                    placement: 'stretch',
+                    internal: 'single',
+                },
+            ],
+        };
+
+        const summary = buildGroupCardSummary(group);
+
+        expect(summary.exercises.map((exercise) => exercise.name)).toEqual(['開脚', 'その場ジャンプ']);
+        expect(summary.exerciseCount).toBe(2);
+        expect(summary.minutes).toBe(1);
+    });
 });

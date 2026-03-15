@@ -1,5 +1,6 @@
 import type { ClassLevel } from '../../data/exercises';
 import type { ExercisePlacement } from '../../data/exercisePlacement';
+import type { SessionPlannedItem } from '../../lib/sessionPlan';
 
 export interface PastFuwafuwaRecord {
     id: string;
@@ -99,6 +100,7 @@ export interface AppState {
     setSessionUserIds: (ids: string[]) => void;
     isInSession: boolean;
     sessionExerciseIds: string[] | null;
+    sessionPlannedItems: SessionPlannedItem[] | null;
     sessionSourceMenuId: string | null;
     sessionSourceMenuSource: SessionMenuSource | null;
     sessionSourceMenuName: string | null;
@@ -111,6 +113,15 @@ export interface AppState {
     startSession: () => void;
     startSessionWithExercises: (
         ids: string[],
+        options?: {
+            sourceMenuId?: string | null;
+            sourceMenuSource?: SessionMenuSource | null;
+            sourceMenuName?: string | null;
+            returnTab?: TabId;
+        },
+    ) => void;
+    startSessionWithPlan: (
+        items: SessionPlannedItem[],
         options?: {
             sourceMenuId?: string | null;
             sourceMenuSource?: SessionMenuSource | null;

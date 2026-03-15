@@ -3,6 +3,7 @@ import { getCustomExercises, getAllSessions, getTodayKey } from '../../lib/db';
 import { fetchTeacherMenuSettingsForClass } from '../../lib/teacherMenuSettings';
 import { fetchTeacherExercises } from '../../lib/teacherContent';
 import { fetchAllTeacherItemOverrides } from '../../lib/teacherItemOverrides';
+import type { SessionPlannedItem } from '../../lib/sessionPlan';
 import type { UserProfileStore } from '../../store/useAppStore';
 import { type ClassLevel, type Exercise } from '../../data/exercises';
 import {
@@ -16,12 +17,14 @@ import {
     getSessionDailyTargetMinutes,
     mapTeacherExercisesToCustomPool,
     resolveExplicitSessionExercises,
+    resolvePlannedSessionExercises,
 } from './sessionSetupHelpers';
 
 interface UseSessionSetupParams {
     users: UserProfileStore[];
     sessionUserIds: string[];
     sessionExerciseIds: string[] | null;
+    sessionPlannedItems: SessionPlannedItem[] | null;
     sessionHybridMode?: boolean;
 }
 
@@ -37,6 +40,7 @@ export function useSessionSetup({
     users,
     sessionUserIds,
     sessionExerciseIds,
+    sessionPlannedItems,
     sessionHybridMode,
 }: UseSessionSetupParams): UseSessionSetupResult {
     const [isLoading, setIsLoading] = useState(true);
@@ -84,6 +88,11 @@ export function useSessionSetup({
                 const teacherCustomPool = mapTeacherExercisesToCustomPool(teacherExercises, classLevel);
                 const allCustomPool = [...customExercises, ...teacherCustomPool];
 
+                if (sessionPlannedItems && !sessionHybridMode) {
+                    setSessionExercises(resolvePlannedSessionExercises(sessionPlannedItems));
+                    return;
+                }
+
                 if (!sessionExerciseIds || sessionHybridMode) {
                     const allSessions = await getAllSessions();
                     setSessionExercises(buildAutoSessionExercises({
@@ -122,6 +131,7 @@ export function useSessionSetup({
         globalExcludedIds,
         globalRequiredIds,
         sessionExerciseIds,
+        sessionPlannedItems,
         sessionHybridMode,
         sessionUserIds,
     ]);

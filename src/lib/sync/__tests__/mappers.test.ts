@@ -2,11 +2,14 @@ import { describe, it, expect } from 'vitest';
 import {
     toSessionUpsertPayload,
     toAppSettingsUpsertPayload,
+    toMenuGroupUpsertPayload,
     toLocalSessionRecord,
     toLocalCustomExercise,
+    toLocalCustomMenuGroup,
     toLocalUserFromCloudFamily,
 } from '../mappers';
 import type { SessionRecord } from '../../db';
+import type { MenuGroup } from '../../../data/menuGroups';
 import type { UserProfileStore } from '../../../store/useAppStore';
 
 describe('toSessionUpsertPayload', () => {
@@ -31,6 +34,7 @@ describe('toSessionUpsertPayload', () => {
             total_seconds: 600,
             exercise_ids: ['ex1', 'ex2'],
             planned_exercise_ids: [],
+            planned_items: [],
             skipped_ids: ['ex3'],
             user_ids: ['user1'],
             source_menu_id: null,
@@ -79,11 +83,91 @@ describe('toLocalSessionRecord', () => {
             totalSeconds: 600,
             exerciseIds: ['ex1'],
             plannedExerciseIds: [],
+            plannedItems: [],
             skippedIds: [],
             userIds: ['user1'],
             sourceMenuId: null,
             sourceMenuSource: null,
             sourceMenuName: null,
+        });
+    });
+});
+
+describe('menu group mappers', () => {
+    it('writes menu_items when present', () => {
+        const group: MenuGroup = {
+            id: 'menu-1',
+            name: 'テストメニュー',
+            emoji: '🌟',
+            description: 'test',
+            exerciseIds: ['S01', 'inline-1'],
+            items: [
+                { id: 'S01', kind: 'exercise_ref', exerciseId: 'S01' },
+                {
+                    id: 'inline-1',
+                    kind: 'inline_only',
+                    name: 'その場ジャンプ',
+                    sec: 30,
+                    emoji: '✨',
+                    placement: 'stretch',
+                    internal: 'single',
+                },
+            ],
+            isPreset: false,
+            creatorId: 'user-1',
+        };
+
+        expect(toMenuGroupUpsertPayload(group, 'acc-1')).toEqual({
+            id: 'menu-1',
+            account_id: 'acc-1',
+            name: 'テストメニュー',
+            emoji: '🌟',
+            description: 'test',
+            exercise_ids: ['S01', 'inline-1'],
+            menu_items: group.items,
+            is_preset: false,
+            creator_id: 'user-1',
+        });
+    });
+
+    it('restores menu_items and falls back when missing', () => {
+        const cloudWithItems = {
+            id: 'menu-1',
+            name: 'メニュー',
+            emoji: '🌈',
+            description: 'desc',
+            exercise_ids: ['S01', 'inline-1'],
+            menu_items: [
+                { id: 'S01', kind: 'exercise_ref', exerciseId: 'S01' },
+                {
+                    id: 'inline-1',
+                    kind: 'inline_only',
+                    name: 'その場ジャンプ',
+                    sec: 30,
+                    emoji: '✨',
+                    placement: 'stretch',
+                    internal: 'single',
+                },
+            ],
+            creator_id: 'user-1',
+        };
+
+        expect(toLocalCustomMenuGroup(cloudWithItems as never)).toMatchObject({
+            id: 'menu-1',
+            items: cloudWithItems.menu_items,
+        });
+
+        const cloudWithoutItems = {
+            ...cloudWithItems,
+            menu_items: null,
+            exercise_ids: ['S01', 'S02'],
+        };
+
+        expect(toLocalCustomMenuGroup(cloudWithoutItems as never)).toMatchObject({
+            items: [
+                { id: 'S01', kind: 'exercise_ref', exerciseId: 'S01' },
+                { id: 'S02', kind: 'exercise_ref', exerciseId: 'S02' },
+            ],
         });
     });
 });

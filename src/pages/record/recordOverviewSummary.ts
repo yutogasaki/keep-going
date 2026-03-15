@@ -6,15 +6,14 @@ import {
     type SessionRecord,
 } from '../../lib/db';
 import { getSessionCompletedExerciseTotal, getSessionExerciseCounts } from '../../lib/sessionRecords';
-import type { RecordSessionHistoryDay } from './recordHistorySummary';
+import {
+    buildPlannedItemExerciseMap,
+    type ExerciseDisplayInfo,
+    type RecordSessionHistoryDay,
+} from './recordHistorySummary';
 import type { ExercisePlacement } from '../../data/exercisePlacement';
 
-export interface RecordExerciseDisplayInfo {
-    name: string;
-    emoji: string;
-    placement?: ExercisePlacement;
-    source?: 'standard' | 'teacher' | 'custom';
-}
+export type RecordExerciseDisplayInfo = ExerciseDisplayInfo;
 
 export interface TodayRecordSummary {
     progressPercent: number;
@@ -239,9 +238,12 @@ export function buildTwoWeekRecordSummary({
 
         const bucket = getTimeBucket(new Date(session.startedAt).getHours());
         timeBucketCounts.set(bucket, (timeBucketCounts.get(bucket) ?? 0) + 1);
+        const plannedItemMap = buildPlannedItemExerciseMap(session);
 
         for (const [exerciseId, count] of Object.entries(getSessionExerciseCounts(session))) {
-            const placement = exerciseMap.get(exerciseId)?.placement ?? 'stretch';
+            const placement = plannedItemMap.get(exerciseId)?.placement
+                ?? exerciseMap.get(exerciseId)?.placement
+                ?? 'stretch';
             placementCounts.set(placement, (placementCounts.get(placement) ?? 0) + count);
         }
     }
@@ -379,7 +381,11 @@ export function buildTopExerciseChips({
     const counts = new Map<string, number>();
 
     for (const session of recentSessions) {
+        const plannedItemMap = buildPlannedItemExerciseMap(session);
         for (const [exerciseId, count] of Object.entries(getSessionExerciseCounts(session))) {
+            if (plannedItemMap.get(exerciseId)?.isInline) {
+                continue;
+            }
             counts.set(exerciseId, (counts.get(exerciseId) ?? 0) + count);
         }
     }

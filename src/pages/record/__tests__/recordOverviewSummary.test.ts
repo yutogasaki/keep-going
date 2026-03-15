@@ -110,6 +110,43 @@ describe('recordOverviewSummary', () => {
         ]);
     });
 
+    it('does not count inline-only items in top exercise chips', () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date(2026, 2, 14, 10, 0, 0));
+
+        const sessions = [
+            createSession({
+                id: 'inline-session',
+                date: '2026-03-14',
+                exerciseIds: ['inline-1', 'S01'],
+                plannedItems: [
+                    {
+                        id: 'inline-1',
+                        kind: 'inline_only',
+                        name: 'おへやジャンプ',
+                        sec: 30,
+                        emoji: '✨',
+                        placement: 'stretch',
+                        internal: 'single',
+                    },
+                    {
+                        id: 'S01',
+                        kind: 'exercise_ref',
+                        name: '開脚',
+                        sec: 30,
+                        emoji: '🦵',
+                        placement: 'stretch',
+                        internal: 'single',
+                    },
+                ],
+            }),
+        ];
+
+        expect(buildTopExerciseChips({ sessions, exerciseMap })).toEqual([
+            { id: 'S01', name: '開脚', emoji: '🦵', count: 1, exerciseSource: 'standard' },
+        ]);
+    });
+
     it('groups history days into today, this week, and last week accordions', () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date(2026, 2, 14, 10, 0, 0));

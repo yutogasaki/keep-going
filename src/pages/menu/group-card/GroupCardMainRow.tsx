@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChevronDown, Clock, Play } from 'lucide-react';
 import { ExerciseIcon } from '../../../components/ExerciseIcon';
-import type { MenuGroup } from '../../../data/menuGroups';
+import { getMenuGroupItems, type MenuGroup } from '../../../data/menuGroups';
 import { getTeacherVisibilityLabel } from '../../../lib/teacherExerciseMetadata';
 import {
     catalogExpandButtonStyle,
@@ -41,6 +41,7 @@ export const GroupCardMainRow: React.FC<GroupCardMainRowProps> = ({
 }) => {
     const openDetailsLabel = expanded ? `${group.name}の詳細を閉じる` : `${group.name}の詳細を開く`;
     const playLabel = `${group.name}をはじめる。約${minutes}分、${exerciseCount}種目`;
+    const firstItemId = getMenuGroupItems(group)[0]?.id ?? 'S01';
 
     return (
         <div
@@ -63,7 +64,7 @@ export const GroupCardMainRow: React.FC<GroupCardMainRowProps> = ({
                 }}
             >
                 <div style={catalogIconSurfaceStyle}>
-                    <ExerciseIcon id={group.exerciseIds[0] || 'S01'} emoji={group.emoji} size={24} color="#2BBAA0" />
+                    <ExerciseIcon id={firstItemId} emoji={group.emoji} size={24} color="#2BBAA0" />
                 </div>
 
                 <div style={{ flex: 1, minWidth: 0 }}>

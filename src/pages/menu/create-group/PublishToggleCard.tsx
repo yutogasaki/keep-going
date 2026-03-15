@@ -4,12 +4,14 @@ import { Globe } from 'lucide-react';
 interface PublishToggleCardProps {
     isPublic: boolean;
     onToggle: () => void;
+    disabled?: boolean;
     subtitle?: string;
 }
 
 export const PublishToggleCard: React.FC<PublishToggleCardProps> = ({
     isPublic,
     onToggle,
+    disabled = false,
     subtitle = '他の人がこのメニューをもらえるようになります',
 }) => {
     return (
@@ -20,6 +22,7 @@ export const PublishToggleCard: React.FC<PublishToggleCardProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            opacity: disabled ? 0.72 : 1,
         }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <Globe size={18} color={isPublic ? '#0984E3' : '#B2BEC3'} />
@@ -42,14 +45,20 @@ export const PublishToggleCard: React.FC<PublishToggleCardProps> = ({
                 </div>
             </div>
             <button
-                onClick={onToggle}
+                type="button"
+                onClick={() => {
+                    if (!disabled) {
+                        onToggle();
+                    }
+                }}
+                disabled={disabled}
                 style={{
                     width: 48,
                     height: 28,
                     borderRadius: 14,
                     border: 'none',
                     background: isPublic ? '#0984E3' : '#DFE6E9',
-                    cursor: 'pointer',
+                    cursor: disabled ? 'not-allowed' : 'pointer',
                     position: 'relative',
                     transition: 'background 0.2s',
                     flexShrink: 0,

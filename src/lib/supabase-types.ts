@@ -54,6 +54,7 @@ export interface Database {
                     total_seconds: number;
                     exercise_ids: string[];
                     planned_exercise_ids: string[];
+                    planned_items: unknown[];
                     skipped_ids: string[];
                     user_ids: string[];
                     source_menu_id: string | null;
@@ -69,6 +70,7 @@ export interface Database {
                     total_seconds: number;
                     exercise_ids?: string[];
                     planned_exercise_ids?: string[];
+                    planned_items?: unknown[];
                     skipped_ids?: string[];
                     user_ids?: string[];
                     source_menu_id?: string | null;
@@ -113,6 +115,7 @@ export interface Database {
                     emoji: string;
                     description: string | null;
                     exercise_ids: string[];
+                    menu_items: unknown[];
                     is_preset: boolean;
                     creator_id: string | null;
                     created_at: string;
@@ -124,6 +127,7 @@ export interface Database {
                     emoji?: string;
                     description?: string | null;
                     exercise_ids?: string[];
+                    menu_items?: unknown[];
                     is_preset?: boolean;
                     creator_id?: string | null;
                 };

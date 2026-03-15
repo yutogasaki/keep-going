@@ -93,6 +93,41 @@ describe('buildRecordHistoryDays', () => {
             count: 1,
         });
     });
+
+    it('prefers planned item snapshots for inline menu items', () => {
+        const days = buildRecordHistoryDays({
+            groupedEntries: [[
+                '2026-03-08',
+                [
+                    createRecord({
+                        exerciseIds: ['inline-1'],
+                        skippedIds: [],
+                        plannedItems: [
+                            {
+                                id: 'inline-1',
+                                kind: 'inline_only',
+                                name: 'おへやジャンプ',
+                                sec: 30,
+                                emoji: '✨',
+                                placement: 'stretch',
+                                internal: 'single',
+                            },
+                        ],
+                    }),
+                ],
+            ]],
+            exerciseMap,
+            userNameMap,
+        });
+
+        expect(days[0].items[0].completedExercises[0]).toMatchObject({
+            id: 'inline-1',
+            name: 'おへやジャンプ',
+            emoji: '✨',
+            sourceLabel: 'このメニューだけ',
+            count: 1,
+        });
+    });
 });
 
 describe('buildRecordParticipantSummaries', () => {

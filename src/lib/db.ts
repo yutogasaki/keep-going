@@ -4,6 +4,7 @@ import { deleteCustomExerciseRemote, pushCustomExercise as syncPushCustomExercis
 import { normalizeSessionRecord, type SessionCountMap } from './sessionRecords';
 import { useSyncStatus } from '../store/useSyncStatus';
 import { normalizeExercisePlacement, type ExercisePlacement } from '../data/exercisePlacement';
+import type { SessionPlannedItem } from './sessionPlan';
 import type { SessionMenuSource } from '../store/use-app-store/types';
 
 function onSyncError(error: unknown): void {
@@ -19,6 +20,7 @@ export interface SessionRecord {
     totalSeconds: number;
     exerciseIds: string[];
     plannedExerciseIds?: string[];
+    plannedItems?: SessionPlannedItem[];
     skippedIds: string[]; // internal only
     exerciseCounts?: SessionCountMap;
     skippedCounts?: SessionCountMap;

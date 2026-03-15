@@ -1,5 +1,8 @@
 import type { CustomExercise, SessionRecord } from '../db';
-import type { MenuGroup } from '../../data/menuGroups';
+import {
+    buildMenuGroupItemsFromExerciseIds,
+    type MenuGroup,
+} from '../../data/menuGroups';
 import type { ClassLevel } from '../../data/exercises';
 import { normalizeExercisePlacement } from '../../data/exercisePlacement';
 import type { ChibifuwaRecord, PastFuwafuwaRecord, SessionMenuSource, UserProfileStore } from '../../store/useAppStore';
@@ -35,6 +38,7 @@ export function toSessionUpsertPayload(record: SessionRecord, accountId: string)
         total_seconds: record.totalSeconds,
         exercise_ids: record.exerciseIds,
         planned_exercise_ids: record.plannedExerciseIds ?? [],
+        planned_items: record.plannedItems ?? [],
         skipped_ids: record.skippedIds,
         user_ids: record.userIds ?? [],
         source_menu_id: record.sourceMenuId ?? null,
@@ -86,6 +90,7 @@ export function toMenuGroupUpsertPayload(group: MenuGroup, accountId: string) {
         emoji: group.emoji,
         description: group.description,
         exercise_ids: group.exerciseIds,
+        menu_items: group.items ?? buildMenuGroupItemsFromExerciseIds(group.exerciseIds),
         is_preset: group.isPreset,
         creator_id: group.creatorId ?? null,
     };
@@ -151,6 +156,7 @@ export function toLocalSessionRecord(cloudSession: CloudSession): SessionRecord 
         totalSeconds: cloudSession.total_seconds,
         exerciseIds: cloudSession.exercise_ids,
         plannedExerciseIds: cloudSession.planned_exercise_ids ?? [],
+        plannedItems: (cloudSession.planned_items as SessionRecord['plannedItems']) ?? [],
         skippedIds: cloudSession.skipped_ids,
         userIds: cloudSession.user_ids,
         sourceMenuId: cloudSession.source_menu_id ?? null,
@@ -179,6 +185,7 @@ export function toLocalCustomMenuGroup(cloudGroup: CloudMenuGroup): MenuGroup {
         emoji: cloudGroup.emoji,
         description: cloudGroup.description ?? '',
         exerciseIds: cloudGroup.exercise_ids,
+        items: (cloudGroup.menu_items as MenuGroup['items']) ?? buildMenuGroupItemsFromExerciseIds(cloudGroup.exercise_ids),
         isPreset: false,
         creatorId: cloudGroup.creator_id ?? undefined,
     };

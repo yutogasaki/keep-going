@@ -1,0 +1,456 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { getExerciseById } from '../../../data/exercises';
+import type { MenuGroupItem } from '../../../data/menuGroups';
+import type { PickerExercise } from './ExercisePickerList';
+
+interface QuickAddDraft {
+    name: string;
+    sec: number;
+    saveAsCustom: boolean;
+}
+
+interface MenuItemsCardProps {
+    items: MenuGroupItem[];
+    minutes: number;
+    allExercises?: PickerExercise[];
+    editingInlineItemId: string | null;
+    quickAddDraft: QuickAddDraft;
+    showQuickAdd: boolean;
+    onQuickAddDraftChange: (updates: Partial<QuickAddDraft>) => void;
+    onShowQuickAdd: (show: boolean) => void;
+    onAddQuickItem: () => void;
+    onRemoveAtIndex: (index: number) => void;
+    onOpenInlineEditor: (itemId: string | null) => void;
+    onUpdateInlineItem: (itemId: string, updates: { name?: string; sec?: number }) => void;
+    onPromoteInlineItem: (itemId: string) => void;
+}
+
+function fieldStyle() {
+    return {
+        width: '100%',
+        padding: '10px 12px',
+        borderRadius: 12,
+        border: '1px solid rgba(0,0,0,0.08)',
+        fontFamily: "'Noto Sans JP', sans-serif",
+        fontSize: 14,
+        color: '#2D3436',
+        background: 'white',
+        boxSizing: 'border-box' as const,
+    };
+}
+
+export const MenuItemsCard: React.FC<MenuItemsCardProps> = ({
+    items,
+    minutes,
+    allExercises,
+    editingInlineItemId,
+    quickAddDraft,
+    showQuickAdd,
+    onQuickAddDraftChange,
+    onShowQuickAdd,
+    onAddQuickItem,
+    onRemoveAtIndex,
+    onOpenInlineEditor,
+    onUpdateInlineItem,
+    onPromoteInlineItem,
+}) => {
+    const resolveExercise = (item: MenuGroupItem) => {
+        if (item.kind === 'inline_only') {
+            return item;
+        }
+
+        const builtIn = getExerciseById(item.exerciseId);
+        if (builtIn) {
+            return builtIn;
+        }
+
+        const extra = allExercises?.find((exercise) => exercise.id === item.exerciseId);
+        return extra ? {
+            id: extra.id,
+            name: extra.name,
+            sec: extra.sec,
+            emoji: extra.emoji,
+            placement: extra.placement ?? 'stretch',
+        } : null;
+    };
+
+    return (
+        <div className="card" style={{ padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', border: 'none' }}>
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 16,
+            }}>
+                <label style={{
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#2D3436',
+                }}>
+                    入れている項目（{items.length}）
+                </label>
+                <span style={{
+                    fontFamily: "'Outfit', sans-serif",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#2BBAA0',
+                    background: 'rgba(43, 186, 160, 0.1)',
+                    padding: '4px 10px',
+                    borderRadius: 10,
+                }}>
+                    約{minutes}分
+                </span>
+            </div>
+
+            {items.length === 0 ? (
+                <div style={{
+                    background: '#F8F9FA',
+                    borderRadius: 16,
+                    padding: '24px 16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    border: '2px dashed rgba(0,0,0,0.05)',
+                    marginBottom: 16,
+                }}>
+                    <div style={{ fontSize: 24, opacity: 0.5 }}>👇</div>
+                    <p style={{
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 13,
+                        color: '#8395A7',
+                        textAlign: 'center',
+                        margin: 0,
+                        fontWeight: 600,
+                    }}>
+                        下から種目を足すか、さっと追加してね
+                    </p>
+                </div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
+                    {items.map((item, index) => {
+                        const exercise = resolveExercise(item);
+                        if (!exercise) {
+                            return null;
+                        }
+
+                        const isInline = item.kind === 'inline_only';
+                        const isEditing = editingInlineItemId === item.id;
+
+                        return (
+                            <div
+                                key={item.id}
+                                style={{
+                                    borderRadius: 16,
+                                    background: isInline ? 'rgba(255, 243, 224, 0.55)' : 'rgba(43, 186, 160, 0.06)',
+                                    border: '1px solid rgba(0,0,0,0.05)',
+                                    padding: '14px 16px',
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => isInline ? onOpenInlineEditor(isEditing ? null : item.id) : null}
+                                        style={{
+                                            flex: 1,
+                                            border: 'none',
+                                            background: 'transparent',
+                                            textAlign: 'left',
+                                            padding: 0,
+                                            cursor: isInline ? 'pointer' : 'default',
+                                        }}
+                                    >
+                                        <div style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8,
+                                            marginBottom: 6,
+                                            flexWrap: 'wrap',
+                                        }}>
+                                            <span style={{ fontSize: 22 }}>{exercise.emoji}</span>
+                                            <span style={{
+                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                fontSize: 15,
+                                                fontWeight: 700,
+                                                color: '#2D3436',
+                                            }}>
+                                                {exercise.name}
+                                            </span>
+                                            <span style={{
+                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                fontSize: 11,
+                                                fontWeight: 700,
+                                                color: isInline ? '#C27803' : '#2B7A6E',
+                                                background: isInline ? 'rgba(255, 183, 77, 0.18)' : 'rgba(43, 186, 160, 0.12)',
+                                                padding: '4px 8px',
+                                                borderRadius: 9999,
+                                            }}>
+                                                {isInline ? 'このメニューだけ' : '種目'}
+                                            </span>
+                                        </div>
+                                        <div style={{
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 12,
+                                            color: '#8395A7',
+                                        }}>
+                                            {exercise.sec}秒
+                                        </div>
+                                        <div style={{
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 11,
+                                            color: '#98A6AF',
+                                            marginTop: 4,
+                                        }}>
+                                            {isInline ? 'この画面で編集できます' : '内容は種目で編集'}
+                                        </div>
+                                    </button>
+                                    <motion.button
+                                        type="button"
+                                        whileTap={{ scale: 0.94 }}
+                                        onClick={() => onRemoveAtIndex(index)}
+                                        style={{
+                                            width: 32,
+                                            height: 32,
+                                            borderRadius: '50%',
+                                            border: 'none',
+                                            background: 'rgba(0,0,0,0.06)',
+                                            color: '#52606D',
+                                            cursor: 'pointer',
+                                            fontSize: 16,
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        ×
+                                    </motion.button>
+                                </div>
+
+                                {isInline && isEditing ? (
+                                    <div style={{
+                                        marginTop: 12,
+                                        paddingTop: 12,
+                                        borderTop: '1px solid rgba(0,0,0,0.06)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 10,
+                                    }}>
+                                        <div>
+                                            <div style={{
+                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                fontSize: 12,
+                                                fontWeight: 700,
+                                                color: '#52606D',
+                                                marginBottom: 6,
+                                            }}>
+                                                名前
+                                            </div>
+                                            <input
+                                                value={item.name}
+                                                onChange={(event) => onUpdateInlineItem(item.id, { name: event.target.value })}
+                                                style={fieldStyle()}
+                                            />
+                                        </div>
+                                        <div>
+                                            <div style={{
+                                                fontFamily: "'Noto Sans JP', sans-serif",
+                                                fontSize: 12,
+                                                fontWeight: 700,
+                                                color: '#52606D',
+                                                marginBottom: 6,
+                                            }}>
+                                                時間
+                                            </div>
+                                            <input
+                                                type="number"
+                                                min={5}
+                                                step={5}
+                                                value={item.sec}
+                                                onChange={(event) => onUpdateInlineItem(item.id, { sec: Number(event.target.value) })}
+                                                style={fieldStyle()}
+                                            />
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => onPromoteInlineItem(item.id)}
+                                                style={{
+                                                    padding: '10px 12px',
+                                                    borderRadius: 12,
+                                                    border: 'none',
+                                                    background: 'rgba(43, 186, 160, 0.12)',
+                                                    color: '#2B7A6E',
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontSize: 12,
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                じぶん種目にする
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => onOpenInlineEditor(null)}
+                                                style={{
+                                                    padding: '10px 12px',
+                                                    borderRadius: 12,
+                                                    border: 'none',
+                                                    background: 'rgba(0,0,0,0.06)',
+                                                    color: '#52606D',
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontSize: 12,
+                                                    fontWeight: 700,
+                                                    cursor: 'pointer',
+                                                }}
+                                            >
+                                                完了
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : null}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    color: '#2D3436',
+                }}>
+                    追加する
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span
+                        style={{
+                            padding: '10px 14px',
+                            borderRadius: 12,
+                            background: 'rgba(43, 186, 160, 0.08)',
+                            color: '#2B7A6E',
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 13,
+                            fontWeight: 700,
+                        }}
+                    >
+                        下の一覧から種目を追加
+                    </span>
+                    <button
+                        type="button"
+                        onClick={() => onShowQuickAdd(!showQuickAdd)}
+                        style={{
+                            padding: '10px 14px',
+                            borderRadius: 12,
+                            border: 'none',
+                            background: 'rgba(255, 183, 77, 0.16)',
+                            color: '#A96600',
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                        }}
+                    >
+                        + さっと追加
+                    </button>
+                </div>
+
+                {showQuickAdd ? (
+                    <div style={{
+                        marginTop: 4,
+                        borderRadius: 16,
+                        border: '1px solid rgba(255, 183, 77, 0.3)',
+                        background: 'rgba(255, 248, 238, 0.8)',
+                        padding: '14px 16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10,
+                    }}>
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 13,
+                            fontWeight: 700,
+                            color: '#A96600',
+                        }}>
+                            このメニューだけ追加
+                        </div>
+                        <input
+                            placeholder="例: おへやジャンプ"
+                            value={quickAddDraft.name}
+                            onChange={(event) => onQuickAddDraftChange({ name: event.target.value })}
+                            style={fieldStyle()}
+                        />
+                        <input
+                            type="number"
+                            min={5}
+                            step={5}
+                            value={quickAddDraft.sec}
+                            onChange={(event) => onQuickAddDraftChange({ sec: Number(event.target.value) })}
+                            style={fieldStyle()}
+                        />
+                        <label style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 12,
+                            color: '#52606D',
+                        }}>
+                            <input
+                                type="checkbox"
+                                checked={quickAddDraft.saveAsCustom}
+                                onChange={(event) => onQuickAddDraftChange({ saveAsCustom: event.target.checked })}
+                            />
+                            じぶん種目にも保存
+                        </label>
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 11,
+                            color: '#98A6AF',
+                        }}>
+                            OFFなら、このメニューだけで使います
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                            <button
+                                type="button"
+                                onClick={() => onShowQuickAdd(false)}
+                                style={{
+                                    padding: '10px 12px',
+                                    borderRadius: 12,
+                                    border: 'none',
+                                    background: 'rgba(0,0,0,0.06)',
+                                    color: '#52606D',
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                やめる
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onAddQuickItem}
+                                style={{
+                                    padding: '10px 12px',
+                                    borderRadius: 12,
+                                    border: 'none',
+                                    background: '#FFB74D',
+                                    color: '#7A4500',
+                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                    fontSize: 12,
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                追加
+                            </button>
+                        </div>
+                    </div>
+                ) : null}
+            </div>
+        </div>
+    );
+};

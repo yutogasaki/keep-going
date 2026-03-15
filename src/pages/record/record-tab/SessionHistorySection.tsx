@@ -382,6 +382,24 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({
                                                                     >
                                                                         <span style={{ fontSize: 14 }}>{exercise.emoji}</span>
                                                                         {exercise.name}
+                                                                        {exercise.sourceLabel ? (
+                                                                            <span
+                                                                                style={{
+                                                                                    display: 'inline-flex',
+                                                                                    alignItems: 'center',
+                                                                                    justifyContent: 'center',
+                                                                                    padding: '2px 6px',
+                                                                                    borderRadius: RADIUS.full,
+                                                                                    background: 'rgba(255, 183, 77, 0.18)',
+                                                                                    color: '#A96600',
+                                                                                    fontFamily: FONT.body,
+                                                                                    fontSize: 10,
+                                                                                    fontWeight: 800,
+                                                                                }}
+                                                                            >
+                                                                                {exercise.sourceLabel}
+                                                                            </span>
+                                                                        ) : null}
                                                                     </span>
                                                                 ))}
                                                                 {item.completedExercises.length > 2 && (

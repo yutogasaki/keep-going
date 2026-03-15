@@ -1,11 +1,13 @@
 import type { SessionRecord } from '../../lib/db';
 import { getSessionCompletedExerciseTotal, getSessionExerciseCounts, getSessionSkippedCounts } from '../../lib/sessionRecords';
+import type { ExercisePlacement } from '../../data/exercisePlacement';
 
 export interface RecordExerciseSummary {
     id: string;
     name: string;
     emoji: string;
     count: number;
+    sourceLabel?: string;
 }
 
 export interface RecordSessionHistoryItem {
@@ -43,9 +45,31 @@ export interface RecordInsightSummary {
     participants: RecordParticipantSummary[];
 }
 
-interface ExerciseDisplayInfo {
+export interface ExerciseDisplayInfo {
     name: string;
     emoji: string;
+    placement?: ExercisePlacement;
+    source?: 'standard' | 'teacher' | 'custom';
+    sourceLabel?: string;
+    isInline?: boolean;
+}
+
+export function buildPlannedItemExerciseMap(
+    record: Pick<SessionRecord, 'plannedItems'>,
+): Map<string, ExerciseDisplayInfo> {
+    const plannedMap = new Map<string, ExerciseDisplayInfo>();
+
+    for (const item of record.plannedItems ?? []) {
+        plannedMap.set(item.id, {
+            name: item.name,
+            emoji: item.emoji,
+            placement: item.placement,
+            sourceLabel: item.kind === 'inline_only' ? 'このメニューだけ' : undefined,
+            isInline: item.kind === 'inline_only',
+        });
+    }
+
+    return plannedMap;
 }
 
 function getTotalCount(counts: Record<string, number>): number {
@@ -55,6 +79,7 @@ function getTotalCount(counts: Record<string, number>): number {
 function buildExerciseSummaries(
     counts: Record<string, number>,
     exerciseMap: Map<string, ExerciseDisplayInfo>,
+    plannedItemMap: Map<string, ExerciseDisplayInfo>,
     limit = 2,
 ): RecordExerciseSummary[] {
     return Object.entries(counts)
@@ -63,18 +88,19 @@ function buildExerciseSummaries(
                 return b[1] - a[1];
             }
 
-            const aName = exerciseMap.get(a[0])?.name ?? a[0];
-            const bName = exerciseMap.get(b[0])?.name ?? b[0];
+            const aName = plannedItemMap.get(a[0])?.name ?? exerciseMap.get(a[0])?.name ?? a[0];
+            const bName = plannedItemMap.get(b[0])?.name ?? exerciseMap.get(b[0])?.name ?? b[0];
             return aName.localeCompare(bName, 'ja');
         })
         .slice(0, limit)
         .map(([id, count]) => {
-            const info = exerciseMap.get(id);
+            const info = plannedItemMap.get(id) ?? exerciseMap.get(id);
             return {
                 id,
                 count,
                 name: info?.name ?? '種目',
                 emoji: info?.emoji ?? '🪄',
+                sourceLabel: info?.sourceLabel,
             };
         });
 }
@@ -135,6 +161,7 @@ export function buildRecordHistoryDays({
         items: records.map((record) => {
             const userNames = resolveUserNames(record, userNameMap);
             const skippedCounts = getSessionSkippedCounts(record);
+            const plannedItemMap = buildPlannedItemExerciseMap(record);
 
             return {
                 id: record.id,
@@ -144,8 +171,8 @@ export function buildRecordHistoryDays({
                 skippedTotal: getTotalCount(skippedCounts),
                 sessionLabel: buildSessionLabel(userNames),
                 userNames,
-                completedExercises: buildExerciseSummaries(getSessionExerciseCounts(record), exerciseMap),
-                skippedExercises: buildExerciseSummaries(skippedCounts, exerciseMap),
+                completedExercises: buildExerciseSummaries(getSessionExerciseCounts(record), exerciseMap, plannedItemMap),
+                skippedExercises: buildExerciseSummaries(skippedCounts, exerciseMap, plannedItemMap),
             };
         }),
     }));

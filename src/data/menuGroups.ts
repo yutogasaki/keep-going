@@ -1,5 +1,26 @@
 import { getExercisesByClass, type ClassLevel } from './exercises';
+import type { ExercisePlacement } from './exercisePlacement';
 import type { TeacherContentDisplayMode, TeacherMenuVisibility } from '../lib/teacherExerciseMetadata';
+
+export interface MenuGroupExerciseRefItem {
+    id: string;
+    kind: 'exercise_ref';
+    exerciseId: string;
+}
+
+export interface MenuGroupInlineItem {
+    id: string;
+    kind: 'inline_only';
+    name: string;
+    sec: number;
+    emoji: string;
+    placement: ExercisePlacement;
+    internal: string;
+    reading?: string;
+    description?: string;
+}
+
+export type MenuGroupItem = MenuGroupExerciseRefItem | MenuGroupInlineItem;
 
 export interface MenuGroup {
     id: string;
@@ -7,6 +28,7 @@ export interface MenuGroup {
     emoji: string;
     description: string;
     exerciseIds: string[];
+    items?: MenuGroupItem[];
     isPreset: boolean;
     creatorId?: string; // If undefined, it's a family shared menu
     origin?: 'builtin' | 'teacher';
@@ -70,4 +92,28 @@ export function getPresetsForClass(classLevel: ClassLevel): MenuGroup[] {
         ...group,
         exerciseIds: group.exerciseIds.filter(id => availableIds.has(id)),
     })).filter(group => group.exerciseIds.length > 0);
+}
+
+export function buildMenuGroupItemsFromExerciseIds(exerciseIds: string[]): MenuGroupItem[] {
+    return exerciseIds.map((exerciseId) => ({
+        id: exerciseId,
+        kind: 'exercise_ref',
+        exerciseId,
+    }));
+}
+
+export function getMenuGroupItems(group: Pick<MenuGroup, 'exerciseIds' | 'items'>): MenuGroupItem[] {
+    if (Array.isArray(group.items) && group.items.length > 0) {
+        return group.items;
+    }
+
+    return buildMenuGroupItemsFromExerciseIds(group.exerciseIds);
+}
+
+export function getMenuGroupItemIds(group: Pick<MenuGroup, 'exerciseIds' | 'items'>): string[] {
+    return getMenuGroupItems(group).map((item) => item.id);
+}
+
+export function hasInlineMenuItems(group: Pick<MenuGroup, 'exerciseIds' | 'items'>): boolean {
+    return getMenuGroupItems(group).some((item) => item.kind === 'inline_only');
 }

@@ -1,5 +1,6 @@
 import { EXERCISES, generateSession, type ClassLevel, type Exercise } from '../../data/exercises';
 import type { CustomExercise, SessionRecord } from '../../lib/db';
+import { sessionPlannedItemToExercise, type SessionPlannedItem } from '../../lib/sessionPlan';
 import type { TeacherExercise } from '../../lib/teacherContent';
 import type { TeacherItemOverride } from '../../lib/teacherItemOverrides';
 import type { TeacherMenuSetting } from '../../lib/teacherMenuSettings';
@@ -239,6 +240,10 @@ export function resolveExplicitSessionExercises(
     }
 
     return resolved;
+}
+
+export function resolvePlannedSessionExercises(items: SessionPlannedItem[]): Exercise[] {
+    return items.map((item) => sessionPlannedItemToExercise(item));
 }
 
 export function getDefaultBuiltInExercises(): Exercise[] {

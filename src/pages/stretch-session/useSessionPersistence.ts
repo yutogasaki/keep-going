@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
 import { getTodayKey, saveSession, type SessionRecord } from '../../lib/db';
 import type { Exercise } from '../../data/exercises';
+import {
+    buildSessionPlannedItemsFromExercises,
+    type SessionPlannedItem,
+} from '../../lib/sessionPlan';
 import type { SessionDraft, SessionKind, TabId } from '../../store/use-app-store/types';
 
 interface UseSessionPersistenceParams {
@@ -14,6 +18,7 @@ interface UseSessionPersistenceParams {
     sessionKind: SessionKind | null;
     sessionDraftSetter: (draft: SessionDraft | null) => void;
     sessionExerciseIds: string[] | null;
+    sessionPlannedItems: SessionPlannedItem[] | null;
     sessionExercises: Exercise[];
     sessionSourceMenuId: string | null;
     sessionSourceMenuSource: SessionDraft['sourceMenuSource'];
@@ -36,6 +41,7 @@ export function useSessionPersistence({
     sessionKind,
     sessionDraftSetter,
     sessionExerciseIds,
+    sessionPlannedItems,
     sessionExercises,
     sessionSourceMenuId,
     sessionSourceMenuSource,
@@ -88,6 +94,7 @@ export function useSessionPersistence({
         }
 
         if (completedIds.length > 0 || finalRunningTime > 0) {
+            const plannedItems = sessionPlannedItems ?? buildSessionPlannedItemsFromExercises(sessionExercises);
             const record: SessionRecord = {
                 id: crypto.randomUUID(),
                 date: getTodayKey(),
@@ -95,6 +102,7 @@ export function useSessionPersistence({
                 totalSeconds: finalRunningTime,
                 exerciseIds: completedIds,
                 plannedExerciseIds: sessionExercises.map((exercise) => exercise.id),
+                plannedItems,
                 skippedIds,
                 userIds: sessionUserIds,
                 sourceMenuId: sessionSourceMenuId,
@@ -109,6 +117,7 @@ export function useSessionPersistence({
         isCompleted,
         isTeacherPreview,
         sessionExerciseIds,
+        sessionPlannedItems,
         sessionExercises,
         sessionSourceMenuId,
         sessionSourceMenuName,

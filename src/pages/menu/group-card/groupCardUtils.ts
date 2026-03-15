@@ -1,6 +1,6 @@
 import { getExerciseById } from '../../../data/exercises';
 import type { ExercisePlacement } from '../../../data/exercisePlacement';
-import type { MenuGroup } from '../../../data/menuGroups';
+import { getMenuGroupItems, type MenuGroup, type MenuGroupItem } from '../../../data/menuGroups';
 
 export interface GroupCardExerciseSummary {
     id: string;
@@ -38,9 +38,26 @@ export function resolveGroupExercise(
     return mapped ? toGroupCardExerciseSummary(id, mapped) : null;
 }
 
+function resolveGroupItem(
+    item: MenuGroupItem,
+    exerciseMap?: GroupExerciseMap,
+): GroupCardExerciseSummary | null {
+    if (item.kind === 'inline_only') {
+        return {
+            id: item.id,
+            name: item.name,
+            emoji: item.emoji,
+            sec: item.sec,
+            placement: item.placement,
+        };
+    }
+
+    return resolveGroupExercise(item.exerciseId, exerciseMap);
+}
+
 export function buildGroupCardSummary(group: MenuGroup, exerciseMap?: GroupExerciseMap) {
-    const exercises = group.exerciseIds
-        .map((id) => resolveGroupExercise(id, exerciseMap))
+    const exercises = getMenuGroupItems(group)
+        .map((item) => resolveGroupItem(item, exerciseMap))
         .filter((exercise): exercise is GroupCardExerciseSummary => exercise !== null);
     const activeExercises = exercises.filter((exercise) => exercise.placement !== 'rest');
     const totalSec = activeExercises.reduce((sum, exercise) => sum + exercise.sec, 0);

@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Exercise } from '../../../data/exercises';
-import { getPresetsForClass, type MenuGroup } from '../../../data/menuGroups';
+import { getMenuGroupItems, getPresetsForClass, type MenuGroup } from '../../../data/menuGroups';
 import { audio } from '../../../lib/audio';
 import { deleteCustomGroup, getCustomGroups } from '../../../lib/customGroups';
 import { deleteCustomExercise, getCustomExercises, type CustomExercise } from '../../../lib/db';
+import {
+    resolveMenuGroupToSessionPlannedItems,
+    type SessionPlannedItem,
+} from '../../../lib/sessionPlan';
 import type { UserProfileStore } from '../../../store/useAppStore';
 import { useMenuExercises } from './useMenuExercises';
 import { useMenuPublishActions } from './useMenuPublishActions';
@@ -23,6 +27,14 @@ interface UseMenuPageDataParams {
             sourceMenuName?: string | null;
         },
     ) => void;
+    startSessionWithPlan: (
+        items: SessionPlannedItem[],
+        options?: {
+            sourceMenuId?: string | null;
+            sourceMenuSource?: 'preset' | 'teacher' | 'custom' | 'public' | null;
+            sourceMenuName?: string | null;
+        },
+    ) => void;
     startHybridSession: (requiredIds: string[]) => void;
     updateUserSettings: (
         id: string,
@@ -34,6 +46,7 @@ export function useMenuPageData({
     users,
     sessionUserIds,
     startSessionWithExercises,
+    startSessionWithPlan,
     startHybridSession,
     updateUserSettings,
 }: UseMenuPageDataParams) {
@@ -94,6 +107,20 @@ export function useMenuPageData({
         excludedExercises: userContext.excludedExercises,
     });
 
+    const sessionExerciseLookup = useMemo<Map<string, Exercise | CustomExercise | typeof teacherContent.teacherExercises[number]>>(() => {
+        const lookup = new Map<string, Exercise | CustomExercise | typeof teacherContent.teacherExercises[number]>();
+        for (const exercise of exerciseData.exercises) {
+            lookup.set(exercise.id, exercise);
+        }
+        for (const exercise of customExercises) {
+            lookup.set(exercise.id, exercise);
+        }
+        for (const exercise of teacherContent.teacherExercises) {
+            lookup.set(exercise.id, exercise);
+        }
+        return lookup;
+    }, [customExercises, exerciseData.exercises, teacherContent.teacherExercises]);
+
     const loadCustomData = useCallback(async () => {
         const [allGroups, allExercises] = await Promise.all([
             getCustomGroups(),
@@ -129,7 +156,9 @@ export function useMenuPageData({
 
     const handleGroupTap = useCallback((group: MenuGroup) => {
         audio.initTTS();
-        startSessionWithExercises(group.exerciseIds, {
+        const menuItems = getMenuGroupItems(group);
+        const hasInlineItems = menuItems.some((item) => item.kind === 'inline_only');
+        const sessionOptions = {
             sourceMenuId: group.id,
             sourceMenuSource: teacherContent.teacherMenuIds.has(group.id)
                 ? 'teacher'
@@ -137,8 +166,16 @@ export function useMenuPageData({
                     ? 'preset'
                     : 'custom',
             sourceMenuName: group.name,
-        });
-    }, [startSessionWithExercises, teacherContent.teacherMenuIds]);
+        } as const;
+
+        if (hasInlineItems) {
+            const plannedItems = resolveMenuGroupToSessionPlannedItems(group, sessionExerciseLookup);
+            startSessionWithPlan(plannedItems, sessionOptions);
+            return;
+        }
+
+        startSessionWithExercises(group.exerciseIds, sessionOptions);
+    }, [sessionExerciseLookup, startSessionWithExercises, startSessionWithPlan, teacherContent.teacherMenuIds]);
 
     const handleDeleteGroup = useCallback(async (groupId: string) => {
         await deleteCustomGroup(groupId);
