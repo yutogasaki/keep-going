@@ -282,21 +282,37 @@ export const MenuDetailSheet: React.FC<MenuDetailSheetProps> = ({
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                                 {displayItems.map((item, index) => {
                                     return (
-                                        <span
+                                        <div
                                             key={`${item.id}-${index}`}
                                             style={{
                                                 padding: '8px 12px',
                                                 borderRadius: 999,
-                                                background: '#F7F8FA',
+                                                background: item.kind === 'inline_only' ? '#FFF6E6' : '#F7F8FA',
                                                 fontFamily: "'Noto Sans JP', sans-serif",
                                                 fontSize: 12,
                                                 fontWeight: 700,
                                                 color: '#2D3436',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: 8,
                                             }}
                                         >
-                                            {item.emoji} {item.name}
-                                            {item.kind === 'inline_only' ? ' このメニューだけ' : ''}
-                                        </span>
+                                            <span>{item.emoji} {item.name}</span>
+                                            {item.kind === 'inline_only' ? (
+                                                <span
+                                                    style={{
+                                                        padding: '4px 8px',
+                                                        borderRadius: 999,
+                                                        background: 'rgba(255, 183, 77, 0.22)',
+                                                        color: '#A96600',
+                                                        fontSize: 10,
+                                                        fontWeight: 800,
+                                                    }}
+                                                >
+                                                    このメニューだけ
+                                                </span>
+                                            ) : null}
+                                        </div>
                                     );
                                 })}
                             </div>

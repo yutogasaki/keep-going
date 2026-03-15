@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { DurationSecondsPicker } from '../../../components/DurationSecondsPicker';
 import { EditorSection, EditorShell, editorLabelStyle } from '../../../components/editor/EditorShell';
 import {
     EXERCISE_PLACEMENTS,
@@ -157,31 +158,10 @@ export const TeacherExerciseEditor: React.FC<TeacherExerciseEditorProps> = ({
             </EditorSection>
 
             <EditorSection label="時間（秒）">
-                <div style={{ display: 'flex', gap: 10 }}>
-                    {[15, 30, 60, 120].map((seconds) => (
-                        <motion.button
-                            key={seconds}
-                            whileTap={{ scale: 0.95 }}
-                            type="button"
-                            onClick={() => setSec(seconds)}
-                            style={{
-                                flex: 1,
-                                padding: '12px 0',
-                                borderRadius: 12,
-                                border: sec === seconds ? '2px solid #2BBAA0' : '2px solid transparent',
-                                background: sec === seconds ? 'rgba(43,186,160,0.08)' : '#F8F9FA',
-                                cursor: 'pointer',
-                                fontFamily: "'Outfit', sans-serif",
-                                fontSize: 16,
-                                fontWeight: 700,
-                                color: sec === seconds ? '#2BBAA0' : '#8395A7',
-                                transition: 'all 0.2s',
-                            }}
-                        >
-                            {seconds}秒
-                        </motion.button>
-                    ))}
-                </div>
+                <DurationSecondsPicker
+                    value={sec}
+                    onChange={setSec}
+                />
             </EditorSection>
 
             <EditorSection label="どこに入れる？">
