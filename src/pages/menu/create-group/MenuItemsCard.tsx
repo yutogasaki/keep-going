@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 import { DurationSecondsPicker } from '../../../components/DurationSecondsPicker';
 import { getExerciseById } from '../../../data/exercises';
 import type { MenuGroupItem } from '../../../data/menuGroups';
@@ -22,6 +23,7 @@ interface MenuItemsCardProps {
     onQuickAddDraftChange: (updates: Partial<QuickAddDraft>) => void;
     onShowQuickAdd: (show: boolean) => void;
     onAddQuickItem: (options?: { openEditor?: boolean }) => void;
+    onMoveItem: (fromIndex: number, toIndex: number) => void;
     onRemoveAtIndex: (index: number) => void;
     onOpenInlineEditor: (itemId: string | null) => void;
     onUpdateInlineItem: (itemId: string, updates: { name?: string; sec?: number }) => void;
@@ -54,6 +56,7 @@ export const MenuItemsCard: React.FC<MenuItemsCardProps> = ({
     onQuickAddDraftChange,
     onShowQuickAdd,
     onAddQuickItem,
+    onMoveItem,
     onRemoveAtIndex,
     onOpenInlineEditor,
     onUpdateInlineItem,
@@ -146,6 +149,8 @@ export const MenuItemsCard: React.FC<MenuItemsCardProps> = ({
                         const isEditing = editingInlineItemId === item.id;
                         const canEditExercise = item.kind === 'exercise_ref'
                             && editableExerciseIds.includes(item.exerciseId);
+                        const canMoveUp = index > 0;
+                        const canMoveDown = index < items.length - 1;
 
                         return (
                             <div
@@ -158,6 +163,50 @@ export const MenuItemsCard: React.FC<MenuItemsCardProps> = ({
                                 }}
                             >
                                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => onMoveItem(index, index - 1)}
+                                            disabled={!canMoveUp}
+                                            aria-label="上へ"
+                                            style={{
+                                                width: 30,
+                                                height: 30,
+                                                borderRadius: 10,
+                                                border: 'none',
+                                                background: canMoveUp ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.03)',
+                                                color: canMoveUp ? '#52606D' : '#C5CDD3',
+                                                cursor: canMoveUp ? 'pointer' : 'default',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                padding: 0,
+                                            }}
+                                        >
+                                            <ArrowUp size={14} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => onMoveItem(index, index + 1)}
+                                            disabled={!canMoveDown}
+                                            aria-label="下へ"
+                                            style={{
+                                                width: 30,
+                                                height: 30,
+                                                borderRadius: 10,
+                                                border: 'none',
+                                                background: canMoveDown ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.03)',
+                                                color: canMoveDown ? '#52606D' : '#C5CDD3',
+                                                cursor: canMoveDown ? 'pointer' : 'default',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                padding: 0,
+                                            }}
+                                        >
+                                            <ArrowDown size={14} />
+                                        </button>
+                                    </div>
                                     <button
                                         type="button"
                                         onClick={() => isInline ? onOpenInlineEditor(isEditing ? null : item.id) : null}

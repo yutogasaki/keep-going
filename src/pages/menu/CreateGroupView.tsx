@@ -299,6 +299,25 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
         });
     };
 
+    const moveItem = (fromIndex: number, toIndex: number) => {
+        setItems((previous) => {
+            if (
+                fromIndex < 0
+                || toIndex < 0
+                || fromIndex >= previous.length
+                || toIndex >= previous.length
+                || fromIndex === toIndex
+            ) {
+                return previous;
+            }
+
+            const nextItems = [...previous];
+            const [movedItem] = nextItems.splice(fromIndex, 1);
+            nextItems.splice(toIndex, 0, movedItem);
+            return nextItems;
+        });
+    };
+
     const handleSave = async () => {
         if (!canSave) return;
         setSaving(true);
@@ -419,6 +438,7 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
                 }}
                 onShowQuickAdd={setShowQuickAdd}
                 onAddQuickItem={addQuickItem}
+                onMoveItem={moveItem}
                 onRemoveAtIndex={removeItemAtIndex}
                 onOpenInlineEditor={setEditingInlineItemId}
                 onUpdateInlineItem={updateInlineItem}
