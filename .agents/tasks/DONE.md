@@ -5,7 +5,7 @@
 詳細履歴は `.agents/tasks/archive/YYYY-MM.md` に移す。
 
 ## 2026-03-15: website の更新情報をチャレンジ導線に刷新
-- `public/website/index.html` の更新情報を、ホームで新しい先生チャレンジを見つけて `参加する` まで伝わる内容へ差し替えた
+- `public/website/index.html` の更新情報を、ホームで新しい先生チャレンジを見つけて `参加する` まで伝わる内容へ刷新し、以前の更新は折りたたみで残した
 - Tips も `ホームのチャレンジをのぞこう` に更新し、`npm run build` と desktop / mobile の Playwright visual QA で静的 LP の見え方を確認した
 
 ## 2026-03-15: じぶんチャレンジ再挑戦導線
