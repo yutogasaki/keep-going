@@ -1,16 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
 import { PublicExerciseBrowser } from '../components/PublicExerciseBrowser';
-import {
-    PersonalChallengeFormSheet,
-    type PersonalChallengeCreateSeed,
-} from '../components/PersonalChallengeFormSheet';
+import { PersonalChallengeFormSheet, type PersonalChallengeCreateSeed } from '../components/PersonalChallengeFormSheet';
 import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { ScreenScaffold } from '../components/ScreenScaffold';
 import { Toast } from '../components/Toast';
 import type { ExercisePlacement } from '../data/exercisePlacement';
+import { menuGroupReferencesExercise, removeExerciseFromMenuGroup } from '../lib/menuExerciseCleanup';
 import { useAppStore } from '../store/useAppStore';
 import { CustomMenuModal } from './menu/CustomMenuModal';
 import { CreateGroupView } from './menu/CreateGroupView';
@@ -34,6 +32,7 @@ export const MenuPage: React.FC = () => {
 
     const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
     const [deleteExId, setDeleteExId] = useState<string | null>(null);
+    const [deleteExLoading, setDeleteExLoading] = useState(false);
     const [focusedPlacement, setFocusedPlacement] = useState<ExercisePlacement | null>(null);
     const [focusRequestId, setFocusRequestId] = useState(0);
     const [personalChallengeSeed, setPersonalChallengeSeed] = useState<PersonalChallengeCreateSeed | null>(null);
@@ -111,7 +110,39 @@ export const MenuPage: React.FC = () => {
     });
 
     const canCreatePersonalChallenge = !isTogetherMode && currentUsers.length === 1;
-    const personalChallengeMember = canCreatePersonalChallenge ? currentUsers[0] ?? null : null;
+    const personalChallengeMember = canCreatePersonalChallenge ? (currentUsers[0] ?? null) : null;
+    const deletingCustomExercise = useMemo(
+        () => customExercises.find((exercise) => exercise.id === deleteExId) ?? null,
+        [customExercises, deleteExId],
+    );
+    const customExerciseDeleteImpact = useMemo(() => {
+        if (!deletingCustomExercise) {
+            return {
+                updatedMenuNames: [] as string[],
+                removedMenuNames: [] as string[],
+            };
+        }
+
+        const updatedMenuNames: string[] = [];
+        const removedMenuNames: string[] = [];
+        for (const group of customGroups) {
+            if (!menuGroupReferencesExercise(group, deletingCustomExercise.id)) {
+                continue;
+            }
+
+            const nextGroup = removeExerciseFromMenuGroup(group, deletingCustomExercise.id);
+            if (nextGroup === null) {
+                removedMenuNames.push(group.name);
+            } else {
+                updatedMenuNames.push(group.name);
+            }
+        }
+
+        return {
+            updatedMenuNames,
+            removedMenuNames,
+        };
+    }, [customGroups, deletingCustomExercise]);
 
     const openPersonalChallengeForm = (seed: PersonalChallengeCreateSeed) => {
         if (!canCreatePersonalChallenge) {
@@ -143,7 +174,7 @@ export const MenuPage: React.FC = () => {
                 authorName={currentUsers[0]?.name ?? 'ゲスト'}
                 publishedMenuId={publishedId}
                 customExercises={customExercises}
-                teacherExercises={teacherExercises.filter(te => !teacherHiddenExerciseIds.has(te.id))}
+                teacherExercises={teacherExercises.filter((te) => !teacherHiddenExerciseIds.has(te.id))}
                 onSave={handleCreatedGroup}
                 onCancel={() => {
                     setShowCreateGroup(false);
@@ -240,7 +271,7 @@ export const MenuPage: React.FC = () => {
                 requiredExercises={requiredExercises}
                 excludedExercises={excludedExercises}
                 customExercises={customExercises}
-                teacherExercises={teacherExercises.filter(te => !teacherHiddenExerciseIds.has(te.id))}
+                teacherExercises={teacherExercises.filter((te) => !teacherHiddenExerciseIds.has(te.id))}
                 teacherExcludedExerciseIds={teacherExcludedExerciseIds}
                 teacherRequiredExerciseIds={teacherRequiredExerciseIds}
                 teacherHiddenExerciseIds={teacherHiddenExerciseIds}
@@ -254,22 +285,30 @@ export const MenuPage: React.FC = () => {
                 open={showPublicBrowser}
                 onClose={() => setShowPublicBrowser(false)}
                 onImported={loadCustomData}
-                onCreatePersonalChallenge={canCreatePersonalChallenge ? async (seed) => {
-                    await loadCustomData();
-                    setShowPublicBrowser(false);
-                    openPersonalChallengeForm(seed);
-                } : undefined}
+                onCreatePersonalChallenge={
+                    canCreatePersonalChallenge
+                        ? async (seed) => {
+                              await loadCustomData();
+                              setShowPublicBrowser(false);
+                              openPersonalChallengeForm(seed);
+                          }
+                        : undefined
+                }
             />
 
             <PublicExerciseBrowser
                 open={showPublicExerciseBrowser}
                 onClose={() => setShowPublicExerciseBrowser(false)}
                 onImported={loadCustomData}
-                onCreatePersonalChallenge={canCreatePersonalChallenge ? async (seed) => {
-                    await loadCustomData();
-                    setShowPublicExerciseBrowser(false);
-                    openPersonalChallengeForm(seed);
-                } : undefined}
+                onCreatePersonalChallenge={
+                    canCreatePersonalChallenge
+                        ? async (seed) => {
+                              await loadCustomData();
+                              setShowPublicExerciseBrowser(false);
+                              openPersonalChallengeForm(seed);
+                          }
+                        : undefined
+                }
             />
 
             <PersonalChallengeFormSheet
@@ -305,21 +344,115 @@ export const MenuPage: React.FC = () => {
             <ConfirmDeleteModal
                 open={deleteExId !== null}
                 title="種目をさくじょ"
-                message="このじぶん種目をさくじょしますか？この操作は取り消せません。"
-                onCancel={() => setDeleteExId(null)}
-                onConfirm={() => {
-                    if (deleteExId) {
-                        handleDeleteEx(deleteExId);
+                message={
+                    customExerciseDeleteImpact.updatedMenuNames.length > 0 ||
+                    customExerciseDeleteImpact.removedMenuNames.length > 0
+                        ? 'このじぶん種目をさくじょします。使っているメニューからは自動で外し、空になったメニューは自動でさくじょします。'
+                        : 'このじぶん種目をさくじょしますか？この操作は取り消せません。'
+                }
+                details={
+                    customExerciseDeleteImpact.updatedMenuNames.length > 0 ||
+                    customExerciseDeleteImpact.removedMenuNames.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            {customExerciseDeleteImpact.updatedMenuNames.length > 0 ? (
+                                <div>
+                                    <div
+                                        style={{
+                                            marginBottom: 6,
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                            color: '#2BBAA0',
+                                        }}
+                                    >
+                                        自動で外れるメニュー
+                                    </div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                        {customExerciseDeleteImpact.updatedMenuNames.map((name) => (
+                                            <span
+                                                key={`update-${name}`}
+                                                style={{
+                                                    padding: '4px 10px',
+                                                    borderRadius: 999,
+                                                    background: 'rgba(43, 186, 160, 0.1)',
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontSize: 12,
+                                                    color: '#00796B',
+                                                }}
+                                            >
+                                                {name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null}
+                            {customExerciseDeleteImpact.removedMenuNames.length > 0 ? (
+                                <div>
+                                    <div
+                                        style={{
+                                            marginBottom: 6,
+                                            fontFamily: "'Noto Sans JP', sans-serif",
+                                            fontSize: 12,
+                                            fontWeight: 700,
+                                            color: '#E17055',
+                                        }}
+                                    >
+                                        空になるので削除されるメニュー
+                                    </div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                        {customExerciseDeleteImpact.removedMenuNames.map((name) => (
+                                            <span
+                                                key={`remove-${name}`}
+                                                style={{
+                                                    padding: '4px 10px',
+                                                    borderRadius: 999,
+                                                    background: 'rgba(225, 112, 85, 0.1)',
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontSize: 12,
+                                                    color: '#E17055',
+                                                }}
+                                            >
+                                                {name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null}
+                        </div>
+                    ) : null
+                }
+                loading={deleteExLoading}
+                confirmLabel={
+                    customExerciseDeleteImpact.updatedMenuNames.length > 0 ||
+                    customExerciseDeleteImpact.removedMenuNames.length > 0
+                        ? '外して削除する'
+                        : '削除する'
+                }
+                loadingLabel="更新中..."
+                onCancel={() => {
+                    if (deleteExLoading) {
+                        return;
                     }
                     setDeleteExId(null);
                 }}
+                onConfirm={() => {
+                    if (!deleteExId || deleteExLoading) {
+                        return;
+                    }
+
+                    void (async () => {
+                        setDeleteExLoading(true);
+                        try {
+                            await handleDeleteEx(deleteExId);
+                            setDeleteExId(null);
+                        } finally {
+                            setDeleteExLoading(false);
+                        }
+                    })();
+                }}
             />
 
-            <Toast
-                message={toastMessage?.text ?? null}
-                type={toastMessage?.type ?? 'success'}
-                onClose={clearToast}
-            />
+            <Toast message={toastMessage?.text ?? null} type={toastMessage?.type ?? 'success'} onClose={clearToast} />
         </>
     );
 };

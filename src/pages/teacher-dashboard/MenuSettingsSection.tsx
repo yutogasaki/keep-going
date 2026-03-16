@@ -29,10 +29,7 @@ interface MenuSettingsSectionProps {
     loading: boolean;
 }
 
-export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
-    teacherEmail,
-    loading: parentLoading,
-}) => {
+export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({ teacherEmail, loading: parentLoading }) => {
     const startTeacherPreviewSession = useAppStore((state) => state.startTeacherPreviewSession);
     const [subTab, setSubTab] = useState<SubTab>('groups');
     const {
@@ -42,6 +39,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
         closeExerciseForm,
         closeMenuForm,
         deleteLoading,
+        deleteImpact,
         deleteTarget,
         error,
         expandedItemId,
@@ -82,13 +80,15 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
 
     if (parentLoading || loading) {
         return (
-            <div style={{
-                padding: '40px 20px',
-                textAlign: 'center',
-                fontFamily: "'Noto Sans JP', sans-serif",
-                fontSize: 14,
-                color: '#8395A7',
-            }}>
+            <div
+                style={{
+                    padding: '40px 20px',
+                    textAlign: 'center',
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 14,
+                    color: '#8395A7',
+                }}
+            >
                 読み込み中...
             </div>
         );
@@ -98,10 +98,10 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
         <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* Sub-tabs */}
             <div style={{ display: 'flex', gap: 8 }}>
-                {([
+                {[
                     { id: 'groups' as SubTab, label: DISPLAY_TERMS.groupTab },
                     { id: 'exercises' as SubTab, label: DISPLAY_TERMS.exerciseTab },
-                ]).map(tab => (
+                ].map((tab) => (
                     <button
                         key={tab.id}
                         onClick={() => {
@@ -129,16 +129,18 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
 
             {/* Error banner */}
             {error && (
-                <div style={{
-                    padding: '10px 14px',
-                    borderRadius: 10,
-                    background: 'rgba(225, 112, 85, 0.1)',
-                    border: '1px solid rgba(225, 112, 85, 0.3)',
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 12,
-                    color: '#E17055',
-                    lineHeight: 1.5,
-                }}>
+                <div
+                    style={{
+                        padding: '10px 14px',
+                        borderRadius: 10,
+                        background: 'rgba(225, 112, 85, 0.1)',
+                        border: '1px solid rgba(225, 112, 85, 0.3)',
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 12,
+                        color: '#E17055',
+                        lineHeight: 1.5,
+                    }}
+                >
                     {error}
                 </div>
             )}
@@ -169,7 +171,9 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                 }}
             >
                 <Plus size={16} />
-                {subTab === 'exercises' ? `新しい${CANONICAL_TERMS.teacherExercise}を作成` : `新しい${CANONICAL_TERMS.teacherMenu}を作成`}
+                {subTab === 'exercises'
+                    ? `新しい${CANONICAL_TERMS.teacherExercise}を作成`
+                    : `新しい${CANONICAL_TERMS.teacherMenu}を作成`}
             </button>
 
             {/* Exercise editor (full-screen portal) */}
@@ -181,7 +185,14 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     error={error}
                     onSave={handleSaveExercise}
                     onCancel={closeExerciseForm}
-                    onPlay={exerciseEditorItemId ? () => { audio.initTTS(); startTeacherPreviewSession([exerciseEditorItemId]); } : undefined}
+                    onPlay={
+                        exerciseEditorItemId
+                            ? () => {
+                                  audio.initTTS();
+                                  startTeacherPreviewSession([exerciseEditorItemId]);
+                              }
+                            : undefined
+                    }
                     onDelete={canDeleteExercise ? handleDeleteExerciseFromEditor : undefined}
                     placementLocked={isBuiltInExerciseEditor}
                     submitting={submitting}
@@ -198,22 +209,31 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     error={error}
                     onSave={handleSaveMenu}
                     onCancel={closeMenuForm}
-                    onPlay={menuEditorItemId ? () => { audio.initTTS(); startTeacherPreviewSession(menuEditorInitial?.exerciseIds ?? []); } : undefined}
+                    onPlay={
+                        menuEditorItemId
+                            ? () => {
+                                  audio.initTTS();
+                                  startTeacherPreviewSession(menuEditorInitial?.exerciseIds ?? []);
+                              }
+                            : undefined
+                    }
                     onDelete={canDeleteMenu ? handleDeleteMenuFromEditor : undefined}
                     submitting={submitting}
                 />
             )}
 
             {/* Legend */}
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                fontFamily: "'Noto Sans JP', sans-serif",
-                fontSize: 11,
-                color: '#8395A7',
-                padding: '4px 0',
-            }}>
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: 11,
+                    color: '#8395A7',
+                    padding: '4px 0',
+                }}
+            >
                 {subTab === 'exercises' ? (
                     <>
                         <span style={{ color: '#2BBAA0' }}>★ 必須</span>
@@ -235,7 +255,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     {teacherExercises.length > 0 && (
                         <>
                             <SectionLabel text={CANONICAL_TERMS.teacherExercise} color="#0984E3" />
-                            {sortTeacherExercises(teacherExercises).map(ex => (
+                            {sortTeacherExercises(teacherExercises).map((ex) => (
                                 <MenuSettingsItemCard
                                     key={ex.id}
                                     emoji={ex.emoji}
@@ -251,7 +271,10 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                     onStatusChange={(cl, status) => handleStatusChange(ex.id, 'exercise', cl, status)}
                                     onEdit={() => openTeacherExerciseEditor(ex)}
                                     onDelete={() => promptDeleteExercise(ex)}
-                                    onPlay={() => { audio.initTTS(); startTeacherPreviewSession([ex.id]); }}
+                                    onPlay={() => {
+                                        audio.initTTS();
+                                        startTeacherPreviewSession([ex.id]);
+                                    }}
                                     editLabel="編集"
                                 />
                             ))}
@@ -259,7 +282,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     )}
 
                     <SectionLabel text={CANONICAL_TERMS.standardExercise} color="#8395A7" />
-                    {EXERCISES.map(ex => {
+                    {EXERCISES.map((ex) => {
                         const ov = getOverride(ex.id, 'exercise');
                         const displayName = ov?.nameOverride ?? ex.name;
                         const displayEmoji = ov?.emojiOverride ?? ex.emoji;
@@ -276,7 +299,10 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                 onToggleExpand={() => toggleExpandedItem(ex.id)}
                                 onStatusChange={(cl, status) => handleStatusChange(ex.id, 'exercise', cl, status)}
                                 onEdit={() => openBuiltInExerciseEditor(ex.id)}
-                                onPlay={() => { audio.initTTS(); startTeacherPreviewSession([ex.id]); }}
+                                onPlay={() => {
+                                    audio.initTTS();
+                                    startTeacherPreviewSession([ex.id]);
+                                }}
                                 editLabel="調整"
                             />
                         );
@@ -290,7 +316,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     {teacherMenus.length > 0 && (
                         <>
                             <SectionLabel text={CANONICAL_TERMS.teacherMenu} color="#0984E3" />
-                            {sortTeacherMenus(teacherMenus).map(menu => (
+                            {sortTeacherMenus(teacherMenus).map((menu) => (
                                 <MenuSettingsItemCard
                                     key={menu.id}
                                     emoji={menu.emoji}
@@ -302,10 +328,15 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                     statusByClass={getStatusByClass(menu.id, 'menu_group')}
                                     expanded={expandedItemId === menu.id}
                                     onToggleExpand={() => toggleExpandedItem(menu.id)}
-                                    onStatusChange={(cl, status) => handleStatusChange(menu.id, 'menu_group', cl, status)}
+                                    onStatusChange={(cl, status) =>
+                                        handleStatusChange(menu.id, 'menu_group', cl, status)
+                                    }
                                     onEdit={() => openTeacherMenuEditor(menu)}
                                     onDelete={() => promptDeleteMenu(menu)}
-                                    onPlay={() => { audio.initTTS(); startTeacherPreviewSession(menu.exerciseIds); }}
+                                    onPlay={() => {
+                                        audio.initTTS();
+                                        startTeacherPreviewSession(menu.exerciseIds);
+                                    }}
                                     itemType="menu_group"
                                     editLabel="編集"
                                 />
@@ -314,7 +345,7 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                     )}
 
                     <SectionLabel text={CANONICAL_TERMS.presetMenu} color="#8395A7" />
-                    {PRESET_GROUPS.map(group => {
+                    {PRESET_GROUPS.map((group) => {
                         const ov = getOverride(group.id, 'menu_group');
                         const displayName = ov?.nameOverride ?? group.name;
                         const displayEmoji = ov?.emojiOverride ?? group.emoji;
@@ -330,7 +361,10 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
                                 onToggleExpand={() => toggleExpandedItem(group.id)}
                                 onStatusChange={(cl, status) => handleStatusChange(group.id, 'menu_group', cl, status)}
                                 onEdit={() => openBuiltInMenuEditor(group.id)}
-                                onPlay={() => { audio.initTTS(); startTeacherPreviewSession(group.exerciseIds); }}
+                                onPlay={() => {
+                                    audio.initTTS();
+                                    startTeacherPreviewSession(group.exerciseIds);
+                                }}
                                 itemType="menu_group"
                                 editLabel="調整"
                             />
@@ -343,23 +377,121 @@ export const MenuSettingsSection: React.FC<MenuSettingsSectionProps> = ({
             <ConfirmDeleteModal
                 open={!!deleteTarget}
                 title={deleteTarget?.type === 'exercise' ? 'この種目を削除しますか？' : 'このメニューを削除しますか？'}
-                message={`「${deleteTarget?.name ?? ''}」を削除すると元に戻せません。`}
+                message={
+                    deleteTarget?.type === 'exercise' &&
+                    deleteImpact &&
+                    (deleteImpact.updatedTeacherMenuNames.length > 0 ||
+                        deleteImpact.removedTeacherMenuNames.length > 0 ||
+                        deleteImpact.updatedCustomMenuNames.length > 0 ||
+                        deleteImpact.removedCustomMenuNames.length > 0)
+                        ? `「${deleteTarget?.name ?? ''}」を削除します。使っているメニューからは自動で外し、空になったメニューは自動で削除します。`
+                        : `「${deleteTarget?.name ?? ''}」を削除すると元に戻せません。`
+                }
+                details={
+                    deleteTarget?.type === 'exercise' && deleteImpact ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            {deleteImpact.updatedTeacherMenuNames.length > 0 ? (
+                                <ImpactList
+                                    title="自動で外れる先生メニュー"
+                                    names={deleteImpact.updatedTeacherMenuNames}
+                                    bg="rgba(9, 132, 227, 0.08)"
+                                    color="#0984E3"
+                                />
+                            ) : null}
+                            {deleteImpact.removedTeacherMenuNames.length > 0 ? (
+                                <ImpactList
+                                    title="空になるので削除される先生メニュー"
+                                    names={deleteImpact.removedTeacherMenuNames}
+                                    bg="rgba(225, 112, 85, 0.1)"
+                                    color="#E17055"
+                                />
+                            ) : null}
+                            {deleteImpact.updatedCustomMenuNames.length > 0 ? (
+                                <ImpactList
+                                    title="この端末で自動更新される じぶんメニュー"
+                                    names={deleteImpact.updatedCustomMenuNames}
+                                    bg="rgba(43, 186, 160, 0.1)"
+                                    color="#00796B"
+                                />
+                            ) : null}
+                            {deleteImpact.removedCustomMenuNames.length > 0 ? (
+                                <ImpactList
+                                    title="この端末で削除される じぶんメニュー"
+                                    names={deleteImpact.removedCustomMenuNames}
+                                    bg="rgba(225, 112, 85, 0.1)"
+                                    color="#E17055"
+                                />
+                            ) : null}
+                        </div>
+                    ) : null
+                }
                 onCancel={clearDeleteTarget}
                 onConfirm={handleConfirmDelete}
                 loading={deleteLoading}
+                confirmLabel={
+                    deleteTarget?.type === 'exercise' &&
+                    deleteImpact &&
+                    (deleteImpact.updatedTeacherMenuNames.length > 0 ||
+                        deleteImpact.removedTeacherMenuNames.length > 0 ||
+                        deleteImpact.updatedCustomMenuNames.length > 0 ||
+                        deleteImpact.removedCustomMenuNames.length > 0)
+                        ? '外して削除する'
+                        : '削除する'
+                }
+                loadingLabel="更新中..."
             />
         </div>
     );
 };
 
+const ImpactList: React.FC<{
+    title: string;
+    names: string[];
+    bg: string;
+    color: string;
+}> = ({ title, names, bg, color }) => (
+    <div>
+        <div
+            style={{
+                marginBottom: 6,
+                fontFamily: "'Noto Sans JP', sans-serif",
+                fontSize: 12,
+                fontWeight: 700,
+                color,
+            }}
+        >
+            {title}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {names.map((name) => (
+                <span
+                    key={`${title}-${name}`}
+                    style={{
+                        padding: '4px 10px',
+                        borderRadius: 999,
+                        background: bg,
+                        fontFamily: "'Noto Sans JP', sans-serif",
+                        fontSize: 12,
+                        color,
+                    }}
+                >
+                    {name}
+                </span>
+            ))}
+        </div>
+    </div>
+);
+
 const SectionLabel: React.FC<{ text: string; color: string }> = ({ text, color }) => (
-    <div style={{
-        fontFamily: "'Noto Sans JP', sans-serif",
-        fontSize: 12,
-        fontWeight: 700,
-        color,
-        padding: '4px 0 0',
-    }}>
+    <div
+        style={{
+            fontFamily: "'Noto Sans JP', sans-serif",
+            fontSize: 12,
+            fontWeight: 700,
+            color,
+            padding: '4px 0 0',
+        }}
+    >
         {text}
     </div>
 );

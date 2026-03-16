@@ -1,6 +1,13 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { EXERCISES } from '../../../data/exercises';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
+import { deleteCustomGroup, saveCustomGroup } from '../../../lib/customGroups';
+import {
+    menuGroupReferencesExercise,
+    removeExerciseFromMenuGroup,
+    removeExerciseFromTeacherMenu,
+    teacherMenuReferencesExercise,
+} from '../../../lib/menuExerciseCleanup';
 import {
     createTeacherExercise,
     createTeacherMenu,
@@ -67,6 +74,7 @@ function getUnknownErrorMessage(error: unknown, fallback: string): string {
 
 export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsControllerParams) {
     const {
+        customGroups,
         error,
         loadAll,
         loading,
@@ -106,226 +114,232 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
     const [submitting, setSubmitting] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
-    const getStatusByClass = useCallback((itemId: string, itemType: MenuSettingItemType) => {
-        return getMenuSettingStatusByClass(settings, itemId, itemType);
-    }, [settings]);
+    const getStatusByClass = useCallback(
+        (itemId: string, itemType: MenuSettingItemType) => {
+            return getMenuSettingStatusByClass(settings, itemId, itemType);
+        },
+        [settings],
+    );
 
-    const getOverride = useCallback((itemId: string, itemType: 'exercise' | 'menu_group') => {
-        return getTeacherItemOverride(overrides, itemId, itemType);
-    }, [overrides]);
+    const getOverride = useCallback(
+        (itemId: string, itemType: 'exercise' | 'menu_group') => {
+            return getTeacherItemOverride(overrides, itemId, itemType);
+        },
+        [overrides],
+    );
 
-    const handleStatusChange = useCallback(async (
-        itemId: string,
-        itemType: MenuSettingItemType,
-        classLevel: string,
-        newStatus: MenuSettingStatus,
-    ) => {
-        setError(null);
-        const currentStatusByClass = getStatusByClass(itemId, itemType);
+    const handleStatusChange = useCallback(
+        async (itemId: string, itemType: MenuSettingItemType, classLevel: string, newStatus: MenuSettingStatus) => {
+            setError(null);
+            const currentStatusByClass = getStatusByClass(itemId, itemType);
 
-        setSettings((prev) => {
-            const filtered = prev.filter(
-                (setting) => !(
-                    setting.itemId === itemId
-                    && setting.itemType === itemType
-                    && setting.classLevel === classLevel
-                )
-            );
-
-            if (newStatus !== 'optional') {
-                filtered.push({
-                    id: `temp-${Date.now()}`,
-                    itemId,
-                    itemType,
-                    classLevel,
-                    status: newStatus,
-                    createdBy: teacherEmail,
-                });
-            }
-
-            return filtered;
-        });
-
-        try {
-            const teacherExercise = itemType === 'exercise'
-                ? teacherExercises.find((exercise) => exercise.id === itemId)
-                : null;
-            if (teacherExercise) {
-                const nextClassLevels = getUpdatedVisibleClassLevels(
-                    teacherExercise.classLevels,
-                    currentStatusByClass,
-                    classLevel,
-                    newStatus,
+            setSettings((prev) => {
+                const filtered = prev.filter(
+                    (setting) =>
+                        !(
+                            setting.itemId === itemId &&
+                            setting.itemType === itemType &&
+                            setting.classLevel === classLevel
+                        ),
                 );
 
-                if (nextClassLevels) {
-                    await updateTeacherExercise(teacherExercise.id, {
-                        name: teacherExercise.name,
-                        sec: teacherExercise.sec,
-                        emoji: teacherExercise.emoji,
-                        placement: teacherExercise.placement,
-                        hasSplit: teacherExercise.hasSplit,
-                        description: teacherExercise.description,
-                        classLevels: nextClassLevels,
-                        visibility: teacherExercise.visibility,
-                        focusTags: teacherExercise.focusTags,
-                        recommended: teacherExercise.recommended,
-                        recommendedOrder: teacherExercise.recommendedOrder,
-                        displayMode: teacherExercise.displayMode,
+                if (newStatus !== 'optional') {
+                    filtered.push({
+                        id: `temp-${Date.now()}`,
+                        itemId,
+                        itemType,
+                        classLevel,
+                        status: newStatus,
+                        createdBy: teacherEmail,
                     });
                 }
-            }
 
-            const teacherMenu = itemType === 'menu_group'
-                ? teacherMenus.find((menu) => menu.id === itemId)
-                : null;
-            if (teacherMenu) {
-                const nextClassLevels = getUpdatedVisibleClassLevels(
-                    teacherMenu.classLevels,
-                    currentStatusByClass,
-                    classLevel,
-                    newStatus,
+                return filtered;
+            });
+
+            try {
+                const teacherExercise =
+                    itemType === 'exercise' ? teacherExercises.find((exercise) => exercise.id === itemId) : null;
+                if (teacherExercise) {
+                    const nextClassLevels = getUpdatedVisibleClassLevels(
+                        teacherExercise.classLevels,
+                        currentStatusByClass,
+                        classLevel,
+                        newStatus,
+                    );
+
+                    if (nextClassLevels) {
+                        await updateTeacherExercise(teacherExercise.id, {
+                            name: teacherExercise.name,
+                            sec: teacherExercise.sec,
+                            emoji: teacherExercise.emoji,
+                            placement: teacherExercise.placement,
+                            hasSplit: teacherExercise.hasSplit,
+                            description: teacherExercise.description,
+                            classLevels: nextClassLevels,
+                            visibility: teacherExercise.visibility,
+                            focusTags: teacherExercise.focusTags,
+                            recommended: teacherExercise.recommended,
+                            recommendedOrder: teacherExercise.recommendedOrder,
+                            displayMode: teacherExercise.displayMode,
+                        });
+                    }
+                }
+
+                const teacherMenu = itemType === 'menu_group' ? teacherMenus.find((menu) => menu.id === itemId) : null;
+                if (teacherMenu) {
+                    const nextClassLevels = getUpdatedVisibleClassLevels(
+                        teacherMenu.classLevels,
+                        currentStatusByClass,
+                        classLevel,
+                        newStatus,
+                    );
+
+                    if (nextClassLevels) {
+                        await updateTeacherMenu(teacherMenu.id, {
+                            name: teacherMenu.name,
+                            emoji: teacherMenu.emoji,
+                            description: teacherMenu.description,
+                            exerciseIds: teacherMenu.exerciseIds,
+                            classLevels: nextClassLevels,
+                            visibility: teacherMenu.visibility,
+                            focusTags: teacherMenu.focusTags,
+                            recommended: teacherMenu.recommended,
+                            recommendedOrder: teacherMenu.recommendedOrder,
+                            displayMode: teacherMenu.displayMode,
+                        });
+                    }
+                }
+
+                await upsertTeacherMenuSetting(itemId, itemType, classLevel, newStatus, teacherEmail);
+                dispatchTeacherContentUpdated();
+            } catch (err) {
+                console.warn('[MenuSettings] status change failed:', err);
+                setError(
+                    `保存に失敗しました: ${getUnknownErrorMessage(err, 'deploy.sql を実行してテーブルを作成してください。')}`,
                 );
-
-                if (nextClassLevels) {
-                    await updateTeacherMenu(teacherMenu.id, {
-                        name: teacherMenu.name,
-                        emoji: teacherMenu.emoji,
-                        description: teacherMenu.description,
-                        exerciseIds: teacherMenu.exerciseIds,
-                        classLevels: nextClassLevels,
-                        visibility: teacherMenu.visibility,
-                        focusTags: teacherMenu.focusTags,
-                        recommended: teacherMenu.recommended,
-                        recommendedOrder: teacherMenu.recommendedOrder,
-                        displayMode: teacherMenu.displayMode,
-                    });
-                }
+                void loadAll();
             }
+        },
+        [getStatusByClass, loadAll, setError, setSettings, teacherEmail, teacherExercises, teacherMenus],
+    );
 
-            await upsertTeacherMenuSetting(itemId, itemType, classLevel, newStatus, teacherEmail);
-            dispatchTeacherContentUpdated();
-        } catch (err) {
-            console.warn('[MenuSettings] status change failed:', err);
-            setError(`保存に失敗しました: ${getUnknownErrorMessage(err, 'deploy.sql を実行してテーブルを作成してください。')}`);
-            void loadAll();
-        }
-    }, [getStatusByClass, loadAll, setError, setSettings, teacherEmail, teacherExercises, teacherMenus]);
+    const handleSaveExercise = useCallback(
+        async (data: ExerciseEditorValues) => {
+            setSubmitting(true);
+            setError(null);
 
-    const handleSaveExercise = useCallback(async (data: ExerciseEditorValues) => {
-        setSubmitting(true);
-        setError(null);
+            try {
+                if (editingBuiltInExerciseId) {
+                    const builtInExercise = EXERCISES.find((exercise) => exercise.id === editingBuiltInExerciseId);
+                    if (builtInExercise) {
+                        await upsertTeacherItemOverride(
+                            editingBuiltInExerciseId,
+                            'exercise',
+                            {
+                                nameOverride: data.name !== builtInExercise.name ? data.name : null,
+                                descriptionOverride:
+                                    data.description !== (builtInExercise.description ?? '') ? data.description : null,
+                                emojiOverride: data.emoji !== builtInExercise.emoji ? data.emoji : null,
+                                secOverride: data.sec !== builtInExercise.sec ? data.sec : null,
+                                hasSplitOverride:
+                                    data.hasSplit !== (builtInExercise.hasSplit ?? false) ? data.hasSplit : null,
+                                displayModeOverride: data.displayMode !== 'standard_inline' ? data.displayMode : null,
+                            },
+                            teacherEmail,
+                        );
+                    }
 
-        try {
-            if (editingBuiltInExerciseId) {
-                const builtInExercise = EXERCISES.find((exercise) => exercise.id === editingBuiltInExerciseId);
-                if (builtInExercise) {
-                    await upsertTeacherItemOverride(
-                        editingBuiltInExerciseId,
-                        'exercise',
-                        {
-                            nameOverride: data.name !== builtInExercise.name ? data.name : null,
-                            descriptionOverride:
-                                data.description !== (builtInExercise.description ?? '')
-                                    ? data.description
-                                    : null,
-                            emojiOverride: data.emoji !== builtInExercise.emoji ? data.emoji : null,
-                            secOverride: data.sec !== builtInExercise.sec ? data.sec : null,
-                            hasSplitOverride:
-                                data.hasSplit !== (builtInExercise.hasSplit ?? false)
-                                    ? data.hasSplit
-                                    : null,
-                            displayModeOverride:
-                                data.displayMode !== 'standard_inline'
-                                    ? data.displayMode
-                                    : null,
-                        },
-                        teacherEmail,
-                    );
-                }
-
-                await saveStatuses(editingBuiltInExerciseId, 'exercise', data.statusByClass, teacherEmail);
-            } else {
-                let itemId = editingExercise?.id ?? '';
-                if (editingExercise) {
-                    await updateTeacherExercise(editingExercise.id, data);
+                    await saveStatuses(editingBuiltInExerciseId, 'exercise', data.statusByClass, teacherEmail);
                 } else {
-                    itemId = (await createTeacherExercise({ ...data, createdBy: teacherEmail })) ?? '';
+                    let itemId = editingExercise?.id ?? '';
+                    if (editingExercise) {
+                        await updateTeacherExercise(editingExercise.id, data);
+                    } else {
+                        itemId = (await createTeacherExercise({ ...data, createdBy: teacherEmail })) ?? '';
+                    }
+
+                    const currentStatusByClass = getStatusByClass(itemId, 'exercise');
+                    if (itemId && hasStatusByClassChanges(data.statusByClass, currentStatusByClass)) {
+                        await saveStatuses(itemId, 'exercise', data.statusByClass, teacherEmail);
+                    }
                 }
 
-                const currentStatusByClass = getStatusByClass(itemId, 'exercise');
-                if (itemId && hasStatusByClassChanges(data.statusByClass, currentStatusByClass)) {
-                    await saveStatuses(itemId, 'exercise', data.statusByClass, teacherEmail);
-                }
+                closeExerciseForm();
+                await loadAll();
+                dispatchTeacherContentUpdated();
+            } catch (err) {
+                console.warn('[MenuSettings] save exercise failed:', err);
+                setError(`種目の保存に失敗しました: ${getUnknownErrorMessage(err, '原因不明のエラー')}`);
+            } finally {
+                setSubmitting(false);
             }
+        },
+        [
+            closeExerciseForm,
+            editingBuiltInExerciseId,
+            editingExercise,
+            getStatusByClass,
+            loadAll,
+            setError,
+            teacherEmail,
+        ],
+    );
 
-            closeExerciseForm();
-            await loadAll();
-            dispatchTeacherContentUpdated();
-        } catch (err) {
-            console.warn('[MenuSettings] save exercise failed:', err);
-            setError(`種目の保存に失敗しました: ${getUnknownErrorMessage(err, '原因不明のエラー')}`);
-        } finally {
-            setSubmitting(false);
-        }
-    }, [closeExerciseForm, editingBuiltInExerciseId, editingExercise, getStatusByClass, loadAll, setError, teacherEmail]);
+    const handleSaveMenu = useCallback(
+        async (data: MenuEditorValues) => {
+            setSubmitting(true);
+            setError(null);
 
-    const handleSaveMenu = useCallback(async (data: MenuEditorValues) => {
-        setSubmitting(true);
-        setError(null);
+            try {
+                if (editingBuiltInMenuId) {
+                    const builtInMenu = PRESET_GROUPS.find((group) => group.id === editingBuiltInMenuId);
+                    if (builtInMenu) {
+                        await upsertTeacherItemOverride(
+                            editingBuiltInMenuId,
+                            'menu_group',
+                            {
+                                nameOverride: data.name !== builtInMenu.name ? data.name : null,
+                                descriptionOverride:
+                                    data.description !== (builtInMenu.description ?? '') ? data.description : null,
+                                emojiOverride: data.emoji !== builtInMenu.emoji ? data.emoji : null,
+                                exerciseIdsOverride:
+                                    JSON.stringify(data.exerciseIds) !== JSON.stringify(builtInMenu.exerciseIds)
+                                        ? data.exerciseIds
+                                        : null,
+                                displayModeOverride: data.displayMode !== 'teacher_section' ? data.displayMode : null,
+                            },
+                            teacherEmail,
+                        );
+                    }
 
-        try {
-            if (editingBuiltInMenuId) {
-                const builtInMenu = PRESET_GROUPS.find((group) => group.id === editingBuiltInMenuId);
-                if (builtInMenu) {
-                    await upsertTeacherItemOverride(
-                        editingBuiltInMenuId,
-                        'menu_group',
-                        {
-                            nameOverride: data.name !== builtInMenu.name ? data.name : null,
-                            descriptionOverride:
-                                data.description !== (builtInMenu.description ?? '')
-                                    ? data.description
-                                    : null,
-                            emojiOverride: data.emoji !== builtInMenu.emoji ? data.emoji : null,
-                            exerciseIdsOverride:
-                                JSON.stringify(data.exerciseIds) !== JSON.stringify(builtInMenu.exerciseIds)
-                                    ? data.exerciseIds
-                                    : null,
-                            displayModeOverride:
-                                data.displayMode !== 'teacher_section'
-                                    ? data.displayMode
-                                    : null,
-                        },
-                        teacherEmail,
-                    );
-                }
-
-                await saveStatuses(editingBuiltInMenuId, 'menu_group', data.statusByClass, teacherEmail);
-            } else {
-                let itemId = editingMenu?.id ?? '';
-                if (editingMenu) {
-                    await updateTeacherMenu(editingMenu.id, data);
+                    await saveStatuses(editingBuiltInMenuId, 'menu_group', data.statusByClass, teacherEmail);
                 } else {
-                    itemId = (await createTeacherMenu({ ...data, createdBy: teacherEmail })) ?? '';
+                    let itemId = editingMenu?.id ?? '';
+                    if (editingMenu) {
+                        await updateTeacherMenu(editingMenu.id, data);
+                    } else {
+                        itemId = (await createTeacherMenu({ ...data, createdBy: teacherEmail })) ?? '';
+                    }
+
+                    const currentStatusByClass = getStatusByClass(itemId, 'menu_group');
+                    if (itemId && hasStatusByClassChanges(data.statusByClass, currentStatusByClass)) {
+                        await saveStatuses(itemId, 'menu_group', data.statusByClass, teacherEmail);
+                    }
                 }
 
-                const currentStatusByClass = getStatusByClass(itemId, 'menu_group');
-                if (itemId && hasStatusByClassChanges(data.statusByClass, currentStatusByClass)) {
-                    await saveStatuses(itemId, 'menu_group', data.statusByClass, teacherEmail);
-                }
+                closeMenuForm();
+                await loadAll();
+                dispatchTeacherContentUpdated();
+            } catch (err) {
+                console.warn('[MenuSettings] save menu failed:', err);
+                setError(`メニューの保存に失敗しました: ${getUnknownErrorMessage(err, '原因不明のエラー')}`);
+            } finally {
+                setSubmitting(false);
             }
-
-            closeMenuForm();
-            await loadAll();
-            dispatchTeacherContentUpdated();
-        } catch (err) {
-            console.warn('[MenuSettings] save menu failed:', err);
-            setError(`メニューの保存に失敗しました: ${getUnknownErrorMessage(err, '原因不明のエラー')}`);
-        } finally {
-            setSubmitting(false);
-        }
-    }, [closeMenuForm, editingBuiltInMenuId, editingMenu, getStatusByClass, loadAll, setError, teacherEmail]);
+        },
+        [closeMenuForm, editingBuiltInMenuId, editingMenu, getStatusByClass, loadAll, setError, teacherEmail],
+    );
 
     const handleConfirmDelete = useCallback(async () => {
         if (!deleteTarget) return;
@@ -333,6 +347,45 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
         setDeleteLoading(true);
         try {
             if (deleteTarget.type === 'exercise') {
+                const impactedTeacherMenus = teacherMenus.filter((menu) =>
+                    teacherMenuReferencesExercise(menu, deleteTarget.id),
+                );
+                for (const menu of impactedTeacherMenus) {
+                    const nextMenu = removeExerciseFromTeacherMenu(menu, deleteTarget.id);
+                    if (nextMenu === null) {
+                        await deleteTeacherMenu(menu.id);
+                        continue;
+                    }
+
+                    await updateTeacherMenu(menu.id, {
+                        name: nextMenu.name,
+                        emoji: nextMenu.emoji,
+                        description: nextMenu.description,
+                        exerciseIds: nextMenu.exerciseIds,
+                        classLevels: nextMenu.classLevels,
+                        visibility: nextMenu.visibility,
+                        focusTags: nextMenu.focusTags,
+                        recommended: nextMenu.recommended,
+                        recommendedOrder: nextMenu.recommendedOrder,
+                        displayMode: nextMenu.displayMode,
+                    });
+                }
+
+                const impactedCustomGroups = customGroups.filter((group) =>
+                    menuGroupReferencesExercise(group, deleteTarget.id),
+                );
+                for (const group of impactedCustomGroups) {
+                    const nextGroup = removeExerciseFromMenuGroup(group, deleteTarget.id);
+                    if (nextGroup === null) {
+                        await deleteCustomGroup(group.id);
+                        continue;
+                    }
+
+                    if (nextGroup !== group) {
+                        await saveCustomGroup(nextGroup);
+                    }
+                }
+
                 await deleteTeacherExercise(deleteTarget.id);
                 if (editingExercise?.id === deleteTarget.id) closeExerciseForm();
             } else {
@@ -348,28 +401,83 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
             setDeleteLoading(false);
             setDeleteTarget(null);
         }
-    }, [closeExerciseForm, closeMenuForm, deleteTarget, editingExercise, editingMenu, loadAll, setDeleteTarget]);
+    }, [
+        closeExerciseForm,
+        closeMenuForm,
+        customGroups,
+        deleteTarget,
+        editingExercise,
+        editingMenu,
+        loadAll,
+        setDeleteTarget,
+        teacherMenus,
+    ]);
 
-    const exerciseEditorInitial = editingExercise
-        ?? (editingBuiltInExerciseId ? buildBuiltInExerciseInitial(editingBuiltInExerciseId, overrides) : null);
+    const deleteImpact = useMemo(() => {
+        if (!deleteTarget || deleteTarget.type !== 'exercise') {
+            return null;
+        }
+
+        const updatedTeacherMenuNames: string[] = [];
+        const removedTeacherMenuNames: string[] = [];
+        for (const menu of teacherMenus) {
+            if (!teacherMenuReferencesExercise(menu, deleteTarget.id)) {
+                continue;
+            }
+
+            const nextMenu = removeExerciseFromTeacherMenu(menu, deleteTarget.id);
+            if (nextMenu === null) {
+                removedTeacherMenuNames.push(menu.name);
+            } else {
+                updatedTeacherMenuNames.push(menu.name);
+            }
+        }
+
+        const updatedCustomMenuNames: string[] = [];
+        const removedCustomMenuNames: string[] = [];
+        for (const group of customGroups) {
+            if (!menuGroupReferencesExercise(group, deleteTarget.id)) {
+                continue;
+            }
+
+            const nextGroup = removeExerciseFromMenuGroup(group, deleteTarget.id);
+            if (nextGroup === null) {
+                removedCustomMenuNames.push(group.name);
+            } else {
+                updatedCustomMenuNames.push(group.name);
+            }
+        }
+
+        return {
+            updatedTeacherMenuNames,
+            removedTeacherMenuNames,
+            updatedCustomMenuNames,
+            removedCustomMenuNames,
+        };
+    }, [customGroups, deleteTarget, teacherMenus]);
+
+    const exerciseEditorInitial =
+        editingExercise ??
+        (editingBuiltInExerciseId ? buildBuiltInExerciseInitial(editingBuiltInExerciseId, overrides) : null);
     const exerciseEditorStatuses = editingExercise
         ? getStatusByClass(editingExercise.id, 'exercise')
         : editingBuiltInExerciseId
-            ? getStatusByClass(editingBuiltInExerciseId, 'exercise')
-            : undefined;
+          ? getStatusByClass(editingBuiltInExerciseId, 'exercise')
+          : undefined;
     const exerciseEditorItemId = editingExercise?.id ?? editingBuiltInExerciseId;
 
-    const menuEditorInitial = editingMenu
-        ?? (editingBuiltInMenuId ? buildBuiltInMenuInitial(editingBuiltInMenuId, overrides) : null);
+    const menuEditorInitial =
+        editingMenu ?? (editingBuiltInMenuId ? buildBuiltInMenuInitial(editingBuiltInMenuId, overrides) : null);
     const menuEditorStatuses = editingMenu
         ? getStatusByClass(editingMenu.id, 'menu_group')
         : editingBuiltInMenuId
-            ? getStatusByClass(editingBuiltInMenuId, 'menu_group')
-            : undefined;
+          ? getStatusByClass(editingBuiltInMenuId, 'menu_group')
+          : undefined;
     const menuEditorItemId = editingMenu?.id ?? editingBuiltInMenuId;
 
     return {
         deleteLoading,
+        deleteImpact,
         deleteTarget,
         error,
         expandedItemId,

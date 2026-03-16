@@ -6,6 +6,7 @@ interface ConfirmDeleteModalProps {
     open: boolean;
     title: string;
     message: string;
+    details?: React.ReactNode;
     onCancel: () => void;
     onConfirm: () => void;
     loading?: boolean;
@@ -18,6 +19,7 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
     open,
     title,
     message,
+    details,
     onCancel,
     onConfirm,
     loading = false,
@@ -26,24 +28,29 @@ export const ConfirmDeleteModal: React.FC<ConfirmDeleteModalProps> = ({
     confirmColor = COLOR.danger,
 }) => (
     <Modal open={open} onClose={onCancel} zIndex={Z.confirm} ariaLabel={title}>
-        <h3 style={{
-            margin: '0 0 8px',
-            fontFamily: FONT.body,
-            fontSize: FONT_SIZE.lg,
-            fontWeight: 700,
-            color: COLOR.dark,
-        }}>
+        <h3
+            style={{
+                margin: '0 0 8px',
+                fontFamily: FONT.body,
+                fontSize: FONT_SIZE.lg,
+                fontWeight: 700,
+                color: COLOR.dark,
+            }}
+        >
             {title}
         </h3>
-        <p style={{
-            margin: '0 0 20px',
-            fontFamily: FONT.body,
-            fontSize: 13,
-            color: COLOR.text,
-            lineHeight: 1.6,
-        }}>
+        <p
+            style={{
+                margin: '0 0 20px',
+                fontFamily: FONT.body,
+                fontSize: 13,
+                color: COLOR.text,
+                lineHeight: 1.6,
+            }}
+        >
             {message}
         </p>
+        {details ? <div style={{ margin: '0 0 20px' }}>{details}</div> : null}
         <div style={{ display: 'flex', gap: 8 }}>
             <button
                 onClick={onCancel}

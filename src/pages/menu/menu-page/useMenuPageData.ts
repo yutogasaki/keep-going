@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Exercise } from '../../../data/exercises';
+import { EXERCISES, type Exercise } from '../../../data/exercises';
 import { getMenuGroupItems, getPresetsForClass, type MenuGroup } from '../../../data/menuGroups';
 import { audio } from '../../../lib/audio';
-import { deleteCustomGroup, getCustomGroups } from '../../../lib/customGroups';
+import { deleteCustomGroup, getCustomGroups, saveCustomGroup } from '../../../lib/customGroups';
 import { subscribeCustomContentUpdated } from '../../../lib/customContentEvents';
 import { deleteCustomExercise, getCustomExercises, type CustomExercise } from '../../../lib/db';
 import {
-    resolveMenuGroupToSessionPlannedItems,
-    type SessionPlannedItem,
-} from '../../../lib/sessionPlan';
+    menuGroupReferencesExercise,
+    pruneUnavailableExercisesFromMenuGroup,
+    removeExerciseFromMenuGroup,
+} from '../../../lib/menuExerciseCleanup';
+import { resolveMenuGroupToSessionPlannedItems, type SessionPlannedItem } from '../../../lib/sessionPlan';
+import { fetchTeacherExercises } from '../../../lib/teacherContent';
 import type { UserProfileStore } from '../../../store/useAppStore';
 import { useMenuExercises } from './useMenuExercises';
 import { useMenuPublishActions } from './useMenuPublishActions';
@@ -88,10 +91,7 @@ export function useMenuPageData({
     });
     const { refreshPublishedData } = publishActions;
 
-    const presets = useMemo(
-        () => getPresetsForClass(userContext.classLevel),
-        [userContext.classLevel],
-    );
+    const presets = useMemo(() => getPresetsForClass(userContext.classLevel), [userContext.classLevel]);
 
     const exerciseData = useMenuExercises({
         classLevel: userContext.classLevel,
@@ -109,8 +109,10 @@ export function useMenuPageData({
     });
     const teacherExercises = teacherContent.teacherExercises;
 
-    const sessionExerciseLookup = useMemo<Map<string, Exercise | CustomExercise | typeof teacherExercises[number]>>(() => {
-        const lookup = new Map<string, Exercise | CustomExercise | typeof teacherExercises[number]>();
+    const sessionExerciseLookup = useMemo<
+        Map<string, Exercise | CustomExercise | (typeof teacherExercises)[number]>
+    >(() => {
+        const lookup = new Map<string, Exercise | CustomExercise | (typeof teacherExercises)[number]>();
         for (const exercise of exerciseData.exercises) {
             lookup.set(exercise.id, exercise);
         }
@@ -124,33 +126,55 @@ export function useMenuPageData({
     }, [customExercises, exerciseData.exercises, teacherExercises]);
 
     const loadCustomData = useCallback(async () => {
-        const [allGroups, allExercises] = await Promise.all([
+        const [allGroups, allExercises, allTeacherExercises] = await Promise.all([
             getCustomGroups(),
             getCustomExercises(),
+            fetchTeacherExercises(),
         ]);
 
-        setCustomGroups(allGroups.filter((group) => {
-            if (userContext.isTogetherMode) {
-                return true;
+        const availableExerciseIds = new Set([
+            ...EXERCISES.map((exercise) => exercise.id),
+            ...allExercises.map((exercise) => exercise.id),
+            ...allTeacherExercises.map((exercise) => exercise.id),
+        ]);
+
+        const sanitizedGroups: MenuGroup[] = [];
+        for (const group of allGroups) {
+            const nextGroup = pruneUnavailableExercisesFromMenuGroup(group, availableExerciseIds);
+            if (nextGroup === null) {
+                await deleteCustomGroup(group.id);
+                continue;
             }
 
-            return !group.creatorId || group.creatorId === userContext.currentUserId;
-        }));
-
-        setCustomExercises(allExercises.filter((exercise) => {
-            if (userContext.isTogetherMode) {
-                return true;
+            if (nextGroup !== group) {
+                await saveCustomGroup(nextGroup);
             }
 
-            return !exercise.creatorId || exercise.creatorId === userContext.currentUserId;
-        }));
+            sanitizedGroups.push(nextGroup);
+        }
+
+        setCustomGroups(
+            sanitizedGroups.filter((group) => {
+                if (userContext.isTogetherMode) {
+                    return true;
+                }
+
+                return !group.creatorId || group.creatorId === userContext.currentUserId;
+            }),
+        );
+
+        setCustomExercises(
+            allExercises.filter((exercise) => {
+                if (userContext.isTogetherMode) {
+                    return true;
+                }
+
+                return !exercise.creatorId || exercise.creatorId === userContext.currentUserId;
+            }),
+        );
 
         await refreshPublishedData();
-    }, [
-        refreshPublishedData,
-        userContext.currentUserId,
-        userContext.isTogetherMode,
-    ]);
+    }, [refreshPublishedData, userContext.currentUserId, userContext.isTogetherMode]);
 
     useEffect(() => {
         void loadCustomData();
@@ -162,38 +186,80 @@ export function useMenuPageData({
         });
     }, [loadCustomData]);
 
-    const handleGroupTap = useCallback((group: MenuGroup) => {
-        audio.initTTS();
-        const menuItems = getMenuGroupItems(group);
-        const hasInlineItems = menuItems.some((item) => item.kind === 'inline_only');
-        const sessionOptions = {
-            sourceMenuId: group.id,
-            sourceMenuSource: teacherContent.teacherMenuIds.has(group.id)
-                ? 'teacher'
-                : group.isPreset
-                    ? 'preset'
-                    : 'custom',
-            sourceMenuName: group.name,
-        } as const;
+    const handleGroupTap = useCallback(
+        (group: MenuGroup) => {
+            audio.initTTS();
+            const menuItems = getMenuGroupItems(group);
+            const hasInlineItems = menuItems.some((item) => item.kind === 'inline_only');
+            const sessionOptions = {
+                sourceMenuId: group.id,
+                sourceMenuSource: teacherContent.teacherMenuIds.has(group.id)
+                    ? 'teacher'
+                    : group.isPreset
+                      ? 'preset'
+                      : 'custom',
+                sourceMenuName: group.name,
+            } as const;
 
-        if (hasInlineItems) {
-            const plannedItems = resolveMenuGroupToSessionPlannedItems(group, sessionExerciseLookup);
-            startSessionWithPlan(plannedItems, sessionOptions);
-            return;
-        }
+            if (hasInlineItems) {
+                const plannedItems = resolveMenuGroupToSessionPlannedItems(group, sessionExerciseLookup);
+                startSessionWithPlan(plannedItems, sessionOptions);
+                return;
+            }
 
-        startSessionWithExercises(group.exerciseIds, sessionOptions);
-    }, [sessionExerciseLookup, startSessionWithExercises, startSessionWithPlan, teacherContent.teacherMenuIds]);
+            startSessionWithExercises(group.exerciseIds, sessionOptions);
+        },
+        [sessionExerciseLookup, startSessionWithExercises, startSessionWithPlan, teacherContent.teacherMenuIds],
+    );
 
-    const handleDeleteGroup = useCallback(async (groupId: string) => {
-        await deleteCustomGroup(groupId);
-        await loadCustomData();
-    }, [loadCustomData]);
+    const handleDeleteGroup = useCallback(
+        async (groupId: string) => {
+            await deleteCustomGroup(groupId);
+            await loadCustomData();
+        },
+        [loadCustomData],
+    );
 
-    const handleDeleteEx = useCallback(async (exerciseId: string) => {
-        await deleteCustomExercise(exerciseId);
-        await loadCustomData();
-    }, [loadCustomData]);
+    const handleDeleteEx = useCallback(
+        async (exerciseId: string) => {
+            const impactedGroups = customGroups.filter((group) => menuGroupReferencesExercise(group, exerciseId));
+            let updatedMenuCount = 0;
+            let deletedMenuCount = 0;
+
+            for (const group of impactedGroups) {
+                const nextGroup = removeExerciseFromMenuGroup(group, exerciseId);
+                if (nextGroup === null) {
+                    await deleteCustomGroup(group.id);
+                    deletedMenuCount += 1;
+                    continue;
+                }
+
+                if (nextGroup !== group) {
+                    await saveCustomGroup(nextGroup);
+                    updatedMenuCount += 1;
+                }
+            }
+
+            await deleteCustomExercise(exerciseId);
+            await loadCustomData();
+
+            if (updatedMenuCount === 0 && deletedMenuCount === 0) {
+                showToast({ text: 'じぶん種目を削除しました', type: 'success' });
+                return;
+            }
+
+            const summaryParts = [
+                updatedMenuCount > 0 ? `${updatedMenuCount}つのメニューから外しました` : '',
+                deletedMenuCount > 0 ? `${deletedMenuCount}つの空メニューを削除しました` : '',
+            ].filter((part) => part.length > 0);
+
+            showToast({
+                text: `じぶん種目を削除し、${summaryParts.join('・')}`,
+                type: 'success',
+            });
+        },
+        [customGroups, loadCustomData, showToast],
+    );
 
     const handleCreatedGroup = useCallback(() => {
         setShowCreateGroup(false);
@@ -207,19 +273,28 @@ export function useMenuPageData({
         void loadCustomData();
     }, [loadCustomData]);
 
-    const handleStartSingleExercise = useCallback((exerciseId: string) => {
-        audio.initTTS();
-        startSessionWithExercises([exerciseId]);
-    }, [startSessionWithExercises]);
+    const handleStartSingleExercise = useCallback(
+        (exerciseId: string) => {
+            audio.initTTS();
+            startSessionWithExercises([exerciseId]);
+        },
+        [startSessionWithExercises],
+    );
 
-    const handleStartCustomExercise = useCallback((exerciseId: string) => {
-        startSessionWithExercises([exerciseId]);
-    }, [startSessionWithExercises]);
+    const handleStartCustomExercise = useCallback(
+        (exerciseId: string) => {
+            startSessionWithExercises([exerciseId]);
+        },
+        [startSessionWithExercises],
+    );
 
-    const handleStartHybridSession = useCallback((requiredIds: string[]) => {
-        audio.initTTS();
-        startHybridSession(requiredIds);
-    }, [startHybridSession]);
+    const handleStartHybridSession = useCallback(
+        (requiredIds: string[]) => {
+            audio.initTTS();
+            startHybridSession(requiredIds);
+        },
+        [startHybridSession],
+    );
 
     return {
         tab,
