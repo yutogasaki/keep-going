@@ -152,6 +152,10 @@ export const HomeScreen: React.FC = () => {
         () => users.filter((user) => sessionUserIds.includes(user.id)),
         [sessionUserIds, users],
     );
+    const activeHomeUserIds = useMemo(
+        () => (sessionUserIds.length > 0 ? sessionUserIds : users.map((user) => user.id)),
+        [sessionUserIds, users],
+    );
     const currentClassLevel = useMemo(
         () => getMinClassLevel(currentUsers),
         [currentUsers],
@@ -230,8 +234,6 @@ export const HomeScreen: React.FC = () => {
         completions,
         rewardGrants,
         teacherExercises,
-        pastExpanded,
-        setPastExpanded,
         loadChallenges,
     } = useHomeChallenges({
         users,
@@ -301,6 +303,18 @@ export const HomeScreen: React.FC = () => {
             teacherExerciseHighlight,
             teacherMenuHighlights,
         ],
+    );
+    const joinedTeacherChallenges = useMemo(
+        () => filteredChallenges.filter((challenge) => activeHomeUserIds.some(
+            (userId) => (joinedChallengeIds[userId] || []).includes(challenge.id),
+        )),
+        [activeHomeUserIds, filteredChallenges, joinedChallengeIds],
+    );
+    const recommendedTeacherChallenge = useMemo(
+        () => filteredChallenges.find((challenge) => !activeHomeUserIds.some(
+            (userId) => (joinedChallengeIds[userId] || []).includes(challenge.id),
+        )) ?? null,
+        [activeHomeUserIds, filteredChallenges, joinedChallengeIds],
     );
 
     useEffect(() => {
@@ -753,26 +767,21 @@ export const HomeScreen: React.FC = () => {
 
                 <HomeChallengesAndMenus
                     showChallengeSection={Boolean(selectedUser)}
-                    filteredChallenges={filteredChallenges}
-                    todayDoneChallenges={todayDoneChallenges}
-                    pastChallenges={pastChallenges}
+                    teacherActiveChallenges={joinedTeacherChallenges}
+                    teacherRecommendedChallenge={recommendedTeacherChallenge}
                     personalActiveChallenges={personalActiveChallenges.slice(0, 2)}
-                personalTodayDoneChallenges={personalTodayDoneChallenges.slice(0, 2)}
-                personalPastChallenges={personalPastChallenges.slice(0, 2)}
-                completions={completions}
-                rewardGrants={rewardGrants}
-                recommendedMenus={recommendedMenus}
-                recommendedExercises={recommendedExercises}
-                teacherExercises={teacherExercises}
-                teacherMenus={teacherContent.teacherMenus}
-                customChallengeExercises={customChallengeExercises}
-                customChallengeMenus={customChallengeMenus}
-                teacherMenuHighlights={teacherMenuHighlights}
-                teacherExerciseHighlight={teacherExerciseHighlight}
-                teacherMenuExerciseMap={teacherMenuExerciseMap}
+                    completions={completions}
+                    rewardGrants={rewardGrants}
+                    recommendedMenus={recommendedMenus}
+                    recommendedExercises={recommendedExercises}
+                    teacherExercises={teacherExercises}
+                    teacherMenus={teacherContent.teacherMenus}
+                    customChallengeExercises={customChallengeExercises}
+                    customChallengeMenus={customChallengeMenus}
+                    teacherMenuHighlights={teacherMenuHighlights}
+                    teacherExerciseHighlight={teacherExerciseHighlight}
+                    teacherMenuExerciseMap={teacherMenuExerciseMap}
                     isNewTeacherContent={teacherContent.isNewTeacherContent}
-                    pastExpanded={pastExpanded}
-                    onTogglePastExpanded={() => setPastExpanded((previous) => !previous)}
                     onChallengesUpdated={loadChallenges}
                     onOpenChallengeHub={() => setChallengeHubOpen(true)}
                     onOpenPersonalChallenge={handleOpenPersonalChallenge}

@@ -28,7 +28,7 @@ export const PopularMenusRow: React.FC<PopularMenusRowProps> = ({
     onExerciseTap,
 }) => {
     const featuredMenus = useMemo(
-        () => menus.slice(0, 3),
+        () => menus.slice(0, 2),
         [menus],
     );
     const featuredExercise = exercises[0] ?? null;
@@ -42,7 +42,7 @@ export const PopularMenusRow: React.FC<PopularMenusRowProps> = ({
             <div style={sectionHeaderStyle}>
                 <div style={{ minWidth: 0 }}>
                     <div style={sectionTitleStyle}>みんなのメニュー</div>
-                    <div style={sectionSubtitleStyle}>ほかの子や家族のくふうから見つけよう</div>
+                    <div style={sectionSubtitleStyle}>新しいのを見つける</div>
                 </div>
                 <button
                     type="button"

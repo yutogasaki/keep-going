@@ -53,14 +53,14 @@ export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps>
             <div style={sectionHeaderStyle}>
                 <div style={{ minWidth: 0 }}>
                     <div style={sectionTitleStyle}>先生のメニュー</div>
-                    <div style={sectionSubtitleStyle}>先生がおすすめしているメニューや種目</div>
+                    <div style={sectionSubtitleStyle}>すぐはじめやすい</div>
                 </div>
                 <button
                     type="button"
                     onClick={onOpenMenuTab}
                     style={sectionLinkStyle}
                 >
-                    メニューへ
+                    もっと見る
                     <ChevronRight size={14} />
                 </button>
             </div>
