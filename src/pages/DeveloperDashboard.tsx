@@ -9,6 +9,7 @@ import {
     type AdminAccountSummary,
 } from '../lib/developer';
 import { AccountCard } from './developer-dashboard/AccountCard';
+import { DeveloperBulkActions } from './developer-dashboard/DeveloperBulkActions';
 import { ConfirmActionDialog } from './developer-dashboard/ConfirmActionDialog';
 import { DeveloperHeader } from './developer-dashboard/DeveloperHeader';
 import { DeveloperStatsAndFilters } from './developer-dashboard/DeveloperStatsAndFilters';
@@ -17,7 +18,6 @@ import {
     filterAccountsByType,
     INACTIVE_DAYS,
     NEW_ACCOUNT_GRACE_DAYS,
-    SUSPEND_CANDIDATE_DAYS,
 } from './developer-dashboard/accountSegmentation';
 import { DeveloperDebugPanel } from './settings/developer-debug/DeveloperDebugPanel';
 import type { ConfirmAction, FilterType } from './developer-dashboard/types';
@@ -55,11 +55,71 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
         load();
     }, [load]);
 
+    const accountAnalyses = useMemo(
+        () => new Map(accounts.map((account) => [account.accountId, analyzeAccount(account)])),
+        [accounts],
+    );
+
     const filteredAccounts = useMemo(() => {
         return filterAccountsByType(accounts, filter);
     }, [accounts, filter]);
 
     const stats = useMemo(() => computeStats(accounts), [accounts]);
+
+    const candidateSummary = useMemo(() => {
+        const suspendAccountIds: string[] = [];
+        const suspendedDeleteAccountIds: string[] = [];
+        const cleanupMemberIds: string[] = [];
+        let unusedCleanupAccountCount = 0;
+        const cleanupAccountIds = new Set<string>();
+
+        for (const account of accounts) {
+            const analysis = accountAnalyses.get(account.accountId);
+            if (!analysis) continue;
+
+            if (!account.suspended && analysis.hasUnusedCleanupRisk) {
+                unusedCleanupAccountCount += 1;
+            }
+
+            if (analysis.isSuspendCandidate) {
+                suspendAccountIds.push(account.accountId);
+            }
+
+            if (account.suspended && analysis.suspendReasons.length > 0) {
+                suspendedDeleteAccountIds.push(account.accountId);
+            }
+
+            for (const signal of analysis.memberSignals) {
+                if (!signal.isCleanupCandidate) {
+                    continue;
+                }
+                cleanupMemberIds.push(signal.memberId);
+                cleanupAccountIds.add(account.accountId);
+            }
+        }
+
+        return {
+            suspendAccountIds,
+            suspendedDeleteAccountIds,
+            cleanupMemberIds,
+            cleanupAccountCount: cleanupAccountIds.size,
+            cleanupMemberCount: cleanupMemberIds.length,
+            unusedCleanupAccountCount,
+        };
+    }, [accounts, accountAnalyses]);
+
+    const getAccountLabel = useCallback((account: AdminAccountSummary) => {
+        return `${account.members.map((member) => member.name).join(', ')} / ${account.accountId.slice(0, 8)}...`;
+    }, []);
+
+    const getMemberLabel = useCallback((memberId: string) => {
+        for (const account of accounts) {
+            const member = account.members.find((item) => item.id === memberId);
+            if (!member) continue;
+            return `${member.name} / ${getAccountLabel(account)}`;
+        }
+        return memberId;
+    }, [accounts, getAccountLabel]);
 
     const handleAction = useCallback(async () => {
         if (!confirmAction) {
@@ -69,19 +129,57 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
         setActionLoading(true);
 
         try {
-            if (confirmAction.type === 'delete') {
-                await deleteAccountData(confirmAction.accountId);
-                setAccounts((previous) => previous.filter((account) => account.accountId !== confirmAction.accountId));
-            } else {
-                const newSuspended = confirmAction.type === 'suspend';
-                await suspendAccount(confirmAction.accountId, newSuspended);
-                setAccounts((previous) =>
-                    previous.map((account) =>
-                        account.accountId === confirmAction.accountId
-                            ? { ...account, suspended: newSuspended }
-                            : account,
-                    ),
-                );
+            let failureMessage: string | null = null;
+
+            const settleBulk = async (tasks: Array<Promise<void>>) => {
+                const results = await Promise.allSettled(tasks);
+                const failed = results.filter((result) => result.status === 'rejected');
+                if (failed.length > 0) {
+                    const firstReason = failed[0];
+                    const firstMessage = firstReason.status === 'rejected' && firstReason.reason instanceof Error
+                        ? firstReason.reason.message
+                        : '処理に失敗しました';
+                    failureMessage = `${results.length - failed.length}件成功 / ${failed.length}件失敗: ${firstMessage}`;
+                }
+            };
+
+            switch (confirmAction.type) {
+                case 'delete':
+                    if (!confirmAction.accountId) {
+                        return;
+                    }
+                    await deleteAccountData(confirmAction.accountId);
+                    break;
+                case 'suspend':
+                case 'unsuspend':
+                    if (!confirmAction.accountId) {
+                        return;
+                    }
+                    await suspendAccount(confirmAction.accountId, confirmAction.type === 'suspend');
+                    break;
+                case 'delete_member':
+                    if (!confirmAction.memberId) {
+                        return;
+                    }
+                    await developerDeleteFamilyMember(confirmAction.memberId);
+                    break;
+                case 'bulk_suspend':
+                    await settleBulk((confirmAction.accountIds ?? []).map((accountId) => suspendAccount(accountId, true)));
+                    break;
+                case 'bulk_delete':
+                    await settleBulk((confirmAction.accountIds ?? []).map((accountId) => deleteAccountData(accountId)));
+                    break;
+                case 'bulk_delete_members':
+                    await settleBulk((confirmAction.memberIds ?? []).map((memberId) => developerDeleteFamilyMember(memberId)));
+                    break;
+                default:
+                    return;
+            }
+
+            await load();
+
+            if (failureMessage) {
+                throw new Error(failureMessage);
             }
         } catch (error) {
             console.error('[developer] Action failed:', error);
@@ -90,7 +188,7 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
             setActionLoading(false);
             setConfirmAction(null);
         }
-    }, [confirmAction]);
+    }, [confirmAction, load]);
 
     return (
         <div style={{
@@ -147,7 +245,37 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                                     onFilterChange={setFilter}
                                     inactivityDays={INACTIVE_DAYS}
                                     graceDays={NEW_ACCOUNT_GRACE_DAYS}
-                                    suspendCandidateDays={SUSPEND_CANDIDATE_DAYS}
+                                />
+                                <DeveloperBulkActions
+                                    suspendCandidateCount={candidateSummary.suspendAccountIds.length}
+                                    suspendedDeleteCandidateCount={candidateSummary.suspendedDeleteAccountIds.length}
+                                    cleanupMemberCount={candidateSummary.cleanupMemberCount}
+                                    cleanupAccountCount={candidateSummary.cleanupAccountCount}
+                                    actionLoading={actionLoading}
+                                    onBulkSuspend={() => {
+                                        setConfirmAction({
+                                            type: 'bulk_suspend',
+                                            accountIds: candidateSummary.suspendAccountIds,
+                                            subjectLabel: `休止候補 ${candidateSummary.suspendAccountIds.length}件 / 未使用整理候補 ${candidateSummary.unusedCleanupAccountCount}件`,
+                                            description: '長期未利用と未使用整理候補をまとめて休止します。メンバー削除は行いません。',
+                                        });
+                                    }}
+                                    onBulkDeleteAccounts={() => {
+                                        setConfirmAction({
+                                            type: 'bulk_delete',
+                                            accountIds: candidateSummary.suspendedDeleteAccountIds,
+                                            subjectLabel: `休止済み候補 ${candidateSummary.suspendedDeleteAccountIds.length}件`,
+                                            description: '休止済みの候補アカウントをまとめて完全削除します。メンバー・セッションも消えます。',
+                                        });
+                                    }}
+                                    onBulkDeleteMembers={() => {
+                                        setConfirmAction({
+                                            type: 'bulk_delete_members',
+                                            memberIds: candidateSummary.cleanupMemberIds,
+                                            subjectLabel: `整理候補ユーザー ${candidateSummary.cleanupMemberCount}人 / 対象アカウント ${candidateSummary.cleanupAccountCount}件`,
+                                            description: '整理候補のメンバーだけをまとめて削除します。アカウント自体は削除しません。',
+                                        });
+                                    }}
                                 />
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -155,7 +283,7 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                                         <AccountCard
                                             key={account.accountId}
                                             account={account}
-                                            analysis={analyzeAccount(account)}
+                                            analysis={accountAnalyses.get(account.accountId) ?? analyzeAccount(account)}
                                             expanded={expandedAccount === account.accountId}
                                             onToggle={() => {
                                                 setExpandedAccount(expandedAccount === account.accountId ? null : account.accountId);
@@ -164,26 +292,28 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                                             formatDate={formatDate}
                                             onSuspend={() => {
                                                 setConfirmAction({
+                                                    subjectLabel: getAccountLabel(account),
+                                                    description: (accountAnalyses.get(account.accountId)?.suspendReasonLabels?.length ?? 0) > 0
+                                                        ? `理由: ${(accountAnalyses.get(account.accountId)?.suspendReasonLabels ?? []).join(' / ')}`
+                                                        : undefined,
                                                     accountId: account.accountId,
                                                     type: account.suspended ? 'unsuspend' : 'suspend',
                                                 });
                                             }}
                                             onDelete={() => {
                                                 setConfirmAction({
+                                                    subjectLabel: getAccountLabel(account),
                                                     accountId: account.accountId,
                                                     type: 'delete',
                                                 });
                                             }}
-                                            onDeleteMember={async (memberId) => {
-                                                if (!window.confirm('このメンバーを削除しますか？')) {
-                                                    return;
-                                                }
-                                                try {
-                                                    await developerDeleteFamilyMember(memberId);
-                                                    load();
-                                                } catch (error) {
-                                                    alert('削除に失敗: ' + (error as Error).message);
-                                                }
+                                            onDeleteMember={(memberId) => {
+                                                setConfirmAction({
+                                                    type: 'delete_member',
+                                                    memberId,
+                                                    subjectLabel: getMemberLabel(memberId),
+                                                    description: 'この操作はメンバーだけを削除します。アカウントや他のメンバーは残ります。',
+                                                });
                                             }}
                                         />
                                     ))}

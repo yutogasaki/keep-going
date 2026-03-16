@@ -6,6 +6,12 @@ import type { FilterType } from './types';
 export const NEW_ACCOUNT_GRACE_DAYS = 14;
 export const INACTIVE_DAYS = 14;
 export const SUSPEND_CANDIDATE_DAYS = 30;
+export const MEMBER_CLEANUP_DAYS = 14;
+export const LONG_DORMANT_LABEL = '30日以上ほぼ未利用';
+export const UNUSED_CLEANUP_LABEL = '未使用整理候補';
+export const DUPLICATE_UNREFERENCED_LABEL = '同名未参照';
+
+export type SuspendReason = 'inactive_30d' | 'never_started' | 'reroll';
 
 export interface MemberSegmentation {
     memberId: string;
@@ -16,15 +22,26 @@ export interface MemberSegmentation {
     duplicateGroupSize: number;
     hasNamedSessions: boolean;
     directSessionCount: number;
+    createdDate: string | null;
+    isStaleUnused: boolean;
+    isRerollLike: boolean;
     isCleanupCandidate: boolean;
+    cleanupReasonLabels: string[];
 }
 
 export interface AccountSegmentation {
     isNewGrace: boolean;
     isInactive: boolean;
     isSuspendCandidate: boolean;
+    hasLongDormantRisk: boolean;
+    hasUnusedCleanupRisk: boolean;
+    hasNeverStartedRisk: boolean;
+    isRerollCandidate: boolean;
+    suspendReasons: SuspendReason[];
+    suspendReasonLabels: string[];
     hasDuplicateNames: boolean;
     duplicateNames: string[];
+    cleanupCandidateMemberCount: number;
     memberSignals: MemberSegmentation[];
 }
 
@@ -47,10 +64,31 @@ export function getMemberSessions(account: AdminAccountSummary, memberId: string
     });
 }
 
+function toDateKey(value: string | null | undefined): string | null {
+    if (!value) return null;
+    return value.slice(0, 10);
+}
+
+function toSuspendReasonLabels(reasons: SuspendReason[]): string[] {
+    return [...new Set(reasons.map((reason) => {
+        switch (reason) {
+            case 'inactive_30d':
+                return LONG_DORMANT_LABEL;
+            case 'never_started':
+                return UNUSED_CLEANUP_LABEL;
+            case 'reroll':
+                return UNUSED_CLEANUP_LABEL;
+            default:
+                return reason;
+        }
+    }))];
+}
+
 export function analyzeAccount(account: AdminAccountSummary, now = new Date()): AccountSegmentation {
     const graceThreshold = getThresholdDateKey(NEW_ACCOUNT_GRACE_DAYS, now);
     const inactiveThreshold = getThresholdDateKey(INACTIVE_DAYS, now);
     const suspendThreshold = getThresholdDateKey(SUSPEND_CANDIDATE_DAYS, now);
+    const memberCleanupThreshold = getThresholdDateKey(MEMBER_CLEANUP_DAYS, now);
 
     const nameGroups = new Map<string, string[]>();
     for (const member of account.members) {
@@ -69,6 +107,18 @@ export function analyzeAccount(account: AdminAccountSummary, now = new Date()): 
         const duplicateGroupSize = duplicateGroups.find(([, memberIds]) => memberIds.includes(member.id))?.[1].length ?? 0;
         const hasDuplicateName = duplicateMemberIds.has(member.id);
         const hasNamedSessions = directSessionCount > 0;
+        const createdDate = toDateKey(member.createdAt);
+        const hasAnyUsage = memberSessions.length > 0 || hasNamedSessions;
+        const isDuplicateUnreferenced = hasDuplicateName && !hasNamedSessions && account.members.length > 1;
+        const isStaleUnused = account.members.length > 1
+            && !hasAnyUsage
+            && createdDate !== null
+            && createdDate < memberCleanupThreshold;
+        const isRerollLike = account.totalSessions === 0 && isDuplicateUnreferenced;
+        const cleanupReasonLabels = [
+            (isStaleUnused || isRerollLike) ? UNUSED_CLEANUP_LABEL : null,
+            !isRerollLike && isDuplicateUnreferenced ? DUPLICATE_UNREFERENCED_LABEL : null,
+        ].filter((value): value is string => value !== null);
 
         return {
             memberId: member.id,
@@ -79,7 +129,11 @@ export function analyzeAccount(account: AdminAccountSummary, now = new Date()): 
             duplicateGroupSize,
             hasNamedSessions,
             directSessionCount,
-            isCleanupCandidate: hasDuplicateName && !hasNamedSessions && account.members.length > 1,
+            createdDate,
+            isStaleUnused,
+            isRerollLike,
+            isCleanupCandidate: cleanupReasonLabels.length > 0,
+            cleanupReasonLabels,
         };
     });
 
@@ -88,17 +142,37 @@ export function analyzeAccount(account: AdminAccountSummary, now = new Date()): 
     const isInactive = !account.suspended
         && !isNewGrace
         && (!account.lastActiveDate || account.lastActiveDate < inactiveThreshold);
-    const isSuspendCandidate = !account.suspended
-        && registeredAtKnown
+    const hasLongDormantRisk = registeredAtKnown
         && account.registeredAt! < suspendThreshold
         && (!account.lastActiveDate || account.lastActiveDate < suspendThreshold);
+    const hasNeverStartedRisk = registeredAtKnown
+        && !isNewGrace
+        && account.totalSessions === 0
+        && account.registeredAt! < inactiveThreshold;
+    const rerollLikeMemberCount = memberSignals.filter((signal) => signal.isRerollLike).length;
+    const isRerollCandidate = !isNewGrace
+        && account.totalSessions === 0
+        && rerollLikeMemberCount >= 2;
+    const hasUnusedCleanupRisk = hasNeverStartedRisk || isRerollCandidate;
+    const suspendReasons: SuspendReason[] = [];
+    if (hasLongDormantRisk) suspendReasons.push('inactive_30d');
+    if (hasNeverStartedRisk) suspendReasons.push('never_started');
+    if (isRerollCandidate) suspendReasons.push('reroll');
+    const cleanupCandidateMemberCount = memberSignals.filter((signal) => signal.isCleanupCandidate).length;
 
     return {
         isNewGrace,
         isInactive,
-        isSuspendCandidate,
+        isSuspendCandidate: !account.suspended && suspendReasons.length > 0,
+        hasLongDormantRisk,
+        hasUnusedCleanupRisk,
+        hasNeverStartedRisk,
+        isRerollCandidate,
+        suspendReasons,
+        suspendReasonLabels: toSuspendReasonLabels(suspendReasons),
         hasDuplicateNames: duplicateGroups.length > 0,
         duplicateNames: duplicateGroups.map(([name]) => name),
+        cleanupCandidateMemberCount,
         memberSignals,
     };
 }
@@ -116,6 +190,8 @@ export function filterAccountsByType(
                 return analysis.isInactive;
             case 'new':
                 return analysis.isNewGrace;
+            case 'cleanup':
+                return analysis.cleanupCandidateMemberCount > 0;
             case 'duplicate':
                 return analysis.hasDuplicateNames;
             case 'multi':

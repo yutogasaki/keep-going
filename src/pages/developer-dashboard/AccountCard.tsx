@@ -87,6 +87,18 @@ export const AccountCard: React.FC<AccountCardProps> = ({
                                 休止候補
                             </span>
                         )}
+                        {!account.suspended && analysis.hasUnusedCleanupRisk && (
+                            <span style={{
+                                background: '#FFF7ED',
+                                color: '#C2410C',
+                                padding: '1px 6px',
+                                borderRadius: 8,
+                                fontSize: 10,
+                                fontWeight: 700,
+                            }}>
+                                未使用整理候補
+                            </span>
+                        )}
                         {!account.suspended && !analysis.isSuspendCandidate && analysis.isInactive && (
                             <span style={{
                                 background: '#e5e7eb',
@@ -109,6 +121,18 @@ export const AccountCard: React.FC<AccountCardProps> = ({
                                 fontWeight: 700,
                             }}>
                                 新規14日
+                            </span>
+                        )}
+                        {analysis.cleanupCandidateMemberCount > 0 && (
+                            <span style={{
+                                background: '#DBEAFE',
+                                color: '#1D4ED8',
+                                padding: '1px 6px',
+                                borderRadius: 8,
+                                fontSize: 10,
+                                fontWeight: 700,
+                            }}>
+                                整理候補 {analysis.cleanupCandidateMemberCount}人
                             </span>
                         )}
                         {analysis.hasDuplicateNames && (
@@ -180,15 +204,20 @@ export const AccountCard: React.FC<AccountCardProps> = ({
                                                         onDeleteMember(member.id);
                                                     }}
                                                     style={{
-                                                        background: 'none',
-                                                        border: 'none',
+                                                        background: '#FFFFFF',
+                                                        border: '1px solid rgba(239, 68, 68, 0.14)',
+                                                        borderRadius: 999,
                                                         cursor: 'pointer',
-                                                        color: '#ccc',
-                                                        padding: 2,
-                                                        display: 'flex',
+                                                        color: '#DC2626',
+                                                        padding: '4px 8px',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: 4,
+                                                        fontSize: 10,
+                                                        fontWeight: 700,
                                                     }}
                                                 >
-                                                    <Trash2 size={12} />
+                                                    <Trash2 size={12} />ユーザーだけ削除
                                                 </button>
                                             </div>
                                             <div style={{
@@ -212,6 +241,11 @@ export const AccountCard: React.FC<AccountCardProps> = ({
                                                         整理候補
                                                     </span>
                                                 )}
+                                                {signal?.cleanupReasonLabels.map((label) => (
+                                                    <span key={`${member.id}-${label}`} style={pillStyle('#EFF6FF', '#1D4ED8')}>
+                                                        {label}
+                                                    </span>
+                                                ))}
                                                 <span style={pillStyle('#e5e7eb', '#4b5563')}>
                                                     ID {shortMemberId}
                                                 </span>
@@ -233,7 +267,32 @@ export const AccountCard: React.FC<AccountCardProps> = ({
                                     );
                                 })}
                             </div>
+                            <div style={{
+                                marginTop: 6,
+                                fontSize: 10,
+                                color: '#64748B',
+                                lineHeight: 1.5,
+                            }}>
+                                ユーザー削除はメンバーだけを消して、アカウント自体は残します。
+                            </div>
                         </div>
+                        {(analysis.suspendReasonLabels.length > 0 || analysis.cleanupCandidateMemberCount > 0) && (
+                            <div style={{
+                                padding: '8px 10px',
+                                background: '#F8FAFC',
+                                borderRadius: 8,
+                                color: '#475569',
+                                fontSize: 11,
+                                lineHeight: 1.6,
+                            }}>
+                                {analysis.suspendReasonLabels.length > 0
+                                    ? `休止候補理由: ${analysis.suspendReasonLabels.join(' / ')}`
+                                    : '休止候補理由はありません'}
+                                {analysis.cleanupCandidateMemberCount > 0
+                                    ? ` / 整理候補ユーザー ${analysis.cleanupCandidateMemberCount}人`
+                                    : ''}
+                            </div>
+                        )}
                         {analysis.hasDuplicateNames && (
                             <div style={{
                                 padding: '8px 10px',
