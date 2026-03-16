@@ -17,10 +17,15 @@ export const StudentsOverviewCards: React.FC<StudentsOverviewCardsProps> = ({
         return null;
     }
 
+    const averageStreak = Math.round(
+        (individualStudents.reduce((sum, student) => sum + student.streak, 0) / individualStudents.length) * 10
+    ) / 10;
+
     return (
         <>
             <div className="wide-grid" style={{
-                display: 'flex',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
                 gap: 10,
                 padding: '0 20px',
                 marginBottom: 12,
@@ -36,6 +41,12 @@ export const StudentsOverviewCards: React.FC<StudentsOverviewCardsProps> = ({
                     value={activeToday}
                     label="今日の活動"
                     bgColor="#FFEDE8"
+                />
+                <StatCard
+                    icon={<Flame size={16} color="#E17055" />}
+                    value={`${averageStreak}日`}
+                    label="平均ストリーク"
+                    bgColor="#FFF3E0"
                 />
             </div>
 
@@ -57,12 +68,12 @@ export const StudentsOverviewCards: React.FC<StudentsOverviewCardsProps> = ({
                             fontWeight: 700,
                             color: '#2D3436',
                         }}>
-                            今週のまとめ
+                            直近1週間のまとめ
                         </span>
                     </div>
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
                         gap: 10,
                     }}>
                         <WeeklyStat
@@ -83,12 +94,6 @@ export const StudentsOverviewCards: React.FC<StudentsOverviewCardsProps> = ({
                             sub="分"
                             color="#0984E3"
                         />
-                        <WeeklyStat
-                            label="平均ストリーク"
-                            value={`${individualStudents.length > 0 ? Math.round(individualStudents.reduce((sum, student) => sum + student.streak, 0) / individualStudents.length * 10) / 10 : 0}`}
-                            sub="日"
-                            color="#E17055"
-                        />
                     </div>
                 </div>
             )}
@@ -98,7 +103,7 @@ export const StudentsOverviewCards: React.FC<StudentsOverviewCardsProps> = ({
 
 const StatCard: React.FC<{
     icon: React.ReactNode;
-    value: number;
+    value: number | string;
     label: string;
     bgColor: string;
 }> = ({ icon, value, label, bgColor }) => (
