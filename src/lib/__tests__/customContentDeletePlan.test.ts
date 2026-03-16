@@ -49,6 +49,7 @@ function createPublicMenu(overrides: Partial<PublicMenu> = {}): PublicMenu {
         authorName: overrides.authorName ?? 'author',
         accountId: overrides.accountId ?? 'account-1',
         downloadCount: overrides.downloadCount ?? 0,
+        sourceMenuGroupId: overrides.sourceMenuGroupId ?? null,
         createdAt: overrides.createdAt ?? '2026-03-16T00:00:00.000Z',
     };
 }
@@ -66,11 +67,29 @@ function createPublicExercise(overrides: Partial<PublicExercise> = {}): PublicEx
         authorName: overrides.authorName ?? 'author',
         accountId: overrides.accountId ?? 'account-1',
         downloadCount: overrides.downloadCount ?? 0,
+        sourceCustomExerciseId: overrides.sourceCustomExerciseId ?? null,
+        preserveWithoutMenu: overrides.preserveWithoutMenu ?? true,
         createdAt: overrides.createdAt ?? '2026-03-16T00:00:00.000Z',
     };
 }
 
 describe('customContentDeletePlan', () => {
+    it('matches published menus by source id before comparing menu identity', () => {
+        const group = createMenuGroup({
+            id: 'local-menu-1',
+            name: 'いまの名前',
+            exerciseIds: ['S01', 'custom-ex-1'],
+        });
+        const publishedMenu = createPublicMenu({
+            id: 'public-menu-1',
+            name: 'むかしの名前',
+            exerciseIds: ['S01'],
+            sourceMenuGroupId: 'local-menu-1',
+        });
+
+        expect(findPublishedMenuMatch(group, [publishedMenu])?.id).toBe('public-menu-1');
+    });
+
     it('matches published menus by menu identity instead of local id', () => {
         const group = createMenuGroup({ id: 'local-menu-1' });
         const publishedMenu = createPublicMenu({
@@ -81,6 +100,23 @@ describe('customContentDeletePlan', () => {
         });
 
         expect(findPublishedMenuMatch(group, [publishedMenu])?.id).toBe('public-menu-1');
+    });
+
+    it('matches published exercises by source id before comparing exercise identity', () => {
+        const exercise = createCustomExercise({
+            id: 'local-ex-1',
+            name: 'いまの種目',
+            sec: 45,
+        });
+        const publishedExercise = createPublicExercise({
+            id: 'public-ex-1',
+            name: 'むかしの種目',
+            sec: 30,
+            sourceCustomExerciseId: 'local-ex-1',
+            preserveWithoutMenu: false,
+        });
+
+        expect(findPublishedExerciseMatch(exercise, [publishedExercise])?.id).toBe('public-ex-1');
     });
 
     it('matches published exercises by exercise definition instead of local id', () => {

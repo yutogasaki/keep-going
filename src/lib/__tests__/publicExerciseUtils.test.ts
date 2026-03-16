@@ -18,6 +18,8 @@ function createExercise(overrides: Partial<PublicExercise> & Pick<PublicExercise
         authorName: overrides.authorName ?? 'teacher',
         accountId: overrides.accountId ?? 'account-1',
         downloadCount: overrides.downloadCount ?? 0,
+        sourceCustomExerciseId: overrides.sourceCustomExerciseId ?? null,
+        preserveWithoutMenu: overrides.preserveWithoutMenu ?? true,
         createdAt: overrides.createdAt ?? '2026-03-08T00:00:00.000Z',
     };
 }

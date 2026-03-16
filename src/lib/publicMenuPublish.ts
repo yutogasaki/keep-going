@@ -5,24 +5,31 @@ import {
 } from '../data/menuGroups';
 import { EXERCISES } from '../data/exercises';
 import { getCustomExercises, type CustomExercise } from './db';
-import { fetchMyPublishedExercises, publishExercise, unpublishExercise } from './publicExercises';
+import { findPublishedExerciseMatch, findPublishedMenuMatch } from './publicContentMatches';
+import { fetchMyPublishedMenus } from './publicMenuBrowse';
+import {
+    fetchMyPublishedExercises,
+    publishExercise,
+    unpublishExercise,
+} from './publicExercises';
 import type { CustomExerciseData } from './publicMenuTypes';
 import { supabase } from './supabase';
+import type { Database } from './supabase-types';
 import { getAccountId } from './sync/authState';
 
 const builtInExerciseIds = new Set(EXERCISES.map((exercise) => exercise.id));
+export const PUBLIC_MENU_UNSUPPORTED_EXERCISE_ERROR = 'PUBLIC_MENU_UNSUPPORTED_EXERCISE';
 
-function matchesExerciseDefinition(
-    left: Pick<CustomExerciseData, 'name' | 'emoji' | 'sec' | 'placement'>,
-    right: Pick<CustomExerciseData, 'name' | 'emoji' | 'sec' | 'placement'>,
-): boolean {
-    return left.name === right.name
-        && left.emoji === right.emoji
-        && left.sec === right.sec
-        && left.placement === right.placement;
+interface MenuPublishExerciseDataResult {
+    customExerciseData: CustomExerciseData[];
+    unsupportedExerciseIds: string[];
 }
 
-async function getMenuCustomExerciseData(menu: MenuGroup): Promise<CustomExerciseData[]> {
+interface PublishMenuOptions {
+    existingPublicMenuId?: string;
+}
+
+async function getMenuCustomExerciseData(menu: MenuGroup): Promise<MenuPublishExerciseDataResult> {
     const uniqueCustomIds = [...new Set(
         getMenuGroupItems(menu)
             .filter((item): item is Extract<MenuGroupItem, { kind: 'exercise_ref' }> => item.kind === 'exercise_ref')
@@ -30,22 +37,38 @@ async function getMenuCustomExerciseData(menu: MenuGroup): Promise<CustomExercis
             .filter((id) => !builtInExerciseIds.has(id)),
     )];
     if (uniqueCustomIds.length === 0) {
-        return [];
+        return {
+            customExerciseData: [],
+            unsupportedExerciseIds: [],
+        };
     }
 
     const allCustomExercises = await getCustomExercises();
+    const customExerciseById = new Map(allCustomExercises.map((exercise) => [exercise.id, exercise]));
+    const unsupportedExerciseIds: string[] = [];
+    const customExerciseData: CustomExerciseData[] = [];
 
-    return uniqueCustomIds
-        .map((id) => allCustomExercises.find((exercise) => exercise.id === id))
-        .filter((exercise): exercise is CustomExercise => Boolean(exercise))
-        .map((exercise) => ({
+    for (const id of uniqueCustomIds) {
+        const exercise = customExerciseById.get(id);
+        if (!exercise) {
+            unsupportedExerciseIds.push(id);
+            continue;
+        }
+
+        customExerciseData.push({
             id: exercise.id,
             name: exercise.name,
             sec: exercise.sec,
             emoji: exercise.emoji,
             placement: exercise.placement,
             hasSplit: exercise.hasSplit,
-        }));
+        });
+    }
+
+    return {
+        customExerciseData,
+        unsupportedExerciseIds,
+    };
 }
 
 async function ensurePublishedCustomExercises(
@@ -56,13 +79,7 @@ async function ensurePublishedCustomExercises(
         return;
     }
 
-    const myPublished = await fetchMyPublishedExercises();
-
     for (const exercise of customExerciseData) {
-        const alreadyPublished = myPublished.find((published) => matchesExerciseDefinition(exercise, published));
-        if (alreadyPublished) {
-            continue;
-        }
         await publishExercise(
             {
                 id: exercise.id,
@@ -73,11 +90,19 @@ async function ensurePublishedCustomExercises(
                 hasSplit: exercise.hasSplit,
             },
             authorName,
+            {
+                sourceCustomExerciseId: exercise.id,
+                preserveWithoutMenu: false,
+            },
         );
     }
 }
 
-export async function publishMenu(menu: MenuGroup, authorName: string): Promise<void> {
+export async function publishMenu(
+    menu: MenuGroup,
+    authorName: string,
+    options: PublishMenuOptions = {},
+): Promise<void> {
     if (!supabase) {
         return;
     }
@@ -88,10 +113,16 @@ export async function publishMenu(menu: MenuGroup, authorName: string): Promise<
     }
 
     const menuItems = getMenuGroupItems(menu);
-    const customExerciseData = await getMenuCustomExerciseData(menu);
-    await ensurePublishedCustomExercises(customExerciseData, authorName);
+    const { customExerciseData, unsupportedExerciseIds } = await getMenuCustomExerciseData(menu);
+    if (unsupportedExerciseIds.length > 0) {
+        throw new Error(PUBLIC_MENU_UNSUPPORTED_EXERCISE_ERROR);
+    }
 
-    const { error } = await supabase.from('public_menus').insert({
+    await ensurePublishedCustomExercises(customExerciseData, authorName);
+    const existingMenuId = options.existingPublicMenuId
+        ?? findPublishedMenuMatch(menu, await fetchMyPublishedMenus())?.id
+        ?? null;
+    const payload: PublicMenuInsert = {
         name: menu.name,
         emoji: menu.emoji,
         description: menu.description,
@@ -100,7 +131,16 @@ export async function publishMenu(menu: MenuGroup, authorName: string): Promise<
         custom_exercise_data: customExerciseData,
         author_name: authorName,
         account_id: accountId,
-    });
+        source_menu_group_id: menu.id,
+    };
+
+    const { error } = existingMenuId
+        ? await supabase
+            .from('public_menus')
+            .update(payload)
+            .eq('id', existingMenuId)
+            .eq('account_id', accountId)
+        : await supabase.from('public_menus').insert(payload);
 
     if (error) {
         throw error;
@@ -140,14 +180,68 @@ export async function unpublishMenu(id: string): Promise<void> {
     }
 
     try {
-        const myPublished = await fetchMyPublishedExercises();
+        const [myPublishedExercises, myPublishedMenus] = await Promise.all([
+            fetchMyPublishedExercises(),
+            fetchMyPublishedMenus(),
+        ]);
+        const otherPublishedMenus = myPublishedMenus.filter((menu) => menu.id !== id);
+
         for (const exercise of customData) {
-            const published = myPublished.find((candidate) => matchesExerciseDefinition(exercise, candidate));
-            if (published) {
-                await unpublishExercise(published.id);
+            const published = findPublishedExerciseMatch(
+                toCustomExercise(exercise),
+                myPublishedExercises,
+            );
+            if (!published || published.preserveWithoutMenu) {
+                continue;
             }
+
+            const stillReferencedByOtherMenu = otherPublishedMenus.some((menu) =>
+                menu.customExerciseData.some((candidate) => candidate.id === exercise.id),
+            );
+            if (stillReferencedByOtherMenu) {
+                continue;
+            }
+
+            await unpublishExercise(published.id);
         }
     } catch (error) {
         console.warn('[unpublishMenu] auto-unpublish exercises failed:', error);
     }
+}
+
+export async function linkPublishedMenuToSource(
+    publicMenuId: string,
+    sourceMenuGroupId: string,
+): Promise<void> {
+    if (!supabase) {
+        return;
+    }
+
+    const accountId = getAccountId();
+    if (!accountId) {
+        return;
+    }
+
+    const { error } = await supabase
+        .from('public_menus')
+        .update({ source_menu_group_id: sourceMenuGroupId })
+        .eq('id', publicMenuId)
+        .eq('account_id', accountId);
+
+    if (error) {
+        throw error;
+    }
+}
+
+type PublicMenuInsert = Database['public']['Tables']['public_menus']['Insert'];
+
+function toCustomExercise(exercise: CustomExerciseData): CustomExercise {
+    return {
+        id: exercise.id,
+        name: exercise.name,
+        sec: exercise.sec,
+        emoji: exercise.emoji,
+        placement: exercise.placement,
+        hasSplit: exercise.hasSplit,
+    };
 }

@@ -13,13 +13,18 @@ import {
     type ExercisePlacement,
 } from '../../data/exercisePlacement';
 import { saveCustomExercise, type CustomExercise } from '../../lib/db';
-import { publishExercise } from '../../lib/publicExercises';
+import {
+    linkPublishedExerciseToSource,
+    publishExercise,
+    type PublicExercise,
+} from '../../lib/publicExercises';
 import { getAccountId } from '../../lib/sync';
 import { PublishToggleCard } from './create-group/PublishToggleCard';
 import { COLOR, FONT, FONT_SIZE, inputField } from '../../lib/styles';
 
 interface SingleExerciseEditorProps {
     initial?: CustomExercise | null;
+    publishedExercise?: PublicExercise | null;
     currentUserId?: string;
     authorName?: string;
     submitLabel?: string;
@@ -30,6 +35,7 @@ interface SingleExerciseEditorProps {
 
 export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({
     initial,
+    publishedExercise = null,
     currentUserId,
     authorName,
     submitLabel,
@@ -75,6 +81,14 @@ export const SingleExerciseEditor: React.FC<SingleExerciseEditorProps> = ({
                 await onSaveExercise(ex);
             } else {
                 await saveCustomExercise(ex);
+            }
+
+            if (!onSaveExercise && isEditing && publishedExercise) {
+                await linkPublishedExerciseToSource(
+                    publishedExercise.id,
+                    ex.id,
+                    { preserveWithoutMenu: publishedExercise.preserveWithoutMenu },
+                );
             }
 
             if (!onSaveExercise && isPublic && !isEditing && isLoggedIn && authorName) {

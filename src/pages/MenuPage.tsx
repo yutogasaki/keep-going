@@ -180,9 +180,12 @@ export const MenuPage: React.FC = () => {
     }
 
     if (showCreateEx || editEx) {
+        const publishedExercise = editEx ? findPublishedExercise(editEx) : undefined;
+
         return (
             <SingleExerciseEditor
                 initial={editEx}
+                publishedExercise={publishedExercise}
                 currentUserId={sessionUserIds.length === 1 ? sessionUserIds[0] : undefined}
                 authorName={currentUsers[0]?.name ?? 'ゲスト'}
                 onSave={handleCreatedEx}

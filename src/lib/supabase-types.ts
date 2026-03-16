@@ -405,6 +405,7 @@ export interface Database {
                     account_id: string;
                     download_count: number;
                     custom_exercise_data: unknown[];
+                    source_menu_group_id: string | null;
                     created_at: string;
                 };
                 Insert: {
@@ -418,6 +419,7 @@ export interface Database {
                     account_id: string;
                     download_count?: number;
                     custom_exercise_data?: unknown[];
+                    source_menu_group_id?: string | null;
                 };
                 Update: Partial<Database['public']['Tables']['public_menus']['Insert']>;
                 Relationships: [];
@@ -526,6 +528,8 @@ export interface Database {
                     author_name: string;
                     account_id: string;
                     download_count: number;
+                    source_custom_exercise_id: string | null;
+                    preserve_without_menu: boolean;
                     created_at: string;
                 };
                 Insert: {
@@ -539,6 +543,8 @@ export interface Database {
                     author_name: string;
                     account_id: string;
                     download_count?: number;
+                    source_custom_exercise_id?: string | null;
+                    preserve_without_menu?: boolean;
                 };
                 Update: Partial<Database['public']['Tables']['public_exercises']['Insert']>;
                 Relationships: [];

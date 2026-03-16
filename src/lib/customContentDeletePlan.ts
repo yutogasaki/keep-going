@@ -1,8 +1,9 @@
 import type { MenuGroup } from '../data/menuGroups';
 import { type CustomExercise } from './db';
 import { removeExerciseFromMenuGroup } from './menuExerciseCleanup';
-import { createPublicMenuDedupKey, type PublicMenu } from './publicMenus';
+import type { PublicMenu } from './publicMenuTypes';
 import type { PublicExercise } from './publicExercises';
+import { findPublishedExerciseMatch, findPublishedMenuMatch } from './publicContentMatches';
 
 export interface CustomGroupDeletePlan {
     isPublished: boolean;
@@ -18,28 +19,7 @@ export interface CustomExerciseDeletePlan {
     removedMenuNames: string[];
 }
 
-export function findPublishedMenuMatch(
-    group: MenuGroup,
-    publishedMenus: PublicMenu[],
-): PublicMenu | undefined {
-    const groupKey = createPublicMenuDedupKey(group);
-
-    return publishedMenus.find(
-        (publishedMenu) => createPublicMenuDedupKey(publishedMenu) === groupKey,
-    );
-}
-
-export function findPublishedExerciseMatch(
-    exercise: CustomExercise,
-    publishedExercises: PublicExercise[],
-): PublicExercise | undefined {
-    return publishedExercises.find(
-        (publishedExercise) => publishedExercise.name === exercise.name
-            && publishedExercise.emoji === exercise.emoji
-            && publishedExercise.sec === exercise.sec
-            && publishedExercise.placement === exercise.placement,
-    );
-}
+export { findPublishedExerciseMatch, findPublishedMenuMatch };
 
 export function buildCustomGroupDeletePlan(
     group: MenuGroup | null,

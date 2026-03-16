@@ -8,6 +8,8 @@ import {
     removeExerciseFromTeacherMenu,
     teacherMenuReferencesExercise,
 } from '../../../lib/menuExerciseCleanup';
+import { findPublishedMenuMatch } from '../../../lib/publicContentMatches';
+import { fetchMyPublishedMenus, unpublishMenu } from '../../../lib/publicMenus';
 import {
     createTeacherExercise,
     createTeacherMenu,
@@ -347,6 +349,7 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
         setDeleteLoading(true);
         try {
             if (deleteTarget.type === 'exercise') {
+                const myPublishedMenus = await fetchMyPublishedMenus();
                 const impactedTeacherMenus = teacherMenus.filter((menu) =>
                     teacherMenuReferencesExercise(menu, deleteTarget.id),
                 );
@@ -376,6 +379,10 @@ export function useMenuSettingsController({ teacherEmail }: UseMenuSettingsContr
                 );
                 for (const group of impactedCustomGroups) {
                     const nextGroup = removeExerciseFromMenuGroup(group, deleteTarget.id);
+                    const publishedMenu = findPublishedMenuMatch(group, myPublishedMenus);
+                    if (publishedMenu) {
+                        await unpublishMenu(publishedMenu.id);
+                    }
                     if (nextGroup === null) {
                         await deleteCustomGroup(group.id);
                         continue;

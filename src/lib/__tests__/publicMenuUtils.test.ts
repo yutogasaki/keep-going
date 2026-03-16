@@ -21,6 +21,7 @@ function createMenu(overrides: Partial<PublicMenu> & Pick<PublicMenu, 'id' | 'na
         authorName: overrides.authorName ?? 'teacher',
         accountId: overrides.accountId ?? 'account-1',
         downloadCount: overrides.downloadCount ?? 0,
+        sourceMenuGroupId: overrides.sourceMenuGroupId ?? null,
         createdAt: overrides.createdAt ?? '2026-03-08T00:00:00.000Z',
     };
 }

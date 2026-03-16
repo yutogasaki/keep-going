@@ -14,9 +14,11 @@ import {
     pruneUnavailableExercisesFromMenuGroup,
     removeExerciseFromMenuGroup,
 } from '../../../lib/menuExerciseCleanup';
+import { findPublishedMenuMatch } from '../../../lib/publicContentMatches';
 import { unpublishExercise } from '../../../lib/publicExercises';
-import { unpublishMenu } from '../../../lib/publicMenus';
+import { fetchMyPublishedMenus, unpublishMenu } from '../../../lib/publicMenus';
 import { resolveMenuGroupToSessionPlannedItems, type SessionPlannedItem } from '../../../lib/sessionPlan';
+import { getAccountId } from '../../../lib/sync';
 import { fetchTeacherExercises } from '../../../lib/teacherContent';
 import type { UserProfileStore } from '../../../store/useAppStore';
 import { useMenuExercises } from './useMenuExercises';
@@ -136,10 +138,11 @@ export function useMenuPageData({
     }, [customExercises, exerciseData.exercises, teacherExercises]);
 
     const loadCustomData = useCallback(async () => {
-        const [allGroups, allExercises, allTeacherExercises] = await Promise.all([
+        const [allGroups, allExercises, allTeacherExercises, publishedMenus] = await Promise.all([
             getCustomGroups(),
             getCustomExercises(),
             fetchTeacherExercises(),
+            getAccountId() ? fetchMyPublishedMenus() : Promise.resolve([]),
         ]);
 
         const availableExerciseIds = new Set([
@@ -151,6 +154,13 @@ export function useMenuPageData({
         const sanitizedGroups: MenuGroup[] = [];
         for (const group of allGroups) {
             const nextGroup = pruneUnavailableExercisesFromMenuGroup(group, availableExerciseIds);
+            if (nextGroup !== group) {
+                const publishedMenu = findPublishedMenuMatch(group, publishedMenus);
+                if (publishedMenu) {
+                    await unpublishMenu(publishedMenu.id);
+                }
+            }
+
             if (nextGroup === null) {
                 await deleteCustomGroup(group.id);
                 continue;

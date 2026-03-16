@@ -3,11 +3,12 @@ import type { MenuGroup } from '../../../data/menuGroups';
 import {
     findPublishedExerciseMatch,
     findPublishedMenuMatch,
-} from '../../../lib/customContentDeletePlan';
+} from '../../../lib/publicContentMatches';
 import type { CustomExercise } from '../../../lib/db';
 import { getAccountId } from '../../../lib/sync';
 import {
     fetchMyPublishedMenus,
+    PUBLIC_MENU_UNSUPPORTED_EXERCISE_ERROR,
     publishMenu,
     type PublicMenu,
     unpublishMenu,
@@ -76,7 +77,12 @@ export function useMenuPublishActions({
             await refreshPublishedData();
         } catch (error) {
             console.warn('[menu] publish failed:', error);
-            onToast({ text: '公開に失敗しました', type: 'error' });
+            onToast({
+                text: error instanceof Error && error.message === PUBLIC_MENU_UNSUPPORTED_EXERCISE_ERROR
+                    ? '先生の種目が入っているメニューは公開できません'
+                    : '公開に失敗しました',
+                type: 'error',
+            });
         }
     }, [authorName, onToast, refreshPublishedData]);
 

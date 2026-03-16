@@ -19,7 +19,14 @@ export interface PublicExercise {
     authorName: string;
     accountId: string;
     downloadCount: number;
+    sourceCustomExerciseId: string | null;
+    preserveWithoutMenu: boolean;
     createdAt: string;
+}
+
+interface PublishExerciseOptions {
+    sourceCustomExerciseId?: string | null;
+    preserveWithoutMenu?: boolean;
 }
 
 export function getImportedPublicExerciseId(publicExerciseId: string): string {
@@ -55,12 +62,20 @@ async function fetchActiveExercises(
 
 // ─── Publish an exercise ────────────────────────────
 
-export async function publishExercise(exercise: CustomExercise, authorName: string): Promise<void> {
+export async function publishExercise(
+    exercise: CustomExercise,
+    authorName: string,
+    options: PublishExerciseOptions = {},
+): Promise<void> {
     if (!supabase) return;
     const accountId = getAccountId();
     if (!accountId) return;
 
-    const { error } = await supabase.from('public_exercises').insert({
+    const sourceCustomExerciseId = options.sourceCustomExerciseId ?? exercise.id;
+    const preserveWithoutMenu = options.preserveWithoutMenu ?? true;
+    const existing = await findOwnedPublishedExercise(accountId, exercise, sourceCustomExerciseId);
+
+    const payload = {
         name: exercise.name,
         sec: exercise.sec,
         emoji: exercise.emoji,
@@ -69,8 +84,25 @@ export async function publishExercise(exercise: CustomExercise, authorName: stri
         description: exercise.description ?? null,
         author_name: authorName,
         account_id: accountId,
-    });
+        source_custom_exercise_id: sourceCustomExerciseId,
+        preserve_without_menu: existing?.preserveWithoutMenu ?? preserveWithoutMenu,
+    };
 
+    if (existing) {
+        const { error } = await supabase
+            .from('public_exercises')
+            .update({
+                ...payload,
+                preserve_without_menu: existing.preserveWithoutMenu || preserveWithoutMenu,
+            })
+            .eq('id', existing.id)
+            .eq('account_id', accountId);
+
+        if (error) throw error;
+        return;
+    }
+
+    const { error } = await supabase.from('public_exercises').insert(payload);
     if (error) throw error;
 }
 
@@ -159,6 +191,31 @@ export async function unpublishExercise(id: string): Promise<void> {
     if (error) throw error;
 }
 
+export async function linkPublishedExerciseToSource(
+    publicExerciseId: string,
+    sourceCustomExerciseId: string,
+    options: Pick<PublishExerciseOptions, 'preserveWithoutMenu'> = {},
+): Promise<void> {
+    if (!supabase) return;
+    const accountId = getAccountId();
+    if (!accountId) return;
+
+    const updates: Database['public']['Tables']['public_exercises']['Update'] = {
+        source_custom_exercise_id: sourceCustomExerciseId,
+    };
+    if (options.preserveWithoutMenu !== undefined) {
+        updates.preserve_without_menu = options.preserveWithoutMenu;
+    }
+
+    const { error } = await supabase
+        .from('public_exercises')
+        .update(updates)
+        .eq('id', publicExerciseId)
+        .eq('account_id', accountId);
+
+    if (error) throw error;
+}
+
 // ─── Mapper ─────────────────────────────────────────
 
 function mapPublicExercise(row: PublicExerciseRow): PublicExercise {
@@ -173,6 +230,29 @@ function mapPublicExercise(row: PublicExerciseRow): PublicExercise {
         authorName: row.author_name,
         accountId: row.account_id,
         downloadCount: row.download_count,
+        sourceCustomExerciseId: row.source_custom_exercise_id ?? null,
+        preserveWithoutMenu: row.preserve_without_menu ?? true,
         createdAt: row.created_at,
     };
+}
+
+async function findOwnedPublishedExercise(
+    accountId: string,
+    exercise: CustomExercise,
+    sourceCustomExerciseId: string | null,
+): Promise<PublicExercise | null> {
+    const myPublished = await fetchMyPublishedExercises();
+    const bySource = sourceCustomExerciseId
+        ? myPublished.find((published) => published.sourceCustomExerciseId === sourceCustomExerciseId)
+        : undefined;
+    if (bySource) {
+        return bySource;
+    }
+
+    const identityKey = `${exercise.name}|${exercise.emoji}|${exercise.sec}|${exercise.placement}|${exercise.hasSplit ? '1' : '0'}`;
+    return myPublished.find((published) => (
+        published.accountId === accountId
+        && `${published.name}|${published.emoji}|${published.sec}|${published.placement}|${published.hasSplit ? '1' : '0'}`
+            === identityKey
+    )) ?? null;
 }

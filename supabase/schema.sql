@@ -257,6 +257,7 @@ create table public_menus (
   custom_exercise_data jsonb default '[]',
   author_name text not null,
   account_id uuid references auth.users not null,
+  source_menu_group_id text,
   download_count int default 0,
   created_at timestamptz default now()
 );
@@ -274,6 +275,7 @@ create index idx_challenge_attempts_account on challenge_attempts (account_id);
 create index idx_personal_challenges_account on personal_challenges (account_id);
 create index idx_personal_challenges_member_status on personal_challenges (member_id, status);
 create index idx_public_menus_downloads on public_menus (download_count desc);
+create index idx_public_menus_account_source_group on public_menus (account_id, source_menu_group_id);
 
 -- RLS
 alter table family_members enable row level security;
@@ -601,6 +603,8 @@ create table public_exercises (
   description text,
   author_name text not null,
   account_id uuid references auth.users not null,
+  source_custom_exercise_id text,
+  preserve_without_menu boolean not null default true,
   download_count int default 0,
   created_at timestamptz default now()
 );
@@ -611,6 +615,7 @@ create policy "Anyone can read public_exercises" on public_exercises
 create policy "Users can manage own public_exercises" on public_exercises
   for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
 create index idx_public_exercises_downloads on public_exercises (download_count desc);
+create index idx_public_exercises_account_source_exercise on public_exercises (account_id, source_custom_exercise_id);
 
 -- 種目ダウンロード重複防止
 create table exercise_downloads (

@@ -18,6 +18,7 @@ function makeMenu(overrides: Partial<PublicMenu> = {}): PublicMenu {
         authorName: 'だれか',
         accountId: 'account-1',
         downloadCount: 0,
+        sourceMenuGroupId: null,
         createdAt: '2026-03-10T00:00:00.000Z',
         ...overrides,
     };
@@ -35,6 +36,8 @@ function makeExercise(overrides: Partial<PublicExercise> = {}): PublicExercise {
         authorName: 'だれか',
         accountId: 'account-1',
         downloadCount: 0,
+        sourceCustomExerciseId: null,
+        preserveWithoutMenu: true,
         createdAt: '2026-03-10T00:00:00.000Z',
         ...overrides,
     };

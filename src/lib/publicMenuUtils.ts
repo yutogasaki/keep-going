@@ -215,6 +215,7 @@ export function mapPublicMenu(row: PublicMenuRow): PublicMenu {
         authorName: row.author_name,
         accountId: row.account_id,
         downloadCount: row.download_count,
+        sourceMenuGroupId: row.source_menu_group_id ?? null,
         createdAt: row.created_at,
     };
 }

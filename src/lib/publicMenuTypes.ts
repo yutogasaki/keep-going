@@ -24,5 +24,6 @@ export interface PublicMenu {
     authorName: string;
     accountId: string;
     downloadCount: number;
+    sourceMenuGroupId: string | null;
     createdAt: string;
 }
