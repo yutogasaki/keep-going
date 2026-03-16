@@ -46,6 +46,9 @@ export const ExpiredChallengeCard: React.FC<ExpiredChallengeCardProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ fontSize: 20 }}>{emoji}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
+                        <span style={challengeBadgeStyle}>先生チャレンジ</span>
+                    </div>
                     <div style={{
                         fontFamily: "'Noto Sans JP', sans-serif",
                         fontSize: 13,
@@ -107,4 +110,14 @@ export const ExpiredChallengeCard: React.FC<ExpiredChallengeCardProps> = ({
             </div>
         </motion.div>
     );
+};
+
+const challengeBadgeStyle: React.CSSProperties = {
+    fontFamily: "'Noto Sans JP', sans-serif",
+    fontSize: 10,
+    fontWeight: 800,
+    color: '#5F6B77',
+    background: 'rgba(148, 163, 184, 0.16)',
+    borderRadius: 999,
+    padding: '3px 8px',
 };

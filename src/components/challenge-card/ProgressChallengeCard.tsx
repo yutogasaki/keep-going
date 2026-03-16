@@ -47,6 +47,9 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                 <span style={{ fontSize: 22 }}>{emoji}</span>
                 <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
+                        <span style={challengeBadgeStyle}>先生チャレンジ</span>
+                    </div>
                     <div style={{
                         fontFamily: "'Noto Sans JP', sans-serif",
                         fontSize: 13,
@@ -114,4 +117,14 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
             </div>
         </motion.div>
     );
+};
+
+const challengeBadgeStyle: React.CSSProperties = {
+    fontFamily: "'Noto Sans JP', sans-serif",
+    fontSize: 10,
+    fontWeight: 800,
+    color: '#1E7F6D',
+    background: 'rgba(43, 186, 160, 0.12)',
+    borderRadius: 999,
+    padding: '3px 8px',
 };

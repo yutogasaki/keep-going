@@ -94,7 +94,7 @@ export const PersonalChallengeCard: React.FC<PersonalChallengeCardProps> = ({
                             borderRadius: 999,
                             padding: '2px 7px',
                         }}>
-                            じぶん
+                            じぶんチャレンジ
                         </span>
                         {owner ? (
                             <span style={{

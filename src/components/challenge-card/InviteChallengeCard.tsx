@@ -43,6 +43,9 @@ export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                 <span style={{ fontSize: 28, lineHeight: 1 }}>{emoji}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+                        <span style={challengeBadgeStyle}>先生チャレンジ</span>
+                    </div>
                     <div style={{
                         fontFamily: "'Noto Sans JP', sans-serif",
                         fontSize: 14,
@@ -122,4 +125,14 @@ export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
             </motion.button>
         </motion.div>
     );
+};
+
+const challengeBadgeStyle: React.CSSProperties = {
+    fontFamily: "'Noto Sans JP', sans-serif",
+    fontSize: 10,
+    fontWeight: 800,
+    color: '#1E7F6D',
+    background: 'rgba(43, 186, 160, 0.14)',
+    borderRadius: 999,
+    padding: '3px 8px',
 };
