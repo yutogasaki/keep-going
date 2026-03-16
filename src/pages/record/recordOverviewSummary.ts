@@ -70,11 +70,34 @@ export interface RecordHistoryAccordionSection {
 }
 
 const WEEKDAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'];
+
+function getSessionClockParts(iso: string): { hour: number; minute: number } | null {
+    const match = iso.match(/T(\d{2}):(\d{2})/);
+    if (match) {
+        return {
+            hour: Number(match[1]),
+            minute: Number(match[2]),
+        };
+    }
+
+    const parsed = new Date(iso);
+    if (Number.isNaN(parsed.getTime())) {
+        return null;
+    }
+
+    return {
+        hour: parsed.getHours(),
+        minute: parsed.getMinutes(),
+    };
+}
+
 function formatTime(iso: string): string {
-    return new Date(iso).toLocaleTimeString('ja-JP', {
-        hour: '2-digit',
-        minute: '2-digit',
-    });
+    const clock = getSessionClockParts(iso);
+    if (!clock) {
+        return '--:--';
+    }
+
+    return `${String(clock.hour).padStart(2, '0')}:${String(clock.minute).padStart(2, '0')}`;
 }
 
 function getTimeBucket(hour: number): 'morning' | 'daytime' | 'evening' | 'night' {
@@ -129,7 +152,7 @@ function buildTodayRhythmLine(todaySessions: SessionRecord[]): string {
     }
 
     const sortedBuckets = todaySessions
-        .map((session) => getTimeBucket(new Date(session.startedAt).getHours()))
+        .map((session) => getTimeBucket(getSessionClockParts(session.startedAt)?.hour ?? 0))
         .sort((a, b) => {
             const order = ['morning', 'daytime', 'evening', 'night'];
             return order.indexOf(a) - order.indexOf(b);
@@ -237,7 +260,7 @@ export function buildTwoWeekRecordSummary({
     for (const session of recentSessions) {
         secondsByDate.set(session.date, (secondsByDate.get(session.date) ?? 0) + session.totalSeconds);
 
-        const bucket = getTimeBucket(new Date(session.startedAt).getHours());
+        const bucket = getTimeBucket(getSessionClockParts(session.startedAt)?.hour ?? 0);
         timeBucketCounts.set(bucket, (timeBucketCounts.get(bucket) ?? 0) + 1);
         const plannedItemMap = buildPlannedItemExerciseMap(session);
 
