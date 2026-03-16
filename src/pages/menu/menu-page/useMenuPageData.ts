@@ -3,6 +3,7 @@ import type { Exercise } from '../../../data/exercises';
 import { getMenuGroupItems, getPresetsForClass, type MenuGroup } from '../../../data/menuGroups';
 import { audio } from '../../../lib/audio';
 import { deleteCustomGroup, getCustomGroups } from '../../../lib/customGroups';
+import { subscribeCustomContentUpdated } from '../../../lib/customContentEvents';
 import { deleteCustomExercise, getCustomExercises, type CustomExercise } from '../../../lib/db';
 import {
     resolveMenuGroupToSessionPlannedItems,
@@ -106,20 +107,21 @@ export function useMenuPageData({
         requiredExercises: userContext.requiredExercises,
         excludedExercises: userContext.excludedExercises,
     });
+    const teacherExercises = teacherContent.teacherExercises;
 
-    const sessionExerciseLookup = useMemo<Map<string, Exercise | CustomExercise | typeof teacherContent.teacherExercises[number]>>(() => {
-        const lookup = new Map<string, Exercise | CustomExercise | typeof teacherContent.teacherExercises[number]>();
+    const sessionExerciseLookup = useMemo<Map<string, Exercise | CustomExercise | typeof teacherExercises[number]>>(() => {
+        const lookup = new Map<string, Exercise | CustomExercise | typeof teacherExercises[number]>();
         for (const exercise of exerciseData.exercises) {
             lookup.set(exercise.id, exercise);
         }
         for (const exercise of customExercises) {
             lookup.set(exercise.id, exercise);
         }
-        for (const exercise of teacherContent.teacherExercises) {
+        for (const exercise of teacherExercises) {
             lookup.set(exercise.id, exercise);
         }
         return lookup;
-    }, [customExercises, exerciseData.exercises, teacherContent.teacherExercises]);
+    }, [customExercises, exerciseData.exercises, teacherExercises]);
 
     const loadCustomData = useCallback(async () => {
         const [allGroups, allExercises] = await Promise.all([
@@ -152,6 +154,12 @@ export function useMenuPageData({
 
     useEffect(() => {
         void loadCustomData();
+    }, [loadCustomData]);
+
+    useEffect(() => {
+        return subscribeCustomContentUpdated(() => {
+            void loadCustomData();
+        });
     }, [loadCustomData]);
 
     const handleGroupTap = useCallback((group: MenuGroup) => {

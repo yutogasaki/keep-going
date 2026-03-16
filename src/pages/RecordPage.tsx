@@ -11,6 +11,7 @@ import { ScreenScaffold } from '../components/ScreenScaffold';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { SCREEN_PADDING_X } from '../lib/styles';
 import { getCustomGroups } from '../lib/customGroups';
+import { subscribeCustomContentUpdated } from '../lib/customContentEvents';
 import { getAllSessions, getCustomExercises, getTodayKey, type CustomExercise, type SessionRecord } from '../lib/db';
 import { subscribeTeacherContentUpdated } from '../lib/teacherContentEvents';
 import { EXERCISES } from '../data/exercises';
@@ -198,6 +199,12 @@ export const RecordPage: React.FC = () => {
     useEffect(() => {
         return subscribeTeacherContentUpdated(() => {
             void loadExerciseMap(true);
+        });
+    }, [loadExerciseMap]);
+
+    useEffect(() => {
+        return subscribeCustomContentUpdated(() => {
+            void loadExerciseMap();
         });
     }, [loadExerciseMap]);
 

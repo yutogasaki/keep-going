@@ -5,6 +5,7 @@ import type { MenuGroup } from '../data/menuGroups';
 import { getAccountId } from './sync/authState';
 import { deleteMenuGroupRemote, pushMenuGroup } from './sync/push';
 import { useSyncStatus } from '../store/useSyncStatus';
+import { dispatchCustomContentUpdated } from './customContentEvents';
 
 function onSyncError(error: unknown): void {
     console.warn('[sync]', error);
@@ -24,6 +25,7 @@ export async function getCustomGroups(): Promise<MenuGroup[]> {
 export async function saveCustomGroup(group: MenuGroup): Promise<void> {
     const saved = { ...group, isPreset: false };
     await groupsDB.setItem(group.id, saved);
+    dispatchCustomContentUpdated();
     if (getAccountId()) {
         pushMenuGroup(saved).catch(onSyncError);
     }
@@ -31,6 +33,7 @@ export async function saveCustomGroup(group: MenuGroup): Promise<void> {
 
 export async function deleteCustomGroup(id: string): Promise<void> {
     await groupsDB.removeItem(id);
+    dispatchCustomContentUpdated();
     if (getAccountId()) {
         deleteMenuGroupRemote(id).catch(onSyncError);
     }
@@ -44,4 +47,3 @@ export async function saveCustomGroupDirect(group: MenuGroup): Promise<void> {
 export async function clearGroupsDB(): Promise<void> {
     await groupsDB.clear();
 }
-

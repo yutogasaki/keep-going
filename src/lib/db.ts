@@ -6,6 +6,7 @@ import { useSyncStatus } from '../store/useSyncStatus';
 import { normalizeExercisePlacement, type ExercisePlacement } from '../data/exercisePlacement';
 import type { SessionPlannedItem } from './sessionPlan';
 import type { SessionMenuSource } from '../store/use-app-store/types';
+import { dispatchCustomContentUpdated } from './customContentEvents';
 
 function onSyncError(error: unknown): void {
     console.warn('[sync]', error);
@@ -208,6 +209,7 @@ async function deleteCloudData(): Promise<void> {
 export async function saveCustomExercise(ex: CustomExercise): Promise<void> {
     const normalized = normalizeCustomExercise(ex);
     await customExercisesDB.setItem(normalized.id, normalized);
+    dispatchCustomContentUpdated();
     if (getAccountId()) {
         syncPushCustomExercise(normalized).catch(onSyncError);
     }
@@ -234,6 +236,7 @@ export async function getCustomExercises(): Promise<CustomExercise[]> {
 
 export async function deleteCustomExercise(id: string): Promise<void> {
     await customExercisesDB.removeItem(id);
+    dispatchCustomContentUpdated();
     if (getAccountId()) {
         deleteCustomExerciseRemote(id).catch(onSyncError);
     }

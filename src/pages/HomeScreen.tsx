@@ -18,6 +18,7 @@ import { EXERCISES } from '../data/exercises';
 import type { ExercisePlacement } from '../data/exercisePlacement';
 import type { MenuGroup } from '../data/menuGroups';
 import { getCustomGroups } from '../lib/customGroups';
+import { subscribeCustomContentUpdated } from '../lib/customContentEvents';
 import { getCustomExercises, type CustomExercise } from '../lib/db';
 import { type PublicExercise } from '../lib/publicExercises';
 import { type PublicMenu } from '../lib/publicMenus';
@@ -319,6 +320,12 @@ export const HomeScreen: React.FC = () => {
 
     useEffect(() => {
         void loadCustomChallengeTargets();
+    }, [loadCustomChallengeTargets]);
+
+    useEffect(() => {
+        return subscribeCustomContentUpdated(() => {
+            void loadCustomChallengeTargets();
+        });
     }, [loadCustomChallengeTargets]);
 
     const queueMilestoneEvent = useCallback((event: FuwafuwaMilestoneEvent) => {
