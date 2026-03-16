@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { migrateAppState } from '../migrate';
+import type { PersistedAppStateRecord } from '../migrateHelpers';
 import { makeV0State } from './migrationTestHelpers';
 
 vi.mock('../../../lib/db', () => ({
@@ -26,7 +27,9 @@ describe('legacy migrations', () => {
         const state = makeV0State({ requiredExercises: ['S01', 'S07'] });
         migrateAppState(state, 0);
 
-        const filtered = state.requiredExercises?.filter((id: string) => id === 'S07') ?? [];
+        const filtered = Array.isArray(state.requiredExercises)
+            ? state.requiredExercises.filter((id): id is string => id === 'S07')
+            : [];
         expect(filtered.length).toBeLessThanOrEqual(1);
     });
 
@@ -73,7 +76,7 @@ describe('legacy migrations', () => {
     });
 
     it('v5 moves global settings into the first user', () => {
-        const state: any = {
+        const state: PersistedAppStateRecord = {
             ...makeV0State(),
             users: [{ id: 'u1', name: 'テスト' }],
             sessionUserIds: ['u1'],
@@ -91,7 +94,7 @@ describe('legacy migrations', () => {
     });
 
     it('v5 removes migrated global exercise fields', () => {
-        const state: any = {
+        const state: PersistedAppStateRecord = {
             ...makeV0State(),
             users: [{ id: 'u1', name: 'テスト' }],
             sessionUserIds: ['u1'],
@@ -106,7 +109,7 @@ describe('legacy migrations', () => {
     });
 
     it('v5 gives later users default per-user settings', () => {
-        const state: any = {
+        const state: PersistedAppStateRecord = {
             ...makeV0State(),
             users: [
                 { id: 'u1', name: 'ユーザー1' },

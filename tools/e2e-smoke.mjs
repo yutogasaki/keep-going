@@ -9,7 +9,15 @@ const previewPort = 4173 + Math.floor(Math.random() * 1000);
 const baseUrl = `http://127.0.0.1:${previewPort}`;
 const artifactsDir = path.join(rootDir, 'artifacts', 'qa');
 const storageKey = 'keepgoing-app-state';
-const appStateVersion = 17;
+const migrateSource = await fs.readFile(
+    path.join(rootDir, 'src', 'store', 'use-app-store', 'migrate.ts'),
+    'utf8',
+);
+const appStateVersionMatch = migrateSource.match(/APP_STATE_VERSION = (\d+)/);
+if (!appStateVersionMatch) {
+    throw new Error('Failed to read APP_STATE_VERSION from migrate.ts');
+}
+const appStateVersion = Number(appStateVersionMatch[1]);
 const desktopSpeedMultiplier = 4;
 const mobileSpeedMultiplier = 40;
 const smokeEnv = {
@@ -60,13 +68,21 @@ function createPersistedState(exerciseIds) {
             notificationsEnabled: false,
             notificationTime: '21:00',
             hasSeenSessionControlsHint: true,
+            dismissedHomeAnnouncementIds: [],
+            homeVisitMemory: {
+                soloByUserId: {},
+                familyByUserSet: {},
+            },
             sessionDraft: {
+                kind: 'auto',
                 date: getTodayKey(),
                 exerciseIds,
-                userIds: [],
+                userIds: ['qa-user-1'],
                 returnTab: 'home',
             },
+            sessionUserIds: ['qa-user-1'],
             joinedChallengeIds: {},
+            challengeEnrollmentWindows: {},
             debugFuwafuwaStage: null,
             debugFuwafuwaType: null,
             debugActiveDays: null,

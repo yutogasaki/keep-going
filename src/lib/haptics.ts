@@ -10,7 +10,7 @@ export const haptics = {
         if (typeof window !== 'undefined' && 'navigator' in window && 'vibrate' in navigator) {
             try {
                 navigator.vibrate(pattern);
-            } catch (e) {
+            } catch {
                 // Ignore, as some browsers completely block it or throw
             }
         }

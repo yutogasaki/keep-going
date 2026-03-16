@@ -2,6 +2,76 @@ import { getTodayKey } from '../../lib/db';
 import type { AppState } from './types';
 import { sanitizePersistedState, sanitizeSessionDraft } from './migrateHelpers';
 
+type LegacyUserRecord = Record<string, unknown>;
+type MutableMigratingState = Record<string, unknown> & {
+    users?: unknown;
+    sessionUserIds?: unknown;
+    requiredExercises?: unknown;
+    excludedExercises?: unknown;
+    dailyTargetMinutes?: unknown;
+    bgmEnabled?: unknown;
+    hapticEnabled?: unknown;
+    joinedChallengeIds?: unknown;
+    dismissedHomeAnnouncementIds?: unknown;
+    homeVisitMemory?: unknown;
+    challengeEnrollmentWindows?: unknown;
+    sessionDraft?: unknown;
+    hasSeenSessionControlsHint?: unknown;
+    ttsRate?: unknown;
+    ttsPitch?: unknown;
+    classLevel?: unknown;
+    fuwafuwaBirthDate?: unknown;
+    fuwafuwaType?: unknown;
+    fuwafuwaCycleCount?: unknown;
+    fuwafuwaName?: unknown;
+    pastFuwafuwas?: unknown;
+    notifiedFuwafuwaStages?: unknown;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function getLegacyUsers(value: unknown): LegacyUserRecord[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value.filter(isRecord);
+}
+
+function mapLegacyUsers(
+    state: MutableMigratingState,
+    mapper: (user: LegacyUserRecord, index: number) => LegacyUserRecord,
+): void {
+    const users = getLegacyUsers(state.users);
+    if (users.length === 0) {
+        return;
+    }
+
+    state.users = users.map(mapper);
+}
+
+function getStringArray(value: unknown): string[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value.filter((item): item is string => typeof item === 'string');
+}
+
+function getFiniteNumber(value: unknown, fallback: number): number {
+    return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function getNonEmptyString(value: unknown, fallback: string): string {
+    return typeof value === 'string' && value.length > 0 ? value : fallback;
+}
+
+function getNullableString(value: unknown): string | null {
+    return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
 export const APP_STATE_VERSION = 21;
 
 export type PersistedAppState = Pick<
@@ -49,12 +119,17 @@ export const PERSISTED_APP_STATE_KEYS = [
     'challengeEnrollmentWindows',
 ] as const satisfies ReadonlyArray<keyof PersistedAppState>;
 
-export function migrateAppState(persistedState: any, version: number): AppState {
-    const state = persistedState as any;
+export function migrateAppState(persistedState: unknown, version: number): AppState {
+    const state = (isRecord(persistedState) ? persistedState : {}) as MutableMigratingState;
 
     if (version === 0) {
-        if (state.requiredExercises && !state.requiredExercises.includes('S07')) {
-            state.requiredExercises.push('S07');
+        const requiredExercises = Array.isArray(state.requiredExercises)
+            ? getStringArray(state.requiredExercises)
+            : null;
+
+        if (requiredExercises && !requiredExercises.includes('S07')) {
+            requiredExercises.push('S07');
+            state.requiredExercises = requiredExercises;
         }
     }
 
@@ -64,21 +139,24 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     if (version < 3) {
-        if (!state.users || state.users.length === 0) {
-            const legacyUser: any = {
-                id: crypto.randomUUID(),
-                name: state.fuwafuwaName || 'ゲスト',
-                classLevel: state.classLevel || '初級',
-                fuwafuwaBirthDate: state.fuwafuwaBirthDate || getTodayKey(),
-                fuwafuwaType: state.fuwafuwaType || Math.floor(Math.random() * 10),
-                fuwafuwaCycleCount: state.fuwafuwaCycleCount || 1,
-                fuwafuwaName: state.fuwafuwaName || null,
-                pastFuwafuwas: state.pastFuwafuwas || [],
-                notifiedFuwafuwaStages: state.notifiedFuwafuwaStages || [],
+        if (getLegacyUsers(state.users).length === 0) {
+            const legacyUserId = crypto.randomUUID();
+            const legacyUser: LegacyUserRecord = {
+                id: legacyUserId,
+                name: getNonEmptyString(state.fuwafuwaName, 'ゲスト'),
+                classLevel: getNonEmptyString(state.classLevel, '初級'),
+                fuwafuwaBirthDate: getNonEmptyString(state.fuwafuwaBirthDate, getTodayKey()),
+                fuwafuwaType: getFiniteNumber(state.fuwafuwaType, Math.floor(Math.random() * 10)),
+                fuwafuwaCycleCount: getFiniteNumber(state.fuwafuwaCycleCount, 1),
+                fuwafuwaName: getNullableString(state.fuwafuwaName),
+                pastFuwafuwas: Array.isArray(state.pastFuwafuwas) ? state.pastFuwafuwas : [],
+                notifiedFuwafuwaStages: Array.isArray(state.notifiedFuwafuwaStages)
+                    ? state.notifiedFuwafuwaStages
+                    : [],
             };
 
             state.users = [legacyUser];
-            state.sessionUserIds = [legacyUser.id];
+            state.sessionUserIds = [legacyUserId];
         }
 
         delete state.classLevel;
@@ -91,35 +169,31 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     if (version < 4) {
-        if (!state.excludedExercises || state.excludedExercises.length === 0) {
+        const excludedExercises = getStringArray(state.excludedExercises);
+        if (excludedExercises.length === 0) {
             state.excludedExercises = ['C01', 'C02'];
         }
     }
 
     if (version < 5) {
-        const globalTarget = state.dailyTargetMinutes ?? 10;
-        const globalExcluded = state.excludedExercises ?? ['C01', 'C02'];
-        const globalRequired = state.requiredExercises ?? ['S01', 'S02', 'S07'];
+        const globalTarget = getFiniteNumber(state.dailyTargetMinutes, 10);
+        const globalExcluded = Array.isArray(state.excludedExercises)
+            ? getStringArray(state.excludedExercises)
+            : ['C01', 'C02'];
+        const globalRequired = Array.isArray(state.requiredExercises)
+            ? getStringArray(state.requiredExercises)
+            : ['S01', 'S02', 'S07'];
 
-        if (state.users && Array.isArray(state.users)) {
-            state.users = state.users.map((user: any, index: number) => {
-                if (index === 0) {
-                    return {
-                        ...user,
-                        dailyTargetMinutes: user.dailyTargetMinutes ?? globalTarget,
-                        excludedExercises: user.excludedExercises ?? globalExcluded,
-                        requiredExercises: user.requiredExercises ?? globalRequired,
-                    };
-                }
-
-                return {
-                    ...user,
-                    dailyTargetMinutes: user.dailyTargetMinutes ?? 10,
-                    excludedExercises: user.excludedExercises ?? ['C01', 'C02'],
-                    requiredExercises: user.requiredExercises ?? ['S01', 'S02', 'S07'],
-                };
-            });
-        }
+        mapLegacyUsers(state, (user, index) => ({
+            ...user,
+            dailyTargetMinutes: getFiniteNumber(user.dailyTargetMinutes, index === 0 ? globalTarget : 10),
+            excludedExercises: Array.isArray(user.excludedExercises)
+                ? getStringArray(user.excludedExercises)
+                : (index === 0 ? globalExcluded : ['C01', 'C02']),
+            requiredExercises: Array.isArray(user.requiredExercises)
+                ? getStringArray(user.requiredExercises)
+                : (index === 0 ? globalRequired : ['S01', 'S02', 'S07']),
+        }));
 
         delete state.dailyTargetMinutes;
         delete state.excludedExercises;
@@ -127,22 +201,18 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     if (version < 6) {
-        if (state.users && Array.isArray(state.users)) {
-            state.users = state.users.map((user: any) => ({
-                ...user,
-                consumedMagicDate: user.consumedMagicDate || '',
-                consumedMagicSeconds: user.consumedMagicSeconds || 0,
-            }));
-        }
+        mapLegacyUsers(state, (user) => ({
+            ...user,
+            consumedMagicDate: getNonEmptyString(user.consumedMagicDate, ''),
+            consumedMagicSeconds: getFiniteNumber(user.consumedMagicSeconds, 0),
+        }));
     }
 
     if (version < 8) {
-        if (state.users && Array.isArray(state.users)) {
-            state.users = state.users.map((user: any) => ({
-                ...user,
-                chibifuwas: user.chibifuwas ?? [],
-            }));
-        }
+        mapLegacyUsers(state, (user) => ({
+            ...user,
+            chibifuwas: Array.isArray(user.chibifuwas) ? user.chibifuwas : [],
+        }));
     }
 
     if (version < 9) {
@@ -150,13 +220,17 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     if (version < 10) {
-        const oldIds: string[] = Array.isArray(state.joinedChallengeIds)
-            ? state.joinedChallengeIds
+        const oldIds = Array.isArray(state.joinedChallengeIds)
+            ? getStringArray(state.joinedChallengeIds)
             : [];
 
         const newRecord: Record<string, string[]> = {};
-        if (oldIds.length > 0 && state.users && Array.isArray(state.users)) {
-            for (const user of state.users) {
+        if (oldIds.length > 0) {
+            for (const user of getLegacyUsers(state.users)) {
+                if (typeof user.id !== 'string' || user.id.length === 0) {
+                    continue;
+                }
+
                 newRecord[user.id] = [...oldIds];
             }
         }
@@ -167,27 +241,23 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     if (version < 11) {
         const OLD_REQUIRED = ['S01', 'S02', 'S07'];
         const OLD_EXCLUDED = ['C01', 'C02'];
-        if (state.users && Array.isArray(state.users)) {
-            state.users = state.users.map((user: any) => ({
-                ...user,
-                requiredExercises: (user.requiredExercises ?? []).filter(
-                    (id: string) => !OLD_REQUIRED.includes(id)
-                ),
-                excludedExercises: (user.excludedExercises ?? []).filter(
-                    (id: string) => !OLD_EXCLUDED.includes(id)
-                ),
-            }));
-        }
+        mapLegacyUsers(state, (user) => ({
+            ...user,
+            requiredExercises: getStringArray(user.requiredExercises).filter(
+                (id) => !OLD_REQUIRED.includes(id),
+            ),
+            excludedExercises: getStringArray(user.excludedExercises).filter(
+                (id) => !OLD_EXCLUDED.includes(id),
+            ),
+        }));
     }
 
     if (version < 12) {
-        if (state.users && Array.isArray(state.users)) {
-            state.users = state.users.map((user: any) => {
-                const rest = { ...user };
-                delete rest.consumedMagicDate;
-                return rest;
-            });
-        }
+        mapLegacyUsers(state, (user) => {
+            const rest = { ...user };
+            delete rest.consumedMagicDate;
+            return rest;
+        });
     }
 
     if (version < 13) {
@@ -204,14 +274,10 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     if (version < 17) {
-        if (state.users && Array.isArray(state.users)) {
-            state.users = state.users.map((user: any) => ({
-                ...user,
-                challengeStars: typeof user.challengeStars === 'number' && Number.isFinite(user.challengeStars)
-                    ? Math.max(0, user.challengeStars)
-                    : 0,
-            }));
-        }
+        mapLegacyUsers(state, (user) => ({
+            ...user,
+            challengeStars: Math.max(0, getFiniteNumber(user.challengeStars, 0)),
+        }));
     }
 
     if (version < 18) {
@@ -232,7 +298,7 @@ export function migrateAppState(persistedState: any, version: number): AppState 
     }
 
     sanitizePersistedState(state as Record<string, unknown>);
-    return state as AppState;
+    return state as unknown as AppState;
 }
 
 export function partializeAppState(state: AppState): PersistedAppState {

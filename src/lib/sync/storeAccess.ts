@@ -1,6 +1,5 @@
 export interface SyncStoreState {
     users: Array<{ id: string }>;
-    [key: string]: unknown;
 }
 
 type GetStoreState = () => SyncStoreState;

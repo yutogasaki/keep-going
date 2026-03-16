@@ -327,7 +327,7 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
     );
     const initialDailyConversation = useMemo(
         () => chooseNextDailyConversation(EMPTY_DAILY_CONVERSATION_STATE, dailyContext, 'initial'),
-        [dailyCandidateSignature, dailyContext],
+        [dailyContext],
     );
     const resolvedDailySelection = dailySelection ?? initialDailyConversation.candidate?.selection ?? null;
     const resolvedDailyState = dailySelection ? dailyState : initialDailyConversation.nextState;

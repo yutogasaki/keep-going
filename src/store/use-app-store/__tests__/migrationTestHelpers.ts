@@ -1,4 +1,6 @@
-export function makeV0State(overrides: Record<string, any> = {}) {
+import type { PersistedAppStateRecord } from '../migrateHelpers';
+
+export function makeV0State(overrides: PersistedAppStateRecord = {}) {
     return {
         classLevel: '初級',
         fuwafuwaBirthDate: '2026-03-01',
@@ -17,7 +19,7 @@ export function makeV0State(overrides: Record<string, any> = {}) {
     };
 }
 
-export function makeV5State(overrides: Record<string, any> = {}) {
+export function makeV5State(overrides: PersistedAppStateRecord = {}) {
     return {
         users: [{
             id: 'user-1',
@@ -47,7 +49,7 @@ export function makeV5State(overrides: Record<string, any> = {}) {
     };
 }
 
-export function makeCurrentState(overrides: Record<string, any> = {}) {
+export function makeCurrentState(overrides: PersistedAppStateRecord = {}) {
     return {
         users: [{
             id: 'user-1',
@@ -72,10 +74,16 @@ export function makeCurrentState(overrides: Record<string, any> = {}) {
         ttsEnabled: true,
         bgmEnabled: true,
         hapticEnabled: true,
+        notificationsEnabled: false,
+        notificationTime: '21:00',
         joinedChallengeIds: {},
         challengeEnrollmentWindows: {},
         hasSeenSessionControlsHint: false,
         dismissedHomeAnnouncementIds: [],
+        debugFuwafuwaStage: null,
+        debugFuwafuwaType: null,
+        debugActiveDays: null,
+        debugFuwafuwaScale: null,
         homeVisitMemory: {
             soloByUserId: {},
             familyByUserSet: {},
