@@ -168,8 +168,8 @@ async function cleanupUnusedPublishedCustomExercises(
     }
 
     const [myPublishedExercises, myPublishedMenus] = await Promise.all([
-        fetchMyPublishedExercises(),
-        fetchMyPublishedMenus(),
+        fetchMyPublishedExercises({ throwOnError: true }),
+        fetchMyPublishedMenus({ throwOnError: true }),
     ]);
     const handledPublishedExerciseIds = new Set<string>();
 
@@ -212,8 +212,11 @@ export async function publishMenu(
     }
 
     await ensurePublishedCustomExercises(customExerciseData, authorName);
+    const myPublishedMenus = options.existingPublicMenuId
+        ? null
+        : await fetchMyPublishedMenus({ throwOnError: true });
     const existingMenuId = options.existingPublicMenuId
-        ?? findPublishedMenuMatch(menu, await fetchMyPublishedMenus())?.id
+        ?? findPublishedMenuMatch(menu, myPublishedMenus ?? [])?.id
         ?? null;
     const previousCustomExerciseData = existingMenuId
         ? await fetchPublishedMenuCustomExerciseData(existingMenuId, accountId)

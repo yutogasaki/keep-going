@@ -299,4 +299,44 @@ describe('publicMenuPublish', () => {
         expect(mockedPublishExercise).not.toHaveBeenCalled();
         expect(mockedUnpublishExercise).not.toHaveBeenCalled();
     });
+
+    it('fails closed when published menu lookup fails during cleanup', async () => {
+        const removedExercise = createCustomExercise({
+            id: 'custom-ex-2',
+            name: 'きゅうけい',
+            sec: 45,
+            emoji: '🛋️',
+            placement: 'rest',
+        });
+
+        createPublicMenusSupabaseMock([removedExercise]);
+        mockedFetchMyPublishedMenus.mockRejectedValue(new Error('published menus unavailable'));
+        mockedFetchMyPublishedExercises.mockResolvedValue([
+            createPublicExercise({
+                id: 'public-ex-2',
+                name: removedExercise.name,
+                sec: removedExercise.sec,
+                emoji: removedExercise.emoji,
+                placement: removedExercise.placement,
+                hasSplit: removedExercise.hasSplit ?? false,
+                sourceCustomExerciseId: removedExercise.id,
+                preserveWithoutMenu: false,
+            }),
+        ]);
+
+        await expect(
+            publishMenu(
+                createMenuGroup({
+                    id: 'group-1',
+                    name: '更新後メニュー',
+                    exerciseIds: [],
+                    items: [],
+                }),
+                'みお',
+                { existingPublicMenuId: 'public-menu-1' },
+            ),
+        ).rejects.toThrow('published menus unavailable');
+
+        expect(mockedUnpublishExercise).not.toHaveBeenCalled();
+    });
 });

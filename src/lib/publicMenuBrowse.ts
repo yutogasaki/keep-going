@@ -4,6 +4,9 @@ import type { PublicMenu } from './publicMenuTypes';
 import { mapPublicMenu, pickRecommendedMenus } from './publicMenuUtils';
 
 type PublicMenuSort = 'download_count' | 'created_at';
+interface FetchMyPublishedMenusOptions {
+    throwOnError?: boolean;
+}
 
 async function fetchActiveMenus(
     sortBy: PublicMenuSort,
@@ -49,7 +52,9 @@ export async function fetchRecommendedMenus(): Promise<PublicMenu[]> {
     return pickRecommendedMenus(popular, newest);
 }
 
-export async function fetchMyPublishedMenus(): Promise<PublicMenu[]> {
+export async function fetchMyPublishedMenus(
+    options: FetchMyPublishedMenusOptions = {},
+): Promise<PublicMenu[]> {
     if (!supabase) {
         return [];
     }
@@ -66,10 +71,12 @@ export async function fetchMyPublishedMenus(): Promise<PublicMenu[]> {
         .order('created_at', { ascending: false });
 
     if (error) {
+        if (options.throwOnError) {
+            throw error;
+        }
         console.warn('[publicMenus] fetchMyPublishedMenus failed:', error);
         return [];
     }
 
     return (data ?? []).map(mapPublicMenu);
 }
-

@@ -7,6 +7,9 @@ import { dedupeExercisesByIdentity, pickRecommendedExercises } from './publicExe
 
 type PublicExerciseRow = Database['public']['Tables']['public_exercises']['Row'];
 type PublicExerciseSort = 'download_count' | 'created_at';
+interface FetchMyPublishedExercisesOptions {
+    throwOnError?: boolean;
+}
 
 export interface PublicExercise {
     id: string;
@@ -123,7 +126,9 @@ export async function fetchRecommendedExercises(): Promise<PublicExercise[]> {
 
 // ─── Fetch my published exercises ───────────────────
 
-export async function fetchMyPublishedExercises(): Promise<PublicExercise[]> {
+export async function fetchMyPublishedExercises(
+    options: FetchMyPublishedExercisesOptions = {},
+): Promise<PublicExercise[]> {
     if (!supabase) return [];
     const accountId = getAccountId();
     if (!accountId) return [];
@@ -135,6 +140,9 @@ export async function fetchMyPublishedExercises(): Promise<PublicExercise[]> {
         .order('created_at', { ascending: false });
 
     if (error) {
+        if (options.throwOnError) {
+            throw error;
+        }
         console.warn('[publicExercises] fetchMyPublishedExercises failed:', error);
         return [];
     }
@@ -241,7 +249,7 @@ async function findOwnedPublishedExercise(
     exercise: CustomExercise,
     sourceCustomExerciseId: string | null,
 ): Promise<PublicExercise | null> {
-    const myPublished = await fetchMyPublishedExercises();
+    const myPublished = await fetchMyPublishedExercises({ throwOnError: true });
     const bySource = sourceCustomExerciseId
         ? myPublished.find((published) => published.sourceCustomExerciseId === sourceCustomExerciseId)
         : undefined;
