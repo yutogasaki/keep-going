@@ -6,6 +6,7 @@ import {
 import { EXERCISES } from '../data/exercises';
 import { getCustomExercises, type CustomExercise } from './db';
 import { findPublishedExerciseMatch, findPublishedMenuMatch } from './publicContentMatches';
+import { createPublicExerciseDedupKey } from './publicExerciseUtils';
 import { fetchMyPublishedMenus } from './publicMenuBrowse';
 import {
     fetchMyPublishedExercises,
@@ -27,6 +28,10 @@ interface MenuPublishExerciseDataResult {
 
 interface PublishMenuOptions {
     existingPublicMenuId?: string;
+}
+
+interface PublishedMenuCustomExerciseRow {
+    custom_exercise_data: unknown[] | null;
 }
 
 async function getMenuCustomExerciseData(menu: MenuGroup): Promise<MenuPublishExerciseDataResult> {
@@ -98,6 +103,94 @@ async function ensurePublishedCustomExercises(
     }
 }
 
+async function fetchPublishedMenuCustomExerciseData(
+    publicMenuId: string,
+    accountId: string,
+): Promise<CustomExerciseData[]> {
+    const { data, error } = await supabase
+        .from('public_menus')
+        .select('custom_exercise_data')
+        .eq('id', publicMenuId)
+        .eq('account_id', accountId)
+        .single<PublishedMenuCustomExerciseRow>();
+
+    if (error) {
+        console.warn('[publishMenu] failed to load previous custom exercise snapshot:', error);
+        return [];
+    }
+
+    return (data?.custom_exercise_data as CustomExerciseData[] | null) ?? [];
+}
+
+function getRemovedCustomExerciseData(
+    previousCustomExerciseData: CustomExerciseData[],
+    nextCustomExerciseData: CustomExerciseData[],
+): CustomExerciseData[] {
+    if (previousCustomExerciseData.length === 0) {
+        return [];
+    }
+
+    const nextIds = new Set(nextCustomExerciseData.map((exercise) => exercise.id));
+    return previousCustomExerciseData.filter((exercise) => !nextIds.has(exercise.id));
+}
+
+function isCustomExerciseReferencedByPublishedMenus(
+    exercise: CustomExerciseData,
+    publishedMenus: Awaited<ReturnType<typeof fetchMyPublishedMenus>>,
+): boolean {
+    const targetKey = createPublicExerciseDedupKey({
+        name: exercise.name,
+        emoji: exercise.emoji,
+        sec: exercise.sec,
+        placement: exercise.placement,
+        hasSplit: exercise.hasSplit ?? false,
+    });
+
+    return publishedMenus.some((menu) =>
+        menu.customExerciseData.some((candidate) => (
+            candidate.id === exercise.id
+            || createPublicExerciseDedupKey({
+                name: candidate.name,
+                emoji: candidate.emoji,
+                sec: candidate.sec,
+                placement: candidate.placement,
+                hasSplit: candidate.hasSplit ?? false,
+            }) === targetKey
+        )),
+    );
+}
+
+async function cleanupUnusedPublishedCustomExercises(
+    customExerciseData: CustomExerciseData[],
+): Promise<void> {
+    if (customExerciseData.length === 0) {
+        return;
+    }
+
+    const [myPublishedExercises, myPublishedMenus] = await Promise.all([
+        fetchMyPublishedExercises(),
+        fetchMyPublishedMenus(),
+    ]);
+    const handledPublishedExerciseIds = new Set<string>();
+
+    for (const exercise of customExerciseData) {
+        const published = findPublishedExerciseMatch(
+            toCustomExercise(exercise),
+            myPublishedExercises,
+        );
+        if (!published || published.preserveWithoutMenu || handledPublishedExerciseIds.has(published.id)) {
+            continue;
+        }
+
+        if (isCustomExerciseReferencedByPublishedMenus(exercise, myPublishedMenus)) {
+            continue;
+        }
+
+        handledPublishedExerciseIds.add(published.id);
+        await unpublishExercise(published.id);
+    }
+}
+
 export async function publishMenu(
     menu: MenuGroup,
     authorName: string,
@@ -122,6 +215,9 @@ export async function publishMenu(
     const existingMenuId = options.existingPublicMenuId
         ?? findPublishedMenuMatch(menu, await fetchMyPublishedMenus())?.id
         ?? null;
+    const previousCustomExerciseData = existingMenuId
+        ? await fetchPublishedMenuCustomExerciseData(existingMenuId, accountId)
+        : [];
     const payload: PublicMenuInsert = {
         name: menu.name,
         emoji: menu.emoji,
@@ -145,6 +241,12 @@ export async function publishMenu(
     if (error) {
         throw error;
     }
+
+    const removedCustomExerciseData = getRemovedCustomExerciseData(
+        previousCustomExerciseData,
+        customExerciseData,
+    );
+    await cleanupUnusedPublishedCustomExercises(removedCustomExerciseData);
 }
 
 export async function unpublishMenu(id: string): Promise<void> {
@@ -180,30 +282,7 @@ export async function unpublishMenu(id: string): Promise<void> {
     }
 
     try {
-        const [myPublishedExercises, myPublishedMenus] = await Promise.all([
-            fetchMyPublishedExercises(),
-            fetchMyPublishedMenus(),
-        ]);
-        const otherPublishedMenus = myPublishedMenus.filter((menu) => menu.id !== id);
-
-        for (const exercise of customData) {
-            const published = findPublishedExerciseMatch(
-                toCustomExercise(exercise),
-                myPublishedExercises,
-            );
-            if (!published || published.preserveWithoutMenu) {
-                continue;
-            }
-
-            const stillReferencedByOtherMenu = otherPublishedMenus.some((menu) =>
-                menu.customExerciseData.some((candidate) => candidate.id === exercise.id),
-            );
-            if (stillReferencedByOtherMenu) {
-                continue;
-            }
-
-            await unpublishExercise(published.id);
-        }
+        await cleanupUnusedPublishedCustomExercises(customData);
     } catch (error) {
         console.warn('[unpublishMenu] auto-unpublish exercises failed:', error);
     }
