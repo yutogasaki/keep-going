@@ -1,7 +1,7 @@
 import { EXERCISES } from '../data/exercises';
 import type { MenuGroup, MenuGroupItem } from '../data/menuGroups';
 import { saveCustomGroup } from './customGroups';
-import { getCustomExercises, saveCustomExercise } from './db';
+import { saveCustomExercise } from './db';
 import type { PublicMenu } from './publicMenuTypes';
 import { supabase } from './supabase';
 import { getAccountId } from './sync/authState';
@@ -22,16 +22,9 @@ async function persistImportedCustomExercises(publicMenu: PublicMenu): Promise<M
         return idRemap;
     }
 
-    const existingCustomExercises = await getCustomExercises();
-    const existingIds = new Set(existingCustomExercises.map((exercise) => exercise.id));
-
     for (const exercise of publicMenu.customExerciseData) {
         const importedId = createImportedExerciseId(publicMenu.id, exercise.id);
         idRemap.set(exercise.id, importedId);
-
-        if (existingIds.has(importedId)) {
-            continue;
-        }
 
         try {
             await saveCustomExercise({
