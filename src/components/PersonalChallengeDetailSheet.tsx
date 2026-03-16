@@ -13,6 +13,7 @@ import {
     getPersonalChallengeProgressLabel,
     getPersonalChallengeStatusLabel,
     getPersonalChallengeTargetName,
+    isPersonalChallengeTargetMissing,
 } from './personal-challenge/shared';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../lib/styles';
 
@@ -56,6 +57,20 @@ export const PersonalChallengeDetailSheet: React.FC<PersonalChallengeDetailSheet
     const statusLabel = getPersonalChallengeStatusLabel(challenge.status);
     const isActive = challenge.status === 'active';
     const canDelete = canDeletePersonalChallenge(challenge, progress);
+    const targetMissing = isPersonalChallengeTargetMissing(
+        challenge,
+        teacherExercises,
+        teacherMenus,
+        customExercises,
+        customMenus,
+    );
+    const missingTargetMessage = isActive
+        ? (
+            canEditSetup
+                ? 'もとの対象が見つからないよ。つづける前に、編集でえらび直してね。'
+                : 'もとの対象が見つからないよ。もう一回やる時は、新しく作ってえらび直してね。'
+        )
+        : 'もとの対象が見つからないよ。もう一回つくる時は、えらび直してね。';
 
     return (
         <Modal
@@ -117,6 +132,12 @@ export const PersonalChallengeDetailSheet: React.FC<PersonalChallengeDetailSheet
                 {challenge.description ? (
                     <div style={descriptionCardStyle}>
                         {challenge.description}
+                    </div>
+                ) : null}
+
+                {targetMissing ? (
+                    <div style={warningCardStyle}>
+                        {missingTargetMessage}
                     </div>
                 ) : null}
 
@@ -244,6 +265,17 @@ const descriptionCardStyle: React.CSSProperties = {
     fontSize: FONT_SIZE.sm,
     color: COLOR.text,
     lineHeight: 1.8,
+};
+
+const warningCardStyle: React.CSSProperties = {
+    padding: SPACE.md,
+    borderRadius: RADIUS.lg,
+    background: 'rgba(255, 244, 214, 0.9)',
+    border: '1px solid rgba(242, 153, 74, 0.35)',
+    fontFamily: FONT.body,
+    fontSize: FONT_SIZE.sm,
+    color: '#8A5A00',
+    lineHeight: 1.7,
 };
 
 const primaryButtonStyle: React.CSSProperties = {

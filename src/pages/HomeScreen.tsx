@@ -67,7 +67,11 @@ import {
 } from './home/hooks/useHomeMilestoneWatcher';
 import { pickTeacherExerciseDiscovery } from './home/homeMenuUtils';
 import { getMinClassLevel } from './menu/menuPageUtils';
-import { findPersonalChallengePreset } from '../components/personal-challenge/shared';
+import {
+    findPersonalChallengePreset,
+    inferPersonalChallengeExerciseSource,
+    inferPersonalChallengeMenuSource,
+} from '../components/personal-challenge/shared';
 
 const noop = () => {};
 
@@ -608,10 +612,22 @@ export const HomeScreen: React.FC = () => {
 
         const { challenge } = selectedPersonalChallenge;
         const presetId = findPersonalChallengePreset(challenge) ?? 'week';
+        const nextExerciseSource = inferPersonalChallengeExerciseSource(
+            challenge.exerciseId,
+            teacherContent.teacherExercises,
+            customChallengeExercises,
+        );
+        const nextMenuSource = inferPersonalChallengeMenuSource(
+            challenge.menuSource,
+            challenge.targetMenuId,
+            teacherContent.teacherMenus,
+            customChallengeMenus,
+        );
 
         if (
             challenge.challengeType === 'menu'
-            || customChallengeExercises.some((exercise) => exercise.id === challenge.exerciseId)
+            || nextExerciseSource === 'custom'
+            || nextMenuSource === 'custom'
         ) {
             await loadCustomChallengeTargets();
         }
@@ -620,22 +636,10 @@ export const HomeScreen: React.FC = () => {
             challengeType: challenge.challengeType === 'menu' ? 'menu' : 'exercise',
             presetId,
             exerciseSource: challenge.challengeType === 'exercise'
-                ? (
-                    teacherContent.teacherExercises.some((exercise) => exercise.id === challenge.exerciseId)
-                        ? 'teacher'
-                        : customChallengeExercises.some((exercise) => exercise.id === challenge.exerciseId)
-                            ? 'custom'
-                            : 'standard'
-                )
+                ? nextExerciseSource
                 : undefined,
             menuSource: challenge.challengeType === 'menu'
-                ? (
-                    challenge.menuSource === 'teacher'
-                        ? 'teacher'
-                        : challenge.menuSource === 'custom'
-                            ? 'custom'
-                            : 'preset'
-                )
+                ? nextMenuSource
                 : undefined,
             exerciseId: challenge.exerciseId,
             targetMenuId: challenge.targetMenuId,
@@ -645,9 +649,11 @@ export const HomeScreen: React.FC = () => {
         });
     }, [
         customChallengeExercises,
+        customChallengeMenus,
         loadCustomChallengeTargets,
         openPersonalChallengeForm,
         selectedPersonalChallenge,
+        teacherContent.teacherMenus,
         teacherContent.teacherExercises,
     ]);
 
