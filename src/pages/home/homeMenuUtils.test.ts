@@ -29,6 +29,7 @@ describe('homeMenuUtils', () => {
             authorName: 'えま',
             accountId: 'account-1',
             downloadCount: 0,
+            sourceMenuGroupId: null,
             createdAt: '2026-03-01T00:00:00Z',
         }, new Date('2026-03-10T00:00:00Z').getTime())).toBe('みんなの種目あり');
     });
@@ -63,6 +64,7 @@ describe('homeMenuUtils', () => {
             authorName: 'すず',
             accountId: 'account-2',
             downloadCount: 12,
+            sourceMenuGroupId: null,
             createdAt: '2026-03-05T00:00:00Z',
         })).toBe('開脚、前屈、前後開脚、+1');
     });

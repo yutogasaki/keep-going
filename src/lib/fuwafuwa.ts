@@ -89,8 +89,8 @@ export function calculateFuwafuwaStatus(
 }
 
 /**
- * 過去に来たことのないタイプからランダムに選ぶ。
- * 全種制覇した場合は currentType 以外からランダム。
+ * 過去に来たことのないタイプから優先してランダムに選ぶ。
+ * 全種制覇した場合は全タイプからランダム。
  */
 export function pickNextFuwafuwaType(
     pastFuwafuwas: PastFuwafuwaRecord[],
@@ -104,9 +104,7 @@ export function pickNextFuwafuwaType(
     const available = allTypes.filter(t => !usedTypes.has(t));
 
     if (available.length === 0) {
-        // 全種制覇 → currentType以外からランダム
-        const reset = allTypes.filter(t => t !== currentType);
-        return reset[Math.floor(Math.random() * reset.length)];
+        return allTypes[Math.floor(Math.random() * allTypes.length)];
     }
 
     return available[Math.floor(Math.random() * available.length)];

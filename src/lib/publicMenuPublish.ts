@@ -107,6 +107,10 @@ async function fetchPublishedMenuCustomExerciseData(
     publicMenuId: string,
     accountId: string,
 ): Promise<CustomExerciseData[]> {
+    if (!supabase) {
+        return [];
+    }
+
     const { data, error } = await supabase
         .from('public_menus')
         .select('custom_exercise_data')

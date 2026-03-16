@@ -157,7 +157,7 @@ describe('pickNextFuwafuwaType', () => {
         expect(results.has(5)).toBe(false);
     });
 
-    it('when all types used, picks anything except current', () => {
+    it('when all types used, allows duplicates including the current type', () => {
         const past = Array.from({ length: 10 }, (_, i) => ({
             id: `${i}`,
             type: i,
@@ -166,9 +166,11 @@ describe('pickNextFuwafuwaType', () => {
             finalStage: 3,
             sayonaraDate: '2026-02-01',
         }));
+        const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.35);
+
         const result = pickNextFuwafuwaType(past, 3);
-        expect(result).not.toBe(3);
-        expect(result).toBeGreaterThanOrEqual(0);
-        expect(result).toBeLessThan(10);
+
+        expect(result).toBe(3);
+        randomSpy.mockRestore();
     });
 });
