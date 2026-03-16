@@ -271,6 +271,7 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
     const today = getTodayKey();
     const teacherMenuMap = new Map(teacherMenus.map((menu) => [menu.id, menu]));
     const teacherExerciseMap = new Map(teacherExercises.map((exercise) => [exercise.id, exercise]));
+    const [expandedParticipantLists, setExpandedParticipantLists] = useState<Record<string, boolean>>({});
     const [selectedParticipant, setSelectedParticipant] = useState<ChallengeParticipantDetailData | null>(null);
     const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
 
@@ -333,8 +334,13 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                     challengeAttempts.filter((attempt) => attempt.challengeId === challenge.id),
                 );
                 const completedCount = participantStatuses.filter((item) => item.completed).length;
-                const visibleParticipants = participantStatuses.slice(0, 6);
-                const hiddenParticipantCount = Math.max(0, participantStatuses.length - visibleParticipants.length);
+                const isParticipantListExpanded = expandedParticipantLists[challenge.id] === true;
+                const visibleParticipants = isParticipantListExpanded
+                    ? participantStatuses
+                    : participantStatuses.slice(0, 6);
+                const hiddenParticipantCount = isParticipantListExpanded
+                    ? 0
+                    : Math.max(0, participantStatuses.length - visibleParticipants.length);
                 const participantDetailsByMemberId = new Map(
                     participantStatuses.map((item) => [
                         item.memberId,
@@ -523,12 +529,10 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                         {hiddenParticipantCount > 0 ? (
                                             <button
                                                 type="button"
-                                                onClick={() => {
-                                                    const nextParticipant = participantStatuses[visibleParticipants.length];
-                                                    if (!nextParticipant) return;
-                                                    setSelectedChallenge(challenge);
-                                                    setSelectedParticipant(participantDetailsByMemberId.get(nextParticipant.memberId) ?? null);
-                                                }}
+                                                onClick={() => setExpandedParticipantLists((current) => ({
+                                                    ...current,
+                                                    [challenge.id]: true,
+                                                }))}
                                                 style={{
                                                     fontFamily: "'Noto Sans JP', sans-serif",
                                                     fontSize: 10,
@@ -543,6 +547,29 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                                 }}
                                             >
                                                 +{hiddenParticipantCount}人 つづきを見る
+                                            </button>
+                                        ) : null}
+                                        {isParticipantListExpanded && participantStatuses.length > 6 ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => setExpandedParticipantLists((current) => ({
+                                                    ...current,
+                                                    [challenge.id]: false,
+                                                }))}
+                                                style={{
+                                                    fontFamily: "'Noto Sans JP', sans-serif",
+                                                    fontSize: 10,
+                                                    fontWeight: 700,
+                                                    color: '#64748B',
+                                                    background: '#FFFFFF',
+                                                    borderRadius: 999,
+                                                    padding: '4px 8px',
+                                                    border: '1px solid rgba(148, 163, 184, 0.2)',
+                                                    cursor: 'pointer',
+                                                    justifySelf: 'start',
+                                                }}
+                                            >
+                                                参加者をたたむ
                                             </button>
                                         ) : null}
                                     </div>
