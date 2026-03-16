@@ -4,12 +4,18 @@ import { getMenuGroupItems, getPresetsForClass, type MenuGroup } from '../../../
 import { audio } from '../../../lib/audio';
 import { deleteCustomGroup, getCustomGroups, saveCustomGroup } from '../../../lib/customGroups';
 import { subscribeCustomContentUpdated } from '../../../lib/customContentEvents';
+import {
+    buildCustomExerciseDeletePlan,
+    buildCustomGroupDeletePlan,
+} from '../../../lib/customContentDeletePlan';
 import { deleteCustomExercise, getCustomExercises, type CustomExercise } from '../../../lib/db';
 import {
     menuGroupReferencesExercise,
     pruneUnavailableExercisesFromMenuGroup,
     removeExerciseFromMenuGroup,
 } from '../../../lib/menuExerciseCleanup';
+import { unpublishExercise } from '../../../lib/publicExercises';
+import { unpublishMenu } from '../../../lib/publicMenus';
 import { resolveMenuGroupToSessionPlannedItems, type SessionPlannedItem } from '../../../lib/sessionPlan';
 import { fetchTeacherExercises } from '../../../lib/teacherContent';
 import type { UserProfileStore } from '../../../store/useAppStore';
@@ -89,7 +95,11 @@ export function useMenuPageData({
         authorName: userContext.authorName,
         onToast: showToast,
     });
-    const { refreshPublishedData } = publishActions;
+    const {
+        myPublishedExercises,
+        myPublishedMenus,
+        refreshPublishedData,
+    } = publishActions;
 
     const presets = useMemo(() => getPresetsForClass(userContext.classLevel), [userContext.classLevel]);
 
@@ -214,51 +224,107 @@ export function useMenuPageData({
 
     const handleDeleteGroup = useCallback(
         async (groupId: string) => {
-            await deleteCustomGroup(groupId);
-            await loadCustomData();
+            const targetGroup = customGroups.find((group) => group.id === groupId) ?? null;
+            const deletePlan = buildCustomGroupDeletePlan(targetGroup, myPublishedMenus);
+
+            try {
+                if (deletePlan.publishedMenuId) {
+                    await unpublishMenu(deletePlan.publishedMenuId);
+                }
+
+                await deleteCustomGroup(groupId);
+                await loadCustomData();
+                showToast({
+                    text: deletePlan.isPublished
+                        ? '公開メニューを非公開にしてから削除しました'
+                        : 'メニューを削除しました',
+                    type: 'success',
+                });
+            } catch (error) {
+                console.warn('[menu] group delete failed:', error);
+                await loadCustomData();
+                showToast({
+                    text: deletePlan.isPublished
+                        ? '公開メニューを非公開にできなかったため削除を中止しました'
+                        : 'メニューの削除に失敗しました',
+                    type: 'error',
+                });
+            }
         },
-        [loadCustomData],
+        [customGroups, loadCustomData, myPublishedMenus, showToast],
     );
 
     const handleDeleteEx = useCallback(
         async (exerciseId: string) => {
+            const targetExercise = customExercises.find((exercise) => exercise.id === exerciseId) ?? null;
+            const deletePlan = buildCustomExerciseDeletePlan(
+                targetExercise,
+                customGroups,
+                myPublishedMenus,
+                myPublishedExercises,
+            );
             const impactedGroups = customGroups.filter((group) => menuGroupReferencesExercise(group, exerciseId));
             let updatedMenuCount = 0;
             let deletedMenuCount = 0;
 
-            for (const group of impactedGroups) {
-                const nextGroup = removeExerciseFromMenuGroup(group, exerciseId);
-                if (nextGroup === null) {
-                    await deleteCustomGroup(group.id);
-                    deletedMenuCount += 1;
-                    continue;
+            try {
+                for (const publishedMenuId of deletePlan.publishedMenuIds) {
+                    await unpublishMenu(publishedMenuId);
                 }
 
-                if (nextGroup !== group) {
-                    await saveCustomGroup(nextGroup);
-                    updatedMenuCount += 1;
+                if (deletePlan.publishedExerciseId) {
+                    await unpublishExercise(deletePlan.publishedExerciseId);
                 }
-            }
 
-            await deleteCustomExercise(exerciseId);
-            await loadCustomData();
+                for (const group of impactedGroups) {
+                    const nextGroup = removeExerciseFromMenuGroup(group, exerciseId);
+                    if (nextGroup === null) {
+                        await deleteCustomGroup(group.id);
+                        deletedMenuCount += 1;
+                        continue;
+                    }
 
-            if (updatedMenuCount === 0 && deletedMenuCount === 0) {
-                showToast({ text: 'じぶん種目を削除しました', type: 'success' });
+                    if (nextGroup !== group) {
+                        await saveCustomGroup(nextGroup);
+                        updatedMenuCount += 1;
+                    }
+                }
+
+                await deleteCustomExercise(exerciseId);
+                await loadCustomData();
+            } catch (error) {
+                console.warn('[menu] exercise delete failed:', error);
+                await loadCustomData();
+                showToast({
+                    text:
+                        deletePlan.isPublished || deletePlan.publishedMenuIds.length > 0
+                            ? '公開中の種目やメニューを非公開にできなかったため削除を中止しました'
+                            : 'じぶん種目の削除に失敗しました',
+                    type: 'error',
+                });
                 return;
             }
 
             const summaryParts = [
+                deletePlan.isPublished ? '公開中の種目を非公開にしました' : '',
+                deletePlan.publishedMenuIds.length > 0
+                    ? `${deletePlan.publishedMenuIds.length}つの公開メニューを非公開にしました`
+                    : '',
                 updatedMenuCount > 0 ? `${updatedMenuCount}つのメニューから外しました` : '',
                 deletedMenuCount > 0 ? `${deletedMenuCount}つの空メニューを削除しました` : '',
             ].filter((part) => part.length > 0);
+
+            if (summaryParts.length === 0) {
+                showToast({ text: 'じぶん種目を削除しました', type: 'success' });
+                return;
+            }
 
             showToast({
                 text: `じぶん種目を削除し、${summaryParts.join('・')}`,
                 type: 'success',
             });
         },
-        [customGroups, loadCustomData, showToast],
+        [customExercises, customGroups, loadCustomData, myPublishedExercises, myPublishedMenus, showToast],
     );
 
     const handleCreatedGroup = useCallback(() => {
@@ -337,6 +403,8 @@ export function useMenuPageData({
         handleDeleteEx,
         handleCreatedGroup,
         handleCreatedEx,
+        myPublishedMenus,
+        myPublishedExercises,
         findPublishedMenu: publishActions.findPublishedMenu,
         handlePublishGroup: publishActions.handlePublishGroup,
         handleUnpublishGroup: publishActions.handleUnpublishGroup,

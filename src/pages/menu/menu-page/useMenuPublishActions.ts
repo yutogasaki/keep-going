@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { MenuGroup } from '../../../data/menuGroups';
+import {
+    findPublishedExerciseMatch,
+    findPublishedMenuMatch,
+} from '../../../lib/customContentDeletePlan';
 import type { CustomExercise } from '../../../lib/db';
 import { getAccountId } from '../../../lib/sync';
 import {
-    createPublicMenuDedupKey,
     fetchMyPublishedMenus,
     publishMenu,
     type PublicMenu,
@@ -55,20 +58,11 @@ export function useMenuPublishActions({
     }, [refreshPublishedData]);
 
     const findPublishedMenu = useCallback((group: MenuGroup): PublicMenu | undefined => {
-        const groupKey = createPublicMenuDedupKey(group);
-
-        return myPublishedMenus.find(
-            (publishedMenu) => createPublicMenuDedupKey(publishedMenu) === groupKey,
-        );
+        return findPublishedMenuMatch(group, myPublishedMenus);
     }, [myPublishedMenus]);
 
     const findPublishedExercise = useCallback((exercise: CustomExercise): PublicExercise | undefined => {
-        return myPublishedExercises.find(
-            (publishedExercise) => publishedExercise.name === exercise.name
-                && publishedExercise.emoji === exercise.emoji
-                && publishedExercise.sec === exercise.sec
-                && publishedExercise.placement === exercise.placement
-        );
+        return findPublishedExerciseMatch(exercise, myPublishedExercises);
     }, [myPublishedExercises]);
 
     const handlePublishGroup = useCallback(async (group: MenuGroup) => {
@@ -146,4 +140,3 @@ export function useMenuPublishActions({
         handleUnpublishExercise,
     };
 }
-
