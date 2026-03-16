@@ -267,6 +267,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
 
     return (
         <ScreenScaffold
+            withBottomNav
             header={(
                 <PageHeader
                     title="先生ダッシュボード"
