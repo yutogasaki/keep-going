@@ -30,9 +30,9 @@ function createAccount(overrides: Partial<AdminAccountSummary> = {}): AdminAccou
 describe('accountSegmentation', () => {
     const now = new Date('2026-03-08T12:00:00+09:00');
 
-    it('keeps recently created accounts out of inactive and suspend buckets for 14 days', () => {
+    it('keeps recently created accounts out of inactive and suspend buckets for 7 days', () => {
         const analysis = analyzeAccount(createAccount({
-            registeredAt: '2026-02-28',
+            registeredAt: '2026-03-04',
         }), now);
 
         expect(analysis.isNewGrace).toBe(true);
@@ -40,17 +40,17 @@ describe('accountSegmentation', () => {
         expect(analysis.isSuspendCandidate).toBe(false);
     });
 
-    it('marks accounts as suspend candidates only after both creation and activity age pass 30 days', () => {
+    it('marks accounts as suspend candidates after one week without use', () => {
         const watchAccount = createAccount({
             accountId: 'watch',
-            registeredAt: '2026-02-10',
-            lastActiveDate: '2026-02-20',
+            registeredAt: '2026-02-28',
+            lastActiveDate: '2026-03-04',
             totalSessions: 1,
             sessions: [
                 {
                     id: 'session-watch',
-                    date: '2026-02-20',
-                    startedAt: '2026-02-20T10:00:00Z',
+                    date: '2026-03-04',
+                    startedAt: '2026-03-04T10:00:00Z',
                     totalSeconds: 60,
                     userIds: ['member-1'],
                 },
@@ -58,14 +58,14 @@ describe('accountSegmentation', () => {
         });
         const staleAccount = createAccount({
             accountId: 'stale',
-            registeredAt: '2026-01-01',
-            lastActiveDate: '2026-01-20',
+            registeredAt: '2026-02-20',
+            lastActiveDate: '2026-02-28',
             totalSessions: 1,
             sessions: [
                 {
                     id: 'session-stale',
-                    date: '2026-01-20',
-                    startedAt: '2026-01-20T10:00:00Z',
+                    date: '2026-02-28',
+                    startedAt: '2026-02-28T10:00:00Z',
                     totalSeconds: 60,
                     userIds: ['member-1'],
                 },
@@ -73,7 +73,7 @@ describe('accountSegmentation', () => {
         });
 
         expect(analyzeAccount(watchAccount, now)).toMatchObject({
-            isInactive: true,
+            isInactive: false,
             isSuspendCandidate: false,
         });
         expect(analyzeAccount(staleAccount, now)).toMatchObject({
@@ -82,10 +82,10 @@ describe('accountSegmentation', () => {
         });
     });
 
-    it('marks untouched accounts as suspend candidates once they are older than 14 days', () => {
+    it('marks untouched accounts as suspend candidates once they are older than 7 days', () => {
         const analysis = analyzeAccount(createAccount({
             accountId: 'unused',
-            registeredAt: '2026-02-10',
+            registeredAt: '2026-02-28',
             totalSessions: 0,
             lastActiveDate: null,
         }), now);
@@ -100,7 +100,7 @@ describe('accountSegmentation', () => {
     it('uses the same unused cleanup label for untouched and reroll-like accounts', () => {
         const analysis = analyzeAccount(createAccount({
             accountId: 'reroll',
-            registeredAt: '2026-02-10',
+            registeredAt: '2026-02-28',
             members: [
                 {
                     id: 'member-a',
@@ -126,7 +126,7 @@ describe('accountSegmentation', () => {
             isRerollCandidate: true,
             hasUnusedCleanupRisk: true,
         });
-        expect(analysis.suspendReasonLabels).toEqual(['未使用整理候補']);
+        expect(analysis.suspendReasonLabels).toEqual(['7日以上ほぼ未利用', '未使用整理候補']);
         expect(analysis.memberSignals.every((signal) => signal.cleanupReasonLabels.includes('未使用整理候補'))).toBe(true);
     });
 
@@ -181,24 +181,24 @@ describe('accountSegmentation', () => {
     it('filters accounts by the new developer dashboard strata', () => {
         const newAccount = createAccount({
             accountId: 'new',
-            registeredAt: '2026-03-01',
+            registeredAt: '2026-03-04',
         });
         const unused = createAccount({
             accountId: 'unused',
-            registeredAt: '2026-02-10',
+            registeredAt: '2026-02-28',
             totalSessions: 0,
             lastActiveDate: null,
         });
         const suspendCandidate = createAccount({
             accountId: 'suspend',
-            registeredAt: '2026-01-01',
-            lastActiveDate: '2026-01-15',
+            registeredAt: '2026-02-20',
+            lastActiveDate: '2026-02-28',
             totalSessions: 1,
             sessions: [
                 {
                     id: 'session-suspend',
-                    date: '2026-01-15',
-                    startedAt: '2026-01-15T10:00:00Z',
+                    date: '2026-02-28',
+                    startedAt: '2026-02-28T10:00:00Z',
                     totalSeconds: 60,
                     userIds: ['member-1'],
                 },

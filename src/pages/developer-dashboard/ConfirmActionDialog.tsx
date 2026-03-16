@@ -19,7 +19,8 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
         return null;
     }
 
-    const title = confirmAction.type === 'delete'
+    const title = confirmAction.title ?? (
+        confirmAction.type === 'delete'
         ? 'アカウント全削除'
         : confirmAction.type === 'suspend'
             ? 'アカウント休止'
@@ -28,10 +29,13 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
                 : confirmAction.type === 'delete_member'
                     ? 'ユーザーだけ削除'
                     : confirmAction.type === 'bulk_suspend'
-                        ? '休止候補をまとめて休止'
-                        : confirmAction.type === 'bulk_delete'
-                            ? '休止済み候補をまとめて削除'
-                            : '整理候補ユーザーをまとめて削除';
+                        ? 'まとめて休止'
+                        : confirmAction.type === 'bulk_unsuspend'
+                            ? 'まとめて復活'
+                            : confirmAction.type === 'bulk_delete'
+                                ? '休止済み候補をまとめて削除'
+                                : '整理候補ユーザーをまとめて削除'
+    );
 
     const description = confirmAction.description ?? (
         confirmAction.type === 'delete'
@@ -43,29 +47,35 @@ export const ConfirmActionDialog: React.FC<ConfirmActionDialogProps> = ({
                     : confirmAction.type === 'delete_member'
                         ? 'このメンバーだけを削除します。アカウント自体は削除しません。'
                         : confirmAction.type === 'bulk_suspend'
-                            ? '長期未利用と未使用整理候補のアカウントをまとめて休止します。あとで休止中フィルタから見直せます。'
-                            : confirmAction.type === 'bulk_delete'
-                                ? '休止済みの候補アカウントをまとめて完全削除します。この操作は取り消せません。'
-                                : '整理候補のメンバーだけをまとめて削除します。アカウント自体は削除しません。'
+                            ? '選択したアカウントをまとめて休止します。あとで休止中フィルタから見直せます。'
+                            : confirmAction.type === 'bulk_unsuspend'
+                                ? '選択した休止中アカウントをまとめて復活します。'
+                                : confirmAction.type === 'bulk_delete'
+                                    ? '休止済みの候補アカウントをまとめて完全削除します。この操作は取り消せません。'
+                                    : '整理候補のメンバーだけをまとめて削除します。アカウント自体は削除しません。'
     );
 
     const confirmLabel = actionLoading
         ? '処理中...'
-        : confirmAction.type === 'delete' || confirmAction.type === 'bulk_delete'
-            ? '削除する'
-            : confirmAction.type === 'delete_member' || confirmAction.type === 'bulk_delete_members'
-                ? 'ユーザーだけ削除'
-                : confirmAction.type === 'suspend' || confirmAction.type === 'bulk_suspend'
-                    ? '休止する'
-                    : '解除する';
+        : confirmAction.confirmLabel ?? (
+            confirmAction.type === 'delete' || confirmAction.type === 'bulk_delete'
+                ? '削除する'
+                : confirmAction.type === 'delete_member' || confirmAction.type === 'bulk_delete_members'
+                    ? 'ユーザーだけ削除'
+                    : confirmAction.type === 'suspend' || confirmAction.type === 'bulk_suspend'
+                        ? '休止する'
+                        : confirmAction.type === 'bulk_unsuspend'
+                            ? '復活する'
+                            : '解除する'
+        );
 
     const confirmColor = confirmAction.type === 'delete' || confirmAction.type === 'bulk_delete'
-        ? '#ef4444'
+            ? '#ef4444'
         : confirmAction.type === 'delete_member' || confirmAction.type === 'bulk_delete_members'
             ? '#0f766e'
-            : confirmAction.type === 'suspend' || confirmAction.type === 'bulk_suspend'
-                ? '#f59e0b'
-                : '#22c55e';
+        : confirmAction.type === 'suspend' || confirmAction.type === 'bulk_suspend'
+            ? '#f59e0b'
+            : '#22c55e';
 
     return (
         <div style={{

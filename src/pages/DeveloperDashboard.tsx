@@ -18,6 +18,7 @@ import {
     filterAccountsByType,
     INACTIVE_DAYS,
     NEW_ACCOUNT_GRACE_DAYS,
+    SUSPEND_CANDIDATE_DAYS,
 } from './developer-dashboard/accountSegmentation';
 import { DeveloperDebugPanel } from './settings/developer-debug/DeveloperDebugPanel';
 import type { ConfirmAction, FilterType } from './developer-dashboard/types';
@@ -34,6 +35,7 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
     const [accounts, setAccounts] = useState<AdminAccountSummary[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<FilterType>('all');
+    const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
     const [expandedAccount, setExpandedAccount] = useState<string | null>(null);
     const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
     const [actionLoading, setActionLoading] = useState(false);
@@ -63,8 +65,20 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
     const filteredAccounts = useMemo(() => {
         return filterAccountsByType(accounts, filter);
     }, [accounts, filter]);
+    const filteredAccountIdSet = useMemo(
+        () => new Set(filteredAccounts.map((account) => account.accountId)),
+        [filteredAccounts],
+    );
+    const selectedAccountIdSet = useMemo(
+        () => new Set(selectedAccountIds),
+        [selectedAccountIds],
+    );
 
     const stats = useMemo(() => computeStats(accounts), [accounts]);
+
+    useEffect(() => {
+        setSelectedAccountIds((current) => current.filter((accountId) => filteredAccountIdSet.has(accountId)));
+    }, [filteredAccountIdSet]);
 
     const candidateSummary = useMemo(() => {
         const suspendAccountIds: string[] = [];
@@ -107,6 +121,22 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
             unusedCleanupAccountCount,
         };
     }, [accounts, accountAnalyses]);
+
+    const selectionSummary = useMemo(() => {
+        const selectedAccounts = filteredAccounts.filter((account) => selectedAccountIdSet.has(account.accountId));
+        const suspendableAccountIds = selectedAccounts
+            .filter((account) => !account.suspended)
+            .map((account) => account.accountId);
+        const unsuspendableAccountIds = selectedAccounts
+            .filter((account) => account.suspended)
+            .map((account) => account.accountId);
+
+        return {
+            selectedCount: selectedAccounts.length,
+            suspendableAccountIds,
+            unsuspendableAccountIds,
+        };
+    }, [filteredAccounts, selectedAccountIdSet]);
 
     const getAccountLabel = useCallback((account: AdminAccountSummary) => {
         return `${account.members.map((member) => member.name).join(', ')} / ${account.accountId.slice(0, 8)}...`;
@@ -166,6 +196,9 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                 case 'bulk_suspend':
                     await settleBulk((confirmAction.accountIds ?? []).map((accountId) => suspendAccount(accountId, true)));
                     break;
+                case 'bulk_unsuspend':
+                    await settleBulk((confirmAction.accountIds ?? []).map((accountId) => suspendAccount(accountId, false)));
+                    break;
                 case 'bulk_delete':
                     await settleBulk((confirmAction.accountIds ?? []).map((accountId) => deleteAccountData(accountId)));
                     break;
@@ -177,6 +210,10 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
             }
 
             await load();
+
+            if (confirmAction.type === 'bulk_suspend' || confirmAction.type === 'bulk_unsuspend' || confirmAction.type === 'bulk_delete') {
+                setSelectedAccountIds([]);
+            }
 
             if (failureMessage) {
                 throw new Error(failureMessage);
@@ -244,6 +281,7 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                                     filteredCount={filteredAccounts.length}
                                     onFilterChange={setFilter}
                                     inactivityDays={INACTIVE_DAYS}
+                                    suspendDays={SUSPEND_CANDIDATE_DAYS}
                                     graceDays={NEW_ACCOUNT_GRACE_DAYS}
                                 />
                                 <DeveloperBulkActions
@@ -251,13 +289,37 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                                     suspendedDeleteCandidateCount={candidateSummary.suspendedDeleteAccountIds.length}
                                     cleanupMemberCount={candidateSummary.cleanupMemberCount}
                                     cleanupAccountCount={candidateSummary.cleanupAccountCount}
+                                    visibleAccountCount={filteredAccounts.length}
+                                    selectedCount={selectionSummary.selectedCount}
+                                    selectedSuspendCount={selectionSummary.suspendableAccountIds.length}
+                                    selectedUnsuspendCount={selectionSummary.unsuspendableAccountIds.length}
                                     actionLoading={actionLoading}
                                     onBulkSuspend={() => {
                                         setConfirmAction({
                                             type: 'bulk_suspend',
+                                            title: '休止候補をまとめて休止',
                                             accountIds: candidateSummary.suspendAccountIds,
                                             subjectLabel: `休止候補 ${candidateSummary.suspendAccountIds.length}件 / 未使用整理候補 ${candidateSummary.unusedCleanupAccountCount}件`,
                                             description: '長期未利用と未使用整理候補をまとめて休止します。メンバー削除は行いません。',
+                                        });
+                                    }}
+                                    onBulkSuspendSelected={() => {
+                                        setConfirmAction({
+                                            type: 'bulk_suspend',
+                                            title: '選択中をまとめて休止',
+                                            accountIds: selectionSummary.suspendableAccountIds,
+                                            subjectLabel: `選択中 ${selectionSummary.selectedCount}件 / 休止 ${selectionSummary.suspendableAccountIds.length}件`,
+                                            description: '選択した未休止アカウントをまとめて休止します。',
+                                        });
+                                    }}
+                                    onBulkUnsuspendSelected={() => {
+                                        setConfirmAction({
+                                            type: 'bulk_unsuspend',
+                                            title: '選択中をまとめて復活',
+                                            confirmLabel: '復活する',
+                                            accountIds: selectionSummary.unsuspendableAccountIds,
+                                            subjectLabel: `選択中 ${selectionSummary.selectedCount}件 / 復活 ${selectionSummary.unsuspendableAccountIds.length}件`,
+                                            description: '選択した休止中アカウントをまとめて復活します。',
                                         });
                                     }}
                                     onBulkDeleteAccounts={() => {
@@ -276,6 +338,12 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                                             description: '整理候補のメンバーだけをまとめて削除します。アカウント自体は削除しません。',
                                         });
                                     }}
+                                    onSelectAllVisible={() => {
+                                        setSelectedAccountIds(filteredAccounts.map((account) => account.accountId));
+                                    }}
+                                    onClearSelection={() => {
+                                        setSelectedAccountIds([]);
+                                    }}
                                 />
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -284,7 +352,15 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                                             key={account.accountId}
                                             account={account}
                                             analysis={accountAnalyses.get(account.accountId) ?? analyzeAccount(account)}
+                                            selected={selectedAccountIdSet.has(account.accountId)}
                                             expanded={expandedAccount === account.accountId}
+                                            onToggleSelected={() => {
+                                                setSelectedAccountIds((current) => (
+                                                    current.includes(account.accountId)
+                                                        ? current.filter((accountId) => accountId !== account.accountId)
+                                                        : [...current, account.accountId]
+                                                ));
+                                            }}
                                             onToggle={() => {
                                                 setExpandedAccount(expandedAccount === account.accountId ? null : account.accountId);
                                             }}

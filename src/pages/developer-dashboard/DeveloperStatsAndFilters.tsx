@@ -18,6 +18,7 @@ interface DeveloperStatsAndFiltersProps {
     filteredCount: number;
     onFilterChange: (filter: FilterType) => void;
     inactivityDays: number;
+    suspendDays: number;
     graceDays: number;
 }
 
@@ -28,6 +29,7 @@ export const DeveloperStatsAndFilters: React.FC<DeveloperStatsAndFiltersProps> =
     filteredCount,
     onFilterChange,
     inactivityDays,
+    suspendDays,
     graceDays,
 }) => {
     return (
@@ -53,7 +55,7 @@ export const DeveloperStatsAndFilters: React.FC<DeveloperStatsAndFiltersProps> =
                     ['all', `全て (${accounts.length})`],
                     ['new', `新規${graceDays}日`],
                     ['inactive', `非アクティブ(${inactivityDays}日+)`],
-                    ['suspend', '休止候補'],
+                    ['suspend', `休止候補(${suspendDays}日+)`],
                     ['cleanup', '整理候補あり'],
                     ['duplicate', '同名あり'],
                     ['multi', '複数メンバー'],
@@ -79,7 +81,7 @@ export const DeveloperStatsAndFilters: React.FC<DeveloperStatsAndFiltersProps> =
             </div>
 
             <div style={{ fontSize: 11, color: '#666', marginBottom: 8, lineHeight: 1.5 }}>
-                新規は作成から{graceDays}日間は様子見。休止候補は長期未利用と、未使用整理候補をまとめて拾います。
+                新規は作成から{graceDays}日間は様子見。休止候補は{suspendDays}日以上触っていないアカウントと、未使用整理候補をまとめて拾います。
             </div>
             <div style={{ fontSize: 11, color: '#666', marginBottom: 12, lineHeight: 1.5 }}>
                 同名ありは同じアカウント内で同名メンバーが複数いる状態です。整理候補ありは同名未参照や未使用のまま残ったメンバーがいるアカウントです。

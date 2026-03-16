@@ -3,11 +3,11 @@ import { calculateStreak } from '../../lib/teacher';
 import type { AdminAccountSummary } from '../../lib/developer';
 import type { FilterType } from './types';
 
-export const NEW_ACCOUNT_GRACE_DAYS = 14;
-export const INACTIVE_DAYS = 14;
-export const SUSPEND_CANDIDATE_DAYS = 30;
+export const NEW_ACCOUNT_GRACE_DAYS = 7;
+export const INACTIVE_DAYS = 7;
+export const SUSPEND_CANDIDATE_DAYS = 7;
 export const MEMBER_CLEANUP_DAYS = 14;
-export const LONG_DORMANT_LABEL = '30日以上ほぼ未利用';
+export const LONG_DORMANT_LABEL = `${SUSPEND_CANDIDATE_DAYS}日以上ほぼ未利用`;
 export const UNUSED_CLEANUP_LABEL = '未使用整理候補';
 export const DUPLICATE_UNREFERENCED_LABEL = '同名未参照';
 

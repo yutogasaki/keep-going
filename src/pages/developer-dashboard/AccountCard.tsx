@@ -1,12 +1,14 @@
 import React from 'react';
-import { ChevronDown, Pause, Play, Trash2 } from 'lucide-react';
+import { Check, ChevronDown, Pause, Play, Trash2 } from 'lucide-react';
 import type { AdminAccountSummary } from '../../lib/developer';
-import type { AccountSegmentation } from './accountSegmentation';
+import { NEW_ACCOUNT_GRACE_DAYS, type AccountSegmentation } from './accountSegmentation';
 
 interface AccountCardProps {
     account: AdminAccountSummary;
     analysis: AccountSegmentation;
+    selected: boolean;
     expanded: boolean;
+    onToggleSelected: () => void;
     onToggle: () => void;
     daysAgo: (date: string | null) => string;
     formatDate: (date: string | null) => string;
@@ -18,7 +20,9 @@ interface AccountCardProps {
 export const AccountCard: React.FC<AccountCardProps> = ({
     account,
     analysis,
+    selected,
     expanded,
+    onToggleSelected,
     onToggle,
     daysAgo,
     formatDate,
@@ -46,6 +50,30 @@ export const AccountCard: React.FC<AccountCardProps> = ({
                     gap: 10,
                 }}
             >
+                <button
+                    type="button"
+                    aria-pressed={selected}
+                    aria-label={selected ? '選択解除' : '選択'}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        onToggleSelected();
+                    }}
+                    style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 8,
+                        border: selected ? 'none' : '1px solid #CBD5E1',
+                        background: selected ? '#2563EB' : '#FFFFFF',
+                        color: '#FFFFFF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                    }}
+                >
+                    {selected ? <Check size={14} /> : null}
+                </button>
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 700, fontSize: 14 }}>
@@ -120,7 +148,7 @@ export const AccountCard: React.FC<AccountCardProps> = ({
                                 fontSize: 10,
                                 fontWeight: 700,
                             }}>
-                                新規14日
+                                新規{NEW_ACCOUNT_GRACE_DAYS}日
                             </span>
                         )}
                         {analysis.cleanupCandidateMemberCount > 0 && (
