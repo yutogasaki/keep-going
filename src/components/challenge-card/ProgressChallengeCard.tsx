@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Trophy } from 'lucide-react';
 import type { Challenge } from '../../lib/challenges';
+import { getHomeBadgeStyle, getHomeCardStyle, homeCardMetaLineStyle, homeCardTitleStyle } from '../home/homeCardChrome';
 
 interface ProgressChallengeCardProps {
     challenge: Challenge;
@@ -32,15 +33,9 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
             animate={{ opacity: 1, y: 0 }}
             onClick={onOpenDetail}
             style={{
-                background: allCompleted
-                    ? 'linear-gradient(135deg, #FFF9E6, #FFF3CC)'
-                    : 'var(--glass-bg-heavy)',
-                borderRadius: 'var(--card-radius-sm)',
-                padding: '14px 16px',
-                boxShadow: 'var(--shadow-sm)',
-                border: allCompleted
-                    ? '1px solid #FFD700'
-                    : '1px solid rgba(0,0,0,0.05)',
+                ...getHomeCardStyle(allCompleted ? 'gold' : 'neutral', {
+                    padding: '14px 16px',
+                }),
                 cursor: 'pointer',
             }}
         >
@@ -50,46 +45,40 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
                         <span style={challengeBadgeStyle}>先生チャレンジ</span>
                     </div>
-                    <div style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: '#333',
-                    }}>
+                    <div
+                        style={{
+                            ...homeCardTitleStyle,
+                            fontSize: 13,
+                        }}
+                    >
                         {challenge.title}
                     </div>
-                    <div style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 11,
-                        color: '#888',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        flexWrap: 'wrap',
-                    }}>
+                    <div style={homeCardMetaLineStyle}>
                         {goalLabel}
                         <span style={{ color: '#B2BEC3' }}>|</span>
                         <span>{dailyRuleLabel}</span>
                         <span style={{ color: '#B2BEC3' }}>|</span>
-                        <span style={{
-                            color: deadlineLabel.startsWith('あと') ? '#8395A7' : '#52606D',
-                            fontWeight: deadlineLabel.startsWith('あと') ? 700 : 500,
-                        }}>
+                        <span
+                            style={{
+                                color: deadlineLabel.startsWith('あと') ? '#8395A7' : '#52606D',
+                                fontWeight: deadlineLabel.startsWith('あと') ? 700 : 500,
+                            }}
+                        >
                             {deadlineLabel}
                         </span>
                     </div>
                 </div>
-                {allCompleted && (
-                    <Trophy size={18} color="#FFD700" />
-                )}
+                {allCompleted && <Trophy size={18} color="#FFD700" />}
             </div>
 
-            <div style={{
-                background: '#F0F0F0',
-                borderRadius: 6,
-                height: 8,
-                overflow: 'hidden',
-            }}>
+            <div
+                style={{
+                    background: '#F0F0F0',
+                    borderRadius: 6,
+                    height: 8,
+                    overflow: 'hidden',
+                }}
+            >
                 <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${ratio * 100}%` }}
@@ -104,15 +93,16 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
                 />
             </div>
 
-            <div style={{
-                display: 'flex',
-                justifyContent: 'flex-end',
-                marginTop: 4,
-                fontFamily: "'Noto Sans JP', sans-serif",
-                fontSize: 11,
-                color: allCompleted ? '#B8860B' : '#888',
-                fontWeight: allCompleted ? 700 : 400,
-            }}>
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    marginTop: 4,
+                    ...homeCardMetaLineStyle,
+                    color: allCompleted ? '#B8860B' : '#888',
+                    fontWeight: allCompleted ? 700 : 400,
+                }}
+            >
                 {allCompleted ? 'クリア！🎉' : progressLabel}
             </div>
         </motion.div>
@@ -120,11 +110,8 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
 };
 
 const challengeBadgeStyle: React.CSSProperties = {
-    fontFamily: "'Noto Sans JP', sans-serif",
-    fontSize: 10,
-    fontWeight: 800,
-    color: '#1E7F6D',
-    background: 'rgba(43, 186, 160, 0.12)',
-    borderRadius: 999,
-    padding: '3px 8px',
+    ...getHomeBadgeStyle('mint', {
+        fontWeight: 800,
+        padding: '3px 8px',
+    }),
 };

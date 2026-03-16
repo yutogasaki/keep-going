@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Calendar, Target } from 'lucide-react';
 import type { Challenge } from '../../lib/challenges';
 import { getChallengeCardText } from '../../lib/challenges';
+import { getHomeBadgeStyle, getHomeCardStyle, homeCardMetaLineStyle, homeCardTitleStyle } from '../home/homeCardChrome';
 import { CLASS_EMOJI } from '../../data/exercises';
 
 interface InviteChallengeCardProps {
@@ -32,11 +33,9 @@ export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
             animate={{ opacity: 1, y: 0 }}
             onClick={onOpenDetail}
             style={{
-                background: 'linear-gradient(135deg, #F0FDFA 0%, #E0F7FA 100%)',
-                borderRadius: 16,
-                padding: '16px 18px',
-                boxShadow: '0 2px 12px rgba(43, 186, 160, 0.1)',
-                border: '1px solid rgba(43, 186, 160, 0.15)',
+                ...getHomeCardStyle('mint', {
+                    padding: '16px 18px',
+                }),
                 cursor: 'pointer',
             }}
         >
@@ -46,27 +45,22 @@ export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
                         <span style={challengeBadgeStyle}>先生チャレンジ</span>
                     </div>
-                    <div style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 14,
-                        fontWeight: 700,
-                        color: '#2D3436',
-                        marginBottom: 4,
-                    }}>
+                    <div
+                        style={{
+                            ...homeCardTitleStyle,
+                            fontSize: 14,
+                            marginBottom: 4,
+                        }}
+                    >
                         {challenge.title}
                     </div>
-                    <div style={{
-                        fontFamily: "'Noto Sans JP', sans-serif",
-                        fontSize: 12,
-                        color: '#636E72',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                        flexWrap: 'wrap',
-                    }}>
-                        {cardText && (
-                            <span style={{ color: '#52606D' }}>{cardText}</span>
-                        )}
+                    <div
+                        style={{
+                            ...homeCardMetaLineStyle,
+                            gap: 6,
+                        }}
+                    >
+                        {cardText && <span style={{ color: '#52606D' }}>{cardText}</span>}
                         <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                             <Target size={12} color="#2BBAA0" />
                             {goalLabel}
@@ -92,7 +86,8 @@ export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
                                         fontWeight: 600,
                                     }}
                                 >
-                                    {CLASS_EMOJI[classLevel] ?? ''}{classLevel}
+                                    {CLASS_EMOJI[classLevel] ?? ''}
+                                    {classLevel}
                                 </span>
                             ))}
                         </div>
@@ -128,11 +123,8 @@ export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
 };
 
 const challengeBadgeStyle: React.CSSProperties = {
-    fontFamily: "'Noto Sans JP', sans-serif",
-    fontSize: 10,
-    fontWeight: 800,
-    color: '#1E7F6D',
-    background: 'rgba(43, 186, 160, 0.14)',
-    borderRadius: 999,
-    padding: '3px 8px',
+    ...getHomeBadgeStyle('mint', {
+        fontWeight: 800,
+        padding: '3px 8px',
+    }),
 };

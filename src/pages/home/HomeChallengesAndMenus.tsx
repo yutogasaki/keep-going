@@ -2,6 +2,8 @@ import React from 'react';
 import { ChallengeCard } from '../../components/ChallengeCard';
 import { PersonalChallengeCard } from '../../components/PersonalChallengeCard';
 import { PopularMenusRow } from '../../components/PopularMenusRow';
+import { HomeSection } from '../../components/home/HomeSection';
+import { getHomeCardStyle, homeCardBodyTextStyle, homeCardTitleStyle } from '../../components/home/homeCardChrome';
 import { HomeTeacherMenuHighlights } from './HomeTeacherMenuHighlights';
 import type { ExercisePlacement } from '../../data/exercisePlacement';
 import type { MenuGroup } from '../../data/menuGroups';
@@ -73,100 +75,95 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
     onMenuTap,
     onExerciseTap,
 }) => {
-    const hasChallengeCards = (
-        teacherActiveChallenges.length > 0
-        || teacherRecommendedChallenge !== null
-        || personalActiveChallenges.length > 0
-    );
-    const hasMenuSections = (
-        teacherMenuHighlights.length > 0
-        || teacherExerciseHighlight !== null
-        || recommendedMenus.length > 0
-        || recommendedExercises.length > 0
-    );
+    const hasChallengeCards =
+        teacherActiveChallenges.length > 0 ||
+        teacherRecommendedChallenge !== null ||
+        personalActiveChallenges.length > 0;
+    const hasMenuSections =
+        teacherMenuHighlights.length > 0 ||
+        teacherExerciseHighlight !== null ||
+        recommendedMenus.length > 0 ||
+        recommendedExercises.length > 0;
 
     return (
         <>
             {showChallengeSection && (
-                <div
-                    id="home-challenges-section"
-                    style={{
-                        width: '100%',
-                        padding: '0 16px',
-                        marginTop: 20,
-                    }}
+                <HomeSection
+                    title="チャレンジ"
+                    actionLabel="もっと見る"
+                    onAction={onOpenChallengeHub}
+                    boxed
+                    surfaceTone="mint"
+                    style={{ marginTop: 20 }}
+                    contentStyle={{ gap: 10 }}
                 >
-                    <div style={challengeSectionStyle}>
-                        <div style={challengeHeaderStyle}>
-                            <div style={challengeTitleStyle}>チャレンジ</div>
-                            <button
-                                type="button"
-                                onClick={onOpenChallengeHub}
-                                style={challengeLinkStyle}
-                            >
-                                もっと見る
-                            </button>
-                        </div>
+                    <div id="home-challenges-section" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {teacherActiveChallenges.map((challenge) => (
+                            <ChallengeCard
+                                key={challenge.id}
+                                challenge={challenge}
+                                completions={completions}
+                                rewardGrants={rewardGrants}
+                                teacherExercises={teacherExercises}
+                                onCompleted={onChallengesUpdated}
+                            />
+                        ))}
+                        {personalActiveChallenges.map((item) => (
+                            <PersonalChallengeCard
+                                key={item.challenge.id}
+                                item={item}
+                                teacherExercises={teacherExercises}
+                                teacherMenus={teacherMenus}
+                                customExercises={customChallengeExercises}
+                                customMenus={customChallengeMenus}
+                                onOpenDetail={() => onOpenPersonalChallenge(item)}
+                            />
+                        ))}
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {teacherActiveChallenges.map((challenge) => (
+                        {teacherRecommendedChallenge ? (
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 8,
+                                    marginTop:
+                                        teacherActiveChallenges.length > 0 || personalActiveChallenges.length > 0
+                                            ? 2
+                                            : 0,
+                                }}
+                            >
+                                <span style={challengeSubsectionLabelStyle}>先生からのおすすめ</span>
                                 <ChallengeCard
-                                    key={challenge.id}
-                                    challenge={challenge}
+                                    challenge={teacherRecommendedChallenge}
                                     completions={completions}
                                     rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
                                     onCompleted={onChallengesUpdated}
                                 />
-                            ))}
-                            {personalActiveChallenges.map((item) => (
-                                <PersonalChallengeCard
-                                    key={item.challenge.id}
-                                    item={item}
-                                    teacherExercises={teacherExercises}
-                                    teacherMenus={teacherMenus}
-                                    customExercises={customChallengeExercises}
-                                    customMenus={customChallengeMenus}
-                                    onOpenDetail={() => onOpenPersonalChallenge(item)}
-                                />
-                            ))}
+                            </div>
+                        ) : null}
 
-                            {teacherRecommendedChallenge ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: (teacherActiveChallenges.length > 0 || personalActiveChallenges.length > 0) ? 2 : 0 }}>
-                                    <span style={challengeSubsectionLabelStyle}>先生からのおすすめ</span>
-                                    <ChallengeCard
-                                        challenge={teacherRecommendedChallenge}
-                                        completions={completions}
-                                        rewardGrants={rewardGrants}
-                                        teacherExercises={teacherExercises}
-                                        onCompleted={onChallengesUpdated}
-                                    />
-                                </div>
-                            ) : null}
-
-                            {!hasChallengeCards && (
-                                <button
-                                    type="button"
-                                    onClick={onCreatePersonalChallenge}
-                                    style={{
-                                        border: '1px dashed rgba(43, 186, 160, 0.25)',
-                                        background: 'linear-gradient(135deg, #F8FFFD, #F1FBF7)',
-                                        borderRadius: 16,
+                        {!hasChallengeCards && (
+                            <button
+                                type="button"
+                                onClick={onCreatePersonalChallenge}
+                                style={{
+                                    ...getHomeCardStyle('mint', {
+                                        borderStyle: 'dashed',
+                                        borderColor: 'rgba(43, 186, 160, 0.25)',
                                         padding: '16px',
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        fontFamily: "'Noto Sans JP', sans-serif",
-                                    }}
-                                >
-                                    <div style={{ fontSize: 13, fontWeight: 800, color: '#2D3436' }}>じぶんでつくる</div>
-                                    <div style={{ marginTop: 4, fontSize: 11, color: '#636E72', lineHeight: 1.6 }}>
-                                        7日で5日みたいな目標をつくれるよ。
-                                    </div>
-                                </button>
-                            )}
-                        </div>
+                                    }),
+                                    ...emptyCardButtonStyle,
+                                }}
+                            >
+                                <div style={homeCardTitleStyle}>じぶんでつくる</div>
+                                <div style={{ ...homeCardBodyTextStyle, marginTop: 4 }}>
+                                    7日で5日みたいな目標をつくれるよ。
+                                </div>
+                            </button>
+                        )}
                     </div>
-                </div>
+                </HomeSection>
             )}
 
             {hasMenuSections && (
@@ -204,48 +201,17 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
     );
 };
 
-const challengeSectionStyle: React.CSSProperties = {
-    borderRadius: 24,
-    padding: 16,
-    border: '1px solid rgba(43, 186, 160, 0.12)',
-    background: 'linear-gradient(180deg, rgba(240, 253, 250, 0.92) 0%, rgba(255, 255, 255, 0.98) 100%)',
-    boxShadow: '0 10px 28px rgba(15, 23, 42, 0.06)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-};
-
-const challengeHeaderStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-};
-
-const challengeTitleStyle: React.CSSProperties = {
-    fontFamily: "'Noto Sans JP', sans-serif",
-    fontSize: 16,
-    fontWeight: 800,
-    color: '#1F2937',
-};
-
-const challengeLinkStyle: React.CSSProperties = {
-    border: 'none',
-    background: 'rgba(43, 186, 160, 0.12)',
-    color: '#1E7F6D',
-    cursor: 'pointer',
-    fontFamily: "'Noto Sans JP', sans-serif",
-    fontSize: 12,
-    fontWeight: 800,
-    borderRadius: 999,
-    padding: '8px 12px',
-    whiteSpace: 'nowrap',
-};
-
 const challengeSubsectionLabelStyle: React.CSSProperties = {
     fontFamily: "'Noto Sans JP', sans-serif",
     fontSize: 11,
     fontWeight: 700,
     color: '#64748B',
     padding: '2px 4px 0',
+};
+
+const emptyCardButtonStyle: React.CSSProperties = {
+    width: '100%',
+    textAlign: 'left',
+    cursor: 'pointer',
+    fontFamily: "'Noto Sans JP', sans-serif",
 };

@@ -1,11 +1,22 @@
 import React, { useMemo } from 'react';
 import { ChevronRight, Clock, Play, Sparkles } from 'lucide-react';
+import { HomeSection } from '../../components/home/HomeSection';
+import {
+    getHomeBadgeStyle,
+    getHomeCardStyle,
+    getHomeIconSurfaceStyle,
+    homeCardBodyTextStyle,
+    homeCardButtonResetStyle,
+    homeCardFooterRowStyle,
+    homeCardMetaChipStyle,
+    homeCardTitleStyle,
+} from '../../components/home/homeCardChrome';
 import { getExercisePlacementLabel } from '../../data/exercisePlacement';
 import { getTeacherVisibilityLabel, isTeacherContentNew } from '../../lib/teacherExerciseMetadata';
 import type { TeacherExercise, TeacherMenu } from '../../lib/teacherContent';
+import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../lib/styles';
 import type { GroupExerciseMap } from '../menu/group-card/groupCardUtils';
 import { buildGroupCardSummary } from '../menu/group-card/groupCardUtils';
-import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../lib/styles';
 import { getTeacherExerciseLead, getTeacherMenuLead, toTeacherMenuGroup } from './homeMenuUtils';
 
 interface HomeTeacherMenuHighlightsProps {
@@ -30,11 +41,12 @@ export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps>
     onOpenMenuTab,
 }) => {
     const displayMenus = useMemo(
-        () => menus.map((menu) => ({
-            menu,
-            summary: buildGroupCardSummary(toTeacherMenuGroup(menu), exerciseMap),
-            isNew: isNewTeacherContent(menu.id),
-        })),
+        () =>
+            menus.map((menu) => ({
+                menu,
+                summary: buildGroupCardSummary(toTeacherMenuGroup(menu), exerciseMap),
+                isNew: isNewTeacherContent(menu.id),
+            })),
         [exerciseMap, isNewTeacherContent, menus],
     );
 
@@ -43,31 +55,15 @@ export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps>
     }
 
     return (
-        <section
-            style={{
-                width: '100%',
-                padding: '0 16px',
-                marginTop: 20,
-            }}
+        <HomeSection
+            title="先生のメニュー"
+            subtitle="すぐはじめやすい"
+            actionLabel="もっと見る"
+            onAction={onOpenMenuTab}
         >
-            <div style={sectionHeaderStyle}>
-                <div style={{ minWidth: 0 }}>
-                    <div style={sectionTitleStyle}>先生のメニュー</div>
-                    <div style={sectionSubtitleStyle}>すぐはじめやすい</div>
-                </div>
-                <button
-                    type="button"
-                    onClick={onOpenMenuTab}
-                    style={sectionLinkStyle}
-                >
-                    もっと見る
-                    <ChevronRight size={14} />
-                </button>
-            </div>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: SPACE.md }}>
                 {displayMenus.map(({ menu, summary, isNew }) => (
-                    <div key={menu.id} style={teacherCardStyle}>
+                    <div key={menu.id} style={getHomeCardStyle('warm', { overflow: 'hidden', padding: 0 })}>
                         <button
                             type="button"
                             onClick={() => onPreview(menu)}
@@ -75,7 +71,9 @@ export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps>
                             aria-label={`${menu.name}の詳細をみる`}
                         >
                             <div style={cardHeaderRowStyle}>
-                                <div style={teacherIconStyle}>
+                                <div
+                                    style={getHomeIconSurfaceStyle('warm', { width: 52, height: 52, borderRadius: 18 })}
+                                >
                                     <span style={{ fontSize: 26, lineHeight: 1 }}>{menu.emoji}</span>
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -93,11 +91,12 @@ export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps>
                         <div style={teacherFooterRowStyle}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                 <span style={teacherMetaChipStyle}>
-                                    <Clock size={11} />
-                                    約{summary.minutes}分
+                                    <Clock size={11} />約{summary.minutes}分
                                 </span>
                                 <span style={teacherMetaChipStyle}>{summary.exerciseCount}種目</span>
-                                {menu.focusTags[0] ? <span style={teacherFocusChipStyle}>{menu.focusTags[0]}</span> : null}
+                                {menu.focusTags[0] ? (
+                                    <span style={teacherFocusChipStyle}>{menu.focusTags[0]}</span>
+                                ) : null}
                             </div>
                             <button
                                 type="button"
@@ -113,7 +112,7 @@ export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps>
                 ))}
 
                 {featuredExercise ? (
-                    <div style={teacherDiscoveryPanelStyle}>
+                    <div style={getHomeCardStyle('sky', { overflow: 'hidden', padding: 0 })}>
                         <button
                             type="button"
                             onClick={() => onExercisePreview(featuredExercise)}
@@ -125,7 +124,7 @@ export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps>
                                 先生の新しい種目
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-                                <div style={teacherDiscoveryIconStyle}>
+                                <div style={getHomeIconSurfaceStyle('sky')}>
                                     <span style={{ fontSize: 24, lineHeight: 1 }}>{featuredExercise.emoji}</span>
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -162,11 +161,7 @@ export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps>
                                     </span>
                                 ) : null}
                             </div>
-                            <button
-                                type="button"
-                                onClick={onOpenMenuTab}
-                                style={teacherDiscoveryLinkStyle}
-                            >
+                            <button type="button" onClick={onOpenMenuTab} style={teacherDiscoveryLinkStyle}>
                                 種目も見る
                                 <ChevronRight size={14} />
                             </button>
@@ -174,64 +169,14 @@ export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps>
                     </div>
                 ) : null}
             </div>
-        </section>
+        </HomeSection>
     );
 };
 
-const sectionHeaderStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: SPACE.md,
-    marginBottom: 12,
-    padding: '0 4px',
-};
-
-const sectionTitleStyle: React.CSSProperties = {
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.md + 1,
-    fontWeight: 700,
-    color: COLOR.dark,
-};
-
-const sectionSubtitleStyle: React.CSSProperties = {
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.sm,
-    color: COLOR.muted,
-    marginTop: 4,
-    lineHeight: 1.5,
-};
-
-const sectionLinkStyle: React.CSSProperties = {
-    background: 'none',
-    border: 'none',
-    color: COLOR.info,
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: 600,
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    padding: '2px 0',
-    flexShrink: 0,
-};
-
-const teacherCardStyle: React.CSSProperties = {
-    borderRadius: RADIUS['2xl'],
-    border: '1px solid rgba(255,255,255,0.6)',
-    background: 'linear-gradient(180deg, rgba(255,250,247,0.98) 0%, rgba(255,255,255,0.98) 100%)',
-    boxShadow: '0 6px 18px rgba(0,0,0,0.05)',
-    overflow: 'hidden',
-};
-
 const cardBodyButtonStyle: React.CSSProperties = {
+    ...homeCardButtonResetStyle,
     width: '100%',
-    border: 'none',
-    background: 'none',
     padding: `${SPACE.lg}px`,
-    cursor: 'pointer',
-    textAlign: 'left',
 };
 
 const cardHeaderRowStyle: React.CSSProperties = {
@@ -240,32 +185,10 @@ const cardHeaderRowStyle: React.CSSProperties = {
     gap: SPACE.md,
 };
 
-const teacherIconStyle: React.CSSProperties = {
-    width: 52,
-    height: 52,
-    borderRadius: 18,
-    background: 'linear-gradient(135deg, #FFF0E8, #FFF7D6)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-};
-
-const teacherDiscoveryPanelStyle: React.CSSProperties = {
-    borderRadius: RADIUS['2xl'],
-    border: '1px solid rgba(255,255,255,0.6)',
-    background: 'linear-gradient(180deg, rgba(244,249,255,0.98) 0%, rgba(255,255,255,0.98) 100%)',
-    boxShadow: '0 6px 18px rgba(0,0,0,0.05)',
-    overflow: 'hidden',
-};
-
 const teacherDiscoveryButtonStyle: React.CSSProperties = {
+    ...homeCardButtonResetStyle,
     width: '100%',
-    border: 'none',
-    background: 'none',
     padding: `${SPACE.lg}px`,
-    cursor: 'pointer',
-    textAlign: 'left',
 };
 
 const teacherDiscoveryLabelStyle: React.CSSProperties = {
@@ -276,30 +199,15 @@ const teacherDiscoveryLabelStyle: React.CSSProperties = {
     padding: '6px 10px',
     borderRadius: RADIUS.full,
     background: 'rgba(9, 132, 227, 0.08)',
-    color: '#0984E3',
+    color: COLOR.info,
     fontFamily: FONT.body,
     fontSize: FONT_SIZE.xs + 1,
     fontWeight: 700,
 };
 
-const teacherDiscoveryIconStyle: React.CSSProperties = {
-    width: 48,
-    height: 48,
-    borderRadius: RADIUS.xl,
-    background: 'rgba(9, 132, 227, 0.10)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-};
-
 const teacherDiscoveryFooterStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: SPACE.sm,
+    ...homeCardFooterRowStyle,
     padding: `0 ${SPACE.lg}px ${SPACE.lg}px`,
-    flexWrap: 'wrap',
 };
 
 const teacherDiscoveryLinkStyle: React.CSSProperties = {
@@ -318,19 +226,13 @@ const teacherDiscoveryLinkStyle: React.CSSProperties = {
 };
 
 const teacherTitleStyle: React.CSSProperties = {
-    fontFamily: FONT.body,
+    ...homeCardTitleStyle,
     fontSize: FONT_SIZE.lg,
-    fontWeight: 700,
-    color: COLOR.dark,
-    lineHeight: 1.35,
 };
 
 const teacherLeadStyle: React.CSSProperties = {
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.sm + 1,
-    color: COLOR.text,
+    ...homeCardBodyTextStyle,
     marginTop: 8,
-    lineHeight: 1.6,
     display: '-webkit-box',
     WebkitLineClamp: 2,
     WebkitBoxOrient: 'vertical',
@@ -338,23 +240,13 @@ const teacherLeadStyle: React.CSSProperties = {
 };
 
 const teacherFooterRowStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: SPACE.sm,
+    ...homeCardFooterRowStyle,
     padding: `0 ${SPACE.lg}px ${SPACE.lg}px`,
-    flexWrap: 'wrap',
 };
 
 const teacherMetaChipStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 4,
-    padding: '6px 10px',
-    borderRadius: RADIUS.full,
+    ...homeCardMetaChipStyle,
     background: '#F6F4F2',
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.xs + 1,
     color: COLOR.muted,
 };
 
@@ -381,40 +273,13 @@ const teacherStartButtonStyle: React.CSSProperties = {
 };
 
 const teacherBadgeStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '4px 8px',
-    borderRadius: RADIUS.full,
-    background: 'rgba(9, 132, 227, 0.1)',
-    color: '#0984E3',
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.xs + 1,
-    fontWeight: 700,
+    ...getHomeBadgeStyle('sky'),
 };
 
 const recommendedBadgeStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '4px 8px',
-    borderRadius: RADIUS.full,
-    background: 'rgba(43, 186, 160, 0.12)',
-    color: COLOR.primaryDark,
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.xs + 1,
-    fontWeight: 700,
+    ...getHomeBadgeStyle('mint'),
 };
 
 const newBadgeStyle: React.CSSProperties = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '4px 8px',
-    borderRadius: RADIUS.full,
-    background: '#FF7A7A',
-    color: COLOR.white,
-    fontFamily: FONT.heading,
-    fontSize: FONT_SIZE.xs + 1,
-    fontWeight: 700,
+    ...getHomeBadgeStyle('danger'),
 };
