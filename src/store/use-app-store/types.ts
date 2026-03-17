@@ -143,6 +143,10 @@ export interface AppState {
     setTtsEnabled: (enabled: boolean) => void;
     bgmEnabled: boolean;
     setBgmEnabled: (enabled: boolean) => void;
+    bgmVolume: number;
+    setBgmVolume: (vol: number) => void;
+    bgmTrackId: string;
+    setBgmTrackId: (trackId: string) => void;
     hapticEnabled: boolean;
     setHapticEnabled: (enabled: boolean) => void;
     notificationsEnabled: boolean;

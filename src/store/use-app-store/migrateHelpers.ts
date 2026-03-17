@@ -1,4 +1,5 @@
 import { getTodayKey } from '../../lib/db';
+import { DEFAULT_BGM_TRACK_ID } from '../../lib/bgmTracks';
 import type {
     AppState,
     ChallengeEnrollmentWindow,
@@ -379,6 +380,10 @@ export function sanitizeSoundVolume(value: unknown): number {
     return Math.min(1, Math.max(0, value));
 }
 
+export function sanitizeBgmTrackId(value: unknown): string {
+    return typeof value === 'string' && value.length > 0 ? value : DEFAULT_BGM_TRACK_ID;
+}
+
 export function sanitizeNullableNumber(value: unknown): number | null {
     if (value == null) {
         return null;
@@ -397,6 +402,8 @@ export function sanitizePersistedState(state: Record<string, unknown>): void {
     state.soundVolume = sanitizeSoundVolume(state.soundVolume);
     state.ttsEnabled = sanitizeBooleanSetting(state.ttsEnabled, true);
     state.bgmEnabled = sanitizeBooleanSetting(state.bgmEnabled, true);
+    state.bgmVolume = sanitizeSoundVolume(state.bgmVolume ?? 0.35);
+    state.bgmTrackId = sanitizeBgmTrackId(state.bgmTrackId);
     state.hapticEnabled = sanitizeBooleanSetting(state.hapticEnabled, true);
     state.notificationsEnabled = sanitizeBooleanSetting(state.notificationsEnabled, false);
     state.notificationTime = sanitizeNotificationTime(state.notificationTime);

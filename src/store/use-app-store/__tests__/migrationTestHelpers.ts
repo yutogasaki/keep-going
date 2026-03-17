@@ -1,3 +1,4 @@
+import { DEFAULT_BGM_TRACK_ID } from '../../../lib/bgmTracks';
 import type { PersistedAppStateRecord } from '../migrateHelpers';
 
 export function makeV0State(overrides: PersistedAppStateRecord = {}) {
@@ -15,6 +16,9 @@ export function makeV0State(overrides: PersistedAppStateRecord = {}) {
         onboardingCompleted: true,
         soundVolume: 1.0,
         ttsEnabled: true,
+        bgmEnabled: true,
+        bgmVolume: 0.35,
+        bgmTrackId: DEFAULT_BGM_TRACK_ID,
         ...overrides,
     };
 }
@@ -42,6 +46,8 @@ export function makeV5State(overrides: PersistedAppStateRecord = {}) {
         soundVolume: 1.0,
         ttsEnabled: true,
         bgmEnabled: true,
+        bgmVolume: 0.35,
+        bgmTrackId: DEFAULT_BGM_TRACK_ID,
         hapticEnabled: true,
         dismissedHomeAnnouncementIds: [],
         challengeEnrollmentWindows: {},
@@ -73,6 +79,8 @@ export function makeCurrentState(overrides: PersistedAppStateRecord = {}) {
         soundVolume: 1.0,
         ttsEnabled: true,
         bgmEnabled: true,
+        bgmVolume: 0.35,
+        bgmTrackId: DEFAULT_BGM_TRACK_ID,
         hapticEnabled: true,
         notificationsEnabled: false,
         notificationTime: '21:00',

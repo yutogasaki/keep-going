@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_BGM_TRACK_ID } from '../../../lib/bgmTracks';
 import { APP_STATE_VERSION, migrateAppState } from '../migrate';
 import { makeCurrentState } from './migrationTestHelpers';
 
@@ -35,6 +36,8 @@ describe('persisted state sanitization', () => {
             notificationTime: '99:99',
             ttsEnabled: 'yes',
             bgmEnabled: undefined,
+            bgmVolume: -0.4,
+            bgmTrackId: 123,
             hapticEnabled: null,
             notificationsEnabled: 'sometimes',
             hasSeenSessionControlsHint: 'done',
@@ -78,6 +81,8 @@ describe('persisted state sanitization', () => {
         expect(result.notificationTime).toBe('21:00');
         expect(result.ttsEnabled).toBe(true);
         expect(result.bgmEnabled).toBe(true);
+        expect(result.bgmVolume).toBe(0);
+        expect(result.bgmTrackId).toBe(DEFAULT_BGM_TRACK_ID);
         expect(result.hapticEnabled).toBe(true);
         expect(result.notificationsEnabled).toBe(false);
         expect(result.hasSeenSessionControlsHint).toBe(false);
@@ -215,6 +220,8 @@ describe('persisted state sanitization', () => {
         expect(result.joinedChallengeIds).toEqual(state.joinedChallengeIds);
         expect(result.challengeEnrollmentWindows).toEqual(state.challengeEnrollmentWindows);
         expect(result.bgmEnabled).toBe(state.bgmEnabled);
+        expect(result.bgmVolume).toBe(state.bgmVolume);
+        expect(result.bgmTrackId).toBe(state.bgmTrackId);
         expect(result.hapticEnabled).toBe(state.hapticEnabled);
         expect(result.hasSeenSessionControlsHint).toBe(state.hasSeenSessionControlsHint);
         expect(result.dismissedHomeAnnouncementIds).toEqual(state.dismissedHomeAnnouncementIds);

@@ -1,7 +1,5 @@
 import { useAppStore } from '../store/useAppStore';
-
-// Simple Web Audio API Synthesizer for UI Sounds
-// Generates beeps and chimes without external audio assets
+import { findBgmTrack } from './bgmTracks';
 
 export const getSpeechVolume = (soundVolume: number) => {
     const clamped = Math.max(0, Math.min(1, soundVolume));
@@ -12,13 +10,26 @@ export const getSpeechVolume = (soundVolume: number) => {
     return Math.min(1, 0.2 + clamped * 0.8);
 };
 
+export const getEffectsVolume = (soundVolume: number) => {
+    const clamped = Math.max(0, Math.min(1, soundVolume));
+    if (clamped === 0) return 0;
+
+    // Keep small UI sounds audible without making the lowest non-zero step jump too hard.
+    return Math.min(1, 0.1 + clamped * 0.9);
+};
+
 class AudioEngine {
     private ctx: AudioContext | null = null;
-    private isMuted: boolean = false;
+    private isMuted = false;
     private cachedVoices: SpeechSynthesisVoice[] = [];
+    private bgmAudio: HTMLAudioElement | null = null;
+    private currentBgmSrc: string | null = null;
+    private sessionBgmActive = false;
+    private speechTokenCounter = 0;
+    private activeSpeechToken = 0;
+    private isSpeechActive = false;
 
     constructor() {
-        // iOS Safari loads voices asynchronously — cache them when ready
         if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
             this.cachedVoices = window.speechSynthesis.getVoices();
             window.speechSynthesis.addEventListener('voiceschanged', () => {
@@ -27,7 +38,6 @@ class AudioEngine {
         }
     }
 
-    // Initialize context only on user interaction
     public init() {
         if (typeof window === 'undefined') return;
 
@@ -40,7 +50,7 @@ class AudioEngine {
             this.ctx = new AudioContextClass();
         }
         if (this.ctx.state === 'suspended') {
-            this.ctx.resume();
+            void this.ctx.resume();
         }
     }
 
@@ -48,20 +58,40 @@ class AudioEngine {
         this.isMuted = !this.isMuted;
         if (this.isMuted) {
             this.stopSpeech();
+            this.pauseBgm(false);
+            return;
         }
+
+        this.applyBgmState();
     }
 
     public getMuted() {
         return this.isMuted;
     }
 
+    public syncSessionBgm(active: boolean) {
+        this.sessionBgmActive = active;
+        if (!active) {
+            this.pauseBgm(true);
+            return;
+        }
+
+        this.applyBgmState();
+    }
+
+    public refreshBgm() {
+        this.applyBgmState();
+    }
+
     public stopSpeech() {
         if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
             window.speechSynthesis.cancel();
         }
+
+        this.isSpeechActive = false;
+        this.applyBgmState();
     }
 
-    // Initialize TTS engine (needed for iOS Safari)
     public initTTS() {
         if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
             const utterance = new SpeechSynthesisUtterance('');
@@ -70,7 +100,6 @@ class AudioEngine {
         }
     }
 
-    // Text-to-Speech
     public speak(text: string) {
         if (this.isMuted) return;
 
@@ -81,22 +110,26 @@ class AudioEngine {
             window.speechSynthesis.cancel();
 
             const utterance = new SpeechSynthesisUtterance(text);
+            const token = ++this.speechTokenCounter;
+
             utterance.lang = 'ja-JP';
             utterance.volume = getSpeechVolume(state.soundVolume);
-            // Use cached voices (iOS Safari returns [] from getVoices() until voiceschanged fires)
+            utterance.onstart = () => {
+                this.activeSpeechToken = token;
+                this.isSpeechActive = true;
+                this.applyBgmState();
+            };
+            utterance.onend = () => this.clearSpeechDucking(token);
+            utterance.onerror = () => this.clearSpeechDucking(token);
+
             const voices = this.cachedVoices.length > 0 ? this.cachedVoices : window.speechSynthesis.getVoices();
-            const jpVoices = voices.filter(v => v.lang.startsWith('ja'));
+            const jpVoices = voices.filter((voice) => voice.lang.startsWith('ja'));
 
             if (jpVoices.length > 0) {
-                // Priority (high → low):
-                //   1. iOS Enhanced neural voices (Kyoko Enhanced / Otoya Enhanced) — iOS 16+
-                //   2. Google Japanese (Android Chrome)
-                //   3. Kyoko / Otoya compact (iOS fallback)
-                //   4. First available ja voice
                 utterance.voice =
-                    jpVoices.find(v => /Kyoko|Otoya/.test(v.name) && v.name.includes('Enhanced')) ??
-                    jpVoices.find(v => v.name.includes('Google')) ??
-                    jpVoices.find(v => /Kyoko|Otoya/.test(v.name)) ??
+                    jpVoices.find((voice) => /Kyoko|Otoya/.test(voice.name) && voice.name.includes('Enhanced')) ??
+                    jpVoices.find((voice) => voice.name.includes('Google')) ??
+                    jpVoices.find((voice) => /Kyoko|Otoya/.test(voice.name)) ??
                     jpVoices[0];
             }
 
@@ -107,11 +140,96 @@ class AudioEngine {
         }
     }
 
-    private playTone(freq: number, type: OscillatorType, duration: number, baseVol = 0.1) {
-        if (this.isMuted) return;
+    private clearSpeechDucking(token: number) {
+        if (token !== this.activeSpeechToken) {
+            return;
+        }
+
+        this.isSpeechActive = false;
+        this.applyBgmState();
+    }
+
+    private ensureBgmAudio(src: string): HTMLAudioElement | null {
+        if (typeof window === 'undefined' || typeof Audio === 'undefined') {
+            return null;
+        }
+
+        if (!this.bgmAudio) {
+            this.bgmAudio = new Audio();
+            this.bgmAudio.loop = true;
+            this.bgmAudio.preload = 'auto';
+            this.bgmAudio.setAttribute('playsinline', 'true');
+        }
+
+        if (this.currentBgmSrc !== src) {
+            this.bgmAudio.src = src;
+            this.currentBgmSrc = src;
+            this.bgmAudio.currentTime = 0;
+        }
+
+        return this.bgmAudio;
+    }
+
+    private getBgmVolume() {
+        const state = useAppStore.getState();
+        const baseVolume = Math.max(0, Math.min(1, state.bgmVolume));
+        const duckMultiplier = this.isSpeechActive ? 0.45 : 1;
+        return Math.max(0, Math.min(1, baseVolume * duckMultiplier));
+    }
+
+    private applyBgmState() {
+        const state = useAppStore.getState();
+        const track = findBgmTrack(state.bgmTrackId);
+
+        if (
+            !this.sessionBgmActive ||
+            this.isMuted ||
+            !state.bgmEnabled ||
+            state.bgmVolume <= 0 ||
+            !track
+        ) {
+            this.pauseBgm(false);
+            return;
+        }
+
+        const audio = this.ensureBgmAudio(track.src);
+        if (!audio) {
+            return;
+        }
+
+        audio.volume = this.getBgmVolume();
+        if (audio.paused) {
+            void audio.play().catch(() => {
+                // Playback can be blocked until the browser considers the page user-activated.
+            });
+        }
+    }
+
+    private pauseBgm(reset: boolean) {
+        if (!this.bgmAudio) {
+            return;
+        }
+
+        this.bgmAudio.pause();
+        if (reset) {
+            try {
+                this.bgmAudio.currentTime = 0;
+            } catch {
+                // Ignore browsers that reject currentTime before metadata is ready.
+            }
+        }
+    }
+
+    private getEffectGain(baseVol: number) {
+        if (this.isMuted) return 0;
 
         const state = useAppStore.getState();
-        const vol = baseVol * state.soundVolume;
+        const master = getEffectsVolume(state.soundVolume);
+        return baseVol * master;
+    }
+
+    private playTone(freq: number, type: OscillatorType, duration: number, baseVol = 0.1) {
+        const vol = this.getEffectGain(baseVol);
         if (vol === 0) return;
 
         this.init();
@@ -123,9 +241,8 @@ class AudioEngine {
         osc.type = type;
         osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
 
-        // Envelope
         gain.gain.setValueAtTime(0, this.ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + 0.05);
+        gain.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + 0.04);
         gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
 
         osc.connect(gain);
@@ -135,24 +252,16 @@ class AudioEngine {
         osc.stop(this.ctx.currentTime + duration);
     }
 
-    // ─── Sound Effects ─────────────────────────────
-
-    // Short beep for "3, 2, 1" (Last 5 seconds)
     public playTick() {
-        this.playTone(880, 'sine', 0.1, 0.1); // A5
+        this.playTone(880, 'sine', 0.1, 0.16);
     }
 
-    // High beep for start "GO"
     public playGo() {
-        this.playTone(1760, 'sine', 0.3, 0.15); // A6
+        this.playTone(1760, 'sine', 0.3, 0.22);
     }
 
-    // Soft two-note chime for 10-second progress markers
     public playProgressTone() {
-        if (this.isMuted) return;
-
-        const state = useAppStore.getState();
-        const vol = 0.06 * state.soundVolume;
+        const vol = this.getEffectGain(0.11);
         if (vol === 0) return;
 
         this.init();
@@ -162,31 +271,26 @@ class AudioEngine {
         const gain = this.ctx.createGain();
         gain.connect(this.ctx.destination);
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(vol, now + 0.08);
+        gain.gain.linearRampToValueAtTime(vol, now + 0.06);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
 
-        // G4 → B4 (gentle major third)
         const osc1 = this.ctx.createOscillator();
         osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(392, now); // G4
+        osc1.frequency.setValueAtTime(392, now);
         osc1.connect(gain);
         osc1.start(now);
         osc1.stop(now + 0.6);
 
         const osc2 = this.ctx.createOscillator();
         osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(493.88, now + 0.1); // B4
+        osc2.frequency.setValueAtTime(493.88, now + 0.1);
         osc2.connect(gain);
         osc2.start(now + 0.1);
         osc2.stop(now + 0.6);
     }
 
-    // Rising two-note for exercise start (after GO)
     public playExerciseStart() {
-        if (this.isMuted) return;
-
-        const state = useAppStore.getState();
-        const vol = 0.12 * state.soundVolume;
+        const vol = this.getEffectGain(0.18);
         if (vol === 0) return;
 
         this.init();
@@ -199,28 +303,23 @@ class AudioEngine {
         gain.gain.linearRampToValueAtTime(vol, now + 0.05);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
 
-        // C5 → E5 (bright, warm start)
         const osc1 = this.ctx.createOscillator();
         osc1.type = 'triangle';
-        osc1.frequency.setValueAtTime(523.25, now); // C5
+        osc1.frequency.setValueAtTime(523.25, now);
         osc1.connect(gain);
         osc1.start(now);
         osc1.stop(now + 0.4);
 
         const osc2 = this.ctx.createOscillator();
         osc2.type = 'triangle';
-        osc2.frequency.setValueAtTime(659.25, now + 0.15); // E5
+        osc2.frequency.setValueAtTime(659.25, now + 0.15);
         osc2.connect(gain);
         osc2.start(now + 0.15);
         osc2.stop(now + 0.8);
     }
 
-    // Gentle chime for transition/changing exercise
     public playTransition() {
-        if (this.isMuted) return;
-
-        const state = useAppStore.getState();
-        const vol = 0.1 * state.soundVolume;
+        const vol = this.getEffectGain(0.17);
         if (vol === 0) return;
 
         this.init();
@@ -230,27 +329,22 @@ class AudioEngine {
         const gain = this.ctx.createGain();
         gain.connect(this.ctx.destination);
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(vol, now + 0.1);
+        gain.gain.linearRampToValueAtTime(vol, now + 0.08);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
 
-        // Major chord (C major arpeggio)
-        const freqs = [523.25, 659.25, 783.99]; // C5, E5, G5
-        freqs.forEach((freq, i) => {
+        const freqs = [523.25, 659.25, 783.99];
+        freqs.forEach((freq, index) => {
             const osc = this.ctx!.createOscillator();
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, now + i * 0.05);
+            osc.frequency.setValueAtTime(freq, now + index * 0.05);
             osc.connect(gain);
-            osc.start(now + i * 0.05);
+            osc.start(now + index * 0.05);
             osc.stop(now + 1.5);
         });
     }
 
-    // Success sound for session completion / big break
     public playSuccess() {
-        if (this.isMuted) return;
-
-        const state = useAppStore.getState();
-        const vol = 0.15 * state.soundVolume;
+        const vol = this.getEffectGain(0.23);
         if (vol === 0) return;
 
         this.init();
@@ -260,17 +354,16 @@ class AudioEngine {
         const gain = this.ctx.createGain();
         gain.connect(this.ctx.destination);
         gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(vol, now + 0.1);
+        gain.gain.linearRampToValueAtTime(vol, now + 0.08);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
 
-        // Sparkle chord
-        const freqs = [523.25, 783.99, 1046.50, 1318.51]; // C5, G5, C6, E6
-        freqs.forEach((freq, i) => {
+        const freqs = [523.25, 783.99, 1046.5, 1318.51];
+        freqs.forEach((freq, index) => {
             const osc = this.ctx!.createOscillator();
             osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, now + i * 0.1);
+            osc.frequency.setValueAtTime(freq, now + index * 0.1);
             osc.connect(gain);
-            osc.start(now + i * 0.1);
+            osc.start(now + index * 0.1);
             osc.stop(now + 2.0);
         });
     }

@@ -21,10 +21,10 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
     const previewDisabled = volume === 0;
     const speechPreviewDisabled = previewDisabled || !ttsEnabled;
     const helperText = previewDisabled
-        ? '0% のときは、こえも こうかおんも なりません。'
+        ? '0% のときは、こえも こうかおんも なりません。BGM は下でべつに調整できます。'
         : ttsEnabled
-            ? 'こえ と こうかおん の りょうほうに 反映されます。'
-            : 'いまは こうかおん だけ きけます。こえは オンにすると試せます。';
+            ? 'こえ と こうかおん の りょうほうに 反映されます。BGM には 影響しません。'
+            : 'いまは こうかおん だけ きけます。こえは オンにすると試せます。BGM には 影響しません。';
 
     const previewButtonStyle = (disabled: boolean): React.CSSProperties => ({
         ...btnSecondary,
@@ -76,7 +76,7 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
                                 fontWeight: 700,
                                 color: COLOR.dark,
                             }}>
-                                音の大きさ
+                                ガイダンスと効果音
                             </div>
                             <div style={{
                                 fontFamily: FONT.body,
@@ -111,7 +111,7 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
                     step="0.05"
                     value={volume}
                     onChange={onChange}
-                    aria-label="音の大きさ"
+                    aria-label="ガイダンスと効果音の大きさ"
                     style={{
                         width: '100%',
                         accentColor: COLOR.primary,
@@ -138,7 +138,7 @@ export const VolumeCard: React.FC<VolumeCardProps> = ({
                         style={previewButtonStyle(previewDisabled)}
                     >
                         <Volume2 size={16} />
-                        おとをきく
+                        こうかおんをきく
                     </button>
                     <button
                         type="button"

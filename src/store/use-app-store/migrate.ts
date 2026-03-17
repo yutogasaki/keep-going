@@ -1,4 +1,5 @@
 import { getTodayKey } from '../../lib/db';
+import { DEFAULT_BGM_TRACK_ID } from '../../lib/bgmTracks';
 import type { AppState } from './types';
 import { sanitizePersistedState, sanitizeSessionDraft } from './migrateHelpers';
 
@@ -10,6 +11,8 @@ type MutableMigratingState = Record<string, unknown> & {
     excludedExercises?: unknown;
     dailyTargetMinutes?: unknown;
     bgmEnabled?: unknown;
+    bgmVolume?: unknown;
+    bgmTrackId?: unknown;
     hapticEnabled?: unknown;
     joinedChallengeIds?: unknown;
     dismissedHomeAnnouncementIds?: unknown;
@@ -72,7 +75,7 @@ function getNullableString(value: unknown): string | null {
     return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
-export const APP_STATE_VERSION = 21;
+export const APP_STATE_VERSION = 22;
 
 export type PersistedAppState = Pick<
     AppState,
@@ -82,6 +85,8 @@ export type PersistedAppState = Pick<
     | 'soundVolume'
     | 'ttsEnabled'
     | 'bgmEnabled'
+    | 'bgmVolume'
+    | 'bgmTrackId'
     | 'hapticEnabled'
     | 'notificationsEnabled'
     | 'notificationTime'
@@ -104,6 +109,8 @@ export const PERSISTED_APP_STATE_KEYS = [
     'soundVolume',
     'ttsEnabled',
     'bgmEnabled',
+    'bgmVolume',
+    'bgmTrackId',
     'hapticEnabled',
     'notificationsEnabled',
     'notificationTime',
@@ -295,6 +302,11 @@ export function migrateAppState(persistedState: unknown, version: number): AppSt
 
     if (version < 21) {
         state.challengeEnrollmentWindows = state.challengeEnrollmentWindows ?? {};
+    }
+
+    if (version < 22) {
+        state.bgmVolume = state.bgmVolume ?? 0.35;
+        state.bgmTrackId = state.bgmTrackId ?? DEFAULT_BGM_TRACK_ID;
     }
 
     sanitizePersistedState(state as Record<string, unknown>);

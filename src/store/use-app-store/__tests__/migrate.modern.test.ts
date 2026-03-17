@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_BGM_TRACK_ID } from '../../../lib/bgmTracks';
 import {
     migrateAppState,
     partializeAppState,
@@ -156,6 +157,8 @@ describe('modern migrations', () => {
         expect(result.joinedChallengeIds).toEqual({});
         expect(result.hasSeenSessionControlsHint).toBe(false);
         expect(result.sessionDraft).toBeNull();
+        expect(result.bgmVolume).toBe(0.35);
+        expect(result.bgmTrackId).toBe(DEFAULT_BGM_TRACK_ID);
         expect((result as PersistedAppStateRecord).classLevel).toBeUndefined();
         expect((result as PersistedAppStateRecord).fuwafuwaName).toBeUndefined();
         expect((result as PersistedAppStateRecord).ttsRate).toBeUndefined();
@@ -234,5 +237,16 @@ describe('modern migrations', () => {
         const result = migrateAppState(state, 20);
 
         expect(result.challengeEnrollmentWindows).toEqual({});
+    });
+
+    it('v22 initializes missing bgm track and bgm volume settings', () => {
+        const state = makeCurrentState();
+        delete state.bgmVolume;
+        delete state.bgmTrackId;
+
+        const result = migrateAppState(state, 21);
+
+        expect(result.bgmVolume).toBe(0.35);
+        expect(result.bgmTrackId).toBe(DEFAULT_BGM_TRACK_ID);
     });
 });
