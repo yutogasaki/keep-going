@@ -384,16 +384,14 @@ export const MenuPage: React.FC = () => {
                     customExerciseDeleteImpact.isPublished ||
                     customExerciseDeleteImpact.publishedMenuNames.length > 0
                         ? 'このじぶん種目は公開に関係しています。公開中の種目やメニューを先に非公開にしてから削除します。'
-                        : customExerciseDeleteImpact.updatedMenuNames.length > 0 ||
-                            customExerciseDeleteImpact.removedMenuNames.length > 0
-                          ? 'このじぶん種目をさくじょします。使っているメニューからは自動で外し、空になったメニューは自動でさくじょします。'
+                        : customExerciseDeleteImpact.preservedMenuNames.length > 0
+                          ? 'このじぶん種目をさくじょします。使っているメニューでは、この内容を「このメニューだけ」にのこします。'
                         : 'このじぶん種目をさくじょしますか？この操作は取り消せません。'
                 }
                 details={
                     customExerciseDeleteImpact.isPublished ||
                     customExerciseDeleteImpact.publishedMenuNames.length > 0 ||
-                    customExerciseDeleteImpact.updatedMenuNames.length > 0 ||
-                    customExerciseDeleteImpact.removedMenuNames.length > 0 ? (
+                    customExerciseDeleteImpact.preservedMenuNames.length > 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                             {customExerciseDeleteImpact.isPublished ? (
                                 <div
@@ -442,7 +440,7 @@ export const MenuPage: React.FC = () => {
                                     </div>
                                 </div>
                             ) : null}
-                            {customExerciseDeleteImpact.updatedMenuNames.length > 0 ? (
+                            {customExerciseDeleteImpact.preservedMenuNames.length > 0 ? (
                                 <div>
                                     <div
                                         style={{
@@ -453,10 +451,10 @@ export const MenuPage: React.FC = () => {
                                             color: '#2BBAA0',
                                         }}
                                     >
-                                        自動で外れるメニュー
+                                        このメニューだけ残るメニュー
                                     </div>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                        {customExerciseDeleteImpact.updatedMenuNames.map((name) => (
+                                        {customExerciseDeleteImpact.preservedMenuNames.map((name) => (
                                             <span
                                                 key={`update-${name}`}
                                                 style={{
@@ -474,38 +472,6 @@ export const MenuPage: React.FC = () => {
                                     </div>
                                 </div>
                             ) : null}
-                            {customExerciseDeleteImpact.removedMenuNames.length > 0 ? (
-                                <div>
-                                    <div
-                                        style={{
-                                            marginBottom: 6,
-                                            fontFamily: "'Noto Sans JP', sans-serif",
-                                            fontSize: 12,
-                                            fontWeight: 700,
-                                            color: '#E17055',
-                                        }}
-                                    >
-                                        空になるので削除されるメニュー
-                                    </div>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                        {customExerciseDeleteImpact.removedMenuNames.map((name) => (
-                                            <span
-                                                key={`remove-${name}`}
-                                                style={{
-                                                    padding: '4px 10px',
-                                                    borderRadius: 999,
-                                                    background: 'rgba(225, 112, 85, 0.1)',
-                                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                                    fontSize: 12,
-                                                    color: '#E17055',
-                                                }}
-                                            >
-                                                {name}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            ) : null}
                         </div>
                     ) : null
                 }
@@ -514,9 +480,8 @@ export const MenuPage: React.FC = () => {
                     customExerciseDeleteImpact.isPublished ||
                     customExerciseDeleteImpact.publishedMenuNames.length > 0
                         ? '非公開にして削除する'
-                        : customExerciseDeleteImpact.updatedMenuNames.length > 0 ||
-                            customExerciseDeleteImpact.removedMenuNames.length > 0
-                          ? '外して削除する'
+                        : customExerciseDeleteImpact.preservedMenuNames.length > 0
+                          ? '残して削除する'
                         : '削除する'
                 }
                 loadingLabel={

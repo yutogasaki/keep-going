@@ -1,4 +1,5 @@
-import { getMenuGroupItems, type MenuGroup } from '../data/menuGroups';
+import { getMenuGroupItems, type MenuGroup, type MenuGroupInlineItem } from '../data/menuGroups';
+import type { CustomExercise } from './db';
 import type { TeacherMenu } from './teacherContent';
 
 export function menuGroupReferencesExercise(
@@ -25,6 +26,49 @@ export function removeExerciseFromMenuGroup(group: MenuGroup, exerciseId: string
         ...group,
         exerciseIds: nextItems.map((item) => item.id),
         items: hadExplicitItems ? nextItems : undefined,
+    };
+}
+
+function createPreservedInlineItem(
+    sourceItemId: string,
+    occurrence: number,
+    exercise: CustomExercise,
+): MenuGroupInlineItem {
+    return {
+        id: `inline-preserved-${sourceItemId}-${occurrence}`,
+        kind: 'inline_only',
+        name: exercise.name,
+        sec: exercise.sec,
+        emoji: exercise.emoji,
+        placement: exercise.placement,
+        internal: exercise.hasSplit ? 'R30→L30' : 'single',
+        description: exercise.description,
+    };
+}
+
+export function preserveDeletedCustomExerciseInMenuGroup(
+    group: MenuGroup,
+    exercise: CustomExercise,
+): MenuGroup {
+    const sourceItems = getMenuGroupItems(group);
+    let preservedCount = 0;
+    const nextItems = sourceItems.map((item) => {
+        if (item.kind !== 'exercise_ref' || item.exerciseId !== exercise.id) {
+            return item;
+        }
+
+        preservedCount += 1;
+        return createPreservedInlineItem(item.id, preservedCount, exercise);
+    });
+
+    if (preservedCount === 0) {
+        return group;
+    }
+
+    return {
+        ...group,
+        exerciseIds: nextItems.map((item) => item.id),
+        items: nextItems,
     };
 }
 

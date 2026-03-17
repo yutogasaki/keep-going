@@ -1,6 +1,6 @@
 import type { MenuGroup } from '../data/menuGroups';
 import { type CustomExercise } from './db';
-import { removeExerciseFromMenuGroup } from './menuExerciseCleanup';
+import { preserveDeletedCustomExerciseInMenuGroup } from './menuExerciseCleanup';
 import type { PublicMenu } from './publicMenuTypes';
 import type { PublicExercise } from './publicExercises';
 import { findPublishedExerciseMatch, findPublishedMenuMatch } from './publicContentMatches';
@@ -15,8 +15,7 @@ export interface CustomExerciseDeletePlan {
     publishedExerciseId: string | null;
     publishedMenuIds: string[];
     publishedMenuNames: string[];
-    updatedMenuNames: string[];
-    removedMenuNames: string[];
+    preservedMenuNames: string[];
 }
 
 export { findPublishedExerciseMatch, findPublishedMenuMatch };
@@ -51,19 +50,17 @@ export function buildCustomExerciseDeletePlan(
             publishedExerciseId: null,
             publishedMenuIds: [],
             publishedMenuNames: [],
-            updatedMenuNames: [],
-            removedMenuNames: [],
+            preservedMenuNames: [],
         };
     }
 
     const publishedExercise = findPublishedExerciseMatch(exercise, publishedExercises);
     const publishedMenuIds = new Set<string>();
     const publishedMenuNames = new Set<string>();
-    const updatedMenuNames: string[] = [];
-    const removedMenuNames: string[] = [];
+    const preservedMenuNames: string[] = [];
 
     for (const group of customGroups) {
-        const nextGroup = removeExerciseFromMenuGroup(group, exercise.id);
+        const nextGroup = preserveDeletedCustomExerciseInMenuGroup(group, exercise);
         if (nextGroup === group) {
             continue;
         }
@@ -74,11 +71,7 @@ export function buildCustomExerciseDeletePlan(
             publishedMenuNames.add(group.name);
         }
 
-        if (nextGroup === null) {
-            removedMenuNames.push(group.name);
-        } else {
-            updatedMenuNames.push(group.name);
-        }
+        preservedMenuNames.push(group.name);
     }
 
     return {
@@ -86,7 +79,6 @@ export function buildCustomExerciseDeletePlan(
         publishedExerciseId: publishedExercise?.id ?? null,
         publishedMenuIds: [...publishedMenuIds],
         publishedMenuNames: [...publishedMenuNames],
-        updatedMenuNames,
-        removedMenuNames,
+        preservedMenuNames,
     };
 }

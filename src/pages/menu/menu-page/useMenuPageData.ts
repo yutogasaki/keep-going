@@ -11,6 +11,7 @@ import {
 import { deleteCustomExercise, getCustomExercises, type CustomExercise } from '../../../lib/db';
 import {
     menuGroupReferencesExercise,
+    preserveDeletedCustomExerciseInMenuGroup,
     pruneUnavailableExercisesFromMenuGroup,
     removeExerciseFromMenuGroup,
 } from '../../../lib/menuExerciseCleanup';
@@ -274,8 +275,8 @@ export function useMenuPageData({
                 myPublishedExercises,
             );
             const impactedGroups = customGroups.filter((group) => menuGroupReferencesExercise(group, exerciseId));
-            let updatedMenuCount = 0;
-            let deletedMenuCount = 0;
+            let preservedMenuCount = 0;
+            let removedMenuCount = 0;
 
             try {
                 for (const publishedMenuId of deletePlan.publishedMenuIds) {
@@ -287,16 +288,20 @@ export function useMenuPageData({
                 }
 
                 for (const group of impactedGroups) {
-                    const nextGroup = removeExerciseFromMenuGroup(group, exerciseId);
+                    const nextGroup = targetExercise
+                        ? preserveDeletedCustomExerciseInMenuGroup(group, targetExercise)
+                        : removeExerciseFromMenuGroup(group, exerciseId);
                     if (nextGroup === null) {
                         await deleteCustomGroup(group.id);
-                        deletedMenuCount += 1;
+                        removedMenuCount += 1;
                         continue;
                     }
 
                     if (nextGroup !== group) {
                         await saveCustomGroup(nextGroup);
-                        updatedMenuCount += 1;
+                        if (targetExercise) {
+                            preservedMenuCount += 1;
+                        }
                     }
                 }
 
@@ -320,8 +325,8 @@ export function useMenuPageData({
                 deletePlan.publishedMenuIds.length > 0
                     ? `${deletePlan.publishedMenuIds.length}つの公開メニューを非公開にしました`
                     : '',
-                updatedMenuCount > 0 ? `${updatedMenuCount}つのメニューから外しました` : '',
-                deletedMenuCount > 0 ? `${deletedMenuCount}つの空メニューを削除しました` : '',
+                preservedMenuCount > 0 ? `${preservedMenuCount}つのメニューで このメニューだけの項目にしました` : '',
+                removedMenuCount > 0 ? `${removedMenuCount}つの空メニューを削除しました` : '',
             ].filter((part) => part.length > 0);
 
             if (summaryParts.length === 0) {

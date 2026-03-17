@@ -147,16 +147,16 @@ describe('customContentDeletePlan', () => {
         });
     });
 
-    it('builds a delete plan for a published exercise and impacted published menus', () => {
+    it('builds a delete plan that preserves impacted menus as inline-only items', () => {
         const exercise = createCustomExercise({ id: 'custom-ex-1' });
-        const updatedGroup = createMenuGroup({
+        const preservedGroup = createMenuGroup({
             id: 'menu-1',
             name: 'のこるメニュー',
             exerciseIds: ['custom-ex-1', 'S01'],
         });
-        const removedGroup = createMenuGroup({
+        const preservedSoloGroup = createMenuGroup({
             id: 'menu-2',
-            name: 'きえるメニュー',
+            name: 'ひとつだけメニュー',
             exerciseIds: ['custom-ex-1'],
         });
         const untouchedGroup = createMenuGroup({
@@ -168,15 +168,15 @@ describe('customContentDeletePlan', () => {
         const publishedMenus = [
             createPublicMenu({
                 id: 'public-menu-1',
-                name: updatedGroup.name,
-                emoji: updatedGroup.emoji,
-                exerciseIds: updatedGroup.exerciseIds,
+                name: preservedGroup.name,
+                emoji: preservedGroup.emoji,
+                exerciseIds: preservedGroup.exerciseIds,
             }),
             createPublicMenu({
                 id: 'public-menu-2',
-                name: removedGroup.name,
-                emoji: removedGroup.emoji,
-                exerciseIds: removedGroup.exerciseIds,
+                name: preservedSoloGroup.name,
+                emoji: preservedSoloGroup.emoji,
+                exerciseIds: preservedSoloGroup.exerciseIds,
             }),
         ];
         const publishedExercises = [createPublicExercise({ id: 'public-ex-1' })];
@@ -184,7 +184,7 @@ describe('customContentDeletePlan', () => {
         expect(
             buildCustomExerciseDeletePlan(
                 exercise,
-                [updatedGroup, removedGroup, untouchedGroup],
+                [preservedGroup, preservedSoloGroup, untouchedGroup],
                 publishedMenus,
                 publishedExercises,
             ),
@@ -192,9 +192,8 @@ describe('customContentDeletePlan', () => {
             isPublished: true,
             publishedExerciseId: 'public-ex-1',
             publishedMenuIds: ['public-menu-1', 'public-menu-2'],
-            publishedMenuNames: ['のこるメニュー', 'きえるメニュー'],
-            updatedMenuNames: ['のこるメニュー'],
-            removedMenuNames: ['きえるメニュー'],
+            publishedMenuNames: ['のこるメニュー', 'ひとつだけメニュー'],
+            preservedMenuNames: ['のこるメニュー', 'ひとつだけメニュー'],
         });
     });
 });

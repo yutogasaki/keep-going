@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { MenuGroup } from '../../data/menuGroups';
+import type { CustomExercise } from '../db';
 import type { TeacherMenu } from '../teacherContent';
 import {
     menuGroupReferencesExercise,
+    preserveDeletedCustomExerciseInMenuGroup,
     pruneUnavailableExercisesFromMenuGroup,
     removeExerciseFromMenuGroup,
     removeExerciseFromTeacherMenu,
@@ -40,6 +42,19 @@ function createTeacherMenu(overrides: Partial<TeacherMenu> = {}): TeacherMenu {
     };
 }
 
+function createCustomExercise(overrides: Partial<CustomExercise> = {}): CustomExercise {
+    return {
+        id: overrides.id ?? 'custom-1',
+        name: overrides.name ?? 'ジャンプ',
+        sec: overrides.sec ?? 45,
+        emoji: overrides.emoji ?? '✨',
+        placement: overrides.placement ?? 'stretch',
+        hasSplit: overrides.hasSplit ?? false,
+        description: overrides.description ?? 'たのしくジャンプ',
+        creatorId: overrides.creatorId,
+    };
+}
+
 describe('menuExerciseCleanup', () => {
     it('detects exercise references in custom menus', () => {
         const group = createMenuGroup({
@@ -71,6 +86,38 @@ describe('menuExerciseCleanup', () => {
             ...group,
             exerciseIds: ['inline-1'],
             items: [group.items![1]],
+        });
+    });
+
+    it('preserves deleted custom exercises as inline-only menu items', () => {
+        const group = createMenuGroup({
+            exerciseIds: ['custom-1', 'S01'],
+        });
+        const exercise = createCustomExercise({
+            id: 'custom-1',
+            name: 'ジャンプ',
+            sec: 45,
+            emoji: '✨',
+            placement: 'stretch',
+            description: 'たのしくジャンプ',
+        });
+
+        expect(preserveDeletedCustomExerciseInMenuGroup(group, exercise)).toEqual({
+            ...group,
+            exerciseIds: ['inline-preserved-custom-1-1', 'S01'],
+            items: [
+                {
+                    id: 'inline-preserved-custom-1-1',
+                    kind: 'inline_only',
+                    name: 'ジャンプ',
+                    sec: 45,
+                    emoji: '✨',
+                    placement: 'stretch',
+                    internal: 'single',
+                    description: 'たのしくジャンプ',
+                },
+                { id: 'S01', kind: 'exercise_ref', exerciseId: 'S01' },
+            ],
         });
     });
 
