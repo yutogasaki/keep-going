@@ -14,8 +14,20 @@ export const getEffectsVolume = (soundVolume: number) => {
     const clamped = Math.max(0, Math.min(1, soundVolume));
     if (clamped === 0) return 0;
 
-    // Keep small UI sounds audible without making the lowest non-zero step jump too hard.
-    return Math.min(1, 0.1 + clamped * 0.9);
+    // Keep short cues audible under BGM while avoiding a huge jump at the first non-zero step.
+    return Math.min(1, 0.18 + clamped * 0.82);
+};
+
+export const getBgmDuckMultiplier = ({
+    speechActive,
+    effectActive,
+}: {
+    speechActive: boolean;
+    effectActive: boolean;
+}) => {
+    const speechMultiplier = speechActive ? 0.18 : 1;
+    const effectMultiplier = effectActive ? 0.38 : 1;
+    return Math.min(speechMultiplier, effectMultiplier);
 };
 
 class AudioEngine {
@@ -25,9 +37,12 @@ class AudioEngine {
     private bgmAudio: HTMLAudioElement | null = null;
     private currentBgmSrc: string | null = null;
     private sessionBgmActive = false;
+    private bgmPreviewActive = false;
     private speechTokenCounter = 0;
     private activeSpeechToken = 0;
     private isSpeechActive = false;
+    private isEffectActive = false;
+    private effectDuckTimer: number | null = null;
 
     constructor() {
         if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -76,11 +91,51 @@ class AudioEngine {
             return;
         }
 
+        this.bgmPreviewActive = false;
         this.applyBgmState();
     }
 
     public refreshBgm() {
         this.applyBgmState();
+    }
+
+    public isBgmPreviewing() {
+        return this.bgmPreviewActive;
+    }
+
+    public startBgmPreview() {
+        const state = useAppStore.getState();
+        const track = findBgmTrack(state.bgmTrackId);
+        if (!track || this.isMuted || state.bgmVolume <= 0) {
+            this.bgmPreviewActive = false;
+            this.applyBgmState();
+            return false;
+        }
+
+        const audio = this.ensureBgmAudio(track.src);
+        if (!audio) {
+            this.bgmPreviewActive = false;
+            return false;
+        }
+
+        this.bgmPreviewActive = true;
+        audio.currentTime = 0;
+        this.applyBgmState();
+        return true;
+    }
+
+    public stopBgmPreview() {
+        this.bgmPreviewActive = false;
+        this.applyBgmState();
+    }
+
+    public toggleBgmPreview() {
+        if (this.bgmPreviewActive) {
+            this.stopBgmPreview();
+            return false;
+        }
+
+        return this.startBgmPreview();
     }
 
     public stopSpeech() {
@@ -172,27 +227,29 @@ class AudioEngine {
 
     private getBgmVolume() {
         const state = useAppStore.getState();
+        const track = findBgmTrack(state.bgmTrackId);
         const baseVolume = Math.max(0, Math.min(1, state.bgmVolume));
-        const duckMultiplier = this.isSpeechActive ? 0.45 : 1;
-        return Math.max(0, Math.min(1, baseVolume * duckMultiplier));
+        const trackGain = track?.gain ?? 1;
+        const duckMultiplier = getBgmDuckMultiplier({
+            speechActive: this.isSpeechActive,
+            effectActive: this.isEffectActive,
+        });
+        return Math.max(0, Math.min(1, baseVolume * trackGain * duckMultiplier));
     }
 
     private applyBgmState() {
         const state = useAppStore.getState();
         const track = findBgmTrack(state.bgmTrackId);
+        const hasPlayableTrack = track != null && state.bgmVolume > 0;
+        const shouldPlayPreview = this.bgmPreviewActive && !this.isMuted && hasPlayableTrack;
+        const shouldPlaySession = this.sessionBgmActive && !this.isMuted && state.bgmEnabled && hasPlayableTrack;
 
-        if (
-            !this.sessionBgmActive ||
-            this.isMuted ||
-            !state.bgmEnabled ||
-            state.bgmVolume <= 0 ||
-            !track
-        ) {
-            this.pauseBgm(false);
+        if (!shouldPlayPreview && !shouldPlaySession) {
+            this.pauseBgm(!this.sessionBgmActive);
             return;
         }
 
-        const audio = this.ensureBgmAudio(track.src);
+        const audio = this.ensureBgmAudio(track!.src);
         if (!audio) {
             return;
         }
@@ -228,6 +285,25 @@ class AudioEngine {
         return baseVol * master;
     }
 
+    private beginEffectDucking(durationMs: number) {
+        if (typeof window === 'undefined') {
+            return;
+        }
+
+        this.isEffectActive = true;
+        this.applyBgmState();
+
+        if (this.effectDuckTimer !== null) {
+            window.clearTimeout(this.effectDuckTimer);
+        }
+
+        this.effectDuckTimer = window.setTimeout(() => {
+            this.isEffectActive = false;
+            this.effectDuckTimer = null;
+            this.applyBgmState();
+        }, Math.max(0, durationMs) + 160);
+    }
+
     private playTone(freq: number, type: OscillatorType, duration: number, baseVol = 0.1) {
         const vol = this.getEffectGain(baseVol);
         if (vol === 0) return;
@@ -245,6 +321,7 @@ class AudioEngine {
         gain.gain.linearRampToValueAtTime(vol, this.ctx.currentTime + 0.04);
         gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
 
+        this.beginEffectDucking(duration * 1000);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
@@ -253,15 +330,15 @@ class AudioEngine {
     }
 
     public playTick() {
-        this.playTone(880, 'sine', 0.1, 0.16);
+        this.playTone(880, 'sine', 0.1, 0.24);
     }
 
     public playGo() {
-        this.playTone(1760, 'sine', 0.3, 0.22);
+        this.playTone(1760, 'sine', 0.3, 0.28);
     }
 
     public playProgressTone() {
-        const vol = this.getEffectGain(0.11);
+        const vol = this.getEffectGain(0.16);
         if (vol === 0) return;
 
         this.init();
@@ -274,6 +351,7 @@ class AudioEngine {
         gain.gain.linearRampToValueAtTime(vol, now + 0.06);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
 
+        this.beginEffectDucking(600);
         const osc1 = this.ctx.createOscillator();
         osc1.type = 'sine';
         osc1.frequency.setValueAtTime(392, now);
@@ -290,7 +368,7 @@ class AudioEngine {
     }
 
     public playExerciseStart() {
-        const vol = this.getEffectGain(0.18);
+        const vol = this.getEffectGain(0.22);
         if (vol === 0) return;
 
         this.init();
@@ -303,6 +381,7 @@ class AudioEngine {
         gain.gain.linearRampToValueAtTime(vol, now + 0.05);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
 
+        this.beginEffectDucking(800);
         const osc1 = this.ctx.createOscillator();
         osc1.type = 'triangle';
         osc1.frequency.setValueAtTime(523.25, now);
@@ -319,7 +398,7 @@ class AudioEngine {
     }
 
     public playTransition() {
-        const vol = this.getEffectGain(0.17);
+        const vol = this.getEffectGain(0.19);
         if (vol === 0) return;
 
         this.init();
@@ -332,6 +411,7 @@ class AudioEngine {
         gain.gain.linearRampToValueAtTime(vol, now + 0.08);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
 
+        this.beginEffectDucking(1500);
         const freqs = [523.25, 659.25, 783.99];
         freqs.forEach((freq, index) => {
             const osc = this.ctx!.createOscillator();
@@ -344,7 +424,7 @@ class AudioEngine {
     }
 
     public playSuccess() {
-        const vol = this.getEffectGain(0.23);
+        const vol = this.getEffectGain(0.22);
         if (vol === 0) return;
 
         this.init();
@@ -357,6 +437,7 @@ class AudioEngine {
         gain.gain.linearRampToValueAtTime(vol, now + 0.08);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
 
+        this.beginEffectDucking(2000);
         const freqs = [523.25, 783.99, 1046.5, 1318.51];
         freqs.forEach((freq, index) => {
             const osc = this.ctx!.createOscillator();
