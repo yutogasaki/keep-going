@@ -1,5 +1,5 @@
 import React from 'react';
-import { Music, Play, Square } from 'lucide-react';
+import { ChevronDown, Music, Play, Square } from 'lucide-react';
 import type { BgmTrack } from '../../../lib/bgmTracks';
 import { btnSecondary, inputField, COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../../lib/styles';
 import { ToggleButton } from '../ToggleButton';
@@ -59,6 +59,35 @@ export const BgmCard: React.FC<BgmCardProps> = ({
         cursor: disabled ? 'not-allowed' : 'pointer',
         width: '100%',
     });
+
+    const selectShellStyle: React.CSSProperties = {
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        borderRadius: RADIUS.lg,
+        border: `1px solid ${hasTracks ? 'rgba(9, 132, 227, 0.14)' : COLOR.border}`,
+        background: hasTracks
+            ? 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(240,247,255,0.92))'
+            : COLOR.bgMuted,
+        boxShadow: hasTracks
+            ? '0 4px 12px rgba(9,132,227,0.06), inset 0 1px 0 rgba(255,255,255,0.75)'
+            : 'inset 0 1px 0 rgba(255,255,255,0.65)',
+        overflow: 'hidden',
+    };
+
+    const selectStyle: React.CSSProperties = {
+        ...inputField,
+        fontSize: FONT_SIZE.md,
+        fontWeight: 600,
+        color: hasTracks ? COLOR.dark : COLOR.muted,
+        cursor: hasTracks ? 'pointer' : 'not-allowed',
+        appearance: 'none',
+        WebkitAppearance: 'none',
+        border: 'none',
+        background: 'transparent',
+        boxShadow: 'none',
+        paddingRight: 48,
+    };
 
     return (
         <div className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
@@ -126,27 +155,39 @@ export const BgmCard: React.FC<BgmCardProps> = ({
                         }}>
                             BGM をえらぶ
                         </span>
-                        <select
-                            value={resolvedTrackId}
-                            onChange={(event) => onTrackChange(event.target.value)}
-                            disabled={!hasTracks}
-                            style={{
-                                ...inputField,
-                                fontSize: FONT_SIZE.md,
-                                color: hasTracks ? COLOR.dark : COLOR.muted,
-                                cursor: hasTracks ? 'pointer' : 'not-allowed',
-                                appearance: 'none',
-                                WebkitAppearance: 'none',
-                            }}
-                        >
-                            {hasTracks ? tracks.map((track) => (
-                                <option key={track.id} value={track.id}>
-                                    {track.label}
-                                </option>
-                            )) : (
-                                <option value="">BGM がまだありません</option>
-                            )}
-                        </select>
+                        <div style={selectShellStyle}>
+                            <select
+                                value={resolvedTrackId}
+                                onChange={(event) => onTrackChange(event.target.value)}
+                                disabled={!hasTracks}
+                                style={selectStyle}
+                            >
+                                {hasTracks ? tracks.map((track) => (
+                                    <option key={track.id} value={track.id}>
+                                        {track.label}
+                                    </option>
+                                )) : (
+                                    <option value="">BGM がまだありません</option>
+                                )}
+                            </select>
+                            <div style={{
+                                position: 'absolute',
+                                right: 12,
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                width: 28,
+                                height: 28,
+                                borderRadius: RADIUS.full,
+                                background: hasTracks ? 'rgba(9, 132, 227, 0.12)' : 'rgba(0,0,0,0.04)',
+                                color: hasTracks ? COLOR.info : COLOR.light,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                pointerEvents: 'none',
+                            }}>
+                                <ChevronDown size={16} />
+                            </div>
+                        </div>
                     </label>
 
                     <button
