@@ -38,13 +38,14 @@ describe('getEffectsVolume', () => {
 describe('getBgmMixVolume', () => {
     it('keeps the BGM mix quieter than the raw slider value', () => {
         expect(getBgmMixVolume(0)).toBe(0);
-        expect(getBgmMixVolume(0.5)).toBeCloseTo(0.2157, 3);
-        expect(getBgmMixVolume(1)).toBeCloseTo(0.55);
+        expect(getBgmMixVolume(0.3)).toBeCloseTo(0.0786, 3);
+        expect(getBgmMixVolume(0.5)).toBeCloseTo(0.1645, 3);
+        expect(getBgmMixVolume(1)).toBeCloseTo(0.45);
     });
 
     it('clamps values outside the supported range', () => {
         expect(getBgmMixVolume(-1)).toBe(0);
-        expect(getBgmMixVolume(2)).toBeCloseTo(0.55);
+        expect(getBgmMixVolume(2)).toBeCloseTo(0.45);
     });
 });
 

@@ -157,7 +157,7 @@ describe('modern migrations', () => {
         expect(result.joinedChallengeIds).toEqual({});
         expect(result.hasSeenSessionControlsHint).toBe(false);
         expect(result.sessionDraft).toBeNull();
-        expect(result.bgmVolume).toBe(0.35);
+        expect(result.bgmVolume).toBe(0.3);
         expect(result.bgmTrackId).toBe(DEFAULT_BGM_TRACK_ID);
         expect((result as PersistedAppStateRecord).classLevel).toBeUndefined();
         expect((result as PersistedAppStateRecord).fuwafuwaName).toBeUndefined();
@@ -246,7 +246,7 @@ describe('modern migrations', () => {
 
         const result = migrateAppState(state, 21);
 
-        expect(result.bgmVolume).toBe(0.35);
+        expect(result.bgmVolume).toBe(0.3);
         expect(result.bgmTrackId).toBe(DEFAULT_BGM_TRACK_ID);
     });
 });

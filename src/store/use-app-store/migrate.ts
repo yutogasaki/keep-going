@@ -305,7 +305,7 @@ export function migrateAppState(persistedState: unknown, version: number): AppSt
     }
 
     if (version < 22) {
-        state.bgmVolume = state.bgmVolume ?? 0.35;
+        state.bgmVolume = state.bgmVolume ?? 0.3;
         state.bgmTrackId = state.bgmTrackId ?? DEFAULT_BGM_TRACK_ID;
     }
 

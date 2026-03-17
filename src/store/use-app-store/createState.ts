@@ -246,7 +246,7 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
     setTtsEnabled: (ttsEnabled) => set({ ttsEnabled }),
     bgmEnabled: true,
     setBgmEnabled: (bgmEnabled) => set({ bgmEnabled }),
-    bgmVolume: 0.35,
+    bgmVolume: 0.3,
     setBgmVolume: (bgmVolume) => set({ bgmVolume }),
     bgmTrackId: DEFAULT_BGM_TRACK_ID,
     setBgmTrackId: (bgmTrackId) => set({ bgmTrackId }),

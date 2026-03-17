@@ -23,7 +23,7 @@ export const getBgmMixVolume = (bgmVolume: number) => {
     if (clamped === 0) return 0;
 
     // Give the lower half of the slider more usable range so BGM sits behind guidance more easily.
-    return Math.pow(clamped, 1.35) * 0.55;
+    return Math.pow(clamped, 1.45) * 0.45;
 };
 
 export const getBgmDuckMultiplier = ({

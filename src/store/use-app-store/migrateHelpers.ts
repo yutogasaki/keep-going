@@ -402,7 +402,7 @@ export function sanitizePersistedState(state: Record<string, unknown>): void {
     state.soundVolume = sanitizeSoundVolume(state.soundVolume);
     state.ttsEnabled = sanitizeBooleanSetting(state.ttsEnabled, true);
     state.bgmEnabled = sanitizeBooleanSetting(state.bgmEnabled, true);
-    state.bgmVolume = sanitizeSoundVolume(state.bgmVolume ?? 0.35);
+    state.bgmVolume = sanitizeSoundVolume(state.bgmVolume ?? 0.3);
     state.bgmTrackId = sanitizeBgmTrackId(state.bgmTrackId);
     state.hapticEnabled = sanitizeBooleanSetting(state.hapticEnabled, true);
     state.notificationsEnabled = sanitizeBooleanSetting(state.notificationsEnabled, false);
