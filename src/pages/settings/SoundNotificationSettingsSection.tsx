@@ -1,7 +1,9 @@
 import React from 'react';
+import { BGM_TRACKS } from '../../lib/bgmTracks';
 import { useAppStore } from '../../store/useAppStore';
 import { audio } from '../../lib/audio';
 import { VolumeCard } from './sound-notification/VolumeCard';
+import { BgmCard } from './sound-notification/BgmCard';
 import { AudioTogglesCard } from './sound-notification/AudioTogglesCard';
 import { HapticCard } from './sound-notification/HapticCard';
 import { NotificationCard } from './sound-notification/NotificationCard';
@@ -11,6 +13,12 @@ export const SoundNotificationSettingsSection: React.FC = () => {
     const setSoundVolume = useAppStore((state) => state.setSoundVolume);
     const ttsEnabled = useAppStore((state) => state.ttsEnabled);
     const setTtsEnabled = useAppStore((state) => state.setTtsEnabled);
+    const bgmEnabled = useAppStore((state) => state.bgmEnabled);
+    const setBgmEnabled = useAppStore((state) => state.setBgmEnabled);
+    const bgmVolume = useAppStore((state) => state.bgmVolume);
+    const setBgmVolume = useAppStore((state) => state.setBgmVolume);
+    const bgmTrackId = useAppStore((state) => state.bgmTrackId);
+    const setBgmTrackId = useAppStore((state) => state.setBgmTrackId);
     const hapticEnabled = useAppStore((state) => state.hapticEnabled);
     const setHapticEnabled = useAppStore((state) => state.setHapticEnabled);
     const notificationsEnabled = useAppStore((state) => state.notificationsEnabled);
@@ -21,6 +29,11 @@ export const SoundNotificationSettingsSection: React.FC = () => {
     const handleVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = parseFloat(event.target.value);
         setSoundVolume(value);
+    };
+
+    const handleBgmVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = parseFloat(event.target.value);
+        setBgmVolume(value);
     };
 
     const requestNotificationPermission = async (enable: boolean) => {
@@ -66,6 +79,16 @@ export const SoundNotificationSettingsSection: React.FC = () => {
                     audio.initTTS();
                     audio.speak('つぎは、かいきゃくストレッチです');
                 }}
+            />
+
+            <BgmCard
+                enabled={bgmEnabled}
+                volume={bgmVolume}
+                selectedTrackId={bgmTrackId}
+                tracks={BGM_TRACKS}
+                onToggle={() => setBgmEnabled(!bgmEnabled)}
+                onTrackChange={setBgmTrackId}
+                onVolumeChange={handleBgmVolumeChange}
             />
 
             <AudioTogglesCard

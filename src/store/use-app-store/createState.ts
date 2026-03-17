@@ -1,4 +1,5 @@
 import type { StateCreator } from 'zustand';
+import { DEFAULT_BGM_TRACK_ID } from '../../lib/bgmTracks';
 import { getTodayKey } from '../../lib/db';
 import { getFamilyVisitMemoryKey } from '../../pages/home/homeVisitMemory';
 import type { AppState, PastFuwafuwaRecord, SessionDraft, TabId } from './types';
@@ -245,6 +246,10 @@ export const createAppState: StateCreator<AppState, [], [], AppState> = (set, ge
     setTtsEnabled: (ttsEnabled) => set({ ttsEnabled }),
     bgmEnabled: true,
     setBgmEnabled: (bgmEnabled) => set({ bgmEnabled }),
+    bgmVolume: 0.35,
+    setBgmVolume: (bgmVolume) => set({ bgmVolume }),
+    bgmTrackId: DEFAULT_BGM_TRACK_ID,
+    setBgmTrackId: (bgmTrackId) => set({ bgmTrackId }),
     hapticEnabled: true,
     setHapticEnabled: (hapticEnabled) => set({ hapticEnabled }),
     notificationsEnabled: false,

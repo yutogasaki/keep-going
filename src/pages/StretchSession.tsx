@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { audio } from '../lib/audio';
 import { useAppStore } from '../store/useAppStore';
 import { useSessionSetup } from './stretch-session/useSessionSetup';
@@ -124,6 +124,15 @@ export const StretchSession: React.FC = () => {
         audio.toggleMute();
         setIsMuted(audio.getMuted());
     };
+
+    useEffect(() => {
+        const shouldPlayBgm = !isLoading && sessionExercises.length > 0 && !isCompleted;
+        audio.syncSessionBgm(shouldPlayBgm);
+    }, [isLoading, sessionExercises.length, isCompleted]);
+
+    useEffect(() => () => {
+        audio.syncSessionBgm(false);
+    }, []);
 
     if (isLoading) {
         return <StretchLoadingScreen />;

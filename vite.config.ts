@@ -98,7 +98,7 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|woff|woff2|eot|ttf|otf)$/i,
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|woff|woff2|eot|ttf|otf|mp3)$/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'media-cache',
