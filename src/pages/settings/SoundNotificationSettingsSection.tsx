@@ -9,6 +9,7 @@ import { HapticCard } from './sound-notification/HapticCard';
 import { NotificationCard } from './sound-notification/NotificationCard';
 
 export const SoundNotificationSettingsSection: React.FC = () => {
+    const [isBgmPreviewing, setIsBgmPreviewing] = React.useState(audio.isBgmPreviewing());
     const soundVolume = useAppStore((state) => state.soundVolume);
     const setSoundVolume = useAppStore((state) => state.setSoundVolume);
     const ttsEnabled = useAppStore((state) => state.ttsEnabled);
@@ -34,6 +35,15 @@ export const SoundNotificationSettingsSection: React.FC = () => {
     const handleBgmVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = parseFloat(event.target.value);
         setBgmVolume(value);
+        if (value === 0 && audio.isBgmPreviewing()) {
+            audio.stopBgmPreview();
+            setIsBgmPreviewing(false);
+            return;
+        }
+
+        if (audio.isBgmPreviewing()) {
+            audio.refreshBgm();
+        }
     };
 
     const requestNotificationPermission = async (enable: boolean) => {
@@ -68,6 +78,21 @@ export const SoundNotificationSettingsSection: React.FC = () => {
         audio.stopSpeech();
     };
 
+    const handleBgmTrackChange = (trackId: string) => {
+        setBgmTrackId(trackId);
+        if (audio.isBgmPreviewing()) {
+            setIsBgmPreviewing(audio.startBgmPreview());
+        }
+    };
+
+    const handleBgmPreviewToggle = () => {
+        setIsBgmPreviewing(audio.toggleBgmPreview());
+    };
+
+    React.useEffect(() => () => {
+        audio.stopBgmPreview();
+    }, []);
+
     return (
         <>
             <VolumeCard
@@ -86,9 +111,11 @@ export const SoundNotificationSettingsSection: React.FC = () => {
                 volume={bgmVolume}
                 selectedTrackId={bgmTrackId}
                 tracks={BGM_TRACKS}
+                isPreviewing={isBgmPreviewing}
                 onToggle={() => setBgmEnabled(!bgmEnabled)}
-                onTrackChange={setBgmTrackId}
+                onTrackChange={handleBgmTrackChange}
                 onVolumeChange={handleBgmVolumeChange}
+                onPreviewToggle={handleBgmPreviewToggle}
             />
 
             <AudioTogglesCard

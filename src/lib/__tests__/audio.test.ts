@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getEffectsVolume, getSpeechVolume } from '../audio';
+import { getBgmDuckMultiplier, getEffectsVolume, getSpeechVolume } from '../audio';
 
 describe('getSpeechVolume', () => {
     it('returns 0 when sound volume is 0', () => {
@@ -24,13 +24,28 @@ describe('getEffectsVolume', () => {
     });
 
     it('keeps small effect sounds audible across the slider range', () => {
-        expect(getEffectsVolume(0.1)).toBeCloseTo(0.19);
-        expect(getEffectsVolume(0.5)).toBeCloseTo(0.55);
+        expect(getEffectsVolume(0.1)).toBeCloseTo(0.262);
+        expect(getEffectsVolume(0.5)).toBeCloseTo(0.59);
         expect(getEffectsVolume(1)).toBe(1);
     });
 
     it('clamps values outside the supported range', () => {
         expect(getEffectsVolume(-1)).toBe(0);
         expect(getEffectsVolume(2)).toBe(1);
+    });
+});
+
+describe('getBgmDuckMultiplier', () => {
+    it('keeps BGM at full volume when nothing else is active', () => {
+        expect(getBgmDuckMultiplier({ speechActive: false, effectActive: false })).toBe(1);
+    });
+
+    it('ducks BGM more strongly for speech than short effects', () => {
+        expect(getBgmDuckMultiplier({ speechActive: false, effectActive: true })).toBe(0.38);
+        expect(getBgmDuckMultiplier({ speechActive: true, effectActive: false })).toBe(0.18);
+    });
+
+    it('keeps the stronger ducking when speech and effects overlap', () => {
+        expect(getBgmDuckMultiplier({ speechActive: true, effectActive: true })).toBe(0.18);
     });
 });

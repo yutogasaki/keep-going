@@ -2,13 +2,42 @@ export interface BgmTrack {
     id: string;
     label: string;
     src: string;
+    gain: number;
 }
+
+const FRIENDLY_BGM_LABELS: Record<string, string> = {
+    'Fairy Meadow Stretch': 'ようせいの はらっぱ',
+    'Fairy Meadow Stretch(1)': 'ようせいの はらっぱ きらり',
+    'Gentle Morning Stretch': 'あさの のびのび',
+    'Gentle Morning Stretch(1)': 'あさの のびのび ひだまり',
+    'Pixel Stretch Playground': 'ぴこぴこ ストレッチひろば',
+    'Pixel Stretch Playground(1)': 'ぴこぴこ ストレッチひろば ダッシュ',
+    'Sunshine Skipping Stones': 'おひさま みずあそび',
+    'Sunshine Skipping Stones(1)': 'おひさま みずあそび きらきら',
+    'Tiny Paws Parade': 'こねこの パレード',
+    'Tiny Paws Parade(1)': 'こねこの パレード るんるん',
+};
+
+// Attenuate louder imported tracks so the Music folder feels more even at one slider value.
+const BGM_TRACK_GAINS: Record<string, number> = {
+    'Fairy Meadow Stretch': 0.88,
+    'Fairy Meadow Stretch(1)': 0.82,
+    'Gentle Morning Stretch': 0.87,
+    'Gentle Morning Stretch(1)': 0.75,
+    'Pixel Stretch Playground': 0.93,
+    'Pixel Stretch Playground(1)': 0.83,
+    'Sunshine Skipping Stones': 0.78,
+    'Sunshine Skipping Stones(1)': 0.93,
+    'Tiny Paws Parade': 1,
+    'Tiny Paws Parade(1)': 0.9,
+};
 
 interface RawBgmTrack {
     id: string;
     baseLabel: string;
     sortLabel: string;
     src: string;
+    gain: number;
     variantHint: number;
 }
 
@@ -43,6 +72,14 @@ function createTrackId(stem: string): string {
     return normalized || 'bgm-track';
 }
 
+function getFriendlyTrackLabel(stem: string, fallbackLabel: string): string {
+    return FRIENDLY_BGM_LABELS[stem] ?? fallbackLabel;
+}
+
+function getTrackGain(stem: string): number {
+    return BGM_TRACK_GAINS[stem] ?? 1;
+}
+
 function buildTracks(): BgmTrack[] {
     const modules = import.meta.glob('../../Music/*.mp3', {
         eager: true,
@@ -56,9 +93,10 @@ function buildTracks(): BgmTrack[] {
 
             return {
                 id: createTrackId(stem),
-                baseLabel,
-                sortLabel: `${baseLabel}\u0000${stem}`,
+                baseLabel: getFriendlyTrackLabel(stem, baseLabel),
+                sortLabel: `${getFriendlyTrackLabel(stem, baseLabel)}\u0000${stem}`,
                 src,
+                gain: getTrackGain(stem),
                 variantHint: getVariantHint(stem),
             } satisfies RawBgmTrack;
         })
@@ -90,6 +128,7 @@ function buildTracks(): BgmTrack[] {
                 ? `${track.baseLabel} ${nextIndex}`
                 : track.baseLabel,
             src: track.src,
+            gain: track.gain,
         };
     });
 }

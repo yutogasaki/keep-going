@@ -1,7 +1,7 @@
 import React from 'react';
-import { Music } from 'lucide-react';
+import { Music, Play, Square } from 'lucide-react';
 import type { BgmTrack } from '../../../lib/bgmTracks';
-import { inputField, COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../../lib/styles';
+import { btnSecondary, inputField, COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../../lib/styles';
 import { ToggleButton } from '../ToggleButton';
 
 interface BgmCardProps {
@@ -9,9 +9,11 @@ interface BgmCardProps {
     volume: number;
     selectedTrackId: string;
     tracks: BgmTrack[];
+    isPreviewing: boolean;
     onToggle: () => void;
     onTrackChange: (trackId: string) => void;
     onVolumeChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    onPreviewToggle: () => void;
 }
 
 export const BgmCard: React.FC<BgmCardProps> = ({
@@ -19,23 +21,44 @@ export const BgmCard: React.FC<BgmCardProps> = ({
     volume,
     selectedTrackId,
     tracks,
+    isPreviewing,
     onToggle,
     onTrackChange,
     onVolumeChange,
+    onPreviewToggle,
 }) => {
     const volumePercent = Math.round(volume * 100);
     const hasTracks = tracks.length > 0;
     const resolvedTrackId = tracks.some((track) => track.id === selectedTrackId)
         ? selectedTrackId
         : (tracks[0]?.id ?? '');
+    const previewDisabled = !hasTracks || volume === 0;
 
     const helperText = !hasTracks
         ? 'Music フォルダの mp3 がまだ見つからないため、いまは BGM を選べません。'
-        : !enabled
-            ? 'オフのあいだは セッション中でも BGM は流れません。'
-            : volume === 0
-                ? '0% のときは BGM は流れません。'
+        : volume === 0
+            ? '0% のときは BGM は流れません。試し聞きもできません。'
+            : !enabled
+                ? 'オフのあいだは セッション中には流れません。下のボタンで試し聞きはできます。'
                 : 'BGM だけの大きさです。こえ と こうかおん には 影響しません。';
+
+    const previewButtonStyle = (disabled: boolean): React.CSSProperties => ({
+        ...btnSecondary,
+        padding: '10px 14px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: SPACE.sm,
+        border: `1px solid ${COLOR.border}`,
+        background: disabled
+            ? COLOR.bgMuted
+            : isPreviewing
+                ? 'rgba(9, 132, 227, 0.12)'
+                : 'rgba(255,255,255,0.88)',
+        color: disabled ? COLOR.light : isPreviewing ? COLOR.info : COLOR.text,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        width: '100%',
+    });
 
     return (
         <div className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
@@ -125,6 +148,16 @@ export const BgmCard: React.FC<BgmCardProps> = ({
                             )}
                         </select>
                     </label>
+
+                    <button
+                        type="button"
+                        onClick={onPreviewToggle}
+                        disabled={previewDisabled}
+                        style={previewButtonStyle(previewDisabled)}
+                    >
+                        {isPreviewing ? <Square size={16} /> : <Play size={16} />}
+                        {isPreviewing ? 'BGMをとめる' : 'BGMをきいてみる'}
+                    </button>
 
                     <div style={{
                         display: 'flex',
