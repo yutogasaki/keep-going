@@ -1,8 +1,6 @@
 import { useAppStore } from '../store/useAppStore';
 import { findBgmTrack } from './bgmTracks';
 
-export const BGM_OUTPUT_HEADROOM = 0.65;
-
 export const getSpeechVolume = (soundVolume: number) => {
     const clamped = Math.max(0, Math.min(1, soundVolume));
     if (clamped === 0) return 0;
@@ -18,6 +16,14 @@ export const getEffectsVolume = (soundVolume: number) => {
 
     // Keep short cues clearly audible even when BGM is still fairly high.
     return Math.min(1, 0.28 + clamped * 0.72);
+};
+
+export const getBgmMixVolume = (bgmVolume: number) => {
+    const clamped = Math.max(0, Math.min(1, bgmVolume));
+    if (clamped === 0) return 0;
+
+    // Give the lower half of the slider more usable range so BGM sits behind guidance more easily.
+    return Math.pow(clamped, 1.35) * 0.55;
 };
 
 export const getBgmDuckMultiplier = ({
@@ -230,13 +236,13 @@ class AudioEngine {
     private getBgmVolume() {
         const state = useAppStore.getState();
         const track = findBgmTrack(state.bgmTrackId);
-        const baseVolume = Math.max(0, Math.min(1, state.bgmVolume));
+        const baseVolume = getBgmMixVolume(state.bgmVolume);
         const trackGain = track?.gain ?? 1;
         const duckMultiplier = getBgmDuckMultiplier({
             speechActive: this.isSpeechActive,
             effectActive: this.isEffectActive,
         });
-        return Math.max(0, Math.min(1, baseVolume * trackGain * BGM_OUTPUT_HEADROOM * duckMultiplier));
+        return Math.max(0, Math.min(1, baseVolume * trackGain * duckMultiplier));
     }
 
     private applyBgmState() {

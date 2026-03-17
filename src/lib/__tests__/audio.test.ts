@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BGM_OUTPUT_HEADROOM, getBgmDuckMultiplier, getEffectsVolume, getSpeechVolume } from '../audio';
+import { getBgmDuckMultiplier, getBgmMixVolume, getEffectsVolume, getSpeechVolume } from '../audio';
 
 describe('getSpeechVolume', () => {
     it('returns 0 when sound volume is 0', () => {
@@ -35,11 +35,16 @@ describe('getEffectsVolume', () => {
     });
 });
 
-describe('BGM_OUTPUT_HEADROOM', () => {
-    it('keeps the BGM mix below the raw slider value', () => {
-        expect(BGM_OUTPUT_HEADROOM).toBeCloseTo(0.65);
-        expect(BGM_OUTPUT_HEADROOM).toBeGreaterThan(0);
-        expect(BGM_OUTPUT_HEADROOM).toBeLessThan(1);
+describe('getBgmMixVolume', () => {
+    it('keeps the BGM mix quieter than the raw slider value', () => {
+        expect(getBgmMixVolume(0)).toBe(0);
+        expect(getBgmMixVolume(0.5)).toBeCloseTo(0.2157, 3);
+        expect(getBgmMixVolume(1)).toBeCloseTo(0.55);
+    });
+
+    it('clamps values outside the supported range', () => {
+        expect(getBgmMixVolume(-1)).toBe(0);
+        expect(getBgmMixVolume(2)).toBeCloseTo(0.55);
     });
 });
 
