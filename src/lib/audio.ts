@@ -1,6 +1,10 @@
 import { useAppStore } from '../store/useAppStore';
 import { findBgmTrack } from './bgmTracks';
 
+export const normalizeSpeechText = (text: string) =>
+    // Some browser voices misread `次は` as `じは`, so normalize only the spoken form.
+    text.replaceAll('次は', 'つぎは');
+
 export const getSpeechVolume = (soundVolume: number) => {
     const clamped = Math.max(0, Math.min(1, soundVolume));
     if (clamped === 0) return 0;
@@ -172,7 +176,7 @@ class AudioEngine {
         if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
             window.speechSynthesis.cancel();
 
-            const utterance = new SpeechSynthesisUtterance(text);
+            const utterance = new SpeechSynthesisUtterance(normalizeSpeechText(text));
             const token = ++this.speechTokenCounter;
 
             utterance.lang = 'ja-JP';

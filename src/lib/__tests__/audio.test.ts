@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { getBgmDuckMultiplier, getBgmMixVolume, getEffectsVolume, getSpeechVolume } from '../audio';
+import { getBgmDuckMultiplier, getBgmMixVolume, getEffectsVolume, getSpeechVolume, normalizeSpeechText } from '../audio';
+
+describe('normalizeSpeechText', () => {
+    it('replaces known TTS misreadings without changing the visible copy source', () => {
+        expect(normalizeSpeechText('次は、ぶりっじです')).toBe('つぎは、ぶりっじです');
+        expect(normalizeSpeechText('残り10秒、次はブリッジ')).toBe('残り10秒、つぎはブリッジ');
+    });
+
+    it('leaves unrelated speech untouched', () => {
+        expect(normalizeSpeechText('最初は、かえるあしです')).toBe('最初は、かえるあしです');
+    });
+});
 
 describe('getSpeechVolume', () => {
     it('returns 0 when sound volume is 0', () => {
