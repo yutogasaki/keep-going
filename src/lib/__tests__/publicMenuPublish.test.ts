@@ -3,7 +3,7 @@ import { buildMenuGroupItemsFromExerciseIds, type MenuGroup } from '../../data/m
 import type { CustomExercise } from '../db';
 import type { PublicExercise } from '../publicExercises';
 import type { PublicMenu } from '../publicMenuTypes';
-import { publishMenu } from '../publicMenuPublish';
+import { publishMenu, unpublishMenu } from '../publicMenuPublish';
 import { getCustomExercises } from '../db';
 import { fetchMyPublishedMenus } from '../publicMenuBrowse';
 import {
@@ -155,6 +155,61 @@ function createPublicMenusSupabaseMock(previousCustomExerciseData: PublicMenu['c
     });
 
     return { updatePayloads };
+}
+
+function createPublicMenusUnpublishSupabaseMock(options: {
+    customExerciseData: PublicMenu['customExerciseData'];
+    authorName?: string;
+    deleteError?: Error | null;
+}) {
+    supabaseFromMock.mockImplementation((table: string) => {
+        if (table !== 'public_menus') {
+            throw new Error(`Unexpected table: ${table}`);
+        }
+
+        return {
+            select: vi.fn(() => {
+                const selectChain = {
+                    eq: vi.fn(() => selectChain),
+                    single: vi.fn(async () => ({
+                        data: {
+                            custom_exercise_data: options.customExerciseData,
+                            author_name: options.authorName ?? 'みお',
+                        },
+                        error: null,
+                    })),
+                };
+                return selectChain;
+            }),
+            delete: vi.fn(() => {
+                let eqCount = 0;
+                const deleteChain = {
+                    eq: vi.fn(() => {
+                        eqCount += 1;
+                        if (eqCount >= 2) {
+                            return Promise.resolve({ error: options.deleteError ?? null });
+                        }
+                        return deleteChain;
+                    }),
+                };
+                return deleteChain;
+            }),
+            update: vi.fn((payload: unknown) => {
+                let eqCount = 0;
+                const updateChain = {
+                    eq: vi.fn(() => {
+                        eqCount += 1;
+                        if (eqCount >= 2) {
+                            return Promise.resolve({ error: null, payload });
+                        }
+                        return updateChain;
+                    }),
+                };
+                return updateChain;
+            }),
+            insert: vi.fn(async () => ({ error: null })),
+        };
+    });
 }
 
 beforeEach(() => {
@@ -338,5 +393,98 @@ describe('publicMenuPublish', () => {
         ).rejects.toThrow('published menus unavailable');
 
         expect(mockedUnpublishExercise).not.toHaveBeenCalled();
+    });
+
+    it('unpublishes orphaned custom exercises before removing the public menu', async () => {
+        const removedExercise = createCustomExercise({
+            id: 'custom-ex-2',
+            name: 'きゅうけい',
+            sec: 45,
+            emoji: '🛋️',
+            placement: 'rest',
+        });
+
+        createPublicMenusUnpublishSupabaseMock({
+            customExerciseData: [removedExercise],
+            authorName: 'みお',
+        });
+        mockedFetchMyPublishedMenus.mockResolvedValue([
+            createPublicMenu({
+                id: 'public-menu-1',
+                name: '公開メニュー',
+                exerciseIds: ['custom-ex-2'],
+                customExerciseData: [removedExercise],
+                sourceMenuGroupId: 'group-1',
+            }),
+        ]);
+        mockedFetchMyPublishedExercises.mockResolvedValue([
+            createPublicExercise({
+                id: 'public-ex-2',
+                name: removedExercise.name,
+                sec: removedExercise.sec,
+                emoji: removedExercise.emoji,
+                placement: removedExercise.placement,
+                hasSplit: removedExercise.hasSplit ?? false,
+                sourceCustomExerciseId: removedExercise.id,
+                preserveWithoutMenu: false,
+            }),
+        ]);
+
+        await unpublishMenu('public-menu-1');
+
+        expect(mockedUnpublishExercise).toHaveBeenCalledWith('public-ex-2');
+        expect(mockedPublishExercise).not.toHaveBeenCalled();
+    });
+
+    it('restores related public exercises if menu deletion fails after cleanup starts', async () => {
+        const removedExercise = createCustomExercise({
+            id: 'custom-ex-2',
+            name: 'きゅうけい',
+            sec: 45,
+            emoji: '🛋️',
+            placement: 'rest',
+        });
+
+        createPublicMenusUnpublishSupabaseMock({
+            customExerciseData: [removedExercise],
+            authorName: 'みお',
+            deleteError: new Error('delete failed'),
+        });
+        mockedFetchMyPublishedMenus.mockResolvedValue([
+            createPublicMenu({
+                id: 'public-menu-1',
+                name: '公開メニュー',
+                exerciseIds: ['custom-ex-2'],
+                customExerciseData: [removedExercise],
+                sourceMenuGroupId: 'group-1',
+            }),
+        ]);
+        mockedFetchMyPublishedExercises.mockResolvedValue([
+            createPublicExercise({
+                id: 'public-ex-2',
+                name: removedExercise.name,
+                sec: removedExercise.sec,
+                emoji: removedExercise.emoji,
+                placement: removedExercise.placement,
+                hasSplit: removedExercise.hasSplit ?? false,
+                sourceCustomExerciseId: removedExercise.id,
+                preserveWithoutMenu: false,
+            }),
+        ]);
+
+        await expect(unpublishMenu('public-menu-1')).rejects.toThrow('delete failed');
+
+        expect(mockedUnpublishExercise).toHaveBeenCalledWith('public-ex-2');
+        expect(mockedPublishExercise).toHaveBeenCalledWith(
+            expect.objectContaining({
+                id: 'custom-ex-2',
+                name: 'きゅうけい',
+            }),
+            'みお',
+            expect.objectContaining({
+                sourceCustomExerciseId: 'custom-ex-2',
+                preserveWithoutMenu: false,
+            }),
+        );
     });
 });

@@ -9,6 +9,7 @@ import { findPublishedExerciseMatch, findPublishedMenuMatch } from './publicCont
 import { createPublicExerciseDedupKey } from './publicExerciseUtils';
 import { fetchMyPublishedMenus } from './publicMenuBrowse';
 import {
+    type PublicExercise,
     fetchMyPublishedExercises,
     publishExercise,
     unpublishExercise,
@@ -32,6 +33,11 @@ interface PublishMenuOptions {
 
 interface PublishedMenuCustomExerciseRow {
     custom_exercise_data: unknown[] | null;
+}
+
+interface UnusedPublishedCustomExerciseCandidate {
+    exerciseData: CustomExerciseData;
+    publishedExercise: PublicExercise;
 }
 
 async function getMenuCustomExerciseData(menu: MenuGroup): Promise<MenuPublishExerciseDataResult> {
@@ -171,11 +177,22 @@ async function cleanupUnusedPublishedCustomExercises(
         return;
     }
 
-    const [myPublishedExercises, myPublishedMenus] = await Promise.all([
-        fetchMyPublishedExercises({ throwOnError: true }),
-        fetchMyPublishedMenus({ throwOnError: true }),
-    ]);
+    const candidates = await findUnusedPublishedCustomExerciseCandidates(
+        customExerciseData,
+        await fetchMyPublishedExercises({ throwOnError: true }),
+        await fetchMyPublishedMenus({ throwOnError: true }),
+    );
+
+    await unpublishCustomExerciseCandidates(candidates);
+}
+
+function findUnusedPublishedCustomExerciseCandidates(
+    customExerciseData: CustomExerciseData[],
+    myPublishedExercises: PublicExercise[],
+    myPublishedMenus: Awaited<ReturnType<typeof fetchMyPublishedMenus>>,
+): UnusedPublishedCustomExerciseCandidate[] {
     const handledPublishedExerciseIds = new Set<string>();
+    const candidates: UnusedPublishedCustomExerciseCandidate[] = [];
 
     for (const exercise of customExerciseData) {
         const published = findPublishedExerciseMatch(
@@ -191,8 +208,56 @@ async function cleanupUnusedPublishedCustomExercises(
         }
 
         handledPublishedExerciseIds.add(published.id);
-        await unpublishExercise(published.id);
+        candidates.push({
+            exerciseData: exercise,
+            publishedExercise: published,
+        });
     }
+
+    return candidates;
+}
+
+async function unpublishCustomExerciseCandidates(
+    candidates: UnusedPublishedCustomExerciseCandidate[],
+): Promise<void> {
+    for (const candidate of candidates) {
+        await unpublishExercise(candidate.publishedExercise.id);
+    }
+}
+
+async function republishCustomExercises(
+    customExerciseData: CustomExerciseData[],
+    authorName: string,
+): Promise<void> {
+    if (customExerciseData.length === 0) {
+        return;
+    }
+
+    for (const exercise of customExerciseData) {
+        await publishExercise(
+            toCustomExercise(exercise),
+            authorName,
+            {
+                sourceCustomExerciseId: exercise.id,
+                preserveWithoutMenu: false,
+            },
+        );
+    }
+}
+
+async function fetchStrictPublishedSnapshots(): Promise<{
+    myPublishedExercises: PublicExercise[];
+    myPublishedMenus: Awaited<ReturnType<typeof fetchMyPublishedMenus>>;
+}> {
+    const [myPublishedExercises, myPublishedMenus] = await Promise.all([
+        fetchMyPublishedExercises({ throwOnError: true }),
+        fetchMyPublishedMenus({ throwOnError: true }),
+    ]);
+
+    return {
+        myPublishedExercises,
+        myPublishedMenus,
+    };
 }
 
 export async function publishMenu(
@@ -266,32 +331,52 @@ export async function unpublishMenu(id: string): Promise<void> {
         return;
     }
 
-    const { data: menuRow } = await supabase
+    const { data: menuRow, error: menuFetchError } = await supabase
         .from('public_menus')
         .select('*')
         .eq('id', id)
         .eq('account_id', accountId)
         .single();
 
-    const { error } = await supabase
-        .from('public_menus')
-        .delete()
-        .eq('id', id)
-        .eq('account_id', accountId);
-
-    if (error) {
-        throw error;
+    if (menuFetchError) {
+        throw menuFetchError;
     }
 
+    const publicMenusTable = supabase.from('public_menus');
     const customData = (menuRow?.custom_exercise_data as CustomExerciseData[]) ?? [];
-    if (customData.length === 0) {
-        return;
-    }
+    const authorName = menuRow?.author_name ?? '';
+    const { myPublishedExercises, myPublishedMenus } = await fetchStrictPublishedSnapshots();
+    const cleanupCandidates = findUnusedPublishedCustomExerciseCandidates(
+        customData,
+        myPublishedExercises,
+        myPublishedMenus.filter((menu) => menu.id !== id),
+    );
 
+    const unpublishedExerciseData: CustomExerciseData[] = [];
     try {
-        await cleanupUnusedPublishedCustomExercises(customData);
+        for (const candidate of cleanupCandidates) {
+            await unpublishExercise(candidate.publishedExercise.id);
+            unpublishedExerciseData.push(candidate.exerciseData);
+        }
+
+        const deleteResult = await publicMenusTable
+            .delete()
+            .eq('id', id)
+            .eq('account_id', accountId);
+
+        if (deleteResult.error) {
+            throw deleteResult.error;
+        }
     } catch (error) {
-        console.warn('[unpublishMenu] auto-unpublish exercises failed:', error);
+        if (unpublishedExerciseData.length > 0 && authorName) {
+            try {
+                await republishCustomExercises(unpublishedExerciseData, authorName);
+            } catch (restoreError) {
+                console.warn('[unpublishMenu] restore published exercises failed:', restoreError);
+            }
+        }
+
+        throw error;
     }
 }
 
