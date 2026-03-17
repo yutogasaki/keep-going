@@ -1,6 +1,8 @@
 import { useAppStore } from '../store/useAppStore';
 import { findBgmTrack } from './bgmTracks';
 
+export const BGM_OUTPUT_HEADROOM = 0.65;
+
 export const getSpeechVolume = (soundVolume: number) => {
     const clamped = Math.max(0, Math.min(1, soundVolume));
     if (clamped === 0) return 0;
@@ -14,8 +16,8 @@ export const getEffectsVolume = (soundVolume: number) => {
     const clamped = Math.max(0, Math.min(1, soundVolume));
     if (clamped === 0) return 0;
 
-    // Keep short cues audible under BGM while avoiding a huge jump at the first non-zero step.
-    return Math.min(1, 0.18 + clamped * 0.82);
+    // Keep short cues clearly audible even when BGM is still fairly high.
+    return Math.min(1, 0.28 + clamped * 0.72);
 };
 
 export const getBgmDuckMultiplier = ({
@@ -25,8 +27,8 @@ export const getBgmDuckMultiplier = ({
     speechActive: boolean;
     effectActive: boolean;
 }) => {
-    const speechMultiplier = speechActive ? 0.18 : 1;
-    const effectMultiplier = effectActive ? 0.38 : 1;
+    const speechMultiplier = speechActive ? 0.08 : 1;
+    const effectMultiplier = effectActive ? 0.22 : 1;
     return Math.min(speechMultiplier, effectMultiplier);
 };
 
@@ -234,7 +236,7 @@ class AudioEngine {
             speechActive: this.isSpeechActive,
             effectActive: this.isEffectActive,
         });
-        return Math.max(0, Math.min(1, baseVolume * trackGain * duckMultiplier));
+        return Math.max(0, Math.min(1, baseVolume * trackGain * BGM_OUTPUT_HEADROOM * duckMultiplier));
     }
 
     private applyBgmState() {
@@ -330,15 +332,15 @@ class AudioEngine {
     }
 
     public playTick() {
-        this.playTone(880, 'sine', 0.1, 0.24);
+        this.playTone(880, 'sine', 0.1, 0.42);
     }
 
     public playGo() {
-        this.playTone(1760, 'sine', 0.3, 0.28);
+        this.playTone(1760, 'sine', 0.3, 0.5);
     }
 
     public playProgressTone() {
-        const vol = this.getEffectGain(0.16);
+        const vol = this.getEffectGain(0.36);
         if (vol === 0) return;
 
         this.init();
@@ -368,7 +370,7 @@ class AudioEngine {
     }
 
     public playExerciseStart() {
-        const vol = this.getEffectGain(0.22);
+        const vol = this.getEffectGain(0.48);
         if (vol === 0) return;
 
         this.init();
@@ -398,7 +400,7 @@ class AudioEngine {
     }
 
     public playTransition() {
-        const vol = this.getEffectGain(0.19);
+        const vol = this.getEffectGain(0.42);
         if (vol === 0) return;
 
         this.init();
@@ -424,7 +426,7 @@ class AudioEngine {
     }
 
     public playSuccess() {
-        const vol = this.getEffectGain(0.22);
+        const vol = this.getEffectGain(0.5);
         if (vol === 0) return;
 
         this.init();
