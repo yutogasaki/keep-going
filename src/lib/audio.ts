@@ -52,13 +52,34 @@ class AudioEngine {
     private currentBgmSrc: string | null = null;
     private sessionBgmActive = false;
     private bgmPreviewActive = false;
+    private bgmRetryPending = false;
     private speechTokenCounter = 0;
     private activeSpeechToken = 0;
     private isSpeechActive = false;
     private isEffectActive = false;
     private effectDuckTimer: number | null = null;
+    private readonly retryPendingBgmPlayback = () => {
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+            return;
+        }
+
+        if (!this.bgmRetryPending || !this.shouldPlayBgm()) {
+            return;
+        }
+
+        this.init();
+        this.applyBgmState();
+    };
 
     constructor() {
+        if (typeof window !== 'undefined') {
+            window.addEventListener('pageshow', this.retryPendingBgmPlayback);
+            window.addEventListener('pointerdown', this.retryPendingBgmPlayback, { passive: true });
+            window.addEventListener('touchend', this.retryPendingBgmPlayback, { passive: true });
+            window.addEventListener('keydown', this.retryPendingBgmPlayback);
+            document.addEventListener('visibilitychange', this.retryPendingBgmPlayback);
+        }
+
         if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
             this.cachedVoices = window.speechSynthesis.getVoices();
             window.speechSynthesis.addEventListener('voiceschanged', () => {
@@ -77,9 +98,33 @@ class AudioEngine {
             if (!AudioContextClass) return;
 
             this.ctx = new AudioContextClass();
+            this.ctx.addEventListener('statechange', () => {
+                if (this.ctx?.state === 'running') {
+                    this.bgmRetryPending = false;
+                    this.applyBgmState();
+                    return;
+                }
+
+                if (this.shouldPlayBgm()) {
+                    this.bgmRetryPending = true;
+                }
+            });
         }
+
         if (this.ctx.state === 'suspended') {
-            void this.ctx.resume();
+            this.bgmRetryPending = this.shouldPlayBgm();
+            void this.ctx.resume()
+                .then(() => {
+                    if (this.ctx?.state === 'running') {
+                        this.bgmRetryPending = false;
+                        this.applyBgmState();
+                    }
+                })
+                .catch(() => {
+                    this.bgmRetryPending = this.shouldPlayBgm();
+                });
+        } else if (this.ctx.state === 'running') {
+            this.bgmRetryPending = false;
         }
 
         this.ensureBgmRouting();
@@ -103,6 +148,7 @@ class AudioEngine {
     public syncSessionBgm(active: boolean) {
         this.sessionBgmActive = active;
         if (!active) {
+            this.bgmRetryPending = false;
             this.pauseBgm(true);
             return;
         }
@@ -145,6 +191,9 @@ class AudioEngine {
 
     public stopBgmPreview() {
         this.bgmPreviewActive = false;
+        if (!this.shouldPlayBgm()) {
+            this.bgmRetryPending = false;
+        }
         this.applyBgmState();
     }
 
@@ -246,7 +295,7 @@ class AudioEngine {
     }
 
     private ensureBgmRouting() {
-        if (!this.ctx || !this.bgmAudio) {
+        if (!this.ctx || !this.bgmAudio || this.ctx.state !== 'running') {
             return false;
         }
 
@@ -300,14 +349,23 @@ class AudioEngine {
         return Math.max(0, Math.min(1, baseVolume * trackGain * duckMultiplier));
     }
 
-    private applyBgmState() {
+    private shouldPlayBgm() {
         const state = useAppStore.getState();
         const track = findBgmTrack(state.bgmTrackId);
         const hasPlayableTrack = track != null && state.bgmVolume > 0;
         const shouldPlayPreview = this.bgmPreviewActive && !this.isMuted && hasPlayableTrack;
         const shouldPlaySession = this.sessionBgmActive && !this.isMuted && state.bgmEnabled && hasPlayableTrack;
 
-        if (!shouldPlayPreview && !shouldPlaySession) {
+        return shouldPlayPreview || shouldPlaySession;
+    }
+
+    private applyBgmState() {
+        const state = useAppStore.getState();
+        const track = findBgmTrack(state.bgmTrackId);
+        const shouldPlay = this.shouldPlayBgm();
+
+        if (!shouldPlay) {
+            this.bgmRetryPending = false;
             this.pauseBgm(!this.sessionBgmActive);
             return;
         }
@@ -319,10 +377,18 @@ class AudioEngine {
 
         this.setBgmOutputVolume(this.getBgmVolume());
         if (audio.paused) {
-            void audio.play().catch(() => {
-                // Playback can be blocked until the browser considers the page user-activated.
-            });
+            void audio.play()
+                .then(() => {
+                    this.bgmRetryPending = false;
+                })
+                .catch(() => {
+                    this.bgmRetryPending = true;
+                    // Playback can be blocked until the browser considers the page user-activated.
+                });
+            return;
         }
+
+        this.bgmRetryPending = false;
     }
 
     private pauseBgm(reset: boolean) {
