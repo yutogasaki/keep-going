@@ -40,6 +40,7 @@ import { HomeAnimatedBackground } from './home/HomeAnimatedBackground';
 import { FuwafuwaHomeCard } from './home/FuwafuwaHomeCard';
 import { ChallengeHubSheet } from './home/ChallengeHubSheet';
 import { HomeChallengesAndMenus } from './home/HomeChallengesAndMenus';
+import { selectHomeTeacherChallenges } from './home/homeChallengeSelection';
 import { TeacherExerciseDetailSheet } from './home/TeacherExerciseDetailSheet';
 import { TeacherMenuDetailSheet } from './home/TeacherMenuDetailSheet';
 import {
@@ -309,17 +310,14 @@ export const HomeScreen: React.FC = () => {
             teacherMenuHighlights,
         ],
     );
-    const joinedTeacherChallenges = useMemo(
-        () => filteredChallenges.filter((challenge) => activeHomeUserIds.some(
-            (userId) => (joinedChallengeIds[userId] || []).includes(challenge.id),
-        )),
-        [activeHomeUserIds, filteredChallenges, joinedChallengeIds],
-    );
-    const recommendedTeacherChallenge = useMemo(
-        () => filteredChallenges.find((challenge) => !activeHomeUserIds.some(
-            (userId) => (joinedChallengeIds[userId] || []).includes(challenge.id),
-        )) ?? null,
-        [activeHomeUserIds, filteredChallenges, joinedChallengeIds],
+    const { joinedTeacherChallenges, recommendedTeacherChallenge } = useMemo(
+        () => selectHomeTeacherChallenges({
+            activeUserIds: activeHomeUserIds,
+            availableChallenges: filteredChallenges,
+            todayDoneChallenges,
+            joinedChallengeIds,
+        }),
+        [activeHomeUserIds, filteredChallenges, joinedChallengeIds, todayDoneChallenges],
     );
 
     useEffect(() => {
