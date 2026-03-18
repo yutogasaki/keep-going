@@ -107,11 +107,13 @@ class AudioEngine {
             return;
         }
 
+        this.init();
         this.bgmPreviewActive = false;
         this.applyBgmState();
     }
 
     public refreshBgm() {
+        this.init();
         this.applyBgmState();
     }
 
@@ -128,6 +130,7 @@ class AudioEngine {
             return false;
         }
 
+        this.init();
         const audio = this.ensureBgmAudio(track.src);
         if (!audio) {
             this.bgmPreviewActive = false;
@@ -249,7 +252,7 @@ class AudioEngine {
 
         if (!this.bgmGainNode) {
             this.bgmGainNode = this.ctx.createGain();
-            this.bgmGainNode.gain.setValueAtTime(1, this.ctx.currentTime);
+            this.bgmGainNode.gain.setValueAtTime(this.getBgmVolume(), this.ctx.currentTime);
             this.bgmGainNode.connect(this.ctx.destination);
         }
 
