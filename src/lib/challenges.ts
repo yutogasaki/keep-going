@@ -398,12 +398,14 @@ export function getChallengeDailyCapLabel(challenge: Challenge): string {
 export function createRollingChallengeWindow(
     challenge: Pick<Challenge, 'windowDays'>,
     startDate = getTodayKey(),
+    joinedAt?: string | null,
 ): ChallengeProgressWindow {
     const resolvedWindowDays = Math.max(1, challenge.windowDays ?? 7);
 
     return {
         startDate,
         endDate: getRollingWindowEndDate(startDate, resolvedWindowDays),
+        ...(joinedAt ? { joinedAt } : {}),
     };
 }
 
@@ -551,14 +553,15 @@ export function buildChallengeEnrollmentState(
             ...(joinedChallengeIds[enrollment.memberId] ?? []),
             enrollment.challengeId,
         ];
-        challengeEnrollmentWindows[enrollment.memberId] = {
-            ...(challengeEnrollmentWindows[enrollment.memberId] ?? {}),
-            [enrollment.challengeId]: {
-                startDate: enrollment.effectiveStartDate,
-                endDate: enrollment.effectiveEndDate,
-            },
-        };
-    }
+            challengeEnrollmentWindows[enrollment.memberId] = {
+                ...(challengeEnrollmentWindows[enrollment.memberId] ?? {}),
+                [enrollment.challengeId]: {
+                    startDate: enrollment.effectiveStartDate,
+                    endDate: enrollment.effectiveEndDate,
+                    joinedAt: enrollment.joinedAt,
+                },
+            };
+        }
 
     return {
         joinedChallengeIds,
@@ -945,11 +948,11 @@ export async function markChallengeJoined(
     challengeId: string,
     memberId: string,
     effectiveWindow: ChallengeProgressWindow,
+    joinedAt = new Date().toISOString(),
 ): Promise<void> {
     if (!supabase) return;
     const accountId = getAccountId();
     if (!accountId) return;
-    const joinedAt = new Date().toISOString();
 
     const { error } = await supabase.from('challenge_enrollments').upsert({
         challenge_id: challengeId,
@@ -1012,12 +1015,11 @@ export async function retryChallenge(
     challengeId: string,
     memberId: string,
     effectiveWindow: ChallengeProgressWindow,
+    joinedAt = new Date().toISOString(),
 ): Promise<void> {
     if (!supabase) return;
     const accountId = getAccountId();
     if (!accountId) return;
-
-    const joinedAt = new Date().toISOString();
     const latestAttempt = await fetchLatestChallengeAttemptRow(challengeId, accountId, memberId);
     if (latestAttempt?.status === 'active') {
         await updateLatestChallengeAttemptStatus(challengeId, accountId, memberId, 'expired', {

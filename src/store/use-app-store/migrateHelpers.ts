@@ -266,12 +266,15 @@ function sanitizeChallengeEnrollmentWindow(value: unknown): ChallengeEnrollmentW
 
     const startDate = candidate.startDate.trim();
     const endDate = candidate.endDate.trim();
+    const joinedAt = typeof candidate.joinedAt === 'string' && !Number.isNaN(Date.parse(candidate.joinedAt))
+        ? candidate.joinedAt
+        : undefined;
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate) || endDate < startDate) {
         return null;
     }
 
-    return { startDate, endDate };
+    return { startDate, endDate, ...(joinedAt ? { joinedAt } : {}) };
 }
 
 export function sanitizeChallengeEnrollmentWindows(

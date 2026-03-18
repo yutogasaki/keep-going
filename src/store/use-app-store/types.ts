@@ -26,6 +26,7 @@ export interface HomeVisitMemory {
 export interface ChallengeEnrollmentWindow {
     startDate: string;
     endDate: string;
+    joinedAt?: string | null;
 }
 
 export type FuwafuwaMilestoneKind = 'egg' | 'fairy' | 'adult';

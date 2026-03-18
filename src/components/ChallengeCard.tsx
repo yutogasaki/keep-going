@@ -105,8 +105,9 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
     const activeWindowLabel = getChallengePeriodLabel(challenge, effectiveWindow);
     const deadlineLabel = getChallengeDeadlineLabel(challenge, effectiveWindow);
     const handleJoin = () => {
+        const joinedAt = new Date().toISOString();
         const nextWindow = challenge.windowType === 'rolling'
-            ? createRollingChallengeWindow(challenge)
+            ? createRollingChallengeWindow(challenge, undefined, joinedAt)
             : null;
 
         activeUserIds.forEach((userId) => {
@@ -115,9 +116,10 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
             const effectiveWindow = nextWindow ?? {
                 startDate: challenge.startDate,
                 endDate: challenge.endDate,
+                joinedAt,
             };
 
-            markChallengeJoined(challenge.id, userId, effectiveWindow).catch((error) => {
+            markChallengeJoined(challenge.id, userId, effectiveWindow, joinedAt).catch((error) => {
                 console.warn('[challenges] markChallengeJoined failed:', error);
             });
         });
@@ -125,11 +127,12 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
     };
 
     const handleRetry = () => {
-        const nextWindow = createRollingChallengeWindow(challenge);
+        const joinedAt = new Date().toISOString();
+        const nextWindow = createRollingChallengeWindow(challenge, undefined, joinedAt);
 
         activeUserIds.forEach((userId) => {
             joinChallenge(userId, challenge.id, nextWindow);
-            retryChallenge(challenge.id, userId, nextWindow).catch((error) => {
+            retryChallenge(challenge.id, userId, nextWindow, joinedAt).catch((error) => {
                 console.warn('[challenges] retryChallenge failed:', error);
             });
         });

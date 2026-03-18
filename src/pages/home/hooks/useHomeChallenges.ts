@@ -134,7 +134,7 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
                 const todayProgress = await countChallengeProgressInCustomWindow(
                     challenge,
                     activeUserIds,
-                    { startDate: today, endDate: today },
+                    { startDate: today, endDate: today, joinedAt: effectiveWindow?.joinedAt ?? null },
                 );
 
                 if (isChallengeDoneForToday(challenge, todayProgress)) {

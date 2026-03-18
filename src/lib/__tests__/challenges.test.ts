@@ -243,6 +243,53 @@ describe('countChallengeProgress', () => {
         expect(progress).toBe(2);
     });
 
+    it('ignores sessions before joinedAt on the join day', async () => {
+        mockedGetAllSessions.mockResolvedValue(asSessions([
+            {
+                id: 'before-join',
+                date: '2026-03-05',
+                startedAt: '2026-03-05T09:00:00Z',
+                totalSeconds: 60,
+                exerciseIds: ['S01'],
+                skippedIds: [],
+                userIds: ['u1'],
+            },
+            {
+                id: 'after-join',
+                date: '2026-03-05',
+                startedAt: '2026-03-05T15:00:00Z',
+                totalSeconds: 60,
+                exerciseIds: ['S01'],
+                skippedIds: [],
+                userIds: ['u1'],
+            },
+            {
+                id: 'next-day',
+                date: '2026-03-06',
+                startedAt: '2026-03-06T10:00:00Z',
+                totalSeconds: 60,
+                exerciseIds: ['S01'],
+                skippedIds: [],
+                userIds: ['u1'],
+            },
+        ]));
+
+        const progress = await countChallengeProgress(makeChallenge({
+            goalType: 'active_day',
+            requiredDays: 5,
+            targetCount: 5,
+            windowType: 'calendar',
+            startDate: '2026-03-01',
+            endDate: '2026-03-31',
+        }), ['u1'], {
+            startDate: '2026-03-01',
+            endDate: '2026-03-31',
+            joinedAt: '2026-03-05T12:00:00Z',
+        });
+
+        expect(progress).toBe(2);
+    });
+
     it('counts active days from total minutes for duration challenges', async () => {
         mockedGetAllSessions.mockResolvedValue(asSessions([
             {
@@ -497,6 +544,7 @@ describe('buildChallengeEnrollmentState', () => {
                     'challenge-a': {
                         startDate: '2026-03-14',
                         endDate: '2026-03-20',
+                        joinedAt: '2026-03-14T00:00:00Z',
                     },
                 },
             },

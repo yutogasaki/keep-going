@@ -27,6 +27,7 @@ export interface ChallengeEngineInput {
 export interface ChallengeProgressWindow {
     startDate: string;
     endDate: string;
+    joinedAt?: string | null;
 }
 
 export function getRollingWindowEndDate(startDate: string, windowDays: number): string {
@@ -44,6 +45,7 @@ export function resolveChallengeWindow(
     return {
         startDate: challenge.startDate,
         endDate: challenge.endDate,
+        joinedAt: effectiveWindow?.joinedAt ?? null,
     };
 }
 
@@ -75,7 +77,24 @@ function sessionMatchesUsers(session: SessionRecord, userIds: string[]): boolean
 }
 
 function sessionMatchesWindow(session: SessionRecord, window: ChallengeProgressWindow): boolean {
-    return session.date >= window.startDate && session.date <= window.endDate;
+    if (session.date < window.startDate || session.date > window.endDate) {
+        return false;
+    }
+
+    if (!window.joinedAt) {
+        return true;
+    }
+
+    const joinedDate = window.joinedAt.slice(0, 10);
+    if (session.date < joinedDate) {
+        return false;
+    }
+
+    if (session.date > joinedDate) {
+        return true;
+    }
+
+    return session.startedAt >= window.joinedAt;
 }
 
 export function countChallengeProgressFromSessions(
