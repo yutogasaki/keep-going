@@ -79,7 +79,9 @@ export const ExpiredChallengeCard: React.FC<ExpiredChallengeCardProps> = ({
                             color: '#6B7280',
                             marginTop: 4,
                         }}>
-                            いつでもチャレンジだから、またやりたくなったら新しい期間ではじめられるよ
+                            {challenge.publishMode === 'always_on'
+                                ? 'いつでもチャレンジだから、またやりたくなったら新しい期間ではじめられるよ'
+                                : '今出ているあいだは、またやりたくなったら新しい期間ではじめられるよ'}
                         </div>
                     )}
                 </div>

@@ -115,7 +115,8 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
                     continue;
                 }
 
-                if (!isChallengePublishedOnDate(challenge, today)) {
+                // Keep already-started seasonal rolling challenges visible until their own window ends.
+                if (!joined && !isChallengePublishedOnDate(challenge, today)) {
                     continue;
                 }
 

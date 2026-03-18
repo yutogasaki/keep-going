@@ -311,12 +311,20 @@ describe('canRetryTeacherChallenge', () => {
         }))).toBe(true);
     });
 
-    it('does not allow retry for seasonal or calendar challenges', () => {
+    it('allows retry for seasonal rolling challenges while published', () => {
         expect(canRetryTeacherChallenge(makeChallenge({
             publishMode: 'seasonal',
             windowType: 'rolling',
             windowDays: 7,
-        }))).toBe(false);
+        }))).toBe(true);
+    });
+
+    it('does not allow retry after the seasonal publish period or for calendar challenges', () => {
+        expect(canRetryTeacherChallenge(makeChallenge({
+            publishMode: 'seasonal',
+            windowType: 'rolling',
+            windowDays: 7,
+        }), '2026-04-01')).toBe(false);
         expect(canRetryTeacherChallenge(makeChallenge({
             publishMode: 'always_on',
             windowType: 'calendar',

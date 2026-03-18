@@ -345,9 +345,14 @@ export function getChallengeRewardLabel(challenge: Challenge): string {
 }
 
 export function canRetryTeacherChallenge(
-    challenge: Pick<Challenge, 'publishMode' | 'windowType'>,
+    challenge: Pick<Challenge, 'publishMode' | 'publishStartDate' | 'publishEndDate' | 'startDate' | 'endDate' | 'windowType'>,
+    date = getTodayKey(),
 ): boolean {
-    return challenge.publishMode === 'always_on' && challenge.windowType === 'rolling';
+    if (challenge.windowType !== 'rolling') {
+        return false;
+    }
+
+    return challenge.publishMode === 'always_on' || isChallengePublishedOnDate(challenge, date);
 }
 
 export function getChallengeGoalTarget(

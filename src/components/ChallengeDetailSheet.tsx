@@ -56,6 +56,12 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
     const goalLabel = getChallengeGoalLabel(challenge, targetLabel);
     const progressLabel = getChallengeProgressLabel(challenge, progress);
     const periodLabel = getChallengePeriodLabel(challenge, joined ? effectiveWindow : null);
+    const retryIntroText = challenge.publishMode === 'always_on'
+        ? 'いつでもチャレンジだから'
+        : '今出ているあいだは';
+    const retryRuleText = challenge.publishMode === 'always_on'
+        ? 'いつでもチャレンジは、期間が終わっても新しい期間でもう一度できます。'
+        : '今だけチャレンジも、出ているあいだは新しい期間でもう一度できます。';
 
     return (
         <Modal
@@ -152,11 +158,11 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                 >
                     {completed ? (
                         canRetry
-                            ? 'クリアしたよ。いつでもチャレンジだから、またやりたくなったら新しい期間でもう一度できます。'
+                            ? `クリアしたよ。${retryIntroText}、またやりたくなったら新しい期間でもう一度できます。`
                             : 'クリア済みです。'
                     ) : expired ? (
                         canRetry
-                            ? '今回はここまで。いつでもチャレンジだから、もう一度やると新しい期間ではじめられるよ。'
+                            ? `今回はここまで。${retryIntroText}、もう一度やると新しい期間ではじめられるよ。`
                             : '期間が終わったよ。'
                     ) : joined ? (
                         `いまの進みぐあい: ${progressLabel}`
@@ -179,7 +185,7 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                             lineHeight: 1.7,
                         }}
                     >
-                        いつでもチャレンジは、期間が終わっても新しい期間でもう一度できます。
+                        {retryRuleText}
                         ごほうびは最初にクリアした1回ぶんだけです。
                     </div>
                 )}
