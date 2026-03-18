@@ -47,6 +47,8 @@ class AudioEngine {
     private isMuted = false;
     private cachedVoices: SpeechSynthesisVoice[] = [];
     private bgmAudio: HTMLAudioElement | null = null;
+    private bgmSourceNode: MediaElementAudioSourceNode | null = null;
+    private bgmGainNode: GainNode | null = null;
     private currentBgmSrc: string | null = null;
     private sessionBgmActive = false;
     private bgmPreviewActive = false;
@@ -79,6 +81,8 @@ class AudioEngine {
         if (this.ctx.state === 'suspended') {
             void this.ctx.resume();
         }
+
+        this.ensureBgmRouting();
     }
 
     public toggleMute() {
@@ -234,7 +238,51 @@ class AudioEngine {
             this.bgmAudio.currentTime = 0;
         }
 
+        this.ensureBgmRouting();
         return this.bgmAudio;
+    }
+
+    private ensureBgmRouting() {
+        if (!this.ctx || !this.bgmAudio) {
+            return false;
+        }
+
+        if (!this.bgmGainNode) {
+            this.bgmGainNode = this.ctx.createGain();
+            this.bgmGainNode.gain.setValueAtTime(1, this.ctx.currentTime);
+            this.bgmGainNode.connect(this.ctx.destination);
+        }
+
+        if (!this.bgmSourceNode) {
+            try {
+                this.bgmSourceNode = this.ctx.createMediaElementSource(this.bgmAudio);
+                this.bgmSourceNode.connect(this.bgmGainNode);
+            } catch {
+                return false;
+            }
+        }
+
+        this.bgmAudio.volume = 1;
+        return true;
+    }
+
+    private setBgmOutputVolume(volume: number) {
+        const clamped = Math.max(0, Math.min(1, volume));
+        const usesWebAudioMix = this.ensureBgmRouting();
+
+        if (usesWebAudioMix && this.ctx && this.bgmGainNode) {
+            const now = this.ctx.currentTime;
+            const currentValue = this.bgmGainNode.gain.value;
+            this.bgmGainNode.gain.cancelScheduledValues(now);
+            this.bgmGainNode.gain.setValueAtTime(currentValue, now);
+            this.bgmGainNode.gain.linearRampToValueAtTime(clamped, now + 0.06);
+            this.bgmAudio!.volume = 1;
+            return;
+        }
+
+        if (this.bgmAudio) {
+            this.bgmAudio.volume = clamped;
+        }
     }
 
     private getBgmVolume() {
@@ -266,7 +314,7 @@ class AudioEngine {
             return;
         }
 
-        audio.volume = this.getBgmVolume();
+        this.setBgmOutputVolume(this.getBgmVolume());
         if (audio.paused) {
             void audio.play().catch(() => {
                 // Playback can be blocked until the browser considers the page user-activated.
