@@ -35,14 +35,14 @@ describe('getEffectsVolume', () => {
     });
 
     it('keeps small effect sounds audible across the slider range', () => {
-        expect(getEffectsVolume(0.1)).toBeCloseTo(0.352);
-        expect(getEffectsVolume(0.5)).toBeCloseTo(0.64);
-        expect(getEffectsVolume(1)).toBe(1);
+        expect(getEffectsVolume(0.1)).toBeCloseTo(0.475);
+        expect(getEffectsVolume(0.5)).toBeCloseTo(0.775);
+        expect(getEffectsVolume(1)).toBeCloseTo(1.15);
     });
 
     it('clamps values outside the supported range', () => {
         expect(getEffectsVolume(-1)).toBe(0);
-        expect(getEffectsVolume(2)).toBe(1);
+        expect(getEffectsVolume(2)).toBeCloseTo(1.15);
     });
 });
 
@@ -66,7 +66,7 @@ describe('getBgmDuckMultiplier', () => {
     });
 
     it('ducks BGM more strongly for speech than short effects', () => {
-        expect(getBgmDuckMultiplier({ speechActive: false, effectActive: true })).toBe(0.22);
+        expect(getBgmDuckMultiplier({ speechActive: false, effectActive: true })).toBe(0.1);
         expect(getBgmDuckMultiplier({ speechActive: true, effectActive: false })).toBe(0.08);
     });
 

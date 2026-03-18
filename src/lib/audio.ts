@@ -3,7 +3,7 @@ import { findBgmTrack } from './bgmTracks';
 
 export const normalizeSpeechText = (text: string) =>
     // Some browser voices misread `次は` as `じは`, so normalize only the spoken form.
-    text.replaceAll('次は', 'つぎは');
+    text.replace(/次は/gu, 'つぎは');
 
 export const getSpeechVolume = (soundVolume: number) => {
     const clamped = Math.max(0, Math.min(1, soundVolume));
@@ -18,8 +18,8 @@ export const getEffectsVolume = (soundVolume: number) => {
     const clamped = Math.max(0, Math.min(1, soundVolume));
     if (clamped === 0) return 0;
 
-    // Keep short cues clearly audible even when BGM is still fairly high.
-    return Math.min(1, 0.28 + clamped * 0.72);
+    // Let short cues punch through more clearly, especially on small mobile speakers.
+    return Math.min(1.15, 0.4 + clamped * 0.75);
 };
 
 export const getBgmMixVolume = (bgmVolume: number) => {
@@ -38,7 +38,7 @@ export const getBgmDuckMultiplier = ({
     effectActive: boolean;
 }) => {
     const speechMultiplier = speechActive ? 0.08 : 1;
-    const effectMultiplier = effectActive ? 0.22 : 1;
+    const effectMultiplier = effectActive ? 0.1 : 1;
     return Math.min(speechMultiplier, effectMultiplier);
 };
 
@@ -342,15 +342,15 @@ class AudioEngine {
     }
 
     public playTick() {
-        this.playTone(880, 'sine', 0.1, 0.42);
+        this.playTone(880, 'sine', 0.1, 0.7);
     }
 
     public playGo() {
-        this.playTone(1760, 'sine', 0.3, 0.5);
+        this.playTone(1760, 'sine', 0.3, 0.9);
     }
 
     public playProgressTone() {
-        const vol = this.getEffectGain(0.36);
+        const vol = this.getEffectGain(0.52);
         if (vol === 0) return;
 
         this.init();
@@ -380,7 +380,7 @@ class AudioEngine {
     }
 
     public playExerciseStart() {
-        const vol = this.getEffectGain(0.48);
+        const vol = this.getEffectGain(0.68);
         if (vol === 0) return;
 
         this.init();
@@ -410,7 +410,7 @@ class AudioEngine {
     }
 
     public playTransition() {
-        const vol = this.getEffectGain(0.42);
+        const vol = this.getEffectGain(0.58);
         if (vol === 0) return;
 
         this.init();
@@ -436,7 +436,7 @@ class AudioEngine {
     }
 
     public playSuccess() {
-        const vol = this.getEffectGain(0.5);
+        const vol = this.getEffectGain(0.68);
         if (vol === 0) return;
 
         this.init();
