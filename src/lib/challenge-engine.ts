@@ -85,7 +85,11 @@ function sessionMatchesWindow(session: SessionRecord, window: ChallengeProgressW
         return true;
     }
 
-    const joinedDate = window.joinedAt.slice(0, 10);
+    const joinedDate = getChallengeDateKeyFromTimestamp(window.joinedAt);
+    if (!joinedDate) {
+        return true;
+    }
+
     if (session.date < joinedDate) {
         return false;
     }
@@ -94,7 +98,26 @@ function sessionMatchesWindow(session: SessionRecord, window: ChallengeProgressW
         return true;
     }
 
-    return session.startedAt >= window.joinedAt;
+    const sessionStart = Date.parse(session.startedAt);
+    const joinedAt = Date.parse(window.joinedAt);
+    if (Number.isNaN(sessionStart) || Number.isNaN(joinedAt)) {
+        return true;
+    }
+
+    return sessionStart >= joinedAt;
+}
+
+function getChallengeDateKeyFromTimestamp(timestamp: string): string | null {
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) {
+        return null;
+    }
+
+    const adjusted = new Date(date.getTime() - 3 * 60 * 60 * 1000);
+    const year = adjusted.getFullYear();
+    const month = String(adjusted.getMonth() + 1).padStart(2, '0');
+    const day = String(adjusted.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 export function countChallengeProgressFromSessions(

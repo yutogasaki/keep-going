@@ -290,6 +290,44 @@ describe('countChallengeProgress', () => {
         expect(progress).toBe(2);
     });
 
+    it('respects the 3AM challenge day boundary when joinedAt is stored in UTC', async () => {
+        mockedGetAllSessions.mockResolvedValue(asSessions([
+            {
+                id: 'before-join',
+                date: '2026-03-14',
+                startedAt: '2026-03-14T07:00:00+09:00',
+                totalSeconds: 60,
+                exerciseIds: ['S01'],
+                skippedIds: [],
+                userIds: ['u1'],
+            },
+            {
+                id: 'after-join',
+                date: '2026-03-14',
+                startedAt: '2026-03-14T09:30:00+09:00',
+                totalSeconds: 60,
+                exerciseIds: ['S01'],
+                skippedIds: [],
+                userIds: ['u1'],
+            },
+        ]));
+
+        const progress = await countChallengeProgress(makeChallenge({
+            goalType: 'active_day',
+            requiredDays: 5,
+            targetCount: 5,
+            windowType: 'calendar',
+            startDate: '2026-03-14',
+            endDate: '2026-03-31',
+        }), ['u1'], {
+            startDate: '2026-03-14',
+            endDate: '2026-03-31',
+            joinedAt: '2026-03-13T23:30:00.000Z',
+        });
+
+        expect(progress).toBe(1);
+    });
+
     it('counts active days from total minutes for duration challenges', async () => {
         mockedGetAllSessions.mockResolvedValue(asSessions([
             {
