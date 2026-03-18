@@ -14,3 +14,26 @@ export function getChallengeDaysLeft(endDateString: string): number {
     const endDate = new Date(`${endDateString}T23:59:59`);
     return Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 }
+
+interface ChallengeProgressCalloutParams {
+    progress: number;
+    goalTarget: number;
+    goalType: 'active_day' | 'total_count';
+    allCompleted: boolean;
+}
+
+export function getChallengeProgressCallout({
+    progress,
+    goalTarget,
+    goalType,
+    allCompleted,
+}: ChallengeProgressCalloutParams): string {
+    if (allCompleted || progress >= goalTarget) {
+        return 'クリア！ ごほうびゲット';
+    }
+
+    const remaining = Math.max(goalTarget - progress, 0);
+    return goalType === 'active_day'
+        ? `あと${remaining}日でクリア`
+        : `あと${remaining}回でクリア`;
+}

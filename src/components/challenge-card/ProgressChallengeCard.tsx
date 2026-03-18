@@ -2,12 +2,15 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Trophy } from 'lucide-react';
 import type { Challenge } from '../../lib/challenges';
+import { getChallengeProgressCallout } from './challengeCardUtils';
 
 interface ProgressChallengeCardProps {
     challenge: Challenge;
     emoji: string;
     goalLabel: string;
     deadlineLabel: string;
+    progress: number;
+    goalTarget: number;
     ratio: number;
     progressLabel: string;
     allCompleted: boolean;
@@ -20,12 +23,22 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
     emoji,
     goalLabel,
     deadlineLabel,
+    progress,
+    goalTarget,
     ratio,
     progressLabel,
     allCompleted,
     dailyRuleLabel,
     onOpenDetail,
 }) => {
+    const progressChipLabel = allCompleted ? 'クリア！' : `進捗 ${progressLabel}`;
+    const progressCallout = getChallengeProgressCallout({
+        progress,
+        goalTarget,
+        goalType: challenge.goalType,
+        allCompleted,
+    });
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -47,8 +60,9 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                 <span style={{ fontSize: 22 }}>{emoji}</span>
                 <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 4, alignItems: 'center' }}>
                         <span style={challengeBadgeStyle}>先生チャレンジ</span>
+                        <span style={allCompleted ? progressChipCompletedStyle : progressChipStyle}>{progressChipLabel}</span>
                     </div>
                     <div style={{
                         fontFamily: "'Noto Sans JP', sans-serif",
@@ -106,14 +120,18 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
 
             <div style={{
                 display: 'flex',
-                justifyContent: 'flex-end',
-                marginTop: 4,
+                justifyContent: 'flex-start',
+                alignItems: 'center',
+                gap: 10,
+                flexWrap: 'wrap',
+                marginTop: 8,
                 fontFamily: "'Noto Sans JP', sans-serif",
                 fontSize: 11,
-                color: allCompleted ? '#B8860B' : '#888',
-                fontWeight: allCompleted ? 700 : 400,
+                color: allCompleted ? '#8C6A00' : '#2F6F63',
             }}>
-                {allCompleted ? 'クリア！🎉' : progressLabel}
+                <span style={{ fontWeight: 700 }}>
+                    {progressCallout}
+                </span>
             </div>
         </motion.div>
     );
@@ -127,4 +145,20 @@ const challengeBadgeStyle: React.CSSProperties = {
     background: 'rgba(43, 186, 160, 0.12)',
     borderRadius: 999,
     padding: '3px 8px',
+};
+
+const progressChipStyle: React.CSSProperties = {
+    fontFamily: "'Noto Sans JP', sans-serif",
+    fontSize: 10,
+    fontWeight: 800,
+    color: '#0F766E',
+    background: 'rgba(45, 212, 191, 0.16)',
+    borderRadius: 999,
+    padding: '3px 8px',
+};
+
+const progressChipCompletedStyle: React.CSSProperties = {
+    ...progressChipStyle,
+    color: '#9A6700',
+    background: 'rgba(250, 204, 21, 0.18)',
 };
