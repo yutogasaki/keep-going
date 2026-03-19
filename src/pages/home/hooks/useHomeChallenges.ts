@@ -18,6 +18,7 @@ import {
 import { getTodayKey } from '../../../lib/db';
 import { fetchTeacherExercises, type TeacherExercise } from '../../../lib/teacherContent';
 import { useAppStore, type UserProfileStore } from '../../../store/useAppStore';
+import { isTeacherChallengeCompletedToday } from '../challengeRewardUtils';
 
 interface UseHomeChallengesParams {
     users: UserProfileStore[];
@@ -99,18 +100,32 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
             const nextPast: Challenge[] = [];
 
             for (const challenge of classMatchedChallenges) {
-                const completedUserIds = new Set(
-                    completions
-                        .filter((completion) => completion.challengeId === challenge.id)
-                        .map((completion) => completion.memberId),
+                const relevantCompletions = completions.filter(
+                    (completion) => completion.challengeId === challenge.id && activeUserIds.includes(completion.memberId),
                 );
+                const completedUserIds = new Set(relevantCompletions.map((completion) => completion.memberId));
                 const finishedOverall = isChallengeFinishedOverall(activeUserIds, completedUserIds);
                 const joined = activeUserIds.some((userId) => (joinedChallengeIds[userId] || []).includes(challenge.id));
                 const effectiveWindow = activeUserIds
                     .map((userId) => challengeEnrollmentWindows[userId]?.[challenge.id] ?? null)
                     .find((window): window is NonNullable<typeof window> => Boolean(window)) ?? null;
 
-                if (finishedOverall || isChallengePastForUsers(challenge, today, effectiveWindow)) {
+                if (finishedOverall) {
+                    if (isTeacherChallengeCompletedToday({
+                        challengeId: challenge.id,
+                        activeUserIds,
+                        completions: relevantCompletions,
+                        today,
+                    })) {
+                        nextTodayDone.push(challenge);
+                        continue;
+                    }
+
+                    nextPast.push(challenge);
+                    continue;
+                }
+
+                if (isChallengePastForUsers(challenge, today, effectiveWindow)) {
                     nextPast.push(challenge);
                     continue;
                 }

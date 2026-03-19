@@ -11,6 +11,7 @@ import type { PublicExercise } from '../../lib/publicExercises';
 import type { PublicMenu } from '../../lib/publicMenus';
 import type { TeacherExercise, TeacherMenu } from '../../lib/teacherContent';
 import type { PersonalChallengeProgressItem } from './hooks/usePersonalChallenges';
+import type { ChallengeRewardScene } from './challengeRewardUtils';
 
 interface HomeChallengesAndMenusProps {
     showChallengeSection: boolean;
@@ -30,6 +31,7 @@ interface HomeChallengesAndMenusProps {
     teacherMenuExerciseMap: Map<string, { name: string; emoji: string; sec: number; placement: ExercisePlacement }>;
     isNewTeacherContent: (id: string) => boolean;
     onChallengesUpdated: () => void;
+    onTeacherChallengeRewardGranted: (scene: ChallengeRewardScene) => void;
     onOpenChallengeHub: () => void;
     onOpenPersonalChallenge: (item: PersonalChallengeProgressItem) => void;
     onCreatePersonalChallenge: () => void;
@@ -61,6 +63,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
     teacherMenuExerciseMap,
     isNewTeacherContent,
     onChallengesUpdated,
+    onTeacherChallengeRewardGranted,
     onOpenChallengeHub,
     onOpenPersonalChallenge,
     onCreatePersonalChallenge,
@@ -117,6 +120,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                                     rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
                                     onCompleted={onChallengesUpdated}
+                                    onRewardGranted={onTeacherChallengeRewardGranted}
                                 />
                             ))}
                             {personalActiveChallenges.map((item) => (
@@ -140,6 +144,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                                         rewardGrants={rewardGrants}
                                         teacherExercises={teacherExercises}
                                         onCompleted={onChallengesUpdated}
+                                        onRewardGranted={onTeacherChallengeRewardGranted}
                                     />
                                 </div>
                             ) : null}

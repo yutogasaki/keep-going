@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { ChallengeDetailSheet } from './ChallengeDetailSheet';
 import { ExpiredChallengeCard } from './challenge-card/ExpiredChallengeCard';
@@ -29,6 +29,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
     rewardGrants,
     teacherExercises = [],
     onCompleted,
+    onRewardGranted,
     expired,
 }) => {
     const [detailOpen, setDetailOpen] = useState(false);
@@ -69,6 +70,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
 
     const allCompleted = activeUserIds.every((userId) => completedUserIds.has(userId));
     const canRetry = canRetryTeacherChallenge(challenge);
+    const emoji = getChallengeEmoji(challenge, teacherExercises);
 
     const effectiveWindow = useMemo<ChallengeProgressWindow | null>(() => {
         for (const userId of activeUserIds) {
@@ -81,6 +83,31 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
         return null;
     }, [activeUserIds, challenge.id, challengeEnrollmentWindows]);
 
+    const handleRewardGranted = useCallback((memberId: string) => {
+        const memberName = users.find((user) => user.id === memberId)?.name ?? null;
+        onRewardGranted?.({
+            id: `teacher:${challenge.id}:${memberId}:${effectiveWindow?.startDate ?? challenge.startDate}`,
+            challengeId: challenge.id,
+            source: 'teacher',
+            title: challenge.title,
+            memberId,
+            memberName,
+            rewardKind: challenge.rewardKind,
+            rewardValue: challenge.rewardValue,
+            accentEmoji: emoji,
+        });
+    }, [
+        challenge.id,
+        challenge.rewardKind,
+        challenge.rewardValue,
+        challenge.startDate,
+        challenge.title,
+        effectiveWindow?.startDate,
+        emoji,
+        onRewardGranted,
+        users,
+    ]);
+
     const progress = useChallengeProgress({
         challenge,
         isJoined,
@@ -92,9 +119,9 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
         addChibifuwa,
         addChallengeStars,
         onCompleted,
+        onRewardGranted: handleRewardGranted,
     });
 
-    const emoji = getChallengeEmoji(challenge, teacherExercises);
     const targetLabel = getChallengeTargetLabel(challenge, teacherExercises);
     const goalTarget = getChallengeGoalTarget(challenge);
     const ratio = Math.min(progress / goalTarget, 1);

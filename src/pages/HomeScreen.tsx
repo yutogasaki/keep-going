@@ -13,7 +13,6 @@ import {
     PersonalChallengeFormSheet,
     type PersonalChallengeCreateSeed,
 } from '../components/PersonalChallengeFormSheet';
-import { Toast } from '../components/Toast';
 import { EXERCISES } from '../data/exercises';
 import type { ExercisePlacement } from '../data/exercisePlacement';
 import type { MenuGroup } from '../data/menuGroups';
@@ -37,6 +36,7 @@ import type { FuwafuwaMilestoneEvent } from '../store/useAppStore';
 import { useTeacherContent } from '../hooks/useTeacherContent';
 import { HomeMilestoneModal } from './home/HomeMilestoneModal';
 import { HomeAnimatedBackground } from './home/HomeAnimatedBackground';
+import { ChallengeRewardModal } from './home/ChallengeRewardModal';
 import { FuwafuwaHomeCard } from './home/FuwafuwaHomeCard';
 import { ChallengeHubSheet } from './home/ChallengeHubSheet';
 import { HomeChallengesAndMenus } from './home/HomeChallengesAndMenus';
@@ -66,6 +66,7 @@ import {
     getMilestoneStage,
     useHomeMilestoneWatcher,
 } from './home/hooks/useHomeMilestoneWatcher';
+import { type ChallengeRewardScene } from './home/challengeRewardUtils';
 import { pickTeacherExerciseDiscovery } from './home/homeMenuUtils';
 import { getMinClassLevel } from './menu/menuPageUtils';
 import {
@@ -112,15 +113,15 @@ export const HomeScreen: React.FC = () => {
     const [editingPersonalChallenge, setEditingPersonalChallenge] = useState<PersonalChallengeProgressItem | null>(null);
     const [personalChallengeSeed, setPersonalChallengeSeed] = useState<PersonalChallengeCreateSeed | null>(null);
     const [personalFormOpen, setPersonalFormOpen] = useState(false);
-    const [personalChallengeToastMessage, setPersonalChallengeToastMessage] = useState<string | null>(null);
     const [personalChallengeDeleteOpen, setPersonalChallengeDeleteOpen] = useState(false);
     const [deletingPersonalChallenge, setDeletingPersonalChallenge] = useState(false);
     const [customChallengeExercises, setCustomChallengeExercises] = useState<CustomExercise[]>([]);
     const [customChallengeMenus, setCustomChallengeMenus] = useState<MenuGroup[]>([]);
+    const [pendingChallengeRewardScenes, setPendingChallengeRewardScenes] = useState<ChallengeRewardScene[]>([]);
+    const [activeChallengeRewardScene, setActiveChallengeRewardScene] = useState<ChallengeRewardScene | null>(null);
     const lastSoloVisitKeyRef = useRef('');
     const lastFamilyVisitKeyRef = useRef('');
     const magicDeliveryTimerRef = useRef<number | null>(null);
-    const currentTabRef = useRef(currentTab);
 
     const { allSessions, activeUsers, targetSeconds, perUserMagic, displaySeconds } = useHomeSessions({
         users,
@@ -132,9 +133,13 @@ export const HomeScreen: React.FC = () => {
         ambientCue,
     } = useHomePublicDiscovery();
 
-    useEffect(() => {
-        currentTabRef.current = currentTab;
-    }, [currentTab]);
+    const queueChallengeRewardScene = useCallback((scene: ChallengeRewardScene) => {
+        setPendingChallengeRewardScenes((current) => (
+            current.some((item) => item.id === scene.id) || activeChallengeRewardScene?.id === scene.id
+                ? current
+                : [...current, scene]
+        ));
+    }, [activeChallengeRewardScene]);
 
     useEffect(() => {
         if (users.length === 0) {
@@ -255,28 +260,24 @@ export const HomeScreen: React.FC = () => {
         users,
         sessionUserIds,
         onChallengeCompleted: useCallback((notice: PersonalChallengeCompletionNotice) => {
-            if (currentTabRef.current !== 'home') {
+            if (notice.rewardStars <= 0) {
                 return;
             }
 
-            const resultLine = notice.rewardStars > 0
-                ? `「${notice.title}」をクリアして ほしを1こ もらったよ`
-                : `「${notice.title}」をクリアしたよ`;
-            setPersonalChallengeToastMessage(
-                notice.memberName
-                    ? `${notice.memberName}が${resultLine}`
-                    : resultLine,
-            );
-            haptics.success();
-            audio.playSuccess();
-            lazyConfetti().then((confetti) => confetti({
-                particleCount: 36,
-                spread: 64,
-                startVelocity: 24,
-                origin: { y: 0.78 },
-                colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'],
-            }));
-        }, []),
+            const scene: ChallengeRewardScene = {
+                id: `personal:${notice.challengeId}`,
+                challengeId: notice.challengeId,
+                source: 'personal',
+                title: notice.title,
+                memberId: notice.memberId,
+                memberName: notice.memberName,
+                rewardKind: 'star',
+                rewardValue: notice.rewardStars,
+                accentEmoji: '⭐',
+            };
+
+            queueChallengeRewardScene(scene);
+        }, [queueChallengeRewardScene]),
     });
     const loadCustomChallengeTargets = useCallback(async () => {
         const [menus, exercises] = await Promise.all([
@@ -395,6 +396,44 @@ export const HomeScreen: React.FC = () => {
             }
         };
     }, []);
+
+    useEffect(() => {
+        if (
+            currentTab !== 'home'
+            || activeMilestoneModal
+            || activeChallengeRewardScene
+            || pendingChallengeRewardScenes.length === 0
+        ) {
+            return;
+        }
+
+        setPendingChallengeRewardScenes((current) => {
+            const [nextScene, ...rest] = current;
+            setActiveChallengeRewardScene(nextScene ?? null);
+            return rest;
+        });
+    }, [
+        activeChallengeRewardScene,
+        activeMilestoneModal,
+        currentTab,
+        pendingChallengeRewardScenes.length,
+    ]);
+
+    useEffect(() => {
+        if (!activeChallengeRewardScene) {
+            return;
+        }
+
+        haptics.success();
+        audio.playSuccess();
+        lazyConfetti().then((confetti) => confetti({
+            particleCount: 36,
+            spread: 64,
+            startVelocity: 24,
+            origin: { y: 0.78 },
+            colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'],
+        }));
+    }, [activeChallengeRewardScene]);
 
     useEffect(() => {
         if (isTogetherMode || !selectedUser) {
@@ -714,6 +753,10 @@ export const HomeScreen: React.FC = () => {
                 user={activeMilestoneUser}
                 onClose={handleMilestoneModalClose}
             />
+            <ChallengeRewardModal
+                rewardScene={activeChallengeRewardScene}
+                onClose={() => setActiveChallengeRewardScene(null)}
+            />
 
             <HomeAnimatedBackground />
 
@@ -794,6 +837,7 @@ export const HomeScreen: React.FC = () => {
                     teacherMenuExerciseMap={teacherMenuExerciseMap}
                     isNewTeacherContent={teacherContent.isNewTeacherContent}
                     onChallengesUpdated={loadChallenges}
+                    onTeacherChallengeRewardGranted={queueChallengeRewardScene}
                     onOpenChallengeHub={() => setChallengeHubOpen(true)}
                     onOpenPersonalChallenge={handleOpenPersonalChallenge}
                     onCreatePersonalChallenge={handleCreatePersonalChallenge}
@@ -834,6 +878,7 @@ export const HomeScreen: React.FC = () => {
                 onCreatePersonalChallenge={handleCreatePersonalChallenge}
                 onOpenPersonalChallenge={handleOpenPersonalChallenge}
                 onTeacherChallengesUpdated={loadChallenges}
+                onTeacherChallengeRewardGranted={queueChallengeRewardScene}
             />
 
             <PersonalChallengeDetailSheet
@@ -950,10 +995,6 @@ export const HomeScreen: React.FC = () => {
                 }}
             />
 
-            <Toast
-                message={personalChallengeToastMessage}
-                onClose={() => setPersonalChallengeToastMessage(null)}
-            />
         </div>
     );
 };

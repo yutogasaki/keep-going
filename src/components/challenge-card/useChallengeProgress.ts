@@ -20,6 +20,7 @@ interface UseChallengeProgressParams {
     addChibifuwa: (userId: string, record: Omit<ChibifuwaRecord, 'id'>) => void;
     addChallengeStars: (userId: string, amount: number) => void;
     onCompleted: () => void;
+    onRewardGranted?: (memberId: string) => void;
 }
 
 export function useChallengeProgress({
@@ -33,6 +34,7 @@ export function useChallengeProgress({
     addChibifuwa,
     addChallengeStars,
     onCompleted,
+    onRewardGranted,
 }: UseChallengeProgressParams) {
     const [progress, setProgress] = useState(0);
     const checkingRef = useRef(false);
@@ -73,6 +75,7 @@ export function useChallengeProgress({
                                 earnedDate: new Date().toISOString().split('T')[0],
                             });
                         }
+                        onRewardGranted?.(userId);
                     }
                 }
             }
@@ -89,6 +92,7 @@ export function useChallengeProgress({
         addChibifuwa,
         addChallengeStars,
         onCompleted,
+        onRewardGranted,
         isJoined,
     ]);
 

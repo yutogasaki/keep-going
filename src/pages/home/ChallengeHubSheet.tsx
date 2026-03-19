@@ -7,6 +7,7 @@ import type { Challenge, ChallengeCompletion, ChallengeRewardGrant } from '../..
 import type { CustomExercise } from '../../lib/db';
 import type { TeacherExercise, TeacherMenu } from '../../lib/teacherContent';
 import type { PersonalChallengeProgressItem } from './hooks/usePersonalChallenges';
+import type { ChallengeRewardScene } from './challengeRewardUtils';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../lib/styles';
 
 type ChallengeHubTab = 'active' | 'teacher' | 'self' | 'past';
@@ -31,6 +32,7 @@ interface ChallengeHubSheetProps {
     onCreatePersonalChallenge: () => void;
     onOpenPersonalChallenge: (item: PersonalChallengeProgressItem) => void;
     onTeacherChallengesUpdated: () => void;
+    onTeacherChallengeRewardGranted: (scene: ChallengeRewardScene) => void;
 }
 
 export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
@@ -53,6 +55,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
     onCreatePersonalChallenge,
     onOpenPersonalChallenge,
     onTeacherChallengesUpdated,
+    onTeacherChallengeRewardGranted,
 }) => {
     const [tab, setTab] = useState<ChallengeHubTab>('active');
 
@@ -124,6 +127,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
                                     onCompleted={onTeacherChallengesUpdated}
+                                    onRewardGranted={onTeacherChallengeRewardGranted}
                                 />
                             ))}
                             {personalActiveChallenges.map((item) => (
@@ -152,6 +156,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                         rewardGrants={rewardGrants}
                                         teacherExercises={teacherExercises}
                                         onCompleted={onTeacherChallengesUpdated}
+                                        onRewardGranted={onTeacherChallengeRewardGranted}
                                     />
                                 ))}
                                 {personalTodayDoneChallenges.map((item) => (
@@ -182,6 +187,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
                                     onCompleted={onTeacherChallengesUpdated}
+                                    onRewardGranted={onTeacherChallengeRewardGranted}
                                 />
                             ))}
                             {teacherTodayDoneChallenges.map((challenge) => (
@@ -192,6 +198,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
                                     onCompleted={onTeacherChallengesUpdated}
+                                    onRewardGranted={onTeacherChallengeRewardGranted}
                                 />
                             ))}
                             {!hasTeacherLive ? <EmptyState text="先生チャレンジはまだないよ" /> : null}
@@ -279,6 +286,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
                                     onCompleted={onTeacherChallengesUpdated}
+                                    onRewardGranted={onTeacherChallengeRewardGranted}
                                     expired
                                 />
                             ))}

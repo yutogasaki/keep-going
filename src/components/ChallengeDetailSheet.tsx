@@ -158,8 +158,8 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                 >
                     {completed ? (
                         canRetry
-                            ? `クリアしたよ。${retryIntroText}、またやりたくなったら新しい期間でもう一度できます。`
-                            : 'クリア済みです。'
+                            ? `${getChallengeRewardLabel(challenge)}を うけとったよ。${retryIntroText}、またやりたくなったら新しい期間でもう一度できます。`
+                            : `${getChallengeRewardLabel(challenge)}を うけとったよ。`
                     ) : expired ? (
                         canRetry
                             ? `今回はここまで。${retryIntroText}、もう一度やると新しい期間ではじめられるよ。`
