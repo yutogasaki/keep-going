@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CLASS_LEVELS, EXERCISES } from '../../../data/exercises';
 import { getExercisePlacementLabel } from '../../../data/exercisePlacement';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
+import { getTodayKey } from '../../../lib/db';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
 import { sortTeacherContentByRecommendation } from '../../../lib/teacherExerciseMetadata';
 import { CANONICAL_TERMS } from '../../../lib/terminology';
@@ -24,6 +25,15 @@ interface ChallengeFormCardProps {
     onToggleClassLevel: (level: string) => void;
     onCancel: () => void;
     onSubmit: () => void;
+}
+
+function formatShortDateLabel(date: string): string {
+    const [, month, day] = date.split('-');
+    if (!month || !day) {
+        return date;
+    }
+
+    return `${Number(month)}/${Number(day)}`;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -257,6 +267,11 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
         && values.publishEndDate < values.publishStartDate
         ? '表示終了日は表示開始日より後にしてください'
         : '';
+    const todayKey = getTodayKey();
+    const canStartPreviewToday = values.publishMode === 'seasonal'
+        && values.startDate > todayKey;
+    const isShowingPreviewBeforeStart = values.publishMode === 'seasonal'
+        && values.publishStartDate < values.startDate;
 
     const isDurationChallenge = values.challengeType === 'duration';
     const hasError = !values.title.trim()
@@ -1008,26 +1023,89 @@ export const ChallengeFormCard: React.FC<ChallengeFormCardProps> = ({
                 </Field>
 
                 {values.publishMode === 'seasonal' ? (
-                    <div style={metricGridStyle}>
-                        <Field label="表示開始日">
-                            <input
-                                type="date"
-                                value={values.publishStartDate}
-                                onChange={(event) => onChange({ publishStartDate: event.target.value })}
-                                style={inputStyle}
-                            />
-                        </Field>
-                        <Field label="表示終了日">
-                            <input
-                                type="date"
-                                value={values.publishEndDate}
-                                onChange={(event) => onChange({ publishEndDate: event.target.value })}
-                                style={{
-                                    ...inputStyle,
-                                    ...(publishDateError ? { border: '1px solid #E17055' } : {}),
-                                }}
-                            />
-                        </Field>
+                    <div style={{ display: 'grid', gap: SPACE.sm }}>
+                        <div style={metricGridStyle}>
+                            <Field label="表示開始日">
+                                <input
+                                    type="date"
+                                    value={values.publishStartDate}
+                                    onChange={(event) => onChange({ publishStartDate: event.target.value })}
+                                    style={inputStyle}
+                                />
+                            </Field>
+                            <Field label="表示終了日">
+                                <input
+                                    type="date"
+                                    value={values.publishEndDate}
+                                    onChange={(event) => onChange({ publishEndDate: event.target.value })}
+                                    style={{
+                                        ...inputStyle,
+                                        ...(publishDateError ? { border: '1px solid #E17055' } : {}),
+                                    }}
+                                />
+                            </Field>
+                        </div>
+
+                        {canStartPreviewToday ? (
+                            <div style={segmentedRowStyle}>
+                                <button
+                                    type="button"
+                                    onClick={() => onChange({ publishStartDate: todayKey })}
+                                    style={{
+                                        ...segmentedButtonBaseStyle,
+                                        ...(values.publishStartDate === todayKey
+                                            ? {
+                                                border: '2px solid #2BBAA0',
+                                                background: '#E8F8F0',
+                                                color: COLOR.primaryDark,
+                                            }
+                                            : null),
+                                    }}
+                                >
+                                    今日から予告する
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => onChange({ publishStartDate: values.startDate })}
+                                    style={{
+                                        ...segmentedButtonBaseStyle,
+                                        ...(values.publishStartDate === values.startDate
+                                            ? {
+                                                border: '2px solid rgba(45, 52, 54, 0.18)',
+                                                background: COLOR.white,
+                                                color: COLOR.dark,
+                                            }
+                                            : null),
+                                    }}
+                                >
+                                    本番の日から出す
+                                </button>
+                            </div>
+                        ) : null}
+
+                        <div style={selectionPreviewStyle}>
+                            <div style={previewIconStyle}>📣</div>
+                            <div style={{ minWidth: 0 }}>
+                                <div style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.sm,
+                                    fontWeight: 800,
+                                    color: COLOR.dark,
+                                }}>
+                                    {isShowingPreviewBeforeStart
+                                        ? `${formatShortDateLabel(values.publishStartDate)}から予告、${formatShortDateLabel(values.startDate)}から本番`
+                                        : '表示開始日を本番より前にすると、ホームで予告中として出せます'}
+                                </div>
+                                <div style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.xs + 1,
+                                    color: COLOR.muted,
+                                    lineHeight: 1.6,
+                                }}>
+                                    期間チャレンジを早めに見せておきたい時は、表示開始日を本番開始日より前にしてください。
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 ) : (
                     <div style={selectionPreviewStyle}>

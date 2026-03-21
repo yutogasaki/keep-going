@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Trophy } from 'lucide-react';
-import type { Challenge } from '../../lib/challenges';
+import { getChallengeRewardLabel, type Challenge } from '../../lib/challenges';
 
 interface ExpiredChallengeCardProps {
     challenge: Challenge;
@@ -24,6 +24,10 @@ export const ExpiredChallengeCard: React.FC<ExpiredChallengeCardProps> = ({
     dailyRuleLabel,
     onOpenDetail,
 }) => {
+    const rewardLabel = challenge.rewardKind === 'star'
+        ? `⭐ ${getChallengeRewardLabel(challenge)}`
+        : '🏅 メダル';
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -82,8 +86,20 @@ export const ExpiredChallengeCard: React.FC<ExpiredChallengeCardProps> = ({
                             {challenge.publishMode === 'always_on'
                                 ? 'いつでもチャレンジだから、またやりたくなったら新しい期間ではじめられるよ'
                                 : '今出ているあいだは、またやりたくなったら新しい期間ではじめられるよ'}
+                            </div>
+                        )}
+                    {wasCompleted ? (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            flexWrap: 'wrap',
+                            marginTop: 6,
+                        }}>
+                            <span style={rewardBadgeStyle}>{rewardLabel}</span>
+                            <span style={rewardHintStyle}>ごほうびゲット</span>
                         </div>
-                    )}
+                    ) : null}
                 </div>
                 {wasCompleted ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -122,4 +138,21 @@ const challengeBadgeStyle: React.CSSProperties = {
     background: 'rgba(148, 163, 184, 0.16)',
     borderRadius: 999,
     padding: '3px 8px',
+};
+
+const rewardBadgeStyle: React.CSSProperties = {
+    fontFamily: "'Noto Sans JP', sans-serif",
+    fontSize: 10,
+    fontWeight: 800,
+    color: '#9A6700',
+    background: 'rgba(255, 236, 179, 0.72)',
+    borderRadius: 999,
+    padding: '4px 8px',
+};
+
+const rewardHintStyle: React.CSSProperties = {
+    fontFamily: "'Noto Sans JP', sans-serif",
+    fontSize: 10,
+    fontWeight: 700,
+    color: '#B8860B',
 };

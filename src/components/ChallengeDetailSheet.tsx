@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar, Sparkles, Target, Trophy } from 'lucide-react';
 import { Modal } from './Modal';
+import { getTodayKey } from '../lib/db';
 import {
     getChallengeDailyCapLabel,
     getChallengeDescriptionText,
@@ -62,6 +63,8 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
     const retryRuleText = challenge.publishMode === 'always_on'
         ? 'いつでもチャレンジは、期間が終わっても新しい期間でもう一度できます。'
         : '今だけチャレンジも、出ているあいだは新しい期間でもう一度できます。';
+    const today = getTodayKey();
+    const isUpcomingPreview = !joined && !completed && !expired && challenge.startDate > today;
 
     return (
         <Modal
@@ -166,6 +169,8 @@ export const ChallengeDetailSheet: React.FC<ChallengeDetailSheetProps> = ({
                             : '期間が終わったよ。'
                     ) : joined ? (
                         `いまの進みぐあい: ${progressLabel}`
+                    ) : isUpcomingPreview ? (
+                        `まだ はじまる前だよ。いまは ${periodLabel} の予告として見えているよ。`
                     ) : (
                         challenge.windowType === 'rolling'
                             ? `参加すると、今日から${Math.max(1, challenge.windowDays ?? 7)}日で自動カウントされます。`

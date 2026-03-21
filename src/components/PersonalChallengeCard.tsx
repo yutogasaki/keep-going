@@ -161,8 +161,25 @@ export const PersonalChallengeCard: React.FC<PersonalChallengeCardProps> = ({
                 fontWeight: completed ? 700 : 500,
             }}>
                 <span>{progressLabel}</span>
-                <span>{getPersonalChallengeStatusLabel(challenge.status)}</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    {completed ? (
+                        <span style={rewardBadgeStyle}>
+                            ⭐ ほし 1こ
+                        </span>
+                    ) : null}
+                    <span>{getPersonalChallengeStatusLabel(challenge.status)}</span>
+                </span>
             </div>
         </motion.div>
     );
+};
+
+const rewardBadgeStyle: React.CSSProperties = {
+    fontFamily: "'Noto Sans JP', sans-serif",
+    fontSize: 10,
+    fontWeight: 800,
+    color: '#9A6700',
+    background: 'rgba(255, 236, 179, 0.72)',
+    borderRadius: 999,
+    padding: '4px 8px',
 };

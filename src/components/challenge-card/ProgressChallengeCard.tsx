@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Trophy } from 'lucide-react';
 import type { Challenge } from '../../lib/challenges';
+import { getChallengeRewardLabel } from '../../lib/challenges';
 import { getChallengeProgressCallout } from './challengeCardUtils';
 
 interface ProgressChallengeCardProps {
@@ -38,6 +39,9 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
         goalType: challenge.goalType,
         allCompleted,
     });
+    const rewardLabel = challenge.rewardKind === 'star'
+        ? `⭐ ${getChallengeRewardLabel(challenge)}`
+        : '🏅 メダル';
 
     return (
         <motion.div
@@ -132,6 +136,11 @@ export const ProgressChallengeCard: React.FC<ProgressChallengeCardProps> = ({
                 <span style={{ fontWeight: 700 }}>
                     {progressCallout}
                 </span>
+                {allCompleted ? (
+                    <span style={rewardBadgeStyle}>
+                        {rewardLabel}
+                    </span>
+                ) : null}
             </div>
         </motion.div>
     );
@@ -161,4 +170,14 @@ const progressChipCompletedStyle: React.CSSProperties = {
     ...progressChipStyle,
     color: '#9A6700',
     background: 'rgba(250, 204, 21, 0.18)',
+};
+
+const rewardBadgeStyle: React.CSSProperties = {
+    fontFamily: "'Noto Sans JP', sans-serif",
+    fontSize: 10,
+    fontWeight: 800,
+    color: '#9A6700',
+    background: 'rgba(255, 236, 179, 0.72)',
+    borderRadius: 999,
+    padding: '4px 8px',
 };

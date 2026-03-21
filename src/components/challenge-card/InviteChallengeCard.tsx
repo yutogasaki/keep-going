@@ -4,6 +4,7 @@ import { Calendar, Target } from 'lucide-react';
 import type { Challenge } from '../../lib/challenges';
 import { getChallengeCardText } from '../../lib/challenges';
 import { CLASS_EMOJI } from '../../data/exercises';
+import { getTodayKey } from '../../lib/db';
 
 interface InviteChallengeCardProps {
     challenge: Challenge;
@@ -25,6 +26,8 @@ export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
     onOpenDetail,
 }) => {
     const cardText = getChallengeCardText(challenge);
+    const isUpcoming = challenge.startDate > getTodayKey();
+    const upcomingLabel = formatUpcomingStartLabel(challenge.startDate);
 
     return (
         <motion.div
@@ -45,6 +48,7 @@ export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
                 <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
                         <span style={challengeBadgeStyle}>先生チャレンジ</span>
+                        {isUpcoming ? <span style={upcomingBadgeStyle}>予告中</span> : null}
                     </div>
                     <div style={{
                         fontFamily: "'Noto Sans JP', sans-serif",
@@ -77,6 +81,17 @@ export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
                         </span>
                         <span style={{ color: '#6B7280' }}>{dailyRuleLabel}</span>
                     </div>
+                    {isUpcoming ? (
+                        <div style={{
+                            fontFamily: "'Noto Sans JP', sans-serif",
+                            fontSize: 11,
+                            color: '#7C3AED',
+                            fontWeight: 700,
+                            marginTop: 5,
+                        }}>
+                            {upcomingLabel}から はじまるよ
+                        </div>
+                    ) : null}
                     {challenge.classLevels.length > 0 && (
                         <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 4 }}>
                             {challenge.classLevels.map((classLevel) => (
@@ -121,11 +136,20 @@ export const InviteChallengeCard: React.FC<InviteChallengeCardProps> = ({
                     letterSpacing: 1,
                 }}
             >
-                参加する
+                {isUpcoming ? 'はじまる前に参加する' : '参加する'}
             </motion.button>
         </motion.div>
     );
 };
+
+function formatUpcomingStartLabel(startDate: string): string {
+    const [, month, day] = startDate.split('-');
+    if (!month || !day) {
+        return startDate;
+    }
+
+    return `${Number(month)}/${Number(day)}`;
+}
 
 const challengeBadgeStyle: React.CSSProperties = {
     fontFamily: "'Noto Sans JP', sans-serif",
@@ -135,4 +159,10 @@ const challengeBadgeStyle: React.CSSProperties = {
     background: 'rgba(43, 186, 160, 0.14)',
     borderRadius: 999,
     padding: '3px 8px',
+};
+
+const upcomingBadgeStyle: React.CSSProperties = {
+    ...challengeBadgeStyle,
+    color: '#7C3AED',
+    background: 'rgba(124, 58, 237, 0.12)',
 };
