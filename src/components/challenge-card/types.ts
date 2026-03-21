@@ -7,6 +7,7 @@ export interface ChallengeCardProps {
     completions: ChallengeCompletion[];
     rewardGrants: ChallengeRewardGrant[];
     teacherExercises?: TeacherExercise[];
+    enabled?: boolean;
     onCompleted: () => void;
     onRewardGranted?: (scene: ChallengeRewardScene) => void;
     expired?: boolean;

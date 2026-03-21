@@ -6,12 +6,17 @@ import type { PerUserMagic } from '../types';
 interface UseHomeSessionsParams {
     users: UserProfileStore[];
     sessionUserIds: string[];
+    enabled?: boolean;
 }
 
-export function useHomeSessions({ users, sessionUserIds }: UseHomeSessionsParams) {
+export function useHomeSessions({ users, sessionUserIds, enabled = true }: UseHomeSessionsParams) {
     const [allSessions, setAllSessions] = useState<SessionRecord[]>([]);
 
     useEffect(() => {
+        if (!enabled) {
+            return;
+        }
+
         const load = () => {
             getAllSessions()
                 .then((sessions) => {
@@ -38,7 +43,7 @@ export function useHomeSessions({ users, sessionUserIds }: UseHomeSessionsParams
             window.removeEventListener('sessionSaved', handleSessionSaved);
             document.removeEventListener('visibilitychange', handleVisibility);
         };
-    }, []);
+    }, [enabled]);
 
     const todayStr = getTodayKey();
     const isTogetherMode = sessionUserIds.length > 1;
@@ -66,12 +71,23 @@ export function useHomeSessions({ users, sessionUserIds }: UseHomeSessionsParams
     );
 
     const perUserMagic = useMemo<PerUserMagic[]>(() => {
-        return activeUsers.map((user) => {
-            const userSessions = allSessions.filter((session) => {
-                return !session.userIds || session.userIds.includes(user.id);
-            });
+        const trainedSecondsByUserId = new Map<string, number>();
 
-            const trained = userSessions.reduce((acc, session) => acc + session.totalSeconds, 0);
+        for (const session of allSessions) {
+            const targetUserIds = session.userIds && session.userIds.length > 0
+                ? session.userIds
+                : activeUsers.map((user) => user.id);
+
+            for (const userId of targetUserIds) {
+                trainedSecondsByUserId.set(
+                    userId,
+                    (trainedSecondsByUserId.get(userId) ?? 0) + session.totalSeconds,
+                );
+            }
+        }
+
+        return activeUsers.map((user) => {
+            const trained = trainedSecondsByUserId.get(user.id) ?? 0;
             const consumed = user.consumedMagicSeconds || 0;
             const userTarget = (user.dailyTargetMinutes || 10) * 60;
 

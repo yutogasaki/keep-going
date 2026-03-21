@@ -95,6 +95,7 @@ export const HomeScreen: React.FC = () => {
     const markSoloHomeVisit = useAppStore((state) => state.markSoloHomeVisit);
     const markFamilyHomeVisit = useAppStore((state) => state.markFamilyHomeVisit);
     const currentTab = useAppStore((state) => state.currentTab);
+    const isHomeActive = currentTab === 'home';
 
     const [menuBrowserOpen, setMenuBrowserOpen] = useState(false);
     const [exerciseBrowserOpen, setExerciseBrowserOpen] = useState(false);
@@ -126,12 +127,13 @@ export const HomeScreen: React.FC = () => {
     const { allSessions, activeUsers, targetSeconds, perUserMagic, displaySeconds } = useHomeSessions({
         users,
         sessionUserIds,
+        enabled: isHomeActive,
     });
     const {
         recommendedMenus,
         recommendedExercises,
         ambientCue,
-    } = useHomePublicDiscovery();
+    } = useHomePublicDiscovery(isHomeActive);
 
     const queueChallengeRewardScene = useCallback((scene: ChallengeRewardScene) => {
         setPendingChallengeRewardScenes((current) => (
@@ -249,6 +251,7 @@ export const HomeScreen: React.FC = () => {
     } = useHomeChallenges({
         users,
         sessionUserIds,
+        enabled: isHomeActive,
     });
     const {
         activeChallenges: personalActiveChallenges,
@@ -259,6 +262,7 @@ export const HomeScreen: React.FC = () => {
     } = usePersonalChallenges({
         users,
         sessionUserIds,
+        enabled: isHomeActive,
         onChallengeCompleted: useCallback((notice: PersonalChallengeCompletionNotice) => {
             if (notice.rewardStars <= 0) {
                 return;
@@ -821,6 +825,7 @@ export const HomeScreen: React.FC = () => {
 
                 <HomeChallengesAndMenus
                     showChallengeSection={Boolean(selectedUser)}
+                    challengeCardsEnabled={isHomeActive}
                     teacherActiveChallenges={joinedTeacherChallenges}
                     teacherRecommendedChallenge={recommendedTeacherChallenge}
                     personalActiveChallenges={personalActiveChallenges.slice(0, 2)}
@@ -860,6 +865,7 @@ export const HomeScreen: React.FC = () => {
 
             <ChallengeHubSheet
                 open={challengeHubOpen}
+                challengeCardsEnabled={isHomeActive}
                 onClose={() => setChallengeHubOpen(false)}
                 teacherActiveChallenges={filteredChallenges}
                 teacherTodayDoneChallenges={todayDoneChallenges}

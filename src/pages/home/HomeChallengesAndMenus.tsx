@@ -15,6 +15,7 @@ import type { ChallengeRewardScene } from './challengeRewardUtils';
 
 interface HomeChallengesAndMenusProps {
     showChallengeSection: boolean;
+    challengeCardsEnabled?: boolean;
     teacherActiveChallenges: Challenge[];
     teacherRecommendedChallenge: Challenge | null;
     personalActiveChallenges: PersonalChallengeProgressItem[];
@@ -47,6 +48,7 @@ interface HomeChallengesAndMenusProps {
 
 export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
     showChallengeSection,
+    challengeCardsEnabled = true,
     teacherActiveChallenges,
     teacherRecommendedChallenge,
     personalActiveChallenges,
@@ -119,6 +121,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                                     completions={completions}
                                     rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
+                                    enabled={challengeCardsEnabled}
                                     onCompleted={onChallengesUpdated}
                                     onRewardGranted={onTeacherChallengeRewardGranted}
                                 />
@@ -143,6 +146,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                                         completions={completions}
                                         rewardGrants={rewardGrants}
                                         teacherExercises={teacherExercises}
+                                        enabled={challengeCardsEnabled}
                                         onCompleted={onChallengesUpdated}
                                         onRewardGranted={onTeacherChallengeRewardGranted}
                                     />

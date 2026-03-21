@@ -14,6 +14,7 @@ type ChallengeHubTab = 'active' | 'teacher' | 'self' | 'past';
 
 interface ChallengeHubSheetProps {
     open: boolean;
+    challengeCardsEnabled?: boolean;
     onClose: () => void;
     teacherActiveChallenges: Challenge[];
     teacherTodayDoneChallenges: Challenge[];
@@ -37,6 +38,7 @@ interface ChallengeHubSheetProps {
 
 export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
     open,
+    challengeCardsEnabled = true,
     onClose,
     teacherActiveChallenges,
     teacherTodayDoneChallenges,
@@ -126,6 +128,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     completions={completions}
                                     rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
+                                    enabled={challengeCardsEnabled && open}
                                     onCompleted={onTeacherChallengesUpdated}
                                     onRewardGranted={onTeacherChallengeRewardGranted}
                                 />
@@ -155,6 +158,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                         completions={completions}
                                         rewardGrants={rewardGrants}
                                         teacherExercises={teacherExercises}
+                                        enabled={challengeCardsEnabled && open}
                                         onCompleted={onTeacherChallengesUpdated}
                                         onRewardGranted={onTeacherChallengeRewardGranted}
                                     />
@@ -186,6 +190,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     completions={completions}
                                     rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
+                                    enabled={challengeCardsEnabled && open}
                                     onCompleted={onTeacherChallengesUpdated}
                                     onRewardGranted={onTeacherChallengeRewardGranted}
                                 />
@@ -197,6 +202,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     completions={completions}
                                     rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
+                                    enabled={challengeCardsEnabled && open}
                                     onCompleted={onTeacherChallengesUpdated}
                                     onRewardGranted={onTeacherChallengeRewardGranted}
                                 />
@@ -285,6 +291,7 @@ export const ChallengeHubSheet: React.FC<ChallengeHubSheetProps> = ({
                                     completions={completions}
                                     rewardGrants={rewardGrants}
                                     teacherExercises={teacherExercises}
+                                    enabled={challengeCardsEnabled && open}
                                     onCompleted={onTeacherChallengesUpdated}
                                     onRewardGranted={onTeacherChallengeRewardGranted}
                                     expired

@@ -49,7 +49,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
     const [challengesLoading, setChallengesLoading] = useState(false);
     const [showCreateForm, setShowCreateForm] = useState(false);
 
-    const load = useCallback(async () => {
+    const load = useCallback(async (forceRefresh = false) => {
         setLoading(true);
         try {
             const currentAccountId = getAccountId();
@@ -65,6 +65,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                     }))
                     : [],
                 localSessions,
+                forceRefresh,
             });
             setStudents(data);
         } catch (err) {
@@ -257,11 +258,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
 
     const handleRefresh = activeTab === 'students'
         ? () => {
-            void load();
+            void load(true);
         }
         : activeTab === 'challenges'
             ? () => {
-                void Promise.all([load(), loadChallenges()]);
+                void Promise.all([load(true), loadChallenges()]);
             }
             : undefined;
 

@@ -28,6 +28,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
     completions,
     rewardGrants,
     teacherExercises = [],
+    enabled = true,
     onCompleted,
     onRewardGranted,
     expired,
@@ -110,6 +111,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
 
     const progress = useChallengeProgress({
         challenge,
+        enabled,
         isJoined,
         allCompleted,
         activeUserIds,

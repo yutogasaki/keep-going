@@ -24,9 +24,10 @@ import { isTeacherChallengeCompletedToday } from '../challengeRewardUtils';
 interface UseHomeChallengesParams {
     users: UserProfileStore[];
     sessionUserIds: string[];
+    enabled?: boolean;
 }
 
-export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesParams) {
+export function useHomeChallenges({ users, sessionUserIds, enabled = true }: UseHomeChallengesParams) {
     const [allChallenges, setAllChallenges] = useState<Challenge[]>([]);
     const [filteredChallenges, setFilteredChallenges] = useState<Challenge[]>([]);
     const [todayDoneChallenges, setTodayDoneChallenges] = useState<Challenge[]>([]);
@@ -35,6 +36,7 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
     const [rewardGrants, setRewardGrants] = useState<ChallengeRewardGrant[]>([]);
     const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
     const [pastExpanded, setPastExpanded] = useState(false);
+    const [sessionRevision, setSessionRevision] = useState(0);
     const hydrateChallengeEnrollmentState = useAppStore((state) => state.hydrateChallengeEnrollmentState);
     const joinedChallengeIds = useAppStore((state) => state.joinedChallengeIds);
     const challengeEnrollmentWindows = useAppStore((state) => state.challengeEnrollmentWindows);
@@ -56,19 +58,27 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
     }, [hydrateChallengeEnrollmentState]);
 
     useEffect(() => {
+        if (!enabled) {
+            return;
+        }
+
         loadChallenges();
-    }, [loadChallenges]);
+    }, [enabled, loadChallenges]);
 
     useEffect(() => {
+        if (!enabled) {
+            return;
+        }
+
         const handleSessionSaved = () => {
-            loadChallenges();
+            setSessionRevision((current) => current + 1);
         };
 
         window.addEventListener('sessionSaved', handleSessionSaved);
         return () => {
             window.removeEventListener('sessionSaved', handleSessionSaved);
         };
-    }, [loadChallenges]);
+    }, [enabled]);
 
     const classMatchedChallenges = useMemo(() => {
         const activeClassLevels = new Set<string>();
@@ -92,6 +102,10 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
     );
 
     useEffect(() => {
+        if (!enabled) {
+            return;
+        }
+
         let cancelled = false;
         const today = getTodayKey();
 
@@ -203,6 +217,8 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
         classMatchedChallenges,
         completions,
         joinedChallengeIds,
+        enabled,
+        sessionRevision,
     ]);
 
     return {

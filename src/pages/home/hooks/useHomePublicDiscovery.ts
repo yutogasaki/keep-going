@@ -3,11 +3,15 @@ import { fetchRecommendedExercises, type PublicExercise } from '../../../lib/pub
 import { fetchRecommendedMenus, type PublicMenu } from '../../../lib/publicMenus';
 import { pickHomeAmbientCue } from '../homeAmbientUtils';
 
-export function useHomePublicDiscovery() {
+export function useHomePublicDiscovery(enabled = true) {
     const [menus, setMenus] = useState<PublicMenu[]>([]);
     const [exercises, setExercises] = useState<PublicExercise[]>([]);
 
     useEffect(() => {
+        if (!enabled) {
+            return;
+        }
+
         let isActive = true;
 
         Promise.all([
@@ -25,7 +29,7 @@ export function useHomePublicDiscovery() {
         return () => {
             isActive = false;
         };
-    }, []);
+    }, [enabled]);
 
     const ambientCue = useMemo(
         () => pickHomeAmbientCue(menus, exercises),

@@ -71,7 +71,7 @@ vi.mock('../supabase', () => {
     };
 });
 
-import { fetchAllStudents } from '../teacher';
+import { fetchAllStudents, invalidateTeacherRemoteSnapshotCache } from '../teacher';
 
 function createFamilyMember(
     id: string,
@@ -136,6 +136,7 @@ function createAppSettings(
 }
 
 beforeEach(() => {
+    invalidateTeacherRemoteSnapshotCache();
     teacherSupabaseMocks.rangeCalls = [];
     teacherSupabaseMocks.familyMembers = [];
     teacherSupabaseMocks.sessions = [];
@@ -152,6 +153,27 @@ afterEach(() => {
 });
 
 describe('fetchAllStudents', () => {
+    it('reuses cached remote rows unless forceRefresh is requested', async () => {
+        teacherSupabaseMocks.familyMembers = [
+            createFamilyMember('member-active', 'active-account'),
+        ];
+        teacherSupabaseMocks.sessions = [
+            createSession('session-remote', 'active-account', '2026-03-06'),
+        ];
+        teacherSupabaseMocks.appSettings = [
+            createAppSettings('active-account', false),
+        ];
+
+        await fetchAllStudents();
+        const firstCallCount = teacherSupabaseMocks.rangeCalls.length;
+
+        await fetchAllStudents();
+        expect(teacherSupabaseMocks.rangeCalls).toHaveLength(firstCallCount);
+
+        await fetchAllStudents({ forceRefresh: true });
+        expect(teacherSupabaseMocks.rangeCalls.length).toBeGreaterThan(firstCallCount);
+    });
+
     it('paginates family members and app settings beyond the default page size', async () => {
         teacherSupabaseMocks.familyMembers = Array.from({ length: 1001 }, (_, index) =>
             createFamilyMember(`member-${index}`, `account-${index}`));

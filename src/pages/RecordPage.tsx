@@ -173,21 +173,21 @@ export const RecordPage: React.FC = () => {
         };
 
         load();
-
-        let interval = setInterval(load, 5000);
+        const handleSessionSaved = () => {
+            load();
+        };
 
         const handleVisibility = () => {
-            clearInterval(interval);
             if (document.visibilityState === 'visible') {
                 load();
-                interval = setInterval(load, 5000);
             }
         };
 
+        window.addEventListener('sessionSaved', handleSessionSaved);
         document.addEventListener('visibilitychange', handleVisibility);
 
         return () => {
-            clearInterval(interval);
+            window.removeEventListener('sessionSaved', handleSessionSaved);
             document.removeEventListener('visibilitychange', handleVisibility);
         };
     }, [filterSessionsByContext, isPageActive]);

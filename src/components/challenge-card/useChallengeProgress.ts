@@ -11,6 +11,7 @@ import type { ChallengeProgressWindow } from '../../lib/challenge-engine';
 
 interface UseChallengeProgressParams {
     challenge: Challenge;
+    enabled?: boolean;
     isJoined: boolean;
     allCompleted: boolean;
     activeUserIds: string[];
@@ -25,6 +26,7 @@ interface UseChallengeProgressParams {
 
 export function useChallengeProgress({
     challenge,
+    enabled = true,
     isJoined,
     allCompleted,
     activeUserIds,
@@ -40,19 +42,51 @@ export function useChallengeProgress({
     const checkingRef = useRef(false);
 
     useEffect(() => {
-        if (!isJoined) return;
+        if (!enabled) {
+            return;
+        }
+
+        if (!isJoined) {
+            setProgress(0);
+            return;
+        }
 
         let cancelled = false;
-        countChallengeProgress(challenge, activeUserIds, effectiveWindow).then((count) => {
-            if (!cancelled) {
-                setProgress(count);
+        let requestId = 0;
+
+        const refreshProgress = () => {
+            const currentRequestId = requestId + 1;
+            requestId = currentRequestId;
+
+            countChallengeProgress(challenge, activeUserIds, effectiveWindow).then((count) => {
+                if (!cancelled && currentRequestId === requestId) {
+                    setProgress(count);
+                }
+            }).catch((error) => {
+                console.warn('[challenges] Failed to refresh challenge progress:', error);
+            });
+        };
+
+        refreshProgress();
+
+        const handleSessionSaved = () => {
+            refreshProgress();
+        };
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                refreshProgress();
             }
-        });
+        };
+
+        window.addEventListener('sessionSaved', handleSessionSaved);
+        document.addEventListener('visibilitychange', handleVisibility);
 
         return () => {
             cancelled = true;
+            window.removeEventListener('sessionSaved', handleSessionSaved);
+            document.removeEventListener('visibilitychange', handleVisibility);
         };
-    }, [challenge, activeUserIds, effectiveWindow, isJoined]);
+    }, [challenge, activeUserIds, effectiveWindow, enabled, isJoined]);
 
     useEffect(() => {
         const goalTarget = getChallengeGoalTarget(challenge);

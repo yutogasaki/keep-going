@@ -56,6 +56,7 @@ export interface LocalStudentSessionSnapshot extends Pick<
 // ─── Fetch all students ──────────────────────────────
 
 const TEACHER_FETCH_PAGE_SIZE = 1000;
+const TEACHER_REMOTE_CACHE_TTL = 60_000;
 
 type TeacherFamilyMemberRow = Pick<
     Database['public']['Tables']['family_members']['Row'],
@@ -86,6 +87,22 @@ interface FetchAllStudentsOptions {
     currentAccountId?: string | null;
     localMembers?: LocalStudentMemberSnapshot[];
     localSessions?: LocalStudentSessionSnapshot[];
+    forceRefresh?: boolean;
+}
+
+interface TeacherRemoteSnapshot {
+    members: TeacherFamilyMemberRow[];
+    sessions: TeacherSessionRow[];
+    settings: TeacherAppSettingsRow[];
+    fetchedAt: number;
+}
+
+let cachedTeacherRemoteSnapshot: TeacherRemoteSnapshot | null = null;
+let teacherRemoteSnapshotPromise: Promise<TeacherRemoteSnapshot> | null = null;
+
+export function invalidateTeacherRemoteSnapshotCache(): void {
+    cachedTeacherRemoteSnapshot = null;
+    teacherRemoteSnapshotPromise = null;
 }
 
 function normalizeSessionMenuSource(value: string | null | undefined): SessionMenuSource | null {
@@ -207,31 +224,77 @@ async function fetchTeacherAppSettings(): Promise<TeacherAppSettingsRow[]> {
     );
 }
 
+async function fetchTeacherRemoteSnapshot(forceRefresh = false): Promise<TeacherRemoteSnapshot> {
+    if (!supabase) {
+        return {
+            members: [],
+            sessions: [],
+            settings: [],
+            fetchedAt: Date.now(),
+        };
+    }
+
+    if (
+        !forceRefresh
+        && cachedTeacherRemoteSnapshot
+        && Date.now() - cachedTeacherRemoteSnapshot.fetchedAt < TEACHER_REMOTE_CACHE_TTL
+    ) {
+        return cachedTeacherRemoteSnapshot;
+    }
+
+    if (!forceRefresh && teacherRemoteSnapshotPromise) {
+        return teacherRemoteSnapshotPromise;
+    }
+
+    teacherRemoteSnapshotPromise = (async () => {
+        const [membersResult, sessionsResult, settingsResult] = await Promise.allSettled([
+            fetchTeacherMembers(),
+            fetchTeacherSessions(),
+            fetchTeacherAppSettings(),
+        ]);
+
+        if (membersResult.status === 'rejected' || sessionsResult.status === 'rejected') {
+            console.error(
+                '[teacher] fetch failed:',
+                membersResult.status === 'rejected' ? membersResult.reason : null,
+                sessionsResult.status === 'rejected' ? sessionsResult.reason : null,
+            );
+
+            if (cachedTeacherRemoteSnapshot) {
+                return cachedTeacherRemoteSnapshot;
+            }
+
+            throw new Error('Failed to fetch teacher dashboard data');
+        }
+
+        if (settingsResult.status === 'rejected') {
+            console.warn('[teacher] Failed to load suspended account settings:', settingsResult.reason);
+        }
+
+        const nextSnapshot: TeacherRemoteSnapshot = {
+            members: membersResult.value,
+            sessions: sessionsResult.value,
+            settings: settingsResult.status === 'fulfilled' ? settingsResult.value : [],
+            fetchedAt: Date.now(),
+        };
+
+        cachedTeacherRemoteSnapshot = nextSnapshot;
+        return nextSnapshot;
+    })();
+
+    try {
+        return await teacherRemoteSnapshotPromise;
+    } finally {
+        teacherRemoteSnapshotPromise = null;
+    }
+}
+
 export async function fetchAllStudents(options: FetchAllStudentsOptions = {}): Promise<StudentSummary[]> {
     if (!supabase) return [];
-
-    const [membersResult, sessionsResult, settingsResult] = await Promise.allSettled([
-        fetchTeacherMembers(),
-        fetchTeacherSessions(),
-        fetchTeacherAppSettings(),
-    ]);
-
-    if (membersResult.status === 'rejected' || sessionsResult.status === 'rejected') {
-        console.error(
-            '[teacher] fetch failed:',
-            membersResult.status === 'rejected' ? membersResult.reason : null,
-            sessionsResult.status === 'rejected' ? sessionsResult.reason : null,
-        );
-        return [];
-    }
-
-    if (settingsResult.status === 'rejected') {
-        console.warn('[teacher] Failed to load suspended account settings:', settingsResult.reason);
-    }
-
-    const members = membersResult.value;
-    const sessions = sessionsResult.value;
-    const settings = settingsResult.status === 'fulfilled' ? settingsResult.value : [];
+    const remoteSnapshot = await fetchTeacherRemoteSnapshot(options.forceRefresh ?? false);
+    const members = remoteSnapshot.members;
+    const sessions = remoteSnapshot.sessions;
+    const settings = remoteSnapshot.settings;
 
     // Filter out suspended accounts
     const suspendedIds = new Set(

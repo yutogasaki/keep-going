@@ -32,6 +32,7 @@ export interface PersonalChallengeCompletionNotice {
 interface UsePersonalChallengesParams {
     users: UserProfileStore[];
     sessionUserIds: string[];
+    enabled?: boolean;
     onChallengeCompleted?: (notice: PersonalChallengeCompletionNotice) => void;
 }
 
@@ -53,6 +54,7 @@ function byUpdatedAtDesc(
 export function usePersonalChallenges({
     users,
     sessionUserIds,
+    enabled = true,
     onChallengeCompleted,
 }: UsePersonalChallengesParams): PersonalChallengeBuckets {
     const [activeChallenges, setActiveChallenges] = useState<PersonalChallengeProgressItem[]>([]);
@@ -226,11 +228,19 @@ export function usePersonalChallenges({
     }, [loadChallenges]);
 
     useEffect(() => {
+        if (!enabled) {
+            return;
+        }
+
         const dispose = loadChallenges();
         return dispose;
-    }, [loadChallenges]);
+    }, [enabled, loadChallenges]);
 
     useEffect(() => {
+        if (!enabled) {
+            return;
+        }
+
         const handleSessionSaved = () => {
             reload();
         };
@@ -239,7 +249,7 @@ export function usePersonalChallenges({
         return () => {
             window.removeEventListener('sessionSaved', handleSessionSaved);
         };
-    }, [reload]);
+    }, [enabled, reload]);
 
     return {
         activeChallenges,
