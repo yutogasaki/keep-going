@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { countChallengeProgressFromSessions } from '../../../lib/challenge-engine';
 import {
-    countChallengeProgressInCustomWindow,
     fetchAllChallenges,
     fetchMyEnrollments,
     fetchMyCompletions,
     fetchMyChallengeRewardGrants,
     buildChallengeEnrollmentState,
     getChallengeActiveWindow,
+    getChallengeGoalTarget,
     isChallengeDoneForToday,
     isChallengeFinishedOverall,
     isChallengePastForUsers,
@@ -15,7 +16,7 @@ import {
     type ChallengeCompletion,
     type ChallengeRewardGrant,
 } from '../../../lib/challenges';
-import { getTodayKey } from '../../../lib/db';
+import { getAllSessions, getTodayKey } from '../../../lib/db';
 import { fetchTeacherExercises, type TeacherExercise } from '../../../lib/teacherContent';
 import { useAppStore, type UserProfileStore } from '../../../store/useAppStore';
 import { isTeacherChallengeCompletedToday } from '../challengeRewardUtils';
@@ -98,6 +99,7 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
             const nextAvailable: Challenge[] = [];
             const nextTodayDone: Challenge[] = [];
             const nextPast: Challenge[] = [];
+            const sessions = await getAllSessions();
 
             for (const challenge of classMatchedChallenges) {
                 const relevantCompletions = completions.filter(
@@ -146,11 +148,25 @@ export function useHomeChallenges({ users, sessionUserIds }: UseHomeChallengesPa
                     continue;
                 }
 
-                const todayProgress = await countChallengeProgressInCustomWindow(
-                    challenge,
-                    activeUserIds,
-                    { startDate: today, endDate: today, joinedAt: effectiveWindow?.joinedAt ?? null },
-                );
+                const todayProgress = countChallengeProgressFromSessions({
+                    challengeType: challenge.challengeType,
+                    exerciseId: challenge.exerciseId,
+                    targetMenuId: challenge.targetMenuId,
+                    menuSource: challenge.menuSource,
+                    targetCount: getChallengeGoalTarget(challenge),
+                    dailyCap: challenge.dailyCap,
+                    countUnit: challenge.countUnit,
+                    startDate: challenge.startDate,
+                    endDate: challenge.endDate,
+                    windowType: challenge.windowType,
+                    goalType: challenge.goalType,
+                    windowDays: challenge.windowDays,
+                    dailyMinimumMinutes: challenge.dailyMinimumMinutes,
+                }, sessions, activeUserIds, {
+                    startDate: today,
+                    endDate: today,
+                    joinedAt: effectiveWindow?.joinedAt ?? null,
+                });
 
                 if (isChallengeDoneForToday(challenge, todayProgress)) {
                     nextTodayDone.push(challenge);

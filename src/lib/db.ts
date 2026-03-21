@@ -46,6 +46,9 @@ export interface CustomExercise {
 // DB instances
 const historyDB = localforage.createInstance({ name: 'keepgoing', storeName: 'history' });
 const customExercisesDB = localforage.createInstance({ name: 'keepgoing', storeName: 'custom_exercises' });
+let cachedSessions: SessionRecord[] | null = null;
+let cachedSessionsPromise: Promise<SessionRecord[]> | null = null;
+let sessionCacheVersion = 0;
 
 export function formatDateKey(date: Date): string {
     const year = date.getFullYear();
@@ -124,10 +127,31 @@ export function calculateStreak(sessions: { date: string }[]): number {
     return streak;
 }
 
+function sortSessionsDesc(sessions: SessionRecord[]): SessionRecord[] {
+    return sessions.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+}
+
+function updateCachedSessions(record: SessionRecord): void {
+    if (!cachedSessions) {
+        return;
+    }
+
+    const next = cachedSessions.filter((session) => session.id !== record.id);
+    next.push(record);
+    cachedSessions = sortSessionsDesc(next);
+}
+
+function invalidateSessionCache(): void {
+    sessionCacheVersion += 1;
+    cachedSessionsPromise = null;
+}
+
 // History operations
 export async function saveSession(record: SessionRecord): Promise<void> {
     const normalized = normalizeSessionRecord(record);
     await historyDB.setItem(normalized.id, normalized);
+    invalidateSessionCache();
+    updateCachedSessions(normalized);
     // Dual-write to Supabase if logged in
     if (getAccountId()) {
         syncPushSession(normalized).catch(onSyncError);
@@ -137,6 +161,10 @@ export async function saveSession(record: SessionRecord): Promise<void> {
 }
 
 export async function getSessionsByDate(date: string): Promise<SessionRecord[]> {
+    if (cachedSessions) {
+        return cachedSessions.filter((session) => session.date === date);
+    }
+
     const sessions: SessionRecord[] = [];
     await historyDB.iterate<SessionRecord, void>((value) => {
         if (value.date === date) sessions.push(normalizeSessionRecord(value));
@@ -145,11 +173,34 @@ export async function getSessionsByDate(date: string): Promise<SessionRecord[]> 
 }
 
 export async function getAllSessions(): Promise<SessionRecord[]> {
-    const sessions: SessionRecord[] = [];
-    await historyDB.iterate<SessionRecord, void>((value) => {
-        sessions.push(normalizeSessionRecord(value));
-    });
-    return sessions.sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+    if (cachedSessions) {
+        return cachedSessions;
+    }
+
+    if (cachedSessionsPromise) {
+        return cachedSessionsPromise;
+    }
+
+    const cacheVersionAtLoadStart = sessionCacheVersion;
+    cachedSessionsPromise = (async () => {
+        const sessions: SessionRecord[] = [];
+        await historyDB.iterate<SessionRecord, void>((value) => {
+            sessions.push(normalizeSessionRecord(value));
+        });
+        const loadedSessions = sortSessionsDesc(sessions);
+        if (sessionCacheVersion === cacheVersionAtLoadStart) {
+            cachedSessions = loadedSessions;
+            return cachedSessions;
+        }
+
+        return loadedSessions;
+    })();
+
+    try {
+        return await cachedSessionsPromise;
+    } finally {
+        cachedSessionsPromise = null;
+    }
 }
 
 export async function getRecentDays(): Promise<Map<string, SessionRecord[]>> {
@@ -170,6 +221,8 @@ export async function clearAllData(): Promise<void> {
     await deleteCloudData();
     // IndexedDB: 'keepgoing' DB 全体を削除（history, custom_exercises, menuGroups, sync_queue）
     await localforage.dropInstance({ name: 'keepgoing' });
+    cachedSessions = null;
+    invalidateSessionCache();
     // localStorage: Zustand persist store + sync account
     localStorage.removeItem('keepgoing-app-state');
     localStorage.removeItem('keepgoing_synced_account');
@@ -246,6 +299,8 @@ export async function deleteCustomExercise(id: string): Promise<void> {
 export async function saveSessionDirect(record: SessionRecord): Promise<void> {
     const normalized = normalizeSessionRecord(record);
     await historyDB.setItem(normalized.id, normalized);
+    invalidateSessionCache();
+    updateCachedSessions(normalized);
 }
 
 export async function saveCustomExerciseDirect(ex: CustomExercise): Promise<void> {
@@ -255,6 +310,8 @@ export async function saveCustomExerciseDirect(ex: CustomExercise): Promise<void
 
 export async function clearHistoryDB(): Promise<void> {
     await historyDB.clear();
+    cachedSessions = [];
+    invalidateSessionCache();
 }
 
 export async function clearCustomExercisesDB(): Promise<void> {
