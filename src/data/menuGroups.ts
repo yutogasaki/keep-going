@@ -96,7 +96,7 @@ export function getPresetsForClass(classLevel: ClassLevel): MenuGroup[] {
 
 export function buildMenuGroupItemsFromExerciseIds(exerciseIds: string[]): MenuGroupItem[] {
     return exerciseIds.map((exerciseId) => ({
-        id: exerciseId,
+        id: `ref-${crypto.randomUUID()}`,
         kind: 'exercise_ref',
         exerciseId,
     }));
@@ -111,7 +111,9 @@ export function getMenuGroupItems(group: Pick<MenuGroup, 'exerciseIds' | 'items'
 }
 
 export function getMenuGroupItemIds(group: Pick<MenuGroup, 'exerciseIds' | 'items'>): string[] {
-    return getMenuGroupItems(group).map((item) => item.id);
+    return getMenuGroupItems(group).map((item) =>
+        item.kind === 'exercise_ref' ? item.exerciseId : item.id,
+    );
 }
 
 export function hasInlineMenuItems(group: Pick<MenuGroup, 'exerciseIds' | 'items'>): boolean {

@@ -174,16 +174,16 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
     const minutes = Math.ceil(totalSec / 60);
     const canSave = name.trim().length > 0 && items.length > 0 && !saving;
     const selectedExerciseIds = useMemo(
-        () => items
-            .filter((item): item is Extract<MenuGroupItem, { kind: 'exercise_ref' }> => item.kind === 'exercise_ref')
-            .map((item) => item.exerciseId),
+        () => items.map((item) =>
+            item.kind === 'exercise_ref' ? item.exerciseId : item.id,
+        ),
         [items],
     );
 
     const addExercise = (exerciseId: string) => {
         setItems((previous) => [
             ...previous,
-            { id: exerciseId, kind: 'exercise_ref', exerciseId },
+            { id: `ref-${crypto.randomUUID()}`, kind: 'exercise_ref', exerciseId },
         ]);
     };
 
@@ -343,7 +343,9 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
                 name: name.trim(),
                 emoji,
                 description: description.trim(),
-                exerciseIds: items.map((item) => item.id),
+                exerciseIds: items.map((item) =>
+                    item.kind === 'exercise_ref' ? item.exerciseId : item.id,
+                ),
                 items,
                 isPreset: false,
                 creatorId: currentUserId,

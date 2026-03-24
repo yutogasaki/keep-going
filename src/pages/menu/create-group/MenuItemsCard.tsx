@@ -12,6 +12,10 @@ interface QuickAddDraft {
     saveAsCustom: boolean;
 }
 
+export function getMenuItemRenderKey(item: MenuGroupItem, _index: number): string {
+    return item.id;
+}
+
 interface MenuItemsCardProps {
     items: MenuGroupItem[];
     minutes: number;
@@ -154,7 +158,7 @@ export const MenuItemsCard: React.FC<MenuItemsCardProps> = ({
 
                         return (
                             <div
-                                key={item.id}
+                                key={getMenuItemRenderKey(item, index)}
                                 style={{
                                     borderRadius: 16,
                                     background: isInline ? 'rgba(255, 243, 224, 0.55)' : 'rgba(43, 186, 160, 0.06)',

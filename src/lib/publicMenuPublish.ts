@@ -229,7 +229,9 @@ export async function publishMenu(
         name: menu.name,
         emoji: menu.emoji,
         description: menu.description,
-        exercise_ids: menuItems.map((item) => item.id),
+        exercise_ids: menuItems.map((item) =>
+            item.kind === 'exercise_ref' ? item.exerciseId : item.id,
+        ),
         menu_items: menuItems,
         custom_exercise_data: customExerciseData,
         author_name: authorName,

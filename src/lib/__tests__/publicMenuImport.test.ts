@@ -82,16 +82,14 @@ describe('publicMenuImport', () => {
             description: 'みおさんのメニュー',
             exerciseIds: ['S01', 'imported-ex-public-menu-1-remote-ex-1'],
             items: [
-                {
-                    id: 'S01',
+                expect.objectContaining({
                     kind: 'exercise_ref',
                     exerciseId: 'S01',
-                },
-                {
-                    id: 'imported-ex-public-menu-1-remote-ex-1',
+                }),
+                expect.objectContaining({
                     kind: 'exercise_ref',
                     exerciseId: 'imported-ex-public-menu-1-remote-ex-1',
-                },
+                }),
             ],
             isPreset: false,
         }));

@@ -23,7 +23,9 @@ export function removeExerciseFromMenuGroup(group: MenuGroup, exerciseId: string
 
     return {
         ...group,
-        exerciseIds: nextItems.map((item) => item.id),
+        exerciseIds: nextItems.map((item) =>
+            item.kind === 'exercise_ref' ? item.exerciseId : item.id,
+        ),
         items: hadExplicitItems ? nextItems : undefined,
     };
 }

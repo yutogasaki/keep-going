@@ -93,7 +93,7 @@ export function resolveMenuGroupToSessionPlannedItems(
         }
 
         return [createSessionPlannedItemFromExercise(exercise, {
-            id: item.id,
+            id: item.exerciseId,
             kind: 'exercise_ref',
         })];
     });

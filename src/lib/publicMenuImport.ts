@@ -69,7 +69,9 @@ function createImportedMenu(
         name: publicMenu.name,
         emoji: publicMenu.emoji,
         description: `${publicMenu.authorName}さんのメニュー`,
-        exerciseIds: remappedItems.map((item) => item.id),
+        exerciseIds: remappedItems.map((item) =>
+            item.kind === 'exercise_ref' ? item.exerciseId : item.id,
+        ),
         items: remappedItems,
         isPreset: false,
     };
