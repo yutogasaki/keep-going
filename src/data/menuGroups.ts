@@ -104,7 +104,11 @@ export function buildMenuGroupItemsFromExerciseIds(exerciseIds: string[]): MenuG
 
 export function getMenuGroupItems(group: Pick<MenuGroup, 'exerciseIds' | 'items'>): MenuGroupItem[] {
     if (Array.isArray(group.items) && group.items.length > 0) {
-        return group.items;
+        return group.items.map((item) =>
+            item.kind === 'exercise_ref' && item.id === item.exerciseId
+                ? { ...item, id: `ref-${crypto.randomUUID()}` }
+                : item,
+        );
     }
 
     return buildMenuGroupItemsFromExerciseIds(group.exerciseIds);
