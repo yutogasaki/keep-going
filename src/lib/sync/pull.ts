@@ -61,7 +61,7 @@ async function mergeSessions(cloudSessions: SessionRecord[], pushLocalOnly: bool
 
     for (const localSession of localSessions) {
         if (!cloudSessionIds.has(localSession.id)) {
-            pushSession(localSession).catch(() => {});
+            pushSession(localSession).catch((err) => console.warn('[sync] background push failed:', err));
         }
     }
 }
@@ -80,7 +80,7 @@ async function mergeExercises(cloudExercises: CustomExercise[], pushLocalOnly: b
 
     for (const localExercise of localExercises) {
         if (!cloudExerciseIds.has(localExercise.id)) {
-            pushCustomExercise(localExercise).catch(() => {});
+            pushCustomExercise(localExercise).catch((err) => console.warn('[sync] background push failed:', err));
         }
     }
 }
@@ -99,7 +99,7 @@ async function mergeGroups(cloudGroups: MenuGroup[], pushLocalOnly: boolean): Pr
 
     for (const localGroup of localGroups) {
         if (!localGroup.isPreset && !cloudGroupIds.has(localGroup.id)) {
-            pushMenuGroup(localGroup).catch(() => {});
+            pushMenuGroup(localGroup).catch((err) => console.warn('[sync] background push failed:', err));
         }
     }
 }
@@ -122,7 +122,7 @@ function mergeUsers(
     for (const localUser of localUsers) {
         if (!cloudUserIds.has(localUser.id)) {
             users.push(localUser);
-            pushFamilyMember(localUser).catch(() => {});
+            pushFamilyMember(localUser).catch((err) => console.warn('[sync] background push failed:', err));
         }
     }
 

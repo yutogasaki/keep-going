@@ -62,6 +62,8 @@ npm run verify
 - モーダルは既存の `src/components/Modal.tsx` を優先する
 - user-visible な変更は、必要に応じて desktop/mobile の visual QA を行う
 - 巨大ファイルは早めに分割する。詳細閾値は `CONSTITUTION.md` を参照
+- import は `@/` エイリアスを優先する（`../../../lib/styles` → `@/lib/styles`）
+- テストのファクトリ関数は `src/__tests__/fixtures.ts` から import する。新規ファクトリもここに追加する
 
 ## Key Paths
 
