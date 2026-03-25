@@ -3,14 +3,17 @@
 このファイルは Codex 向けの短い入口。
 共通の正本は `.agents/agent-guide.md`。
 
-## Read Order
+## Read Order（毎セッション読む）
 
 1. `CONSTITUTION.md`
-2. `docs/development-governance.md`
-3. `.agents/agent-guide.md`
-4. `.agents/tasks/TASKS.md`
-5. `.agents/MEMORY.md`
-6. `docs/tasks.md`（product backlog / spec gap）
+2. `.agents/agent-guide.md`
+3. `.agents/tasks/TASKS.md`
+4. `.agents/MEMORY.md`
+
+## 必要時に参照
+
+- `docs/development-governance.md` — 検証マトリックス。UI/DB/persist 変更時に参照
+- `docs/tasks.md` — product backlog。新機能やタスク優先度の議論時に参照
 
 ## Shared Canonical Guide
 

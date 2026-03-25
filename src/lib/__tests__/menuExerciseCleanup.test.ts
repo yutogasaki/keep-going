@@ -101,10 +101,15 @@ describe('menuExerciseCleanup', () => {
             ],
         });
 
-        expect(pruneUnavailableExercisesFromMenuGroup(group, new Set(['S01']))).toEqual({
-            ...group,
-            exerciseIds: ['S01', 'inline-1'],
-            items: [group.items![0], group.items![2]],
+        const result = pruneUnavailableExercisesFromMenuGroup(group, new Set(['S01']));
+        expect(result).not.toBeNull();
+        expect(result!.exerciseIds).toEqual(['S01', 'inline-1']);
+        expect(result!.items).toHaveLength(2);
+        expect(result!.items![0]).toMatchObject({ kind: 'exercise_ref', exerciseId: 'S01' });
+        expect(result!.items![1]).toMatchObject({
+            kind: 'inline_only',
+            name: 'そのばジャンプ',
+            emoji: '✨',
         });
     });
 

@@ -1,45 +1,19 @@
-# /governance-audit - ルール・task・memory・肥大化監査
+# /governance-audit - ルール・肥大化監査
 
-KeepGoing の開発運用が canonical path からズレていないか、ファイルが肥大化していないかを確認する。
-`CONSTITUTION.md` と `docs/development-governance.md` に沿って監査する。
-
-## 使うタイミング
-
-- ルールや task 運用を見直したい
-- `AGENTS.md` / `CLAUDE.md` / `TASKS.md` / `DONE.md` / `MEMORY.md` を整理したい
-- コンテキスト汚染や重複文書が気になる
+`npm run governance:check` の結果を起点に、運用ファイルの健全性を確認する。
 
 ## 手順
 
-1. まず `npm run governance:check` を実行する
-2. canonical path を確認する
-   - `CONSTITUTION.md`
-   - `docs/development-governance.md`
-   - `.agents/agent-guide.md`
-   - `.agents/tasks/TASKS.md`
-   - `.agents/tasks/DONE.md`
-   - `.agents/MEMORY.md`
-   - `docs/tasks.md`
-3. 役割重複や stale path がないか検索する
-4. 行数と内容の両面で肥大化を確認する
-5. 次の観点で findings を出す
-   - single source 違反
-   - backlog と active queue の混在
-   - durable memory でないものの蓄積
-   - agent guide の重複
-   - stale skill / stale script / stale path
-6. 修正する場合は、まず canonical path へ寄せる
+1. `npm run governance:check` を実行する
+2. エラーがあれば修正する
+3. 自動チェックで拾えない以下を目視確認する:
+   - `DONE.md` / `MEMORY.md` / `TASKS.md` の内容の鮮度（古い情報が残っていないか）
+   - backlog（`docs/tasks.md`）と active queue（`TASKS.md`）の混在
+   - auto-memory と `.agents/MEMORY.md` の重複
 
-## KeepGoing の閾値
+## 閾値（governance:check で自動監査）
 
-- `AGENTS.md`, `CLAUDE.md`: 30 行前後
-- `.agents/agent-guide.md`: 120 行前後
-- `TASKS.md`: 30 行超で整理検討
-- `DONE.md`: 50 行超で圧縮検討
-- `MEMORY.md`: 40 行超で整理検討
-
-## 出力の形
-
-- findings を優先度順に出す
-- 次に `今すぐ直すもの / 後でよいもの` を分ける
-- 修正後は canonical path と残るリスクを短く報告する
+- `AGENTS.md`, `CLAUDE.md`: 30 行
+- `.agents/agent-guide.md`: 120 行
+- `TASKS.md`: 30 行 / `DONE.md`: 50 行 / `MEMORY.md`: 40 行
+- React page/modal/editor: 500 行 / Hook/service: 300 行

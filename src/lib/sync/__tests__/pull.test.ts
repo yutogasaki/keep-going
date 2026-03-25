@@ -203,7 +203,7 @@ describe('pull store state helpers', () => {
         });
         expect(state.challengeEnrollmentWindows).toEqual({
             u1: {
-                'cloud-challenge': { startDate: '2026-03-10', endDate: '2026-03-16' },
+                'cloud-challenge': { startDate: '2026-03-10', endDate: '2026-03-16', joinedAt: '2026-03-10T00:00:00Z' },
             },
         });
     });

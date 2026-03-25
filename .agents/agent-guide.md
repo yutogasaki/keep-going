@@ -3,13 +3,16 @@
 このファイルは `AGENTS.md` と `CLAUDE.md` が参照する共通の正本。
 入口ファイルは短く保ち、詳細はここだけを更新する。
 
-## Read Order
+## Read Order（毎セッション読む）
 
 1. `CONSTITUTION.md`
-2. `docs/development-governance.md`
-3. `.agents/tasks/TASKS.md`
-4. `.agents/MEMORY.md`
-5. `docs/tasks.md`（product backlog / spec gap）
+2. `.agents/tasks/TASKS.md`
+3. `.agents/MEMORY.md`
+
+## 必要時に参照
+
+- `docs/development-governance.md` — 検証マトリックス。UI/DB/persist 変更時に参照
+- `docs/tasks.md` — product backlog。新機能やタスク優先度の議論時に参照
 
 ## Product Snapshot
 
@@ -72,17 +75,20 @@ npm run verify
 
 ## Local Skills
 
-- `audit`
-- `cleanup`
-- `db`
-- `fix`
-- `governance-audit`
-- `persist-migration-check`
-- `preview`
-- `push`
-- `review`
-- `scaffold`
-- `sql`
-- `test`
-- `todo`
-- `visual-qa`
+- `audit` — コード品質監査（バグ/型/規約）
+- `cleanup` — ガバナンスファイルの肥大化整理
+- `db` — DB スキーマ確認
+- `fix` — tsc エラー自動修正
+- `governance-audit` — ルール遵守・肥大化監査
+- `perf` — パフォーマンス計測・バンドル監視
+- `persist-migration-check` — Zustand state 変更の安全確認
+- `preview` — 開発サーバーでの簡易確認
+- `push` — build → commit → push
+- `review` — push 前の変更レビュー
+- `scaffold` — コンポーネント/ページ生成
+- `split` — 大きいファイルの責務分割
+- `sql` — DB マイグレーション生成
+- `sync-debug` — Sync 状態の可視化・デバッグ
+- `test` — テスト実行・生成
+- `todo` — タスク管理
+- `visual-qa` — desktop/mobile の UI 検証

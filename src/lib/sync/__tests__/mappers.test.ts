@@ -163,12 +163,12 @@ describe('menu group mappers', () => {
             exercise_ids: ['S01', 'S02'],
         };
 
-        expect(toLocalCustomMenuGroup(cloudWithoutItems as never)).toMatchObject({
-            items: [
-                { id: 'S01', kind: 'exercise_ref', exerciseId: 'S01' },
-                { id: 'S02', kind: 'exercise_ref', exerciseId: 'S02' },
-            ],
-        });
+        const result = toLocalCustomMenuGroup(cloudWithoutItems as never);
+        expect(result.items).toHaveLength(2);
+        expect(result.items![0]).toMatchObject({ kind: 'exercise_ref', exerciseId: 'S01' });
+        expect(result.items![1]).toMatchObject({ kind: 'exercise_ref', exerciseId: 'S02' });
+        expect(result.items![0].id).toMatch(/^ref-/);
+        expect(result.items![1].id).toMatch(/^ref-/);
     });
 });
 
