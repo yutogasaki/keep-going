@@ -7,6 +7,18 @@
           {
             "type": "command",
             "command": "npx tsc --noEmit 2>&1 | head -20"
+          },
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_FILE_PATHS\" | grep -q 'use-app-store/\\(types\\|createState\\|migrate\\)'; then echo '[Zustand Persist] types/createState/migrate が変更されました。persist-migration-check の実行を推奨します。'; fi"
+          },
+          {
+            "type": "command",
+            "command": "for f in $(echo \"$CLAUDE_FILE_PATHS\" | tr ':' ' ' | xargs -n1 | grep '\\.tsx\\?$' | grep -v '__tests__' | head -1); do d=$(dirname \"$f\")/__tests__; b=$(basename \"$f\" | sed 's/\\.tsx\\?$//'); t=$(ls \"$d\"/${b}*.test.ts 2>/dev/null | head -1); if [ -n \"$t\" ]; then echo \"[Auto Test] $t\"; npx vitest run \"$t\" 2>&1 | tail -5; fi; done"
+          },
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_FILE_PATHS\" | grep -q 'src/pages/.*\\.tsx\\|src/components/.*\\.tsx'; then echo '[Visual QA] UI コンポーネントが変更されました。user-visible な変更がある場合は /visual-qa を実行してください。'; fi"
           }
         ]
       }
