@@ -23,6 +23,7 @@ import { ExercisePickerList, type ExercisePickerSection, type PickerExercise, ty
 import { MenuItemsCard } from './create-group/MenuItemsCard';
 import { MenuMetaCards } from './create-group/MenuMetaCards';
 import { PublishToggleCard } from './create-group/PublishToggleCard';
+import { moveMenuItems } from './create-group/menuItemOrder';
 
 const EMOJI_OPTIONS = ['🌸', '💪', '🦵', '🩰', '⭐', '🌈', '🔥', '💃', '🧘', '🎯', '✨', '🌙'];
 const DEFAULT_INLINE_EMOJI = '✨';
@@ -312,22 +313,7 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
     };
 
     const moveItem = (fromIndex: number, toIndex: number) => {
-        setItems((previous) => {
-            if (
-                fromIndex < 0
-                || toIndex < 0
-                || fromIndex >= previous.length
-                || toIndex >= previous.length
-                || fromIndex === toIndex
-            ) {
-                return previous;
-            }
-
-            const nextItems = [...previous];
-            const [movedItem] = nextItems.splice(fromIndex, 1);
-            nextItems.splice(toIndex, 0, movedItem);
-            return nextItems;
-        });
+        setItems((previous) => moveMenuItems(previous, fromIndex, toIndex));
     };
 
     const handleSave = async () => {
@@ -468,6 +454,7 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
                 onShowQuickAdd={setShowQuickAdd}
                 onAddQuickItem={addQuickItem}
                 onMoveItem={moveItem}
+                onReorderItems={setItems}
                 onRemoveAtIndex={removeItemAtIndex}
                 onOpenInlineEditor={setEditingInlineItemId}
                 onUpdateInlineItem={updateInlineItem}
