@@ -36,7 +36,7 @@ interface MenuItemsCardProps {
     onEditExercise: (exerciseId: string) => void;
 }
 
-interface ResolvedMenuExercise {
+interface DisplayMenuExercise {
     id: string;
     name: string;
     sec: number;
@@ -58,7 +58,7 @@ function fieldStyle() {
     };
 }
 
-function resolveMenuItemExercise(item: MenuGroupItem, allExercises?: PickerExercise[]): ResolvedMenuExercise | MenuGroupItem | null {
+function resolveMenuItemExercise(item: MenuGroupItem, allExercises?: PickerExercise[]): DisplayMenuExercise | null {
     if (item.kind === 'inline_only') {
         return item;
     }
@@ -81,7 +81,7 @@ function resolveMenuItemExercise(item: MenuGroupItem, allExercises?: PickerExerc
 interface MenuItemRowProps {
     item: MenuGroupItem;
     index: number;
-    exercise: ResolvedMenuExercise | MenuGroupItem;
+    exercise: DisplayMenuExercise;
     editableExerciseIds: string[];
     editingInlineItemId: string | null;
     itemsLength: number;
