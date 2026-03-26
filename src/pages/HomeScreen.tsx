@@ -252,6 +252,7 @@ export const HomeScreen: React.FC = () => {
         users,
         sessionUserIds,
         enabled: isHomeActive,
+        sessions: allSessions,
     });
     const {
         activeChallenges: personalActiveChallenges,
@@ -263,6 +264,7 @@ export const HomeScreen: React.FC = () => {
         users,
         sessionUserIds,
         enabled: isHomeActive,
+        sessions: allSessions,
         onChallengeCompleted: useCallback((notice: PersonalChallengeCompletionNotice) => {
             if (notice.rewardStars <= 0) {
                 return;

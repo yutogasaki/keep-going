@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { EXERCISES, type Exercise } from '../../../data/exercises';
 import { getMenuGroupItems, getPresetsForClass, type MenuGroup } from '../../../data/menuGroups';
 import { audio } from '../../../lib/audio';
@@ -25,6 +25,7 @@ import { useMenuExercises } from './useMenuExercises';
 import { useMenuPublishActions } from './useMenuPublishActions';
 import { useMenuUsers } from './useMenuUsers';
 import { useTeacherContent } from './useTeacherContent';
+import { filterVisibleCustomExercises, filterVisibleCustomGroups } from './customMenuLoadUtils';
 import type { MenuToastMessage } from './shared';
 import type { MenuTab } from './types';
 
@@ -73,6 +74,7 @@ export function useMenuPageData({
     const [showPublicBrowser, setShowPublicBrowser] = useState(false);
     const [showPublicExerciseBrowser, setShowPublicExerciseBrowser] = useState(false);
     const [toastMessage, setToastMessage] = useState<MenuToastMessage | null>(null);
+    const customDataLoadVersionRef = useRef(0);
 
     const userContext = useMenuUsers({
         users,
@@ -138,12 +140,40 @@ export function useMenuPageData({
     }, [customExercises, exerciseData.exercises, teacherExercises]);
 
     const loadCustomData = useCallback(async () => {
-        const [allGroups, allExercises, allTeacherExercises, publishedMenus] = await Promise.all([
+        const loadVersion = customDataLoadVersionRef.current + 1;
+        customDataLoadVersionRef.current = loadVersion;
+        const [allGroups, allExercises] = await Promise.all([
             getCustomGroups(),
             getCustomExercises(),
+        ]);
+
+        if (customDataLoadVersionRef.current !== loadVersion) {
+            return;
+        }
+
+        setCustomGroups(
+            filterVisibleCustomGroups(
+                allGroups,
+                userContext.currentUserId,
+                userContext.isTogetherMode,
+            ),
+        );
+        setCustomExercises(
+            filterVisibleCustomExercises(
+                allExercises,
+                userContext.currentUserId,
+                userContext.isTogetherMode,
+            ),
+        );
+
+        const [allTeacherExercises, publishedMenus] = await Promise.all([
             fetchTeacherExercises(),
             getAccountId() ? fetchMyPublishedMenus() : Promise.resolve([]),
         ]);
+
+        if (customDataLoadVersionRef.current !== loadVersion) {
+            return;
+        }
 
         const availableExerciseIds = new Set([
             ...EXERCISES.map((exercise) => exercise.id),
@@ -173,24 +203,24 @@ export function useMenuPageData({
             sanitizedGroups.push(nextGroup);
         }
 
-        setCustomGroups(
-            sanitizedGroups.filter((group) => {
-                if (userContext.isTogetherMode) {
-                    return true;
-                }
+        if (customDataLoadVersionRef.current !== loadVersion) {
+            return;
+        }
 
-                return !group.creatorId || group.creatorId === userContext.currentUserId;
-            }),
+        setCustomGroups(
+            filterVisibleCustomGroups(
+                sanitizedGroups,
+                userContext.currentUserId,
+                userContext.isTogetherMode,
+            ),
         );
 
         setCustomExercises(
-            allExercises.filter((exercise) => {
-                if (userContext.isTogetherMode) {
-                    return true;
-                }
-
-                return !exercise.creatorId || exercise.creatorId === userContext.currentUserId;
-            }),
+            filterVisibleCustomExercises(
+                allExercises,
+                userContext.currentUserId,
+                userContext.isTogetherMode,
+            ),
         );
 
         await refreshPublishedData();

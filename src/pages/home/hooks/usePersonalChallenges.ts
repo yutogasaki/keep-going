@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { countChallengeProgressFromSessions } from '../../../lib/challenge-engine';
-import { getAllSessions, getTodayKey } from '../../../lib/db';
+import { getAllSessions, getTodayKey, type SessionRecord } from '../../../lib/db';
 import {
     completePersonalChallenge,
     endPersonalChallenge,
@@ -11,6 +11,7 @@ import {
 } from '../../../lib/personalChallenges';
 import { isChallengeDoneForToday } from '../../../lib/challenges';
 import { useAppStore, type UserProfileStore } from '../../../store/useAppStore';
+import { buildSessionsByUserId, filterSessionsByDate } from '../homeSessionPerformanceUtils';
 
 export interface PersonalChallengeProgressItem {
     challenge: PersonalChallenge;
@@ -33,6 +34,7 @@ interface UsePersonalChallengesParams {
     users: UserProfileStore[];
     sessionUserIds: string[];
     enabled?: boolean;
+    sessions?: SessionRecord[];
     onChallengeCompleted?: (notice: PersonalChallengeCompletionNotice) => void;
 }
 
@@ -55,6 +57,7 @@ export function usePersonalChallenges({
     users,
     sessionUserIds,
     enabled = true,
+    sessions,
     onChallengeCompleted,
 }: UsePersonalChallengesParams): PersonalChallengeBuckets {
     const [activeChallenges, setActiveChallenges] = useState<PersonalChallengeProgressItem[]>([]);
@@ -78,7 +81,12 @@ export function usePersonalChallenges({
         allowMutations: boolean,
     ) => {
         const today = getTodayKey();
-        const sessions = await getAllSessions();
+        const sessionSource = sessions ?? await getAllSessions();
+        const sessionsByUserId = buildSessionsByUserId(sessionSource, visibleUserIds);
+        const todaySessionsByUserId = new Map<string, SessionRecord[]>();
+        for (const [userId, userSessions] of sessionsByUserId) {
+            todaySessionsByUserId.set(userId, filterSessionsByDate(userSessions, today));
+        }
         const nextActive: PersonalChallengeProgressItem[] = [];
         const nextTodayDone: PersonalChallengeProgressItem[] = [];
         const nextPast: PersonalChallengeProgressItem[] = [];
@@ -90,20 +98,22 @@ export function usePersonalChallenges({
             }
 
             const goalTarget = getPersonalChallengeGoalTarget(challenge);
+            const memberSessions = sessionsByUserId.get(challenge.memberId) ?? [];
+            const memberTodaySessions = todaySessionsByUserId.get(challenge.memberId) ?? [];
             const fullWindow = {
                 startDate: challenge.effectiveStartDate,
                 endDate: challenge.effectiveEndDate,
             };
             const progress = countChallengeProgressFromSessions(
                 toPersonalChallengeEngineInput(challenge),
-                sessions,
+                memberSessions,
                 [challenge.memberId],
                 fullWindow,
             );
             const todayProgress = challenge.status === 'active'
                 ? countChallengeProgressFromSessions(
                     toPersonalChallengeEngineInput(challenge),
-                    sessions,
+                    memberTodaySessions,
                     [challenge.memberId],
                     { startDate: today, endDate: today },
                 )
@@ -181,7 +191,7 @@ export function usePersonalChallenges({
             todayDoneChallenges: nextTodayDone.sort((left, right) => byUpdatedAtDesc(left.challenge, right.challenge)),
             pastChallenges: nextPast.sort((left, right) => byUpdatedAtDesc(left.challenge, right.challenge)),
         };
-    }, [addChallengeStars, onChallengeCompleted, usersById, visibleUserIds]);
+    }, [addChallengeStars, onChallengeCompleted, sessions, usersById, visibleUserIds]);
 
     const loadChallenges = useCallback(() => {
         let cancelled = false;
@@ -228,13 +238,13 @@ export function usePersonalChallenges({
     }, [loadChallenges]);
 
     useEffect(() => {
-        if (!enabled) {
+        if (!enabled || sessions) {
             return;
         }
 
         const dispose = loadChallenges();
         return dispose;
-    }, [enabled, loadChallenges]);
+    }, [enabled, loadChallenges, sessions]);
 
     useEffect(() => {
         if (!enabled) {
@@ -249,7 +259,7 @@ export function usePersonalChallenges({
         return () => {
             window.removeEventListener('sessionSaved', handleSessionSaved);
         };
-    }, [enabled, reload]);
+    }, [enabled, reload, sessions]);
 
     return {
         activeChallenges,

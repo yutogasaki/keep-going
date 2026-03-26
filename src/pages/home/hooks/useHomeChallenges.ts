@@ -15,18 +15,20 @@ import {
     type ChallengeCompletion,
     type ChallengeRewardGrant,
 } from '../../../lib/challenges';
-import { getAllSessions, getTodayKey } from '../../../lib/db';
+import { getAllSessions, getTodayKey, type SessionRecord } from '../../../lib/db';
 import { fetchTeacherExercises, type TeacherExercise } from '../../../lib/teacherContent';
 import { useAppStore, type UserProfileStore } from '../../../store/useAppStore';
 import { isTeacherChallengeCompletedToday } from '../challengeRewardUtils';
+import { filterSessionsByDate, filterSessionsForUsers } from '../homeSessionPerformanceUtils';
 
 interface UseHomeChallengesParams {
     users: UserProfileStore[];
     sessionUserIds: string[];
     enabled?: boolean;
+    sessions?: SessionRecord[];
 }
 
-export function useHomeChallenges({ users, sessionUserIds, enabled = true }: UseHomeChallengesParams) {
+export function useHomeChallenges({ users, sessionUserIds, enabled = true, sessions }: UseHomeChallengesParams) {
     const [allChallenges, setAllChallenges] = useState<Challenge[]>([]);
     const [filteredChallenges, setFilteredChallenges] = useState<Challenge[]>([]);
     const [todayDoneChallenges, setTodayDoneChallenges] = useState<Challenge[]>([]);
@@ -57,15 +59,15 @@ export function useHomeChallenges({ users, sessionUserIds, enabled = true }: Use
     }, [hydrateChallengeEnrollmentState]);
 
     useEffect(() => {
-        if (!enabled) {
+        if (!enabled || sessions) {
             return;
         }
 
         loadChallenges();
-    }, [enabled, loadChallenges]);
+    }, [enabled, loadChallenges, sessions]);
 
     useEffect(() => {
-        if (!enabled) {
+        if (!enabled || sessions) {
             return;
         }
 
@@ -77,7 +79,7 @@ export function useHomeChallenges({ users, sessionUserIds, enabled = true }: Use
         return () => {
             window.removeEventListener('sessionSaved', handleSessionSaved);
         };
-    }, [enabled]);
+    }, [enabled, sessions]);
 
     const classMatchedChallenges = useMemo(() => {
         const activeClassLevels = new Set<string>();
@@ -112,7 +114,9 @@ export function useHomeChallenges({ users, sessionUserIds, enabled = true }: Use
             const nextAvailable: Challenge[] = [];
             const nextTodayDone: Challenge[] = [];
             const nextPast: Challenge[] = [];
-            const sessions = await getAllSessions();
+            const sessionSource = sessions ?? await getAllSessions();
+            const relevantSessions = filterSessionsForUsers(sessionSource, activeUserIds);
+            const todaySessions = filterSessionsByDate(relevantSessions, today);
 
             for (const challenge of classMatchedChallenges) {
                 const relevantCompletions = completions.filter(
@@ -178,7 +182,7 @@ export function useHomeChallenges({ users, sessionUserIds, enabled = true }: Use
                         windowDays: challenge.windowDays,
                         dailyMinimumMinutes: challenge.dailyMinimumMinutes,
                     }),
-                    sessions,
+                    todaySessions,
                     activeUserIds,
                     {
                         startDate: today,
@@ -221,6 +225,7 @@ export function useHomeChallenges({ users, sessionUserIds, enabled = true }: Use
         challengeEnrollmentWindows,
         classMatchedChallenges,
         completions,
+        sessions,
         joinedChallengeIds,
         enabled,
         sessionRevision,
