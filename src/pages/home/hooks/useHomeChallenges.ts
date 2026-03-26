@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { countChallengeProgressFromSessions } from '../../../lib/challenge-engine';
+import { buildChallengeEngineInput, countChallengeProgressFromSessions } from '../../../lib/challenge-engine';
 import {
     fetchAllChallenges,
     fetchMyEnrollments,
@@ -7,7 +7,6 @@ import {
     fetchMyChallengeRewardGrants,
     buildChallengeEnrollmentState,
     getChallengeActiveWindow,
-    getChallengeGoalTarget,
     isChallengeDoneForToday,
     isChallengeFinishedOverall,
     isChallengePastForUsers,
@@ -162,25 +161,31 @@ export function useHomeChallenges({ users, sessionUserIds, enabled = true }: Use
                     continue;
                 }
 
-                const todayProgress = countChallengeProgressFromSessions({
-                    challengeType: challenge.challengeType,
-                    exerciseId: challenge.exerciseId,
-                    targetMenuId: challenge.targetMenuId,
-                    menuSource: challenge.menuSource,
-                    targetCount: getChallengeGoalTarget(challenge),
-                    dailyCap: challenge.dailyCap,
-                    countUnit: challenge.countUnit,
-                    startDate: challenge.startDate,
-                    endDate: challenge.endDate,
-                    windowType: challenge.windowType,
-                    goalType: challenge.goalType,
-                    windowDays: challenge.windowDays,
-                    dailyMinimumMinutes: challenge.dailyMinimumMinutes,
-                }, sessions, activeUserIds, {
-                    startDate: today,
-                    endDate: today,
-                    joinedAt: effectiveWindow?.joinedAt ?? null,
-                });
+                const todayProgress = countChallengeProgressFromSessions(
+                    buildChallengeEngineInput({
+                        challengeType: challenge.challengeType,
+                        exerciseId: challenge.exerciseId,
+                        targetMenuId: challenge.targetMenuId,
+                        menuSource: challenge.menuSource,
+                        targetCount: challenge.targetCount,
+                        dailyCap: challenge.dailyCap,
+                        countUnit: challenge.countUnit,
+                        startDate: challenge.startDate,
+                        endDate: challenge.endDate,
+                        windowType: challenge.windowType,
+                        goalType: challenge.goalType,
+                        requiredDays: challenge.requiredDays,
+                        windowDays: challenge.windowDays,
+                        dailyMinimumMinutes: challenge.dailyMinimumMinutes,
+                    }),
+                    sessions,
+                    activeUserIds,
+                    {
+                        startDate: today,
+                        endDate: today,
+                        joinedAt: effectiveWindow?.joinedAt ?? null,
+                    },
+                );
 
                 if (isChallengeDoneForToday(challenge, todayProgress)) {
                     nextTodayDone.push(challenge);

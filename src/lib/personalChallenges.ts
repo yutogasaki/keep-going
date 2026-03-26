@@ -1,8 +1,10 @@
 import { getAllSessions, getTodayKey } from './db';
 import {
+    buildChallengeEngineInput,
     countChallengeProgressFromSessions,
+    createRollingChallengeWindow,
     getChallengeDaysLeft,
-    getRollingWindowEndDate,
+    getChallengeGoalTarget,
     type ChallengeCountUnit,
     type ChallengeGoalType,
     type ChallengeMenuSource,
@@ -127,32 +129,17 @@ function normalizePersonalChallengeStatus(value: string | null | undefined): Per
         : 'active';
 }
 
-function resolveTargetCount(
-    input: Pick<PersonalChallengeCreateInput, 'goalType' | 'requiredDays' | 'targetCount'>,
-): number {
-    if (input.goalType === 'active_day') {
-        return Math.max(1, input.requiredDays ?? input.targetCount ?? 1);
-    }
-
-    return Math.max(1, input.targetCount ?? 1);
-}
-
 export function createPersonalChallengeWindow(
     effectiveStartDate: string,
     windowDays: number,
 ): ChallengeProgressWindow {
-    return {
-        startDate: effectiveStartDate,
-        endDate: getRollingWindowEndDate(effectiveStartDate, Math.max(windowDays, 1)),
-    };
+    return createRollingChallengeWindow({ windowDays }, effectiveStartDate);
 }
 
 export function getPersonalChallengeGoalTarget(
     challenge: Pick<PersonalChallenge, 'goalType' | 'requiredDays' | 'targetCount'>,
 ): number {
-    return challenge.goalType === 'active_day'
-        ? Math.max(1, challenge.requiredDays ?? challenge.targetCount)
-        : Math.max(1, challenge.targetCount);
+    return getChallengeGoalTarget(challenge);
 }
 
 export function isPersonalChallengeLimitReached(activeCount: number): boolean {
@@ -178,21 +165,22 @@ export function canDeletePersonalChallenge(
 }
 
 export function toPersonalChallengeEngineInput(challenge: PersonalChallenge) {
-    return {
+    return buildChallengeEngineInput({
         challengeType: challenge.challengeType,
         exerciseId: challenge.exerciseId,
         targetMenuId: challenge.targetMenuId,
         menuSource: challenge.menuSource,
-        targetCount: getPersonalChallengeGoalTarget(challenge),
+        targetCount: challenge.targetCount,
         dailyCap: challenge.dailyCap,
         countUnit: challenge.countUnit,
         startDate: challenge.effectiveStartDate,
         endDate: challenge.effectiveEndDate,
         windowType: 'rolling' as const,
         goalType: challenge.goalType,
+        requiredDays: challenge.requiredDays,
         windowDays: challenge.windowDays,
         dailyMinimumMinutes: null,
-    };
+    });
 }
 
 export function mapPersonalChallenge(row: PersonalChallengeRow): PersonalChallenge {
@@ -241,10 +229,10 @@ export function toPersonalChallengeInsertRow(
     const effectiveWindow = createPersonalChallengeWindow(effectiveStartDate, input.windowDays);
     const challengeType = input.challengeType;
     const goalType = input.goalType ?? 'active_day';
-    const targetCount = resolveTargetCount({
+    const targetCount = getChallengeGoalTarget({
         goalType,
         requiredDays: input.requiredDays ?? null,
-        targetCount: input.targetCount,
+        targetCount: input.targetCount ?? 1,
     });
 
     return {
@@ -287,7 +275,7 @@ function toPersonalChallengeSetupUpdateRow(
     const requiredDays = goalType === 'active_day'
         ? Math.max(1, patch.requiredDays ?? challenge.requiredDays ?? challenge.targetCount)
         : null;
-    const targetCount = resolveTargetCount({
+    const targetCount = getChallengeGoalTarget({
         goalType,
         requiredDays,
         targetCount: patch.targetCount ?? challenge.targetCount,

@@ -1,8 +1,9 @@
 import { EXERCISES } from '../../data/exercises';
 import { PRESET_GROUPS } from '../../data/menuGroups';
 import {
+    createRollingChallengeWindow as createRollingWindowFromEngine,
+    getChallengeGoalTarget as getChallengeGoalTargetFromEngine,
     getChallengeDaysLeft as getDaysLeftFromWindowEnd,
-    getRollingWindowEndDate,
     resolveChallengeWindow,
     type ChallengeProgressWindow,
 } from '../challenge-engine';
@@ -63,11 +64,7 @@ export function canRetryTeacherChallenge(
 export function getChallengeGoalTarget(
     challenge: Pick<Challenge, 'goalType' | 'requiredDays' | 'targetCount'>,
 ): number {
-    if (challenge.goalType === 'active_day') {
-        return Math.max(1, challenge.requiredDays ?? challenge.targetCount);
-    }
-
-    return Math.max(1, challenge.targetCount);
+    return getChallengeGoalTargetFromEngine(challenge);
 }
 
 export function getChallengeGoalLabel(
@@ -105,13 +102,7 @@ export function createRollingChallengeWindow(
     startDate = getTodayKey(),
     joinedAt?: string | null,
 ): ChallengeProgressWindow {
-    const resolvedWindowDays = Math.max(1, challenge.windowDays ?? 7);
-
-    return {
-        startDate,
-        endDate: getRollingWindowEndDate(startDate, resolvedWindowDays),
-        ...(joinedAt ? { joinedAt } : {}),
-    };
+    return createRollingWindowFromEngine(challenge, startDate, joinedAt);
 }
 
 export function getChallengeActiveWindow(

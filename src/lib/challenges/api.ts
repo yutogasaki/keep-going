@@ -1,10 +1,9 @@
-import type { ChallengeProgressWindow } from '../challenge-engine';
+import { buildChallengeEngineInput, countChallengeProgressFromSessions, type ChallengeProgressWindow } from '../challenge-engine';
 import { getAllSessions, getTodayKey } from '../db';
-import { countChallengeProgressFromSessions } from '../challenge-engine';
 import { supabase } from '../supabase';
 import type { Database } from '../supabase-types';
 import { getAccountId } from '../sync/authState';
-import { getChallengeActiveWindow, getChallengeGoalTarget } from './display';
+import { getChallengeActiveWindow } from './display';
 import { mapChallenge, mapChallengeAttempt, mapChallengeEnrollment, toChallengeInsertRow, toChallengeUpdateRow } from './mappers';
 import type {
     Challenge,
@@ -464,19 +463,25 @@ function countChallengeProgressInWindow(
     window: ChallengeProgressWindow,
     sessions: Awaited<ReturnType<typeof getAllSessions>>,
 ): number {
-    return countChallengeProgressFromSessions({
-        challengeType: challenge.challengeType,
-        exerciseId: challenge.exerciseId,
-        targetMenuId: challenge.targetMenuId,
-        menuSource: challenge.menuSource,
-        targetCount: getChallengeGoalTarget(challenge),
-        dailyCap: challenge.dailyCap,
-        countUnit: challenge.countUnit,
-        startDate: challenge.startDate,
-        endDate: challenge.endDate,
-        windowType: challenge.windowType,
-        goalType: challenge.goalType,
-        windowDays: challenge.windowDays,
-        dailyMinimumMinutes: challenge.dailyMinimumMinutes,
-    }, sessions, userIds, window);
+    return countChallengeProgressFromSessions(
+        buildChallengeEngineInput({
+            challengeType: challenge.challengeType,
+            exerciseId: challenge.exerciseId,
+            targetMenuId: challenge.targetMenuId,
+            menuSource: challenge.menuSource,
+            targetCount: challenge.targetCount,
+            dailyCap: challenge.dailyCap,
+            countUnit: challenge.countUnit,
+            startDate: challenge.startDate,
+            endDate: challenge.endDate,
+            windowType: challenge.windowType,
+            goalType: challenge.goalType,
+            requiredDays: challenge.requiredDays,
+            windowDays: challenge.windowDays,
+            dailyMinimumMinutes: challenge.dailyMinimumMinutes,
+        }),
+        sessions,
+        userIds,
+        window,
+    );
 }

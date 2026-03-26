@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+    buildChallengeEngineInput,
     countChallengeProgressFromSessions,
+    createRollingChallengeWindow,
     getChallengeDaysLeft,
+    getChallengeGoalTarget,
     getRollingWindowEndDate,
     isChallengeWindowActive,
     isChallengeWindowPast,
@@ -185,6 +188,50 @@ describe('challenge-engine', () => {
         );
 
         expect(progress).toBe(1);
+    });
+
+    it('builds engine input with required days as the shared goal target', () => {
+        expect(buildChallengeEngineInput({
+            challengeType: 'menu',
+            exerciseId: null,
+            targetMenuId: 'menu-1',
+            menuSource: 'custom',
+            targetCount: 99,
+            dailyCap: 1,
+            countUnit: 'menu_completion',
+            startDate: '2026-03-14',
+            endDate: '2026-03-20',
+            windowType: 'rolling',
+            goalType: 'active_day',
+            requiredDays: 5,
+            windowDays: 7,
+            dailyMinimumMinutes: null,
+        })).toMatchObject({
+            targetCount: 5,
+            targetMenuId: 'menu-1',
+            menuSource: 'custom',
+            windowType: 'rolling',
+        });
+    });
+
+    it('creates a rolling window and keeps joinedAt when provided', () => {
+        expect(createRollingChallengeWindow(
+            { windowDays: 7 },
+            '2026-03-14',
+            '2026-03-14T09:30:00Z',
+        )).toEqual({
+            startDate: '2026-03-14',
+            endDate: '2026-03-20',
+            joinedAt: '2026-03-14T09:30:00Z',
+        });
+    });
+
+    it('calculates the shared goal target for active-day challenges', () => {
+        expect(getChallengeGoalTarget({
+            goalType: 'active_day',
+            requiredDays: 5,
+            targetCount: 99,
+        })).toBe(5);
     });
 
     it('resolves a rolling end date from the joined day', () => {

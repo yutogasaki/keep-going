@@ -8,6 +8,12 @@ export type ChallengeType = 'exercise' | 'menu' | 'duration';
 export type ChallengeMenuSource = 'teacher' | 'preset' | 'custom' | 'public';
 export type ChallengeCountUnit = 'exercise_completion' | 'menu_completion';
 
+export interface ChallengeGoalTargetInput {
+    goalType: ChallengeGoalType;
+    requiredDays?: number | null;
+    targetCount: number;
+}
+
 export interface ChallengeEngineInput {
     challengeType: ChallengeType;
     exerciseId: string | null;
@@ -24,14 +30,66 @@ export interface ChallengeEngineInput {
     dailyMinimumMinutes: number | null;
 }
 
+export interface ChallengeEngineSource extends ChallengeGoalTargetInput {
+    challengeType: ChallengeType;
+    exerciseId: string | null;
+    targetMenuId: string | null;
+    menuSource: ChallengeMenuSource | null;
+    dailyCap: number;
+    countUnit: ChallengeCountUnit;
+    startDate: string;
+    endDate: string;
+    windowType: ChallengeWindowType;
+    windowDays: number | null;
+    dailyMinimumMinutes: number | null;
+}
+
 export interface ChallengeProgressWindow {
     startDate: string;
     endDate: string;
     joinedAt?: string | null;
 }
 
+export function getChallengeGoalTarget(challenge: ChallengeGoalTargetInput): number {
+    if (challenge.goalType === 'active_day') {
+        return Math.max(1, challenge.requiredDays ?? challenge.targetCount);
+    }
+
+    return Math.max(1, challenge.targetCount);
+}
+
+export function buildChallengeEngineInput(challenge: ChallengeEngineSource): ChallengeEngineInput {
+    return {
+        challengeType: challenge.challengeType,
+        exerciseId: challenge.exerciseId,
+        targetMenuId: challenge.targetMenuId,
+        menuSource: challenge.menuSource,
+        targetCount: getChallengeGoalTarget(challenge),
+        dailyCap: Math.max(1, challenge.dailyCap),
+        countUnit: challenge.countUnit,
+        startDate: challenge.startDate,
+        endDate: challenge.endDate,
+        windowType: challenge.windowType,
+        goalType: challenge.goalType,
+        windowDays: challenge.windowDays,
+        dailyMinimumMinutes: challenge.dailyMinimumMinutes,
+    };
+}
+
 export function getRollingWindowEndDate(startDate: string, windowDays: number): string {
     return shiftDateKey(startDate, Math.max(windowDays - 1, 0));
+}
+
+export function createRollingChallengeWindow(
+    challenge: Pick<ChallengeEngineSource, 'windowDays'>,
+    startDate: string,
+    joinedAt?: string | null,
+): ChallengeProgressWindow {
+    return {
+        startDate,
+        endDate: getRollingWindowEndDate(startDate, Math.max(challenge.windowDays ?? 7, 1)),
+        ...(joinedAt ? { joinedAt } : {}),
+    };
 }
 
 export function resolveChallengeWindow(

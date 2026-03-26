@@ -164,3 +164,5 @@ export function useChallengeForm(
         durationSummary,
     };
 }
+
+export type ChallengeFormState = ReturnType<typeof useChallengeForm>;
