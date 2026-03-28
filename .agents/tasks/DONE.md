@@ -26,3 +26,8 @@
 - teacher challenge の save 正規化を `src/lib/challenges/engine.ts` に寄せ、`rolling / duration -> active_day`、target/dailyCap/window/publish 条件を 1 か所でそろえた
 - home / teacher list / API の progress 計算入口を shared adapter 経由に統一し、teacher challenge を `countChallengeProgressFromSessions` へ直接流し込む重複を解消した
 - `toChallengeUpdateRow()` で `created_by` を空文字で上書きしないように修正し、challenge adapter のテストを追加した
+
+## 2026-03-28: ふわふわ会話のトーンガイド整理
+- `docs/fuwafuwa-tone-guide.md` を追加し、`褒めない / 評価しない / 指示しない / 回数に触れない` の原則と `daily / ambient / afterglow / milestone` ごとの OK/NG 例を整理した
+- `fuwafuwaSpeechGuidance.ts` に再会文脈と afterglow 文脈の helper を切り出し、`また会えた / ひさしぶり / セッション直後 / みんなで！` の返答を増やした
+- `getUserEventSpeech()` に visit recency を通し、 solo / family の afterglow copy が再訪文脈まで反映されるようにした

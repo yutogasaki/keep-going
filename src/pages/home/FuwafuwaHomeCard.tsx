@@ -179,9 +179,10 @@ export const FuwafuwaHomeCard: React.FC<FuwafuwaHomeCardProps> = ({
                 selectedUserStatus.daysAlive,
                 selectedUserAfterglow,
                 isMagicDeliveryActive,
+                selectedUserVisitRecency,
             )
             : null,
-        [announcement, isMagicDeliveryActive, pokeDepth, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds],
+        [announcement, isMagicDeliveryActive, pokeDepth, recentMilestoneEvent, selectedUserAfterglow, selectedUserDisplaySeconds, selectedUserStatus, selectedUserTargetSeconds, selectedUserVisitRecency],
     );
 
     const buildFamilyDailyCandidate = useMemo(
