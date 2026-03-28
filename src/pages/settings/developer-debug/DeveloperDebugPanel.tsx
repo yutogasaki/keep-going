@@ -4,6 +4,7 @@ import { FuwafuwaDebugSection } from './FuwafuwaDebugSection';
 import { MilestoneDebugSection } from './MilestoneDebugSection';
 import { ChibifuwaDebugSection } from './ChibifuwaDebugSection';
 import { ChallengeDebugSection } from './ChallengeDebugSection';
+import { SyncDebugSection } from './SyncDebugSection';
 
 export const DeveloperDebugPanel: React.FC = () => {
     return (
@@ -29,6 +30,7 @@ export const DeveloperDebugPanel: React.FC = () => {
             <MilestoneDebugSection />
             <ChibifuwaDebugSection />
             <ChallengeDebugSection />
+            <SyncDebugSection />
         </div>
     );
 };

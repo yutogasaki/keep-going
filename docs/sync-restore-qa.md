@@ -32,6 +32,7 @@
 2. オンボーディングの `ログインする` からテストアカウントでログインする
 3. restore 完了後にホームへ入る
 4. `せってい > ユーザー・クラス設定` とホーム/きろく/メニューを確認する
+5. 必要なら `せってい > Developer Dashboard > Debug > Sync snapshot` で件数をメモする
 
 期待結果:
 
@@ -53,6 +54,7 @@
 3. 競合モーダルが出ることを確認する
 4. `クラウドを使う` を選ぶ
 5. 同じ確認項目をホーム/きろく/メニュー/設定で見る
+6. 必要なら `Sync snapshot` を再読み込みして、users / sessions / custom data 件数を確認する
 
 期待結果:
 
@@ -72,6 +74,7 @@
 2. 同じアカウントでログインする
 3. 競合モーダルで `両方をまとめる` を選ぶ
 4. ホーム/きろく/メニュー/設定を確認する
+5. 必要なら `Sync snapshot` を再読み込みして、件数の変化を確認する
 
 期待結果:
 
@@ -113,6 +116,7 @@
 - Zustand persist: `keepgoing-app-state`
 - `syncedAccountKey`
 - IndexedDB / localforage の `history`
+- `せってい > Developer Dashboard > Debug > Sync snapshot`
 
 クラウド確認:
 

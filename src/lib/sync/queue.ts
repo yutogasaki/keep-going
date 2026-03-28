@@ -12,6 +12,13 @@ interface SyncQueueEntry {
     retryCount?: number;
 }
 
+export interface SyncQueueSnapshot {
+    count: number;
+    retryingCount: number;
+    oldestCreatedAt: string | null;
+    byTable: Record<string, number>;
+}
+
 const MAX_RETRIES = 5;
 let processing = false;
 
@@ -84,4 +91,25 @@ export async function processQueue(): Promise<{ failed: number; dropped: number 
 
 export async function clearSyncQueue(): Promise<void> {
     await syncQueueDB.clear();
+}
+
+export async function getSyncQueueSnapshot(): Promise<SyncQueueSnapshot> {
+    const entries: SyncQueueEntry[] = [];
+    await syncQueueDB.iterate<SyncQueueEntry, void>((value) => {
+        entries.push(value);
+    });
+
+    entries.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+    const byTable = entries.reduce<Record<string, number>>((result, entry) => {
+        result[entry.table] = (result[entry.table] ?? 0) + 1;
+        return result;
+    }, {});
+
+    return {
+        count: entries.length,
+        retryingCount: entries.filter((entry) => (entry.retryCount ?? 0) > 0).length,
+        oldestCreatedAt: entries[0]?.createdAt ?? null,
+        byTable,
+    };
 }
