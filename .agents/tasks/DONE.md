@@ -31,3 +31,8 @@
 - `docs/fuwafuwa-tone-guide.md` を追加し、`褒めない / 評価しない / 指示しない / 回数に触れない` の原則と `daily / ambient / afterglow / milestone` ごとの OK/NG 例を整理した
 - `fuwafuwaSpeechGuidance.ts` に再会文脈と afterglow 文脈の helper を切り出し、`また会えた / ひさしぶり / セッション直後 / みんなで！` の返答を増やした
 - `getUserEventSpeech()` に visit recency を通し、 solo / family の afterglow copy が再訪文脈まで反映されるようにした
+
+## 2026-03-28: ホームの safe area / CTA visual QA を完了
+- `ScreenScaffold` と `HomeScreen` の下端余白調整後、`390x844` のモバイル幅で first view を確認し、`ふわふわ -> チャレンジ導入` の視線誘導が崩れていないことを確認した
+- Playwright で scroll container / footer / FAB の幾何を確認し、終端時の最下部 CTA (`種目も見る`) が FAB top より約 32px、footer top より約 55px 上に収まることを確認した
+- 開発中の HMR で出ていた `useAuth must be used within AuthProvider` は context singleton 化で再現しなくなり、ホーム QA の継続を妨げる不安定さを解消した
