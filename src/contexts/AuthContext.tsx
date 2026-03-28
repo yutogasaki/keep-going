@@ -1,5 +1,4 @@
 import {
-    createContext,
     useCallback,
     useContext,
     useEffect,
@@ -16,13 +15,14 @@ import { useSyncStatus } from '../store/useSyncStatus';
 import { SyncConflictModal } from '../components/SyncConflictModal';
 import { fetchCurrentUserRoleFlags } from '../lib/userRoles';
 import { createAuthActions } from './auth/authActions';
+import { getSingletonContext } from './auth/contextSingleton';
 import { LOGIN_CONTEXT_KEY } from './auth/constants';
 import { getAppSettingsSnapshot } from './auth/settingsSnapshot';
 import { runSettingsLoginSync } from './auth/syncFlows';
 import type { AuthContextValue, LoginContext } from './auth/types';
 import type { SyncConflictPromptData, SyncConflictResolution } from '../lib/sync';
 
-const AuthContext = createContext<AuthContextValue | null>(null);
+const AuthContext = getSingletonContext<AuthContextValue | null>('auth', null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
