@@ -1,4 +1,5 @@
 import type { Database } from '../supabase-types';
+import { normalizeChallengeWriteInput } from './engine';
 import type {
     Challenge,
     ChallengeAttempt,
@@ -139,52 +140,60 @@ export function mapChallengeAttempt(
 }
 
 export function toChallengeRowBase(input: ChallengeWriteInput) {
-    const rewardValue = Math.max(0, input.rewardValue);
+    const normalized = normalizeChallengeWriteInput(input);
+    const rewardValue = Math.max(0, normalized.rewardValue);
+
     return {
-        title: input.title,
-        exercise_id: input.exerciseId ?? 'S01',
-        target_exercise_id: input.challengeType === 'exercise' ? input.exerciseId ?? 'S01' : null,
-        target_menu_id: input.challengeType === 'menu' ? input.targetMenuId : null,
-        challenge_type: input.challengeType,
-        menu_source: input.challengeType === 'menu' ? input.menuSource : null,
-        target_count: input.targetCount,
-        daily_cap: input.dailyCap,
-        count_unit: input.countUnit,
-        start_date: input.startDate,
-        end_date: input.endDate,
-        window_type: input.windowType,
-        goal_type: input.goalType,
-        window_days: input.windowType === 'rolling' ? input.windowDays : null,
-        required_days: input.goalType === 'active_day' ? input.requiredDays : null,
-        daily_minimum_minutes: input.goalType === 'active_day' && input.challengeType === 'duration'
-            ? input.dailyMinimumMinutes
+        title: normalized.title,
+        exercise_id: normalized.exerciseId ?? 'S01',
+        target_exercise_id: normalized.challengeType === 'exercise' ? normalized.exerciseId ?? 'S01' : null,
+        target_menu_id: normalized.challengeType === 'menu' ? normalized.targetMenuId : null,
+        challenge_type: normalized.challengeType,
+        menu_source: normalized.challengeType === 'menu' ? normalized.menuSource : null,
+        target_count: normalized.targetCount,
+        daily_cap: normalized.dailyCap,
+        count_unit: normalized.countUnit,
+        start_date: normalized.startDate,
+        end_date: normalized.endDate,
+        window_type: normalized.windowType,
+        goal_type: normalized.goalType,
+        window_days: normalized.windowType === 'rolling' ? normalized.windowDays : null,
+        required_days: normalized.goalType === 'active_day' ? normalized.requiredDays : null,
+        daily_minimum_minutes: normalized.goalType === 'active_day' && normalized.challengeType === 'duration'
+            ? normalized.dailyMinimumMinutes
             : null,
-        publish_mode: input.publishMode,
-        publish_start_date: input.publishMode === 'seasonal'
-            ? (input.publishStartDate ?? input.startDate)
+        publish_mode: normalized.publishMode,
+        publish_start_date: normalized.publishMode === 'seasonal'
+            ? (normalized.publishStartDate ?? normalized.startDate)
             : null,
-        publish_end_date: input.publishMode === 'seasonal'
-            ? (input.publishEndDate ?? input.endDate)
+        publish_end_date: normalized.publishMode === 'seasonal'
+            ? (normalized.publishEndDate ?? normalized.endDate)
             : null,
-        created_by: input.createdBy ?? '',
-        reward_kind: input.rewardKind,
+        reward_kind: normalized.rewardKind,
         reward_value: rewardValue,
-        reward_fuwafuwa_type: input.rewardKind === 'medal' ? rewardValue : 0,
-        tier: input.tier,
-        summary: input.summary,
-        description: input.description,
-        icon_emoji: input.iconEmoji,
-        class_levels: input.classLevels,
+        reward_fuwafuwa_type: normalized.rewardKind === 'medal' ? rewardValue : 0,
+        tier: normalized.tier,
+        summary: normalized.summary,
+        description: normalized.description,
+        icon_emoji: normalized.iconEmoji,
+        class_levels: normalized.classLevels,
     };
 }
 
 export function toChallengeInsertRow(input: ChallengeWriteInput): Database['public']['Tables']['challenges']['Insert'] {
+    const normalized = normalizeChallengeWriteInput(input);
+
     return {
         ...toChallengeRowBase(input),
-        created_by: input.createdBy ?? '',
+        created_by: normalized.createdBy ?? '',
     };
 }
 
 export function toChallengeUpdateRow(input: ChallengeWriteInput): Database['public']['Tables']['challenges']['Update'] {
-    return toChallengeRowBase(input);
+    const normalized = normalizeChallengeWriteInput(input);
+
+    return {
+        ...toChallengeRowBase(input),
+        ...(normalized.createdBy ? { created_by: normalized.createdBy } : {}),
+    };
 }

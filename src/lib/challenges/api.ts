@@ -1,9 +1,10 @@
-import { buildChallengeEngineInput, countChallengeProgressFromSessions, type ChallengeProgressWindow } from '../challenge-engine';
+import { countChallengeProgressFromSessions, type ChallengeProgressWindow } from '../challenge-engine';
 import { getAllSessions, getTodayKey } from '../db';
 import { supabase } from '../supabase';
 import type { Database } from '../supabase-types';
 import { getAccountId } from '../sync/authState';
 import { getChallengeActiveWindow } from './display';
+import { toChallengeEngineInput } from './engine';
 import { mapChallenge, mapChallengeAttempt, mapChallengeEnrollment, toChallengeInsertRow, toChallengeUpdateRow } from './mappers';
 import type {
     Challenge,
@@ -464,22 +465,7 @@ function countChallengeProgressInWindow(
     sessions: Awaited<ReturnType<typeof getAllSessions>>,
 ): number {
     return countChallengeProgressFromSessions(
-        buildChallengeEngineInput({
-            challengeType: challenge.challengeType,
-            exerciseId: challenge.exerciseId,
-            targetMenuId: challenge.targetMenuId,
-            menuSource: challenge.menuSource,
-            targetCount: challenge.targetCount,
-            dailyCap: challenge.dailyCap,
-            countUnit: challenge.countUnit,
-            startDate: challenge.startDate,
-            endDate: challenge.endDate,
-            windowType: challenge.windowType,
-            goalType: challenge.goalType,
-            requiredDays: challenge.requiredDays,
-            windowDays: challenge.windowDays,
-            dailyMinimumMinutes: challenge.dailyMinimumMinutes,
-        }),
+        toChallengeEngineInput(challenge),
         sessions,
         userIds,
         window,

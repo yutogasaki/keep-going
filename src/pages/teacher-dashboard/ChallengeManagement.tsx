@@ -6,6 +6,7 @@ import {
     type ChallengeAttempt,
     type ChallengeCompletion,
     type ChallengeEnrollment,
+    type ChallengeWriteInput,
     updateChallenge,
 } from '../../lib/challenges';
 import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
@@ -121,73 +122,41 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
         setSaveError(null);
         const trimmedTitle = formValues.title.trim();
         const trimmedDescription = formValues.description.trim();
-        const windowType = formValues.windowType;
-        const goalType = formValues.challengeType === 'duration' || windowType === 'rolling'
-            ? 'active_day'
-            : formValues.goalType;
-        const targetCount = goalType === 'active_day' ? formValues.requiredDays : formValues.targetCount;
-        const dailyCap = goalType === 'active_day' ? 1 : formValues.dailyCap;
-        const countUnit = formValues.challengeType === 'menu' ? 'menu_completion' : 'exercise_completion';
-        const publishStartDate = formValues.publishMode === 'seasonal' ? formValues.publishStartDate : null;
-        const publishEndDate = formValues.publishMode === 'seasonal' ? formValues.publishEndDate : null;
+        const challengeInput: ChallengeWriteInput = {
+            title: trimmedTitle,
+            summary: null,
+            description: trimmedDescription || null,
+            challengeType: formValues.challengeType,
+            exerciseId: formValues.challengeType === 'exercise' ? formValues.exerciseId : null,
+            targetMenuId: formValues.challengeType === 'menu' ? formValues.targetMenuId : null,
+            menuSource: formValues.challengeType === 'menu' ? formValues.menuSource : null,
+            targetCount: formValues.targetCount,
+            dailyCap: formValues.dailyCap,
+            countUnit: formValues.challengeType === 'menu' ? 'menu_completion' : 'exercise_completion',
+            startDate: formValues.startDate,
+            endDate: formValues.endDate,
+            windowType: formValues.windowType,
+            goalType: formValues.goalType,
+            windowDays: formValues.windowType === 'rolling' ? formValues.windowDays : null,
+            requiredDays: formValues.requiredDays,
+            dailyMinimumMinutes: formValues.challengeType === 'duration' ? formValues.dailyMinimumMinutes : null,
+            publishMode: formValues.publishMode,
+            publishStartDate: formValues.publishMode === 'seasonal' ? formValues.publishStartDate : null,
+            publishEndDate: formValues.publishMode === 'seasonal' ? formValues.publishEndDate : null,
+            rewardKind: formValues.rewardKind,
+            rewardValue: formValues.rewardValue,
+            tier: formValues.tier,
+            iconEmoji: formValues.iconEmoji.trim() || null,
+            classLevels: formValues.classLevels,
+        };
 
         try {
             if (editingId) {
-                await updateChallenge(editingId, {
-                    title: trimmedTitle,
-                    summary: null,
-                    description: trimmedDescription || null,
-                    challengeType: formValues.challengeType,
-                    exerciseId: formValues.challengeType === 'exercise' ? formValues.exerciseId : null,
-                    targetMenuId: formValues.challengeType === 'menu' ? formValues.targetMenuId : null,
-                    menuSource: formValues.challengeType === 'menu' ? formValues.menuSource : null,
-                    targetCount,
-                    dailyCap,
-                    countUnit,
-                    startDate: formValues.startDate,
-                    endDate: formValues.endDate,
-                    windowType,
-                    goalType,
-                    windowDays: windowType === 'rolling' ? formValues.windowDays : null,
-                    requiredDays: goalType === 'active_day' ? formValues.requiredDays : null,
-                    dailyMinimumMinutes: formValues.challengeType === 'duration' ? formValues.dailyMinimumMinutes : null,
-                    publishMode: formValues.publishMode,
-                    publishStartDate,
-                    publishEndDate,
-                    rewardKind: formValues.rewardKind,
-                    rewardValue: formValues.rewardValue,
-                    tier: formValues.tier,
-                    iconEmoji: formValues.iconEmoji.trim() || null,
-                    classLevels: formValues.classLevels,
-                });
+                await updateChallenge(editingId, challengeInput);
             } else {
                 await createChallenge({
-                    title: trimmedTitle,
-                    summary: null,
-                    description: trimmedDescription || null,
-                    challengeType: formValues.challengeType,
-                    exerciseId: formValues.challengeType === 'exercise' ? formValues.exerciseId : null,
-                    targetMenuId: formValues.challengeType === 'menu' ? formValues.targetMenuId : null,
-                    menuSource: formValues.challengeType === 'menu' ? formValues.menuSource : null,
-                    targetCount,
-                    dailyCap,
-                    countUnit,
-                    startDate: formValues.startDate,
-                    endDate: formValues.endDate,
-                    windowType,
-                    goalType,
-                    windowDays: windowType === 'rolling' ? formValues.windowDays : null,
-                    requiredDays: goalType === 'active_day' ? formValues.requiredDays : null,
-                    dailyMinimumMinutes: formValues.challengeType === 'duration' ? formValues.dailyMinimumMinutes : null,
-                    publishMode: formValues.publishMode,
-                    publishStartDate,
-                    publishEndDate,
+                    ...challengeInput,
                     createdBy: teacherEmail,
-                    rewardKind: formValues.rewardKind,
-                    rewardValue: formValues.rewardValue,
-                    tier: formValues.tier,
-                    iconEmoji: formValues.iconEmoji.trim() || null,
-                    classLevels: formValues.classLevels,
                 });
             }
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { buildChallengeEngineInput, countChallengeProgressFromSessions } from '../../../lib/challenge-engine';
+import { countChallengeProgressFromSessions } from '../../../lib/challenge-engine';
 import {
     fetchAllChallenges,
     fetchMyEnrollments,
@@ -11,6 +11,7 @@ import {
     isChallengeFinishedOverall,
     isChallengePastForUsers,
     isChallengePublishedOnDate,
+    toChallengeEngineInput,
     type Challenge,
     type ChallengeCompletion,
     type ChallengeRewardGrant,
@@ -166,22 +167,7 @@ export function useHomeChallenges({ users, sessionUserIds, enabled = true, sessi
                 }
 
                 const todayProgress = countChallengeProgressFromSessions(
-                    buildChallengeEngineInput({
-                        challengeType: challenge.challengeType,
-                        exerciseId: challenge.exerciseId,
-                        targetMenuId: challenge.targetMenuId,
-                        menuSource: challenge.menuSource,
-                        targetCount: challenge.targetCount,
-                        dailyCap: challenge.dailyCap,
-                        countUnit: challenge.countUnit,
-                        startDate: challenge.startDate,
-                        endDate: challenge.endDate,
-                        windowType: challenge.windowType,
-                        goalType: challenge.goalType,
-                        requiredDays: challenge.requiredDays,
-                        windowDays: challenge.windowDays,
-                        dailyMinimumMinutes: challenge.dailyMinimumMinutes,
-                    }),
+                    toChallengeEngineInput(challenge),
                     todaySessions,
                     activeUserIds,
                     {

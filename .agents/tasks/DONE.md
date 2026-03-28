@@ -21,3 +21,8 @@
 ## 2026-03-28: みんなで表示の文脈明確化
 - `だれでみる？` の badge を `個人を表示中 / 家族N人を表示中` の二層表示にして、現在コンテキストをヘッダーで読み取りやすくした
 - selector sheet に `いま見ている対象` と `切り替えると何が変わるか` を追加し、`個人 / みんなで！` の取り違えを減らした
+
+## 2026-03-28: 共通チャレンジエンジンの teacher 側を統一
+- teacher challenge の save 正規化を `src/lib/challenges/engine.ts` に寄せ、`rolling / duration -> active_day`、target/dailyCap/window/publish 条件を 1 か所でそろえた
+- home / teacher list / API の progress 計算入口を shared adapter 経由に統一し、teacher challenge を `countChallengeProgressFromSessions` へ直接流し込む重複を解消した
+- `toChallengeUpdateRow()` で `created_by` を空文字で上書きしないように修正し、challenge adapter のテストを追加した

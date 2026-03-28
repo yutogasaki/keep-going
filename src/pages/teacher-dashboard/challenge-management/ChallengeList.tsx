@@ -20,6 +20,7 @@ import {
     type ChallengeCompletion,
     type ChallengeEnrollment,
     getLatestChallengeAttempts,
+    toChallengeEngineInput,
 } from '../../../lib/challenges';
 import type { StudentSession } from '../../../lib/teacher';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
@@ -141,7 +142,7 @@ function buildParticipantStatusItems(
             : null;
         const sessions = sessionsByMemberId.get(memberId) ?? [];
         const progress = countChallengeProgressFromSessions(
-            challenge,
+            toChallengeEngineInput(challenge),
             sessions,
             [memberId],
             getChallengeActiveWindow(challenge, effectiveWindow),
