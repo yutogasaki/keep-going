@@ -5,17 +5,13 @@ import { useAppStore } from '../store/useAppStore';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE, Z } from '../lib/styles';
 import { Modal } from './Modal';
 import { UserAvatar } from './UserAvatar';
-
-interface ContextOption {
-    id: string;
-    label: string;
-    type: 'user' | 'together';
-    userIds: string[];
-    avatarUrl?: string;
-    subLabel: string;
-}
-
-const TOGETHER_ID = 'TOGETHER';
+import {
+    buildContextOptions,
+    getContextHeaderStatus,
+    getContextScopeSummary,
+    getSelectedContextOption,
+    type ContextOption,
+} from './currentContextBadgeUtils';
 
 export const CurrentContextBadge: React.FC = () => {
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
@@ -23,44 +19,22 @@ export const CurrentContextBadge: React.FC = () => {
     const setSessionUserIds = useAppStore((state) => state.setSessionUserIds);
     const [selectorOpen, setSelectorOpen] = useState(false);
 
-    const options = useMemo<ContextOption[]>(() => {
-        const userOptions: ContextOption[] = users.map((user) => ({
-            id: user.id,
-            label: user.name,
-            type: 'user' as const,
-            userIds: [user.id],
-            avatarUrl: user.avatarUrl,
-            subLabel: `${user.classLevel}クラス`,
-        }));
-
-        if (users.length >= 2) {
-            userOptions.push({
-                id: TOGETHER_ID,
-                label: 'みんなで！',
-                type: 'together',
-                userIds: users.map((user) => user.id),
-                subLabel: `${users.length}人の進みぐあい`,
-            });
-        }
-
-        return userOptions;
-    }, [users]);
-
-    const isTogetherMode = sessionUserIds.length > 1;
-    const fallbackUser = users[0];
-    const selectedOption = isTogetherMode
-        ? options.find((option) => option.id === TOGETHER_ID)
-        : options.find((option) => option.id === sessionUserIds[0]) ?? (
-            fallbackUser
-                ? options.find((option) => option.id === fallbackUser.id)
-                : null
-        );
+    const options = useMemo<ContextOption[]>(
+        () => buildContextOptions(users),
+        [users],
+    );
+    const selectedOption = useMemo(
+        () => getSelectedContextOption({ options, sessionUserIds, users }),
+        [options, sessionUserIds, users],
+    );
 
     if (!selectedOption) {
         return null;
     }
 
     const canSwitch = options.length > 1;
+    const headerStatus = getContextHeaderStatus(selectedOption);
+    const scopeSummary = getContextScopeSummary(selectedOption);
 
     const handleSelect = (option: ContextOption) => {
         setSessionUserIds(option.userIds);
@@ -93,40 +67,69 @@ export const CurrentContextBadge: React.FC = () => {
                         pointerEvents: 'auto',
                     }}
                 >
-                    {selectedOption.type === 'together' ? (
-                        <div
-                            style={{
-                                width: 20,
-                                height: 20,
-                                borderRadius: RADIUS.circle,
-                                background: 'rgba(9, 132, 227, 0.12)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: COLOR.info,
-                                flexShrink: 0,
-                            }}
-                        >
-                            <Users size={14} />
-                        </div>
-                    ) : (
-                        <UserAvatar
-                            avatarUrl={selectedOption.avatarUrl}
-                            name={selectedOption.label}
-                            size={20}
-                        />
-                    )}
-                    <span
+                    <div
                         style={{
-                            fontFamily: FONT.body,
-                            fontSize: FONT_SIZE.sm + 1,
-                            fontWeight: 700,
-                            color: selectedOption.type === 'together' ? COLOR.info : COLOR.primary,
-                            userSelect: 'none',
+                            width: 20,
+                            height: 20,
+                            flexShrink: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                         }}
                     >
-                        {selectedOption.label}
-                    </span>
+                        {selectedOption.type === 'together' ? (
+                            <div
+                                style={{
+                                    width: 20,
+                                    height: 20,
+                                    borderRadius: RADIUS.circle,
+                                    background: 'rgba(9, 132, 227, 0.12)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: COLOR.info,
+                                }}
+                            >
+                                <Users size={14} />
+                            </div>
+                        ) : (
+                            <UserAvatar
+                                avatarUrl={selectedOption.avatarUrl}
+                                name={selectedOption.label}
+                                size={20}
+                            />
+                        )}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                        <span
+                            style={{
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.xs + 1,
+                                fontWeight: 600,
+                                color: COLOR.muted,
+                                lineHeight: 1.2,
+                                userSelect: 'none',
+                            }}
+                        >
+                            {headerStatus}
+                        </span>
+                        <span
+                            style={{
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.sm + 1,
+                                fontWeight: 700,
+                                color: selectedOption.type === 'together' ? COLOR.info : COLOR.primary,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                lineHeight: 1.2,
+                                userSelect: 'none',
+                                maxWidth: 120,
+                            }}
+                        >
+                            {selectedOption.label}
+                        </span>
+                    </div>
                     {canSwitch && <ChevronDown size={14} color={COLOR.muted} />}
                 </motion.button>
             </AnimatePresence>
@@ -168,8 +171,78 @@ export const CurrentContextBadge: React.FC = () => {
                                 lineHeight: 1.6,
                             }}
                         >
-                            ホーム・きろく・メニューの表示を切り替えます
+                            切り替えると、ホーム・きろく・メニューの見え方が変わります
                         </p>
+                    </div>
+
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: SPACE.md,
+                            padding: '14px 16px',
+                            borderRadius: RADIUS.xl,
+                            background: 'rgba(248,249,250,0.92)',
+                            border: '1px solid rgba(0,0,0,0.06)',
+                        }}
+                    >
+                        {selectedOption.type === 'together' ? (
+                            <div
+                                style={{
+                                    width: 40,
+                                    height: 40,
+                                    borderRadius: RADIUS.circle,
+                                    background: 'rgba(9, 132, 227, 0.12)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: COLOR.info,
+                                    flexShrink: 0,
+                                }}
+                            >
+                                <Users size={20} />
+                            </div>
+                        ) : (
+                            <UserAvatar
+                                avatarUrl={selectedOption.avatarUrl}
+                                name={selectedOption.label}
+                                size={40}
+                            />
+                        )}
+
+                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            <div
+                                style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.xs + 1,
+                                    fontWeight: 700,
+                                    color: COLOR.muted,
+                                }}
+                            >
+                                いま見ている対象
+                            </div>
+                            <div
+                                style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.lg,
+                                    fontWeight: 700,
+                                    color: COLOR.dark,
+                                    lineHeight: 1.3,
+                                }}
+                            >
+                                {selectedOption.label}
+                            </div>
+                            <div
+                                style={{
+                                    fontFamily: FONT.body,
+                                    fontSize: FONT_SIZE.sm,
+                                    color: COLOR.text,
+                                    lineHeight: 1.6,
+                                }}
+                            >
+                                {scopeSummary}
+                            </div>
+                        </div>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: SPACE.sm }}>
@@ -240,6 +313,17 @@ export const CurrentContextBadge: React.FC = () => {
                                             }}
                                         >
                                             {option.subLabel}
+                                        </div>
+                                        <div
+                                            style={{
+                                                marginTop: 4,
+                                                fontFamily: FONT.body,
+                                                fontSize: FONT_SIZE.sm,
+                                                color: COLOR.text,
+                                                lineHeight: 1.5,
+                                            }}
+                                        >
+                                            {option.impactLabel}
                                         </div>
                                     </div>
 
