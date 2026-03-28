@@ -106,6 +106,7 @@ export const SCREEN_PADDING_X_CSS = 'var(--screen-padding-x)';
 export const SCREEN_HEADER_TOP = 'var(--screen-header-top)';
 export const SCREEN_BOTTOM_PADDING = 'var(--screen-bottom-padding)';
 export const SCREEN_BOTTOM_WITH_FOOTER = 'var(--screen-bottom-with-footer)';
+export const SCREEN_BOTTOM_WITH_FAB = `calc(${SCREEN_BOTTOM_WITH_FOOTER} + 18px)`;
 export const HEADER_ICON_BUTTON_SIZE = 44;
 
 export const BOTTOM_NAV_HEIGHT = 56;

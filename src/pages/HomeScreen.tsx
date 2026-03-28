@@ -74,6 +74,7 @@ import {
     inferPersonalChallengeExerciseSource,
     inferPersonalChallengeMenuSource,
 } from '../components/personal-challenge/shared';
+import { SCREEN_BOTTOM_WITH_FAB } from '../lib/styles';
 
 const noop = () => {};
 
@@ -769,6 +770,7 @@ export const HomeScreen: React.FC = () => {
             <ScreenScaffold
                 header={<PageHeader title="ホーム" rightElement={<CurrentContextBadge />} />}
                 withBottomNav
+                bottomPadding={SCREEN_BOTTOM_WITH_FAB}
                 style={{ position: 'relative', zIndex: 1 }}
                 contentStyle={{
                     position: 'relative',

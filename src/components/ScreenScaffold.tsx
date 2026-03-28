@@ -12,6 +12,7 @@ interface ScreenScaffoldProps {
     background?: string;
     style?: React.CSSProperties;
     contentStyle?: React.CSSProperties;
+    bottomPadding?: string;
 }
 
 export const ScreenScaffold: React.FC<ScreenScaffoldProps> = ({
@@ -22,6 +23,7 @@ export const ScreenScaffold: React.FC<ScreenScaffoldProps> = ({
     background = 'transparent',
     style,
     contentStyle,
+    bottomPadding,
 }) => {
     return (
         <div
@@ -43,7 +45,7 @@ export const ScreenScaffold: React.FC<ScreenScaffoldProps> = ({
                     minHeight: 0,
                     overflowY: scroll ? 'auto' : 'visible',
                     WebkitOverflowScrolling: scroll ? 'touch' : undefined,
-                    paddingBottom: withBottomNav ? SCREEN_BOTTOM_WITH_FOOTER : SCREEN_BOTTOM_PADDING,
+                    paddingBottom: bottomPadding ?? (withBottomNav ? SCREEN_BOTTOM_WITH_FOOTER : SCREEN_BOTTOM_PADDING),
                     ...contentStyle,
                 }}
             >
