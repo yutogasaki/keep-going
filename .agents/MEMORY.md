@@ -24,6 +24,8 @@
 - 永続 state 変更は `types/createState/migrate/test` をセットで扱う。
 - user-visible な変更は desktop/mobile の visual QA を伴い、UI を触る場合は token 利用確認まで含める。
 - `AGENTS.md` / `CLAUDE.md` は短い入口に保ち、共通の詳細は `.agents/agent-guide.md` に集約する。
+- Claude / Codex の外部 addon は `npm run ai:setup` から入れ、shared project context の正本は repo 内の `.agents/*` に残す。
+- `claude-mem` などの assistant-local memory は補助レイヤーであり、次回以降も共有したい判断は `.agents/MEMORY.md` に昇格する。
 - skill の正本は `.agents/skills/*/SKILL.md` とし、`.claude/skills/*` は legacy redirect のみを置く。
 - `docs/tasks.md` は current focus と未完了 backlog を優先し、重い履歴 snapshot は `docs/archive/tasks-*.md` へ逃がす。
 - CI の verify 正本は `.github/workflows/verify.yml` で、`lint -> tsc --noEmit -> test -> build` を `pull_request` と `main` push で回す。

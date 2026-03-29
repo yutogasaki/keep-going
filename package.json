@@ -14,6 +14,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "governance:check": "node scripts/check-governance.mjs",
+    "ai:setup": "node scripts/setup-ai-tooling.mjs",
+    "ai:doctor": "node scripts/doctor-ai-tooling.mjs",
     "preview": "vite preview",
     "e2e:smoke": "node tools/e2e-smoke.mjs",
     "test": "vitest run",
@@ -59,4 +61,3 @@
     "zustand": "^5.0.11"
   }
 }
-

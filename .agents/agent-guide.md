@@ -13,6 +13,7 @@
 
 - `docs/development-governance.md` — 検証マトリックス。UI/DB/persist 変更時に参照
 - `docs/tasks.md` — product backlog。新機能やタスク優先度の議論時に参照
+- `docs/ai-tooling.md` — Claude / Codex の bootstrap、plugin、skill 運用
 
 ## Product Snapshot
 
@@ -33,6 +34,8 @@
 
 ```bash
 npm run governance:check
+npm run ai:setup
+npm run ai:doctor
 npm run dev
 npm run build
 npx tsc --noEmit
@@ -64,6 +67,9 @@ npm run verify
 - 巨大ファイルは早めに分割する。詳細閾値は `CONSTITUTION.md` を参照
 - import は `@/` エイリアスを優先する（`../../../lib/styles` → `@/lib/styles`）
 - テストのファクトリ関数は `src/__tests__/fixtures.ts` から import する。新規ファクトリもここに追加する
+- Claude の shared context は `CLAUDE.md` import、project plugin、`.claude/hooks/*` で読み込む
+- `claude-mem` などの assistant-local memory は補助扱いで、 durable な判断の正本は `.agents/MEMORY.md` のままにする
+- 外部 AI skill / plugin の導入と更新は `npm run ai:setup` を正本ルートにする
 
 ## Key Paths
 

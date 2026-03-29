@@ -1,20 +1,12 @@
 # KeepGoing - Claude Guide
 
 このファイルは Claude 向けの短い入口。
-共通の正本は `.agents/agent-guide.md`。
+共有コンテキストの正本は下記 import 先に置く。
 
-## Read Order（毎セッション読む）
+@.agents/agent-guide.md
+@.agents/tasks/TASKS.md
+@.agents/MEMORY.md
 
-1. `CONSTITUTION.md`
-2. `.agents/agent-guide.md`
-3. `.agents/tasks/TASKS.md`
-4. `.agents/MEMORY.md`
-
-## 必要時に参照
-
+必要時だけ参照:
 - `docs/development-governance.md` — 検証マトリックス。UI/DB/persist 変更時に参照
 - `docs/tasks.md` — product backlog。新機能やタスク優先度の議論時に参照
-
-## Shared Canonical Guide
-
-- Product snapshot / stack / commands / repo rules / engineering rules / key paths / local skills は `.agents/agent-guide.md` を参照する
