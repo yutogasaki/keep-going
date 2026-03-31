@@ -13,7 +13,7 @@ function createSession(overrides: Partial<SessionRecord> = {}): SessionRecord {
     return {
         id: 'session-1',
         date: '2026-03-14',
-        startedAt: '2026-03-14T09:00:00+09:00',
+        startedAt: '2026-03-14T09:00:00',
         totalSeconds: 360,
         exerciseIds: ['S01', 'S02'],
         skippedIds: [],
@@ -46,13 +46,13 @@ describe('recordOverviewSummary', () => {
                 createSession({
                     id: 'morning',
                     totalSeconds: 480,
-                    startedAt: '2026-03-14T10:20:00+09:00',
+                    startedAt: '2026-03-14T10:20:00',
                     exerciseIds: ['S01', 'S02', 'S02'],
                 }),
                 createSession({
                     id: 'evening',
                     totalSeconds: 240,
-                    startedAt: '2026-03-14T18:40:00+09:00',
+                    startedAt: '2026-03-14T18:40:00',
                     exerciseIds: ['S04'],
                 }),
             ],
@@ -72,12 +72,12 @@ describe('recordOverviewSummary', () => {
         vi.setSystemTime(new Date(2026, 2, 14, 10, 0, 0));
 
         const sessions = [
-            createSession({ id: 'd0', date: '2026-03-14', startedAt: '2026-03-14T18:40:00+09:00', exerciseIds: ['S01', 'S02'] }),
-            createSession({ id: 'd1', date: '2026-03-13', startedAt: '2026-03-13T18:20:00+09:00', exerciseIds: ['S01'] }),
-            createSession({ id: 'd2', date: '2026-03-12', startedAt: '2026-03-12T17:40:00+09:00', exerciseIds: ['S02', 'S02'] }),
-            createSession({ id: 'd6', date: '2026-03-08', startedAt: '2026-03-08T16:30:00+09:00', exerciseIds: ['S01'] }),
-            createSession({ id: 'd8', date: '2026-03-06', startedAt: '2026-03-06T18:00:00+09:00', exerciseIds: ['S01', 'S99'] }),
-            createSession({ id: 'old', date: '2026-02-20', startedAt: '2026-02-20T18:00:00+09:00', exerciseIds: ['S04'] }),
+            createSession({ id: 'd0', date: '2026-03-14', startedAt: '2026-03-14T18:40:00', exerciseIds: ['S01', 'S02'] }),
+            createSession({ id: 'd1', date: '2026-03-13', startedAt: '2026-03-13T18:20:00', exerciseIds: ['S01'] }),
+            createSession({ id: 'd2', date: '2026-03-12', startedAt: '2026-03-12T17:40:00', exerciseIds: ['S02', 'S02'] }),
+            createSession({ id: 'd6', date: '2026-03-08', startedAt: '2026-03-08T16:30:00', exerciseIds: ['S01'] }),
+            createSession({ id: 'd8', date: '2026-03-06', startedAt: '2026-03-06T18:00:00', exerciseIds: ['S01', 'S99'] }),
+            createSession({ id: 'old', date: '2026-02-20', startedAt: '2026-02-20T18:00:00', exerciseIds: ['S04'] }),
         ];
 
         const summary = buildTwoWeekRecordSummary({ sessions, exerciseMap });
