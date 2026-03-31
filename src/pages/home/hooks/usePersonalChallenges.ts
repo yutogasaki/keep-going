@@ -238,13 +238,13 @@ export function usePersonalChallenges({
     }, [loadChallenges]);
 
     useEffect(() => {
-        if (!enabled || sessions) {
+        if (!enabled) {
             return;
         }
 
         const dispose = loadChallenges();
         return dispose;
-    }, [enabled, loadChallenges, sessions]);
+    }, [enabled, loadChallenges]);
 
     useEffect(() => {
         if (!enabled) {
