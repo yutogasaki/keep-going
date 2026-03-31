@@ -60,12 +60,12 @@ export function useHomeChallenges({ users, sessionUserIds, enabled = true, sessi
     }, [hydrateChallengeEnrollmentState]);
 
     useEffect(() => {
-        if (!enabled || sessions) {
+        if (!enabled) {
             return;
         }
 
         loadChallenges();
-    }, [enabled, loadChallenges, sessions]);
+    }, [enabled, loadChallenges]);
 
     useEffect(() => {
         if (!enabled || sessions) {
