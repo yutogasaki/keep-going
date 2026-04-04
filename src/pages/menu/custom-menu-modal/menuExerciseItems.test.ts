@@ -180,4 +180,65 @@ describe('menuExerciseItems', () => {
             requiredExercises: [item.exercise.id],
         });
     });
+
+    it('restores inherited required when a class-required item is reselected from excluded', () => {
+        const item = buildMenuExerciseItems({
+            classLevel: 'プレ',
+            customExercises: [],
+            excludedExercises: [],
+            filter: 'all',
+            query: 'ポイント',
+            requiredExercises: [],
+            teacherSettings: [],
+        })[0];
+
+        const next = cycleMenuExerciseSelection({
+            excludedExercises: [item.exercise.id],
+            item: {
+                ...item,
+                isUserExcluded: true,
+                isUserOptional: false,
+            },
+            requiredExercises: [],
+        });
+
+        expect(next).toEqual({
+            excludedExercises: [],
+            requiredExercises: [],
+        });
+    });
+
+    it('restores inherited required when a teacher-required item is reselected from excluded', () => {
+        const teacherExercise = createTeacherExercise({ id: 'teacher-restore', name: '先生の必須種目' });
+        const item = buildMenuExerciseItems({
+            classLevel: '初級',
+            customExercises: [],
+            excludedExercises: [],
+            filter: 'all',
+            query: '先生の必須種目',
+            requiredExercises: [],
+            teacherExercises: [teacherExercise],
+            teacherSettings: [createTeacherSetting('teacher-restore', 'required')],
+            teacherRequiredExerciseIds: new Set(['teacher-restore']),
+        }).find((candidate) => candidate.exercise.id === 'teacher-restore');
+
+        if (!item) {
+            throw new Error('expected teacher-required exercise fixture');
+        }
+
+        const next = cycleMenuExerciseSelection({
+            excludedExercises: [item.exercise.id],
+            item: {
+                ...item,
+                isUserExcluded: true,
+                isUserOptional: false,
+            },
+            requiredExercises: [],
+        });
+
+        expect(next).toEqual({
+            excludedExercises: [],
+            requiredExercises: [],
+        });
+    });
 });

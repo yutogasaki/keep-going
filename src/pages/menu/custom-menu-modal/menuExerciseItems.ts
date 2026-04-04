@@ -256,17 +256,17 @@ export function cycleMenuExerciseSelection({
     item,
     requiredExercises,
 }: CycleMenuExerciseSelectionParams) {
-        if (item.isRest) {
+    if (item.isRest) {
         return { excludedExercises, requiredExercises };
     }
 
     const currentStatus = item.isUserOptional
         ? 'optional'
-        : item.isUserRequired || item.inheritedStatus === 'required'
+        : item.isUserRequired
             ? 'required'
-            : item.isUserExcluded || item.inheritedStatus === 'excluded'
+            : item.isUserExcluded
                 ? 'excluded'
-                : 'optional';
+                : item.inheritedStatus;
     const nextStatus = currentStatus === 'optional'
         ? 'excluded'
         : currentStatus === 'excluded'
