@@ -194,7 +194,10 @@ const WeeklyActivityChart: React.FC<{
     dailyActivity: WeeklyStats['dailyActivity'];
     studentCount: number;
 }> = ({ dailyActivity, studentCount }) => {
+    const counts = dailyActivity.map((item) => item.count);
     const maxCount = Math.max(1, ...dailyActivity.map((item) => item.count));
+    const minCount = Math.min(...counts);
+    const countRange = maxCount - minCount;
 
     return (
         <div style={{
@@ -205,7 +208,9 @@ const WeeklyActivityChart: React.FC<{
             minHeight: 148,
         }}>
             {dailyActivity.map((item) => {
-                const heightPercent = Math.max(10, Math.round((item.count / maxCount) * 100));
+                const heightPercent = countRange === 0
+                    ? (item.count === 0 ? 10 : 72)
+                    : Math.max(16, Math.round(((item.count - minCount) / countRange) * 84) + 12);
 
                 return (
                     <div
@@ -266,6 +271,7 @@ const WeeklyActivityChart: React.FC<{
                                 color: item.isToday ? '#2BBAA0' : '#2D3436',
                                 lineHeight: 1.2,
                                 whiteSpace: 'nowrap',
+                                textAlign: 'center',
                             }}>
                                 {item.label}
                             </span>
