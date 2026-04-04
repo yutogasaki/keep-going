@@ -3,6 +3,15 @@ import { Home, BarChart3, List, Settings } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
 import { audio } from '../lib/audio';
 import { haptics } from '../lib/haptics';
+import {
+    BOTTOM_NAV_HEIGHT,
+    COLOR,
+    FONT,
+    FONT_SIZE,
+    SAFE_AREA_BOTTOM,
+    SPACE,
+    Z,
+} from '../lib/styles';
 
 type TabId = 'home' | 'record' | 'menu' | 'settings';
 type FooterTab = { id: TabId; icon: React.ElementType; label: string };
@@ -52,25 +61,28 @@ export const Footer: React.FC = () => {
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 2,
+                    gap: 1,
                     border: 'none',
                     background: 'none',
                     cursor: 'pointer',
-                    padding: '8px 16px',
-                    color: isActive ? '#2BBAA0' : '#B2BEC3',
+                    width: '100%',
+                    height: '100%',
+                    padding: `${SPACE.xs + 1}px ${SPACE.md}px ${SPACE.xs - 1}px`,
+                    color: isActive ? COLOR.primary : COLOR.light,
                     transition: 'color 0.2s ease',
                 }}
             >
                 <Icon
-                    size={22}
+                    size={20}
                     strokeWidth={isActive ? 2.5 : 2}
                     style={{ pointerEvents: 'none' }}
                     aria-hidden="true"
                 />
                 <span style={{
-                    fontSize: 10,
-                    fontWeight: 500,
-                    fontFamily: "'Noto Sans JP', sans-serif",
+                    fontSize: FONT_SIZE.xs,
+                    lineHeight: 1.1,
+                    fontWeight: isActive ? 700 : 500,
+                    fontFamily: FONT.body,
                     pointerEvents: 'none',
                 }}>{label}</span>
             </button>
@@ -85,38 +97,50 @@ export const Footer: React.FC = () => {
                 bottom: 0,
                 left: 0,
                 right: 0,
-                height: 'calc(56px + env(safe-area-inset-bottom, 0px))',
-                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                minHeight: `calc(${BOTTOM_NAV_HEIGHT}px + ${SAFE_AREA_BOTTOM})`,
+                paddingBottom: SAFE_AREA_BOTTOM,
                 background: 'var(--toolbar-bg)',
                 backdropFilter: 'blur(var(--blur-lg))',
                 WebkitBackdropFilter: 'blur(var(--blur-lg))',
                 borderTop: '1px solid rgba(0,0,0,0.06)',
                 boxShadow: 'var(--toolbar-shadow)',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-around',
-                zIndex: 50,
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                zIndex: Z.footer,
             }}
         >
-            {leftTabs.map(renderTabButton)}
-
-            <button
-                className="fab"
-                type="button"
-                aria-label="ストレッチを始める"
-                onClick={handleStartSession}
+            <div
+                style={{
+                    height: BOTTOM_NAV_HEIGHT,
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr auto 1fr 1fr',
+                    alignItems: 'stretch',
+                    width: '100%',
+                    padding: `0 ${SPACE.sm}px`,
+                    columnGap: SPACE.xs,
+                }}
             >
-                <div style={{
-                    width: 0,
-                    height: 0,
-                    borderTop: '10px solid transparent',
-                    borderBottom: '10px solid transparent',
-                    borderLeft: '16px solid white',
-                    marginLeft: 4,
-                }} />
-            </button>
+                {leftTabs.map(renderTabButton)}
 
-            {rightTabs.map(renderTabButton)}
+                <button
+                    className="fab"
+                    type="button"
+                    aria-label="ストレッチを始める"
+                    onClick={handleStartSession}
+                >
+                    <div style={{
+                        width: 0,
+                        height: 0,
+                        borderTop: '10px solid transparent',
+                        borderBottom: '10px solid transparent',
+                        borderLeft: '16px solid white',
+                        marginLeft: 4,
+                    }} />
+                </button>
+
+                {rightTabs.map(renderTabButton)}
+            </div>
         </nav>
     );
 };

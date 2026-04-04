@@ -29,10 +29,11 @@
     --theme-bg-4: var(--color-mint-200);
     --safe-area-top: env(safe-area-inset-top, 0px);
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --bottom-nav-height: 52px;
     --screen-padding-x: 20px;
     --screen-header-top: calc(var(--safe-area-top) + 16px);
     --screen-bottom-padding: calc(var(--safe-area-bottom) + 24px);
-    --screen-bottom-with-footer: calc(var(--safe-area-bottom) + 56px + 24px);
+    --screen-bottom-with-footer: calc(var(--safe-area-bottom) + var(--bottom-nav-height) + 24px);
 }
 
 [data-theme="day"] {
@@ -375,7 +376,7 @@ html {
     }
 
     .footer-nav {
-        height: 44px !important;
+        height: calc(44px + var(--safe-area-bottom)) !important;
     }
 
     .fab {
