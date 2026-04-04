@@ -172,7 +172,11 @@ describe('recordOverviewSummary', () => {
         expect(sections[0].summaryLine).toBe('2日 / 2回 / 12分');
         expect(sections[1].summaryLine).toBe('1日 / 1回 / 6分');
         expect(sections[0].defaultExpanded).toBe(true);
-        expect(sections[0].calendarCells).toHaveLength(35);
+        expect(sections[0].calendarCells).toHaveLength(42);
+        expect(sections[0].calendarCells[0]).toMatchObject({
+            date: '2026-02-23',
+            isCurrentMonth: false,
+        });
         expect(sections[0].calendarCells.find((cell) => cell.date === '2026-03-14')).toMatchObject({
             label: '14',
             hasRecord: true,
@@ -184,6 +188,10 @@ describe('recordOverviewSummary', () => {
         expect(sections[0].calendarCells.find((cell) => cell.date === '2026-03-01')).toMatchObject({
             hasRecord: false,
             isCurrentMonth: true,
+        });
+        expect(sections[0].calendarCells[sections[0].calendarCells.length - 1]).toMatchObject({
+            date: '2026-04-05',
+            isCurrentMonth: false,
         });
     });
 

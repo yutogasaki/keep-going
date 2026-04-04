@@ -13,7 +13,7 @@ function formatDuration(totalSeconds: number): string {
     return `${toDisplayMinutes(totalSeconds)}分`;
 }
 
-const WEEKDAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'];
+const WEEKDAY_LABELS = ['月', '火', '水', '木', '金', '土', '日'];
 
 function getCalendarCellBackground(
     cell: RecordHistoryMonthSection['calendarCells'][number],

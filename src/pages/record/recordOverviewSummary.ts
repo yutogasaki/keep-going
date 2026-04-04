@@ -209,6 +209,10 @@ function formatDateKey(date: Date): string {
     return `${year}-${month}-${day}`;
 }
 
+function getMondayStartWeekdayIndex(date: Date): number {
+    return (date.getDay() + 6) % 7;
+}
+
 function shiftMonthKey(monthKey: string, offsetMonths: number): string {
     const parsed = parseMonthKey(monthKey);
     if (!parsed) {
@@ -266,8 +270,8 @@ function buildRecordHistoryMonthCalendarCells({
 
     const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
     const daysByDate = new Map(days.map((day) => [day.date, day]));
-    const leadingOffset = monthStart.getDay();
-    const trailingOffset = 6 - monthEnd.getDay();
+    const leadingOffset = getMondayStartWeekdayIndex(monthStart);
+    const trailingOffset = 6 - getMondayStartWeekdayIndex(monthEnd);
     const gridStart = new Date(monthStart);
     gridStart.setDate(gridStart.getDate() - leadingOffset);
     const gridEnd = new Date(monthEnd);
