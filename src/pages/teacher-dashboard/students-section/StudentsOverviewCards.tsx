@@ -5,12 +5,14 @@ import type { IndividualStudent, WeeklyStats } from '../types';
 interface StudentsOverviewCardsProps {
     individualStudents: IndividualStudent[];
     activeToday: number;
+    activeYesterday: number;
     weeklyStats: WeeklyStats | null;
 }
 
 export const StudentsOverviewCards: React.FC<StudentsOverviewCardsProps> = ({
     individualStudents,
     activeToday,
+    activeYesterday,
     weeklyStats,
 }) => {
     if (individualStudents.length === 0) {
@@ -41,6 +43,12 @@ export const StudentsOverviewCards: React.FC<StudentsOverviewCardsProps> = ({
                     value={activeToday}
                     label="今日の活動"
                     bgColor="#FFEDE8"
+                />
+                <StatCard
+                    icon={<Calendar size={16} color="#0984E3" />}
+                    value={activeYesterday}
+                    label="昨日の活動"
+                    bgColor="#EAF4FF"
                 />
                 <StatCard
                     icon={<Flame size={16} color="#E17055" />}

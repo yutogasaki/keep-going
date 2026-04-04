@@ -191,7 +191,9 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
     );
 
     const today = getTodayKey();
+    const yesterday = getDateKeyOffset(-1);
     const activeToday = individualStudents.filter((s) => s.lastActiveDate === today).length;
+    const activeYesterday = individualStudents.filter((s) => s.lastActiveDate === yesterday).length;
 
     const weeklyStats = useMemo<WeeklyStats | null>(() => {
         if (individualStudents.length === 0) return null;
@@ -373,6 +375,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
                     expandedStudent={expandedStudent}
                     onToggleStudent={handleToggleStudent}
                     activeToday={activeToday}
+                    activeYesterday={activeYesterday}
                     weeklyStats={weeklyStats}
                 />
             )}

@@ -12,6 +12,7 @@ interface StudentsSectionProps {
     expandedStudent: string | null;
     onToggleStudent: (studentId: string) => void;
     activeToday: number;
+    activeYesterday: number;
     weeklyStats: WeeklyStats | null;
 }
 
@@ -24,6 +25,7 @@ export const StudentsSection: React.FC<StudentsSectionProps> = ({
     expandedStudent,
     onToggleStudent,
     activeToday,
+    activeYesterday,
     weeklyStats,
 }) => {
     return (
@@ -32,6 +34,7 @@ export const StudentsSection: React.FC<StudentsSectionProps> = ({
                 <StudentsOverviewCards
                     individualStudents={individualStudents}
                     activeToday={activeToday}
+                    activeYesterday={activeYesterday}
                     weeklyStats={weeklyStats}
                 />
             )}
