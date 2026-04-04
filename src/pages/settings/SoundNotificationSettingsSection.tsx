@@ -7,6 +7,11 @@ import { BgmCard } from './sound-notification/BgmCard';
 import { AudioTogglesCard } from './sound-notification/AudioTogglesCard';
 import { HapticCard } from './sound-notification/HapticCard';
 import { NotificationCard } from './sound-notification/NotificationCard';
+import {
+    getPushNotificationUnavailableMessage,
+    isPushNotificationSupported,
+    requestPushPermission,
+} from '../../lib/pushNotifications';
 
 export const SoundNotificationSettingsSection: React.FC = () => {
     const [isBgmPreviewing, setIsBgmPreviewing] = React.useState(audio.isBgmPreviewing());
@@ -52,12 +57,12 @@ export const SoundNotificationSettingsSection: React.FC = () => {
             return;
         }
 
-        if (!('Notification' in window)) {
-            alert('お使いのブラウザは通知に対応していません。');
+        if (!isPushNotificationSupported()) {
+            alert(getPushNotificationUnavailableMessage());
             return;
         }
 
-        const permission = await Notification.requestPermission();
+        const permission = await requestPushPermission();
         if (permission === 'granted') {
             setNotificationsEnabled(true);
         } else {

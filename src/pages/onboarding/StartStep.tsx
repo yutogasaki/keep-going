@@ -176,42 +176,47 @@ export const StartStep: React.FC<StartStepProps> = ({ onNext, onBack }) => {
                             </div>
                         </div>
 
-                        <motion.button
-                            type="button"
-                            whileTap={{ scale: 0.96 }}
-                            onClick={onNext}
-                            aria-label="はじめる"
+                        <div
                             style={{
                                 position: 'absolute',
                                 left: '50%',
                                 bottom: 46,
                                 transform: 'translateX(-50%)',
-                                width: 72,
-                                height: 72,
-                                borderRadius: RADIUS.circle,
-                                border: 'none',
-                                background: `linear-gradient(135deg, ${COLOR.primary} 0%, ${COLOR.primaryDark} 100%)`,
-                                color: COLOR.white,
-                                boxShadow: '0 6px 20px rgba(43, 186, 160, 0.4), 0 2px 8px rgba(43, 186, 160, 0.2)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
                                 zIndex: 2,
                             }}
                         >
-                            <div
-                                aria-hidden="true"
+                            <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.96 }}
+                                onClick={onNext}
+                                aria-label="はじめる"
                                 style={{
-                                    width: 0,
-                                    height: 0,
-                                    borderTop: '12px solid transparent',
-                                    borderBottom: '12px solid transparent',
-                                    borderLeft: '18px solid white',
-                                    marginLeft: 4,
+                                    width: 72,
+                                    height: 72,
+                                    borderRadius: RADIUS.circle,
+                                    border: 'none',
+                                    background: `linear-gradient(135deg, ${COLOR.primary} 0%, ${COLOR.primaryDark} 100%)`,
+                                    color: COLOR.white,
+                                    boxShadow: '0 6px 20px rgba(43, 186, 160, 0.4), 0 2px 8px rgba(43, 186, 160, 0.2)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
                                 }}
-                            />
-                        </motion.button>
+                            >
+                                <div
+                                    aria-hidden="true"
+                                    style={{
+                                        width: 0,
+                                        height: 0,
+                                        borderTop: '12px solid transparent',
+                                        borderBottom: '12px solid transparent',
+                                        borderLeft: '18px solid white',
+                                        marginLeft: 4,
+                                    }}
+                                />
+                            </motion.button>
+                        </div>
                     </div>
 
                     <div

@@ -102,6 +102,27 @@ do $$ begin
 exception when duplicate_column then null;
 end $$;
 
+create table if not exists web_push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  account_id uuid references auth.users on delete cascade not null,
+  endpoint text not null,
+  p256dh_key text not null,
+  auth_key text not null,
+  expiration_time bigint,
+  notification_time text not null default '21:00',
+  time_zone text not null default 'UTC',
+  user_agent text,
+  last_sent_local_date date,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique (endpoint)
+);
+
+create index if not exists idx_web_push_subscriptions_account on web_push_subscriptions (account_id);
+create index if not exists idx_web_push_subscriptions_schedule on web_push_subscriptions (notification_time, time_zone);
+
+alter table web_push_subscriptions enable row level security;
+
 -- sessions に menu challenge 用メタデータ追加
 do $$ begin
   alter table sessions add column planned_exercise_ids jsonb not null default '[]';
@@ -560,6 +581,17 @@ do $$ begin
 exception when duplicate_object then null;
 end $$;
 
+do $$ begin
+  create policy "Users can manage own push subscriptions" on web_push_subscriptions
+    for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
+exception when duplicate_object then null;
+end $$;
+
+drop trigger if exists web_push_subscriptions_updated_at on web_push_subscriptions;
+create trigger web_push_subscriptions_updated_at
+  before update on web_push_subscriptions
+  for each row execute function update_updated_at();
+
 -- ─── RLSポリシー（安全に作成） ────────────────────────
 
 do $$ begin
@@ -676,6 +708,7 @@ begin
   delete from challenge_attempts where account_id = target_account_id;
   delete from challenge_completions where account_id = target_account_id;
   delete from public_menus where account_id = target_account_id;
+  delete from web_push_subscriptions where account_id = target_account_id;
   delete from app_settings where account_id = target_account_id;
   delete from menu_groups where account_id = target_account_id;
   delete from custom_exercises where account_id = target_account_id;

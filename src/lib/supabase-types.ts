@@ -161,6 +161,36 @@ export interface Database {
                 Update: Partial<Database['public']['Tables']['app_settings']['Insert']>;
                 Relationships: [];
             };
+            web_push_subscriptions: {
+                Row: {
+                    id: string;
+                    account_id: string;
+                    endpoint: string;
+                    p256dh_key: string;
+                    auth_key: string;
+                    expiration_time: number | null;
+                    notification_time: string;
+                    time_zone: string;
+                    user_agent: string | null;
+                    last_sent_local_date: string | null;
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    account_id: string;
+                    endpoint: string;
+                    p256dh_key: string;
+                    auth_key: string;
+                    expiration_time?: number | null;
+                    notification_time?: string;
+                    time_zone?: string;
+                    user_agent?: string | null;
+                    last_sent_local_date?: string | null;
+                };
+                Update: Partial<Database['public']['Tables']['web_push_subscriptions']['Insert']>;
+                Relationships: [];
+            };
             user_roles: {
                 Row: {
                     id: string;

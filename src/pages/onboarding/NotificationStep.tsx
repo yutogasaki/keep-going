@@ -4,6 +4,11 @@ import { Bell } from 'lucide-react';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../lib/styles';
 import { useAppStore } from '../../store/useAppStore';
 import { OnboardingStepScaffold } from './OnboardingStepScaffold';
+import {
+    getPushNotificationUnavailableMessage,
+    isPushNotificationSupported,
+    requestPushPermission,
+} from '../../lib/pushNotifications';
 
 const REMINDER_TIME_OPTIONS = [
     { value: '17:00', label: '17:00' },
@@ -22,12 +27,12 @@ export const NotificationStep: React.FC<NotificationStepProps> = ({ onDone, onBa
     const setNotificationTime = useAppStore((state) => state.setNotificationTime);
     const [requesting, setRequesting] = useState(false);
 
-    const supported = typeof window !== 'undefined' && 'Notification' in window;
+    const supported = isPushNotificationSupported();
 
     const handleAllow = async () => {
         setRequesting(true);
         try {
-            const permission = await Notification.requestPermission();
+            const permission = await requestPushPermission();
             if (permission === 'granted') {
                 setNotificationsEnabled(true);
             }
@@ -127,6 +132,23 @@ export const NotificationStep: React.FC<NotificationStepProps> = ({ onDone, onBa
                             );
                         })}
                     </div>
+
+                    {!supported && (
+                        <div
+                            style={{
+                                width: '100%',
+                                padding: '12px 14px',
+                                borderRadius: RADIUS.lg,
+                                background: 'rgba(255,255,255,0.72)',
+                                color: COLOR.muted,
+                                fontFamily: FONT.body,
+                                fontSize: FONT_SIZE.sm,
+                                lineHeight: 1.6,
+                            }}
+                        >
+                            {getPushNotificationUnavailableMessage()}
+                        </div>
+                    )}
 
                     {supported && (
                         <button

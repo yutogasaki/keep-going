@@ -88,6 +88,22 @@ create table app_settings (
   updated_at timestamptz default now()
 );
 
+create table web_push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  account_id uuid references auth.users on delete cascade not null,
+  endpoint text not null,
+  p256dh_key text not null,
+  auth_key text not null,
+  expiration_time bigint,
+  notification_time text not null default '21:00',
+  time_zone text not null default 'UTC',
+  user_agent text,
+  last_sent_local_date date,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique (endpoint)
+);
+
 -- ユーザー権限（teacher / developer）
 create table user_roles (
   id uuid primary key default gen_random_uuid(),
@@ -266,6 +282,8 @@ create table public_menus (
 create index idx_family_members_account on family_members (account_id);
 create index idx_sessions_account on sessions (account_id);
 create index idx_sessions_date on sessions (account_id, date);
+create index idx_web_push_subscriptions_account on web_push_subscriptions (account_id);
+create index idx_web_push_subscriptions_schedule on web_push_subscriptions (notification_time, time_zone);
 create index idx_user_roles_role on user_roles (role);
 create index idx_challenges_dates on challenges (start_date, end_date);
 create index idx_challenge_completions_account on challenge_completions (account_id);
@@ -283,6 +301,7 @@ alter table sessions enable row level security;
 alter table custom_exercises enable row level security;
 alter table menu_groups enable row level security;
 alter table app_settings enable row level security;
+alter table web_push_subscriptions enable row level security;
 alter table user_roles enable row level security;
 alter table challenges enable row level security;
 alter table challenge_completions enable row level security;
@@ -301,6 +320,8 @@ create policy "Users can manage own data" on custom_exercises
 create policy "Users can manage own data" on menu_groups
   for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
 create policy "Users can manage own data" on app_settings
+  for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
+create policy "Users can manage own push subscriptions" on web_push_subscriptions
   for all using (auth.uid() = account_id) with check (auth.uid() = account_id);
 
 -- challenges: 全ユーザーが読める、先生だけが作成・削除
@@ -388,6 +409,8 @@ create trigger family_members_updated_at before update on family_members
   for each row execute function update_updated_at();
 create trigger app_settings_updated_at before update on app_settings
   for each row execute function update_updated_at();
+create trigger web_push_subscriptions_updated_at before update on web_push_subscriptions
+  for each row execute function update_updated_at();
 
 -- ─── 先生モード ──────────────────────────────────────
 
@@ -455,6 +478,7 @@ begin
   delete from challenge_attempts where account_id = target_account_id;
   delete from challenge_completions where account_id = target_account_id;
   delete from public_menus where account_id = target_account_id;
+  delete from web_push_subscriptions where account_id = target_account_id;
   delete from app_settings where account_id = target_account_id;
   delete from menu_groups where account_id = target_account_id;
   delete from custom_exercises where account_id = target_account_id;

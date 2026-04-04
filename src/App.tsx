@@ -5,6 +5,7 @@ import { SyncToast } from './components/SyncToast';
 import { OfflineBanner } from './components/OfflineBanner';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { PushNotificationSync } from './components/PushNotificationSync';
 
 const MainLayout = lazy(() =>
     import('./layouts/MainLayout').then((module) => ({ default: module.MainLayout }))
@@ -111,6 +112,7 @@ function AppContent() {
                 {hasCompletedOnboarding ? <MainLayout /> : <Onboarding />}
             </Suspense>
             <PwaReloadPrompt />
+            <PushNotificationSync />
             <SyncToast message={toastMessage} />
             <OfflineBanner />
         </div>
