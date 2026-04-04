@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import { MagicTank } from '../../components/MagicTank';
 import type { SessionRecord } from '../../lib/db';
-import { calculateFuwafuwaStatus } from '../../lib/fuwafuwa';
+import { calculateFuwafuwaStatus, getFuwafuwaImagePath } from '../../lib/fuwafuwa';
 import type { FuwafuwaMilestoneEvent } from '../../store/useAppStore';
 import { COLOR, FONT, FONT_SIZE, RADIUS, SPACE } from '../../lib/styles';
 import type { UserProfileStore } from '../../store/useAppStore';
@@ -111,7 +111,7 @@ export const FuwafuwaTogetherView: FC<FuwafuwaTogetherViewProps> = ({
                         const userSessions = sessionsByUserId.get(user.id) ?? [];
                         const milestoneEvent = milestoneEventsByUserId.get(user.id) ?? null;
                         const status = calculateFuwafuwaStatus(user.fuwafuwaBirthDate, userSessions);
-                        const imagePath = `/ikimono/${user.fuwafuwaType}-${status.stage}.webp`;
+                        const imagePath = getFuwafuwaImagePath(user.fuwafuwaType, status.stage);
                         const progressPercent = Math.min(
                             100,
                             Math.round(((userMagic?.displaySeconds ?? 0) / Math.max(1, userMagic?.targetSeconds ?? 1)) * 100),

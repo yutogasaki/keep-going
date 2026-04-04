@@ -1,5 +1,6 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { getFuwafuwaImagePath } from '../../lib/fuwafuwa';
 import { btnPrimary, COLOR, FONT, FONT_SIZE, RADIUS, SPACE, Z } from '../../lib/styles';
 import type { FuwafuwaMilestoneEvent, UserProfileStore } from '../../store/useAppStore';
 import { getMilestoneEmoji, getMilestoneTitle } from './milestoneCopy';
@@ -34,7 +35,7 @@ export const HomeMilestoneModal: React.FC<HomeMilestoneModalProps> = ({
     }
 
     const stage = getMilestoneStage(activeMilestoneModal.kind);
-    const imagePath = `/ikimono/${user.fuwafuwaType}-${stage}.webp`;
+    const imagePath = getFuwafuwaImagePath(user.fuwafuwaType, stage);
     const partnerLabel = getPartnerLabel(user);
 
     return (

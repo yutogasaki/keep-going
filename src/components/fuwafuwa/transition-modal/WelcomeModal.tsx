@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { getFuwafuwaImagePath } from '../../../lib/fuwafuwa';
 
 interface WelcomeModalProps {
     userFuwafuwaType: number;
@@ -77,7 +78,7 @@ export const WelcomeModal: React.FC<WelcomeModalProps> = ({
                             rotate: [0, 2, -2, 0],
                         }}
                         transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                        src={`/ikimono/${userFuwafuwaType}-1.webp`}
+                        src={getFuwafuwaImagePath(userFuwafuwaType, 1)}
                         alt="new egg"
                         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                     />

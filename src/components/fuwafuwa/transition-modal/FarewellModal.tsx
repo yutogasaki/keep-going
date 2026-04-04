@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { getFuwafuwaImagePath } from '../../../lib/fuwafuwa';
 import type { DepartingInfo } from '../types';
 
 interface FarewellModalProps {
@@ -82,9 +83,9 @@ export const FarewellModal: React.FC<FarewellModalProps> = ({
                             : '0 12px 40px rgba(232, 67, 147, 0.2)',
                         background: '#fff',
                     }}
-                >
+                    >
                     <img
-                        src={`/ikimono/${departingInfo.type}-${departingInfo.stage}.webp`}
+                        src={getFuwafuwaImagePath(departingInfo.type, departingInfo.stage)}
                         alt="departing fuwafuwa"
                         style={{
                             width: '100%',

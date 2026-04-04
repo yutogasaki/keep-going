@@ -1,6 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
+    APRIL_FUWAFUWA_TYPES,
     calculateFuwafuwaStatus,
+    getFuwafuwaImagePath,
+    isAprilDateKey,
+    pickInitialFuwafuwaType,
     pickNextFuwafuwaType,
     FUWAFUWA_CYCLE_DAYS,
     FUWAFUWA_TYPE_COUNT,
@@ -171,11 +175,58 @@ describe('pickNextFuwafuwaType', () => {
             finalStage: 3,
             sayonaraDate: '2026-02-01',
         }));
-        const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.35);
+        const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.29);
 
         const result = pickNextFuwafuwaType(past, 3);
 
         expect(result).toBe(3);
         randomSpy.mockRestore();
+    });
+
+    it('biases April births toward the April types', () => {
+        const randomSpy = vi.spyOn(Math, 'random')
+            .mockReturnValueOnce(0.2)
+            .mockReturnValueOnce(0.99);
+
+        const result = pickNextFuwafuwaType([], 0, '2026-04-10');
+
+        expect(APRIL_FUWAFUWA_TYPES).toContain(result as typeof APRIL_FUWAFUWA_TYPES[number]);
+        expect(result).toBe(11);
+        randomSpy.mockRestore();
+    });
+
+    it('falls back to non-April types when the April roll misses', () => {
+        const randomSpy = vi.spyOn(Math, 'random')
+            .mockReturnValueOnce(0.95)
+            .mockReturnValueOnce(0);
+
+        const result = pickNextFuwafuwaType([], 10, '2026-04-10');
+
+        expect(result).toBe(0);
+        randomSpy.mockRestore();
+    });
+});
+
+describe('pickInitialFuwafuwaType', () => {
+    it('includes type 10 and 11 in the overall pool', () => {
+        const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.95);
+
+        const result = pickInitialFuwafuwaType('2026-03-10');
+
+        expect(result).toBe(11);
+        randomSpy.mockRestore();
+    });
+});
+
+describe('fuwafuwa helpers', () => {
+    it('detects April from date keys', () => {
+        expect(isAprilDateKey('2026-04-01')).toBe(true);
+        expect(isAprilDateKey('2026-03-31')).toBe(false);
+    });
+
+    it('uses April-themed filenames for type 10 and 11', () => {
+        expect(getFuwafuwaImagePath(10, 2)).toBe('/ikimono/april-petal-2.webp');
+        expect(getFuwafuwaImagePath(11, 3)).toBe('/ikimono/april-cloud-3.webp');
+        expect(getFuwafuwaImagePath(5, 1)).toBe('/ikimono/5-1.webp');
     });
 });

@@ -3,7 +3,7 @@ import { useAnimation } from 'framer-motion';
 import type { AnimationDefinition } from 'framer-motion';
 import { useAppStore } from '../store/useAppStore';
 import { useShallow } from 'zustand/react/shallow';
-import { calculateFuwafuwaStatus, FUWAFUWA_TYPE_COUNT, pickNextFuwafuwaType } from '../lib/fuwafuwa';
+import { calculateFuwafuwaStatus, getFuwafuwaImagePath, pickInitialFuwafuwaType, pickNextFuwafuwaType } from '../lib/fuwafuwa';
 import { getTodayKey, type SessionRecord } from '../lib/db';
 import type { UserProfileStore } from '../store/useAppStore';
 import { FuwafuwaOrb } from './fuwafuwa/FuwafuwaOrb';
@@ -249,7 +249,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
         if (!fuwafuwaBirthDate) {
             updateUser(user.id, {
                 fuwafuwaBirthDate: getTodayKey(),
-                fuwafuwaType: Math.floor(Math.random() * FUWAFUWA_TYPE_COUNT),
+                fuwafuwaType: pickInitialFuwafuwaType(),
             });
         }
     }, [fuwafuwaBirthDate, user.id, updateUser]);
@@ -377,7 +377,7 @@ export const FuwafuwaCharacter: React.FC<Props> = ({
         setShowNameModal(false);
     };
 
-    const imagePath = `/ikimono/${displayType}-${displayStage}.webp`;
+    const imagePath = getFuwafuwaImagePath(displayType, displayStage);
     const auraVisual = useMemo(() => getAuraVisualState(displayActiveDays), [displayActiveDays]);
     const { auraColor, pulseDuration, showFireflies } = auraVisual;
 

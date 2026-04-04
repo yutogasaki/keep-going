@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Award, Home } from 'lucide-react';
+import { getFuwafuwaImagePath } from '../../lib/fuwafuwa';
 import type { ChibifuwaRecord, PastFuwafuwaRecord } from '../../store/useAppStore';
 import { formatDate } from './recordUtils';
 
@@ -193,7 +194,7 @@ export const AlbumTabContent: React.FC<AlbumTabContentProps> = ({
                                 border: '2px solid rgba(255,154,158,0.2)',
                             }}>
                                 <img
-                                    src={`/ikimono/${fuwafuwa.type}-${fuwafuwa.finalStage}.webp`}
+                                    src={getFuwafuwaImagePath(fuwafuwa.type, fuwafuwa.finalStage)}
                                     alt="Fuwafuwa"
                                     loading="lazy"
                                     style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.05)', display: 'block' }}

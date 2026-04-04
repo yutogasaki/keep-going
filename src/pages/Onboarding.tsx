@@ -18,7 +18,7 @@ import type { OnboardingStep } from './onboarding/types';
 import { getLoginSyncFailureMessage } from '../contexts/auth/syncFlowMessages';
 import { shouldFinishOnboardingAfterLogin } from './onboarding/postLoginFlow';
 import { SCREEN_BOTTOM_PADDING, SCREEN_HEADER_TOP } from '../lib/styles';
-import { FUWAFUWA_TYPE_COUNT } from '../lib/fuwafuwa';
+import { pickInitialFuwafuwaType } from '../lib/fuwafuwa';
 
 export const Onboarding: React.FC = () => {
     const setOnboardingCompleted = useAppStore((state) => state.setOnboardingCompleted);
@@ -87,7 +87,7 @@ export const Onboarding: React.FC = () => {
             name: userName.trim() || 'ゲスト',
             classLevel: selectedClass || '初級',
             fuwafuwaBirthDate: getTodayKey(),
-            fuwafuwaType: Math.floor(Math.random() * FUWAFUWA_TYPE_COUNT),
+            fuwafuwaType: pickInitialFuwafuwaType(),
             fuwafuwaCycleCount: 1,
             fuwafuwaName: null,
             pastFuwafuwas: [],
