@@ -101,6 +101,7 @@ export const Z = {
 
 export const SAFE_AREA_TOP = 'var(--safe-area-top)';
 export const SAFE_AREA_BOTTOM = 'var(--safe-area-bottom)';
+export const FOOTER_SAFE_AREA_BOTTOM = 'var(--footer-safe-area-bottom)';
 export const SCREEN_PADDING_X = 20;
 export const SCREEN_PADDING_X_CSS = 'var(--screen-padding-x)';
 export const SCREEN_HEADER_TOP = 'var(--screen-header-top)';
@@ -109,8 +110,8 @@ export const SCREEN_BOTTOM_WITH_FOOTER = 'var(--screen-bottom-with-footer)';
 export const SCREEN_BOTTOM_WITH_FAB = `calc(${SCREEN_BOTTOM_WITH_FOOTER} + 18px)`;
 export const HEADER_ICON_BUTTON_SIZE = 44;
 
-export const BOTTOM_NAV_HEIGHT = 52;
-export const FLOATING_UI_BOTTOM = `calc(${BOTTOM_NAV_HEIGHT}px + ${SAFE_AREA_BOTTOM} + 16px)`;
+export const BOTTOM_NAV_HEIGHT = 48;
+export const FLOATING_UI_BOTTOM = `calc(${BOTTOM_NAV_HEIGHT}px + ${FOOTER_SAFE_AREA_BOTTOM} + 16px)`;
 export const FLOATING_UI_TOP = `calc(${SAFE_AREA_TOP} + 16px)`;
 
 /* ─── Common Style Mixins ──────── */

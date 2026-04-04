@@ -6,9 +6,9 @@ import { haptics } from '../lib/haptics';
 import {
     BOTTOM_NAV_HEIGHT,
     COLOR,
+    FOOTER_SAFE_AREA_BOTTOM,
     FONT,
     FONT_SIZE,
-    SAFE_AREA_BOTTOM,
     SPACE,
     Z,
 } from '../lib/styles';
@@ -67,13 +67,13 @@ export const Footer: React.FC = () => {
                     cursor: 'pointer',
                     width: '100%',
                     height: '100%',
-                    padding: `${SPACE.xs + 1}px ${SPACE.md}px ${SPACE.xs - 1}px`,
+                    padding: `${SPACE.xs}px ${SPACE.sm + 2}px 2px`,
                     color: isActive ? COLOR.primary : COLOR.light,
                     transition: 'color 0.2s ease',
                 }}
             >
                 <Icon
-                    size={20}
+                    size={18}
                     strokeWidth={isActive ? 2.5 : 2}
                     style={{ pointerEvents: 'none' }}
                     aria-hidden="true"
@@ -97,8 +97,8 @@ export const Footer: React.FC = () => {
                 bottom: 0,
                 left: 0,
                 right: 0,
-                minHeight: `calc(${BOTTOM_NAV_HEIGHT}px + ${SAFE_AREA_BOTTOM})`,
-                paddingBottom: SAFE_AREA_BOTTOM,
+                minHeight: `calc(${BOTTOM_NAV_HEIGHT}px + ${FOOTER_SAFE_AREA_BOTTOM})`,
+                paddingBottom: FOOTER_SAFE_AREA_BOTTOM,
                 background: 'var(--toolbar-bg)',
                 backdropFilter: 'blur(var(--blur-lg))',
                 WebkitBackdropFilter: 'blur(var(--blur-lg))',
@@ -117,8 +117,8 @@ export const Footer: React.FC = () => {
                     gridTemplateColumns: '1fr 1fr auto 1fr 1fr',
                     alignItems: 'stretch',
                     width: '100%',
-                    padding: `0 ${SPACE.sm}px`,
-                    columnGap: SPACE.xs,
+                    padding: `0 ${SPACE.xs}px`,
+                    columnGap: 2,
                 }}
             >
                 {leftTabs.map(renderTabButton)}

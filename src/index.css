@@ -29,11 +29,12 @@
     --theme-bg-4: var(--color-mint-200);
     --safe-area-top: env(safe-area-inset-top, 0px);
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-    --bottom-nav-height: 52px;
+    --footer-safe-area-bottom: max(calc(var(--safe-area-bottom) - 10px), 0px);
+    --bottom-nav-height: 48px;
     --screen-padding-x: 20px;
     --screen-header-top: calc(var(--safe-area-top) + 16px);
     --screen-bottom-padding: calc(var(--safe-area-bottom) + 24px);
-    --screen-bottom-with-footer: calc(var(--safe-area-bottom) + var(--bottom-nav-height) + 24px);
+    --screen-bottom-with-footer: calc(var(--footer-safe-area-bottom) + var(--bottom-nav-height) + 18px);
 }
 
 [data-theme="day"] {
@@ -307,7 +308,7 @@ html {
 
 /* ─── Safe Area Footer Fix ──────────────── */
 .footer-nav {
-    padding-bottom: var(--safe-area-bottom);
+    padding-bottom: var(--footer-safe-area-bottom);
 }
 
 /* ─── Responsive Breakpoints ──────────────── */
@@ -376,7 +377,7 @@ html {
     }
 
     .footer-nav {
-        height: calc(44px + var(--safe-area-bottom)) !important;
+        height: calc(40px + var(--footer-safe-area-bottom)) !important;
     }
 
     .fab {
