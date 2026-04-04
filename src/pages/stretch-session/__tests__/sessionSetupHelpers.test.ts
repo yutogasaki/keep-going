@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { buildEffectiveSessionSelections, buildHistoricalCounts, getSessionContextClassLevel, getSessionContextUsers, getSessionDailyTargetMinutes, resolveExplicitSessionExercises } from '../sessionSetupHelpers';
+import { EXERCISES } from '../../../data/exercises';
+import {
+    buildAutoSessionExercises,
+    buildEffectiveSessionSelections,
+    buildHistoricalCounts,
+    buildOrderedRequiredExerciseIds,
+    getSessionContextClassLevel,
+    getSessionContextUsers,
+    getSessionDailyTargetMinutes,
+    resolveExplicitSessionExercises,
+} from '../sessionSetupHelpers';
 import type { TeacherMenuSetting } from '../../../lib/teacherMenuSettings';
 import type { UserProfileStore } from '../../../store/useAppStore';
 
@@ -76,6 +86,45 @@ describe('sessionSetupHelpers', () => {
 
         expect(selection.requiredIds).toEqual(['S05', 'S01', 'custom-1']);
         expect(selection.excludedIds).toEqual(['S06', 'S03', 'S02']);
+    });
+
+    it('puts class defaults before dynamic required ids', () => {
+        expect(buildOrderedRequiredExerciseIds('プレ', ['S05', 'C02'])).toEqual([
+            'S07',
+            'S01',
+            'S02',
+            'S05',
+            'S06',
+            'S08',
+            'C02',
+        ]);
+    });
+
+    it('keeps required packs at the front even when they exceed the target time', () => {
+        const session = buildAutoSessionExercises({
+            classLevel: 'プレ',
+            dailyTargetMinutes: 3,
+            globalRequiredIds: [],
+            globalExcludedIds: [],
+            teacherSettings: [],
+            sessionExerciseIds: null,
+            sessionHybridMode: false,
+            allSessions: [],
+            sessionUserIds: ['u1'],
+            allCustomPool: [],
+            builtInOverrides: EXERCISES,
+            todayKey: '2026-04-04',
+        });
+
+        expect(session.slice(0, 6).map((exercise) => exercise.id)).toEqual([
+            'S07',
+            'S01',
+            'S02',
+            'S05',
+            'S06',
+            'S08',
+        ]);
+        expect(session.at(-1)?.id).toBe('S09');
     });
 
     it('resolves custom exercises into full session exercise objects', () => {

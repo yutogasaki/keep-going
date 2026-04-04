@@ -1,4 +1,5 @@
 import { EXERCISES, generateSession, type ClassLevel, type Exercise } from '../../data/exercises';
+import { getAutoStartRequiredExerciseIds } from '../../data/autoStartProfiles';
 import type { CustomExercise, SessionRecord } from '../../lib/db';
 import { sessionPlannedItemToExercise, type SessionPlannedItem } from '../../lib/sessionPlan';
 import type { TeacherExercise } from '../../lib/teacherContent';
@@ -67,6 +68,71 @@ export function buildExerciseOverrideMap(overrides: TeacherItemOverride[]): Map<
             .filter((override) => override.itemType === 'exercise')
             .map((override) => [override.itemId, override]),
     );
+}
+
+function dedupeExerciseIds(ids: string[]): string[] {
+    const seen = new Set<string>();
+    const ordered: string[] = [];
+
+    for (const id of ids) {
+        if (!id || seen.has(id)) {
+            continue;
+        }
+        seen.add(id);
+        ordered.push(id);
+    }
+
+    return ordered;
+}
+
+function removeLeadingPrep(exercises: Exercise[]): Exercise[] {
+    const trimmed = [...exercises];
+    while (trimmed[0]?.placement === 'prep') {
+        trimmed.shift();
+    }
+    return trimmed;
+}
+
+function removeTrailingEnding(exercises: Exercise[]): Exercise[] {
+    const trimmed = [...exercises];
+    while (trimmed[trimmed.length - 1]?.placement === 'ending') {
+        trimmed.pop();
+    }
+    return trimmed;
+}
+
+function insertAutoRestExercises(exercises: Exercise[]): Exercise[] {
+    const restExercise = EXERCISES.find((exercise) => exercise.id === 'R03');
+    if (!restExercise) {
+        return exercises;
+    }
+
+    const withRests: Exercise[] = [];
+    let accumulated = 0;
+    for (const exercise of exercises) {
+        withRests.push(exercise);
+        accumulated += exercise.sec;
+        if (accumulated >= 300) {
+            withRests.push(restExercise);
+            accumulated = 0;
+        }
+    }
+
+    if (withRests.at(-1)?.placement === 'rest') {
+        withRests.pop();
+    }
+
+    return withRests;
+}
+
+export function buildOrderedRequiredExerciseIds(
+    classLevel: ClassLevel,
+    dynamicRequiredIds: string[],
+): string[] {
+    return dedupeExerciseIds([
+        ...getAutoStartRequiredExerciseIds(classLevel),
+        ...dynamicRequiredIds,
+    ]);
 }
 
 export function applyTeacherExerciseOverrides(
@@ -201,15 +267,39 @@ export function buildAutoSessionExercises({
         sessionHybridMode,
         todayExerciseIds,
     });
+    const orderedRequiredIds = buildOrderedRequiredExerciseIds(classLevel, requiredIds);
+    const allAvailableExercises = [...builtInOverrides, ...allCustomPool];
+    const requiredExercises = resolveExplicitSessionExercises(orderedRequiredIds, allAvailableExercises);
+    const requiredExerciseIds = requiredExercises.map((exercise) => exercise.id);
+    const requiredSeconds = requiredExercises.reduce((sum, exercise) => sum + exercise.sec, 0);
+    const remainingTargetSeconds = Math.max(0, dailyTargetMinutes * 60 - requiredSeconds);
 
-    return generateSession(classLevel, {
-        excludedIds,
-        requiredIds,
-        targetSeconds: dailyTargetMinutes * 60,
-        customPool: allCustomPool,
-        historicalCounts,
-        builtInOverrides,
-    });
+    const optionalSession = remainingTargetSeconds > 0
+        ? generateSession(classLevel, {
+            excludedIds: dedupeExerciseIds([...excludedIds, ...requiredExerciseIds]),
+            requiredIds: [],
+            targetSeconds: remainingTargetSeconds,
+            customPool: allCustomPool,
+            historicalCounts,
+            builtInOverrides,
+        })
+        : [];
+
+    const trimmedOptionalSession = requiredExercises.length > 0
+        ? removeTrailingEnding(removeLeadingPrep(optionalSession.filter((exercise) => exercise.placement !== 'rest')))
+        : optionalSession.filter((exercise) => exercise.placement !== 'rest');
+
+    const combined = [
+        ...requiredExercises,
+        ...trimmedOptionalSession,
+    ];
+    const endingExercise = resolveExplicitSessionExercises(['S09'], allAvailableExercises)[0];
+
+    if (endingExercise && combined.at(-1)?.id !== endingExercise.id) {
+        combined.push(endingExercise);
+    }
+
+    return insertAutoRestExercises(combined);
 }
 
 export function resolveExplicitSessionExercises(
