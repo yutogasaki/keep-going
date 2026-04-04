@@ -30,7 +30,7 @@ import { AlbumTabContent } from './record/AlbumTabContent';
 import { RecordModals } from './record/RecordModals';
 import { buildRecordHistoryDays } from './record/recordHistorySummary';
 import {
-    buildRecordHistoryAccordionSections,
+    buildRecordHistoryMonthSections,
     buildRecordSuggestionSummary,
     type RecordTopExerciseChip,
     buildTodayRecordSummary,
@@ -279,8 +279,8 @@ export const RecordPage: React.FC = () => {
         [exerciseMap, sessions],
     );
 
-    const historySections = useMemo(
-        () => buildRecordHistoryAccordionSections({
+    const historyMonths = useMemo(
+        () => buildRecordHistoryMonthSections({
             historyDays,
             todayKey,
         }),
@@ -375,7 +375,7 @@ export const RecordPage: React.FC = () => {
                                 twoWeekSummary={twoWeekSummary}
                                 suggestion={suggestion}
                                 topExercises={topExercises}
-                                historySections={historySections}
+                                historyMonths={historyMonths}
                                 canCreatePersonalChallenge={canCreatePersonalChallenge}
                                 onCreatePersonalChallengeFromExercise={handleCreatePersonalChallengeFromExercise}
                                 onSuggestionClick={() => {

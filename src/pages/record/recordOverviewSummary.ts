@@ -2,7 +2,6 @@ import {
     calculateStreak,
     getDateKeyOffset,
     parseDateKey,
-    shiftDateKey,
     type SessionRecord,
 } from '../../lib/db';
 import { getSessionCompletedExerciseTotal, getSessionExerciseCounts } from '../../lib/sessionRecords';
@@ -60,9 +59,13 @@ export interface RecordTopExerciseChip {
     exerciseSource?: 'standard' | 'teacher' | 'custom';
 }
 
-export interface RecordHistoryAccordionSection {
-    id: 'today' | 'thisWeek' | 'lastWeek';
+export interface RecordHistoryMonthSection {
+    id: string;
     label: string;
+    monthLabel: string;
+    dayCount: number;
+    sessionCount: number;
+    totalMinutes: number;
     summaryLine: string;
     emptyLine: string;
     days: RecordSessionHistoryDay[];
@@ -167,23 +170,64 @@ function getDotLevel(totalSeconds: number): 0 | 1 | 2 | 3 {
     return 3;
 }
 
-function getWeekStart(dateKey: string): string {
-    const date = parseDateKey(dateKey);
-    if (!date) {
-        return dateKey;
-    }
-
-    const offset = (date.getDay() + 6) % 7;
-    date.setDate(date.getDate() - offset);
-
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+function getMonthKey(dateKey: string): string {
+    return dateKey.slice(0, 7);
 }
 
-function compareDateKey(a: string, b: string): number {
-    return a.localeCompare(b);
+function parseMonthKey(monthKey: string): Date | null {
+    const match = /^(\d{4})-(\d{2})$/.exec(monthKey);
+    if (!match) {
+        return null;
+    }
+
+    return new Date(Number(match[1]), Number(match[2]) - 1, 1);
+}
+
+function formatMonthKey(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`;
+}
+
+function shiftMonthKey(monthKey: string, offsetMonths: number): string {
+    const parsed = parseMonthKey(monthKey);
+    if (!parsed) {
+        return monthKey;
+    }
+
+    parsed.setMonth(parsed.getMonth() + offsetMonths);
+    return formatMonthKey(parsed);
+}
+
+function formatMonthLabel(monthKey: string): string {
+    const parsed = parseMonthKey(monthKey);
+    if (!parsed) {
+        return monthKey;
+    }
+
+    return `${parsed.getFullYear()}年${parsed.getMonth() + 1}月`;
+}
+
+function buildMonthShortLabel(monthKey: string, currentMonthKey: string): string {
+    if (monthKey === currentMonthKey) {
+        return '今月';
+    }
+
+    if (monthKey === shiftMonthKey(currentMonthKey, -1)) {
+        return '先月';
+    }
+
+    const parsed = parseMonthKey(monthKey);
+    const currentParsed = parseMonthKey(currentMonthKey);
+    if (!parsed || !currentParsed) {
+        return monthKey;
+    }
+
+    if (parsed.getFullYear() === currentParsed.getFullYear()) {
+        return `${parsed.getMonth() + 1}月`;
+    }
+
+    return `${parsed.getFullYear()}年${parsed.getMonth() + 1}月`;
 }
 
 export function buildTodayRecordSummary({
@@ -418,66 +462,43 @@ export function buildTopExerciseChips({
         .slice(0, 3);
 }
 
-export function buildRecordHistoryAccordionSections({
+export function buildRecordHistoryMonthSections({
     historyDays,
     todayKey,
 }: {
     historyDays: RecordSessionHistoryDay[];
     todayKey: string;
-}): RecordHistoryAccordionSection[] {
-    const currentWeekStart = getWeekStart(todayKey);
-    const lastWeekStart = shiftDateKey(currentWeekStart, -7);
+}): RecordHistoryMonthSection[] {
+    const currentMonthKey = getMonthKey(todayKey);
+    const previousMonthKey = shiftMonthKey(currentMonthKey, -1);
+    const monthKeys = Array.from(new Set([
+        currentMonthKey,
+        previousMonthKey,
+        ...historyDays.map((day) => getMonthKey(day.date)),
+    ])).sort((left, right) => right.localeCompare(left));
 
-    const todayDays = historyDays.filter((day) => day.date === todayKey);
-    const thisWeekDays = historyDays.filter((day) => (
-        compareDateKey(day.date, currentWeekStart) >= 0
-        && compareDateKey(day.date, todayKey) < 0
-    ));
-    const lastWeekDays = historyDays.filter((day) => (
-        compareDateKey(day.date, lastWeekStart) >= 0
-        && compareDateKey(day.date, currentWeekStart) < 0
-    ));
-
-    const buildSummaryLine = (
-        days: RecordSessionHistoryDay[],
-        options?: { includeDayCount?: boolean },
-    ) => {
-        if (days.length === 0) {
-            return 'まだありません';
-        }
-
-        const totalSessions = days.reduce((sum, day) => sum + day.sessionCount, 0);
+    return monthKeys.map((monthKey) => {
+        const days = historyDays
+            .filter((day) => getMonthKey(day.date) === monthKey)
+            .sort((left, right) => right.date.localeCompare(left.date));
+        const dayCount = days.length;
+        const sessionCount = days.reduce((sum, day) => sum + day.sessionCount, 0);
         const totalMinutes = toDisplayMinutes(days.reduce((sum, day) => sum + day.totalSeconds, 0));
-        if (options?.includeDayCount) {
-            return `${days.length}日 / ${totalSessions}回 / ${totalMinutes}分`;
-        }
-        return `${totalSessions}回 / ${totalMinutes}分`;
-    };
+        const monthLabel = formatMonthLabel(monthKey);
 
-    return [
-        {
-            id: 'today',
-            label: '今日',
-            summaryLine: buildSummaryLine(todayDays),
-            emptyLine: '今日はまだ きろくがありません',
-            days: todayDays,
-            defaultExpanded: true,
-        },
-        {
-            id: 'thisWeek',
-            label: '今週',
-            summaryLine: buildSummaryLine(thisWeekDays, { includeDayCount: true }),
-            emptyLine: '今週ののこりは まだこれから',
-            days: thisWeekDays,
-            defaultExpanded: false,
-        },
-        {
-            id: 'lastWeek',
-            label: '先週',
-            summaryLine: buildSummaryLine(lastWeekDays, { includeDayCount: true }),
-            emptyLine: '先週のきろくは ありません',
-            days: lastWeekDays,
-            defaultExpanded: false,
-        },
-    ];
+        return {
+            id: monthKey,
+            label: buildMonthShortLabel(monthKey, currentMonthKey),
+            monthLabel,
+            dayCount,
+            sessionCount,
+            totalMinutes,
+            summaryLine: dayCount === 0
+                ? 'まだありません'
+                : `${dayCount}日 / ${sessionCount}回 / ${totalMinutes}分`,
+            emptyLine: `${monthLabel}のきろくは ありません`,
+            days,
+            defaultExpanded: monthKey === currentMonthKey,
+        };
+    });
 }

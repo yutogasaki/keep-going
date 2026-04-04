@@ -13,7 +13,7 @@ export const RecordTabContent: React.FC<RecordTabContentProps> = ({
     twoWeekSummary,
     suggestion,
     topExercises,
-    historySections,
+    historyMonths,
     onSuggestionClick,
     canCreatePersonalChallenge,
     onCreatePersonalChallengeFromExercise,
@@ -35,7 +35,7 @@ export const RecordTabContent: React.FC<RecordTabContentProps> = ({
                 canCreatePersonalChallenge={canCreatePersonalChallenge}
                 onCreatePersonalChallenge={onCreatePersonalChallengeFromExercise}
             />
-            <SessionHistorySection loading={loading} sections={historySections} />
+            <SessionHistorySection loading={loading} months={historyMonths} />
         </motion.div>
     );
 };

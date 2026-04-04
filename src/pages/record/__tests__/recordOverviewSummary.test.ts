@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { SessionRecord } from '../../../lib/db';
 import { buildRecordHistoryDays } from '../recordHistorySummary';
 import {
-    buildRecordHistoryAccordionSections,
+    buildRecordHistoryMonthSections,
     buildRecordSuggestionSummary,
     buildTodayRecordSummary,
     buildTopExerciseChips,
@@ -147,32 +147,31 @@ describe('recordOverviewSummary', () => {
         ]);
     });
 
-    it('groups history days into today, this week, and last week accordions', () => {
+    it('groups history days into month sections including current and previous month', () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date(2026, 2, 14, 10, 0, 0));
 
         const historyDays = buildRecordHistoryDays({
             groupedEntries: [
                 ['2026-03-14', [createSession({ id: 'today', date: '2026-03-14' })]],
-                ['2026-03-11', [createSession({ id: 'this-week', date: '2026-03-11' })]],
-                ['2026-03-07', [createSession({ id: 'last-week', date: '2026-03-07' })]],
+                ['2026-03-11', [createSession({ id: 'this-month', date: '2026-03-11' })]],
+                ['2026-02-20', [createSession({ id: 'last-month', date: '2026-02-20' })]],
             ],
             exerciseMap,
             userNameMap,
         });
 
-        const sections = buildRecordHistoryAccordionSections({
+        const sections = buildRecordHistoryMonthSections({
             historyDays,
             todayKey: '2026-03-14',
         });
 
-        expect(sections.map((section) => section.label)).toEqual(['今日', '今週', '先週']);
-        expect(sections[0].days.map((day) => day.date)).toEqual(['2026-03-14']);
-        expect(sections[1].days.map((day) => day.date)).toEqual(['2026-03-11']);
-        expect(sections[2].days.map((day) => day.date)).toEqual(['2026-03-07']);
-        expect(sections[0].summaryLine).toBe('1回 / 6分');
+        expect(sections.map((section) => section.label)).toEqual(['今月', '先月']);
+        expect(sections[0].days.map((day) => day.date)).toEqual(['2026-03-14', '2026-03-11']);
+        expect(sections[1].days.map((day) => day.date)).toEqual(['2026-02-20']);
+        expect(sections[0].summaryLine).toBe('2日 / 2回 / 12分');
         expect(sections[1].summaryLine).toBe('1日 / 1回 / 6分');
-        expect(sections[2].summaryLine).toBe('1日 / 1回 / 6分');
+        expect(sections[0].defaultExpanded).toBe(true);
     });
 
     it('uses a softer suggestion copy before any recent record exists', () => {
@@ -217,7 +216,7 @@ describe('recordOverviewSummary', () => {
             exerciseMap,
             userNameMap,
         });
-        const sections = buildRecordHistoryAccordionSections({
+        const sections = buildRecordHistoryMonthSections({
             historyDays,
             todayKey: '2026-03-14',
         });
@@ -225,7 +224,7 @@ describe('recordOverviewSummary', () => {
         expect(todaySummary.minutes).toBe(1);
         expect(trendSummary.totalMinutes).toBe(1);
         expect(trendSummary.dots[trendSummary.dots.length - 1]?.minutes).toBe(1);
-        expect(sections[0].summaryLine).toBe('1回 / 1分');
+        expect(sections[0].summaryLine).toBe('1日 / 1回 / 1分');
     });
 
     it('suggests a familiar menu after today is already enough', () => {

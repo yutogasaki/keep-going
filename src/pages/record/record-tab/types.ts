@@ -1,5 +1,5 @@
 import type {
-    RecordHistoryAccordionSection,
+    RecordHistoryMonthSection,
     RecordSuggestionSummary,
     RecordTopExerciseChip,
     TodayRecordSummary,
@@ -12,7 +12,7 @@ export interface RecordTabContentProps {
     twoWeekSummary: TwoWeekRecordSummary;
     suggestion: RecordSuggestionSummary;
     topExercises: RecordTopExerciseChip[];
-    historySections: RecordHistoryAccordionSection[];
+    historyMonths: RecordHistoryMonthSection[];
     onSuggestionClick: () => void;
     canCreatePersonalChallenge?: boolean;
     onCreatePersonalChallengeFromExercise?: (exercise: RecordTopExerciseChip) => void;
