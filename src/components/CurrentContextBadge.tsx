@@ -7,8 +7,6 @@ import { Modal } from './Modal';
 import { UserAvatar } from './UserAvatar';
 import {
     buildContextOptions,
-    getContextHeaderStatus,
-    getContextScopeSummary,
     getSelectedContextOption,
     type ContextOption,
 } from './currentContextBadgeUtils';
@@ -33,8 +31,6 @@ export const CurrentContextBadge: React.FC = () => {
     }
 
     const canSwitch = options.length > 1;
-    const headerStatus = getContextHeaderStatus(selectedOption);
-    const scopeSummary = getContextScopeSummary(selectedOption);
 
     const handleSelect = (option: ContextOption) => {
         setSessionUserIds(option.userIds);
@@ -51,7 +47,7 @@ export const CurrentContextBadge: React.FC = () => {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: -10 }}
                     whileTap={canSwitch ? { scale: 0.97 } : undefined}
-                    aria-label={canSwitch ? '表示するユーザーを選ぶ' : `${selectedOption.label}を表示中`}
+                    aria-label={canSwitch ? '表示するユーザーを選ぶ' : selectedOption.label}
                     style={{
                         background: 'var(--glass-bg-heavy)',
                         backdropFilter: 'blur(var(--blur-sm))',
@@ -100,19 +96,7 @@ export const CurrentContextBadge: React.FC = () => {
                             />
                         )}
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                        <span
-                            style={{
-                                fontFamily: FONT.body,
-                                fontSize: FONT_SIZE.xs + 1,
-                                fontWeight: 600,
-                                color: COLOR.muted,
-                                lineHeight: 1.2,
-                                userSelect: 'none',
-                            }}
-                        >
-                            {headerStatus}
-                        </span>
+                    <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
                         <span
                             style={{
                                 fontFamily: FONT.body,
@@ -162,87 +146,6 @@ export const CurrentContextBadge: React.FC = () => {
                         >
                             だれでみる？
                         </h3>
-                        <p
-                            style={{
-                                margin: 0,
-                                fontFamily: FONT.body,
-                                fontSize: FONT_SIZE.sm,
-                                color: COLOR.text,
-                                lineHeight: 1.6,
-                            }}
-                        >
-                            切り替えると、ホーム・きろく・メニューの見え方が変わります
-                        </p>
-                    </div>
-
-                    <div
-                        style={{
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: SPACE.md,
-                            padding: '14px 16px',
-                            borderRadius: RADIUS.xl,
-                            background: 'rgba(248,249,250,0.92)',
-                            border: '1px solid rgba(0,0,0,0.06)',
-                        }}
-                    >
-                        {selectedOption.type === 'together' ? (
-                            <div
-                                style={{
-                                    width: 40,
-                                    height: 40,
-                                    borderRadius: RADIUS.circle,
-                                    background: 'rgba(9, 132, 227, 0.12)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: COLOR.info,
-                                    flexShrink: 0,
-                                }}
-                            >
-                                <Users size={20} />
-                            </div>
-                        ) : (
-                            <UserAvatar
-                                avatarUrl={selectedOption.avatarUrl}
-                                name={selectedOption.label}
-                                size={40}
-                            />
-                        )}
-
-                        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                            <div
-                                style={{
-                                    fontFamily: FONT.body,
-                                    fontSize: FONT_SIZE.xs + 1,
-                                    fontWeight: 700,
-                                    color: COLOR.muted,
-                                }}
-                            >
-                                いま見ている対象
-                            </div>
-                            <div
-                                style={{
-                                    fontFamily: FONT.body,
-                                    fontSize: FONT_SIZE.lg,
-                                    fontWeight: 700,
-                                    color: COLOR.dark,
-                                    lineHeight: 1.3,
-                                }}
-                            >
-                                {selectedOption.label}
-                            </div>
-                            <div
-                                style={{
-                                    fontFamily: FONT.body,
-                                    fontSize: FONT_SIZE.sm,
-                                    color: COLOR.text,
-                                    lineHeight: 1.6,
-                                }}
-                            >
-                                {scopeSummary}
-                            </div>
-                        </div>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: SPACE.sm }}>
@@ -313,17 +216,6 @@ export const CurrentContextBadge: React.FC = () => {
                                             }}
                                         >
                                             {option.subLabel}
-                                        </div>
-                                        <div
-                                            style={{
-                                                marginTop: 4,
-                                                fontFamily: FONT.body,
-                                                fontSize: FONT_SIZE.sm,
-                                                color: COLOR.text,
-                                                lineHeight: 1.5,
-                                            }}
-                                        >
-                                            {option.impactLabel}
                                         </div>
                                     </div>
 

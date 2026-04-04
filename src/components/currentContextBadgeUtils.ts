@@ -7,7 +7,6 @@ export interface ContextOption {
     userIds: string[];
     avatarUrl?: string;
     subLabel: string;
-    impactLabel: string;
 }
 
 export const TOGETHER_ID = 'TOGETHER';
@@ -20,7 +19,6 @@ export function buildContextOptions(users: UserProfileStore[]): ContextOption[] 
         userIds: [user.id],
         avatarUrl: user.avatarUrl,
         subLabel: `${user.classLevel}クラス`,
-        impactLabel: `${user.name} の ホーム・きろく・メニューを見ます`,
     }));
 
     if (users.length >= 2) {
@@ -30,7 +28,6 @@ export function buildContextOptions(users: UserProfileStore[]): ContextOption[] 
             type: 'together',
             userIds: users.map((user) => user.id),
             subLabel: `${users.length}人の進みぐあい`,
-            impactLabel: '家族みんなの 合計や まとまりを見ます',
         });
     }
 
@@ -56,16 +53,4 @@ export function getSelectedContextOption({
     }
 
     return options.find((option) => option.id === selectedUserId) ?? null;
-}
-
-export function getContextHeaderStatus(option: ContextOption): string {
-    return option.type === 'together'
-        ? `家族${option.userIds.length}人を表示中`
-        : '個人を表示中';
-}
-
-export function getContextScopeSummary(option: ContextOption): string {
-    return option.type === 'together'
-        ? 'ホーム・きろく・メニューで、家族みんなのまとまりを見ています'
-        : `ホーム・きろく・メニューで、${option.label} を見ています`;
 }

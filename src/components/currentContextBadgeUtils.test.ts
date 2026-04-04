@@ -2,8 +2,6 @@ import { describe, expect, it } from 'vitest';
 import type { UserProfileStore } from '../store/use-app-store/types';
 import {
     buildContextOptions,
-    getContextHeaderStatus,
-    getContextScopeSummary,
     getSelectedContextOption,
     TOGETHER_ID,
 } from './currentContextBadgeUtils';
@@ -79,7 +77,7 @@ describe('currentContextBadgeUtils', () => {
         });
 
         expect(selected?.id).toBe(TOGETHER_ID);
-        expect(getContextHeaderStatus(selected!)).toBe('家族2人を表示中');
-        expect(getContextScopeSummary(selected!)).toBe('ホーム・きろく・メニューで、家族みんなのまとまりを見ています');
+        expect(selected?.label).toBe('みんなで！');
+        expect(selected?.subLabel).toBe('2人の進みぐあい');
     });
 });
