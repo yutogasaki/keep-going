@@ -3,7 +3,6 @@ import { supabase } from '../../lib/supabase';
 import { clearSyncQueue } from '../../lib/sync';
 import { SYNCED_ACCOUNT_KEY } from './constants';
 import type { EmailAuthMode } from './types';
-import { disablePushSubscription } from '../../lib/pushNotifications';
 
 interface CreateAuthActionsParams {
     user: User | null;
@@ -98,9 +97,6 @@ export function createAuthActions({ user, setToastMessage }: CreateAuthActionsPa
     const signOut = async (): Promise<void> => {
         if (!supabase) return;
 
-        await disablePushSubscription().catch((error) => {
-            console.warn('[push] Failed to clean up subscription on sign-out:', error);
-        });
         await supabase.auth.signOut();
         await clearSyncQueue();
         localStorage.removeItem(SYNCED_ACCOUNT_KEY);

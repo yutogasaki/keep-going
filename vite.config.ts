@@ -64,7 +64,6 @@ export default defineConfig({
       includeAssets: ['audio/bgm.mp3'],
       manifest: false, // Use existing public/manifest.json
       workbox: {
-        importScripts: ['push-sw.js'],
         globPatterns: ['**/*.{js,css,ico,png,webp,svg,woff,woff2}'],
         globIgnores: ['images/**/*', 'website/**/*'],
         cleanupOutdatedCaches: true,

@@ -4,6 +4,5 @@ export type OnboardingStep =
     | 'name'
     | 'class'
     | 'start'
-    | 'notification'
     | 'auth'
     | 'restoring';

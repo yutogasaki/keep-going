@@ -6,12 +6,6 @@ import { VolumeCard } from './sound-notification/VolumeCard';
 import { BgmCard } from './sound-notification/BgmCard';
 import { AudioTogglesCard } from './sound-notification/AudioTogglesCard';
 import { HapticCard } from './sound-notification/HapticCard';
-import { NotificationCard } from './sound-notification/NotificationCard';
-import {
-    getPushNotificationUnavailableMessage,
-    isPushNotificationSupported,
-    requestPushPermission,
-} from '../../lib/pushNotifications';
 
 export const SoundNotificationSettingsSection: React.FC = () => {
     const [isBgmPreviewing, setIsBgmPreviewing] = React.useState(audio.isBgmPreviewing());
@@ -27,10 +21,6 @@ export const SoundNotificationSettingsSection: React.FC = () => {
     const setBgmTrackId = useAppStore((state) => state.setBgmTrackId);
     const hapticEnabled = useAppStore((state) => state.hapticEnabled);
     const setHapticEnabled = useAppStore((state) => state.setHapticEnabled);
-    const notificationsEnabled = useAppStore((state) => state.notificationsEnabled);
-    const setNotificationsEnabled = useAppStore((state) => state.setNotificationsEnabled);
-    const notificationTime = useAppStore((state) => state.notificationTime);
-    const setNotificationTime = useAppStore((state) => state.setNotificationTime);
 
     const handleVolumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const value = parseFloat(event.target.value);
@@ -48,26 +38,6 @@ export const SoundNotificationSettingsSection: React.FC = () => {
 
         if (audio.isBgmPreviewing()) {
             audio.refreshBgm();
-        }
-    };
-
-    const requestNotificationPermission = async (enable: boolean) => {
-        if (!enable) {
-            setNotificationsEnabled(false);
-            return;
-        }
-
-        if (!isPushNotificationSupported()) {
-            alert(getPushNotificationUnavailableMessage());
-            return;
-        }
-
-        const permission = await requestPushPermission();
-        if (permission === 'granted') {
-            setNotificationsEnabled(true);
-        } else {
-            alert('通知が許可されていません。ブラウザの設定をご確認ください。');
-            setNotificationsEnabled(false);
         }
     };
 
@@ -131,13 +101,6 @@ export const SoundNotificationSettingsSection: React.FC = () => {
             <HapticCard
                 enabled={hapticEnabled}
                 onToggle={() => setHapticEnabled(!hapticEnabled)}
-            />
-
-            <NotificationCard
-                enabled={notificationsEnabled}
-                time={notificationTime}
-                onToggle={() => requestNotificationPermission(!notificationsEnabled)}
-                onTimeChange={setNotificationTime}
             />
         </>
     );

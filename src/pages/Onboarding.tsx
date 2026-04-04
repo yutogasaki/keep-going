@@ -14,7 +14,6 @@ import { NameStep } from './onboarding/NameStep';
 import { RestoringStep } from './onboarding/RestoringStep';
 import { StartStep } from './onboarding/StartStep';
 import { WelcomeStep } from './onboarding/WelcomeStep';
-import { NotificationStep } from './onboarding/NotificationStep';
 import type { OnboardingStep } from './onboarding/types';
 import { getLoginSyncFailureMessage } from '../contexts/auth/syncFlowMessages';
 import { shouldFinishOnboardingAfterLogin } from './onboarding/postLoginFlow';
@@ -207,17 +206,10 @@ export const Onboarding: React.FC = () => {
                     />
                 )}
 
-                {step === 'start' && (
-                    <StartStep
-                        onNext={() => setStep('notification')}
-                        onBack={() => setStep('class')}
-                    />
-                )}
-
-                    {step === 'notification' && (
-                        <NotificationStep
-                            onDone={handleFinish}
-                            onBack={() => setStep('start')}
+                    {step === 'start' && (
+                        <StartStep
+                            onNext={handleFinish}
+                            onBack={() => setStep('class')}
                         />
                     )}
                 </AnimatePresence>

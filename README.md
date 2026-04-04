@@ -20,7 +20,6 @@ cp .env.example .env.local # 環境変数テンプレートをコピー
 ```
 VITE_SUPABASE_URL=https://xxxxx.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGci...
-VITE_WEB_PUSH_PUBLIC_KEY=BL...
 ```
 
 ```bash
@@ -48,24 +47,6 @@ npm run dev                # 開発サーバー起動
 
 - Vercel に `main` ブランチへのプッシュで自動デプロイ
 - PWA 対応（Service Worker 自動登録）
-
-## Web Push セットアップ
-
-毎日通知を有効にする場合は、追加で以下を設定する。
-
-```
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGci...
-WEB_PUSH_PUBLIC_KEY=BL...
-WEB_PUSH_PRIVATE_KEY=...
-WEB_PUSH_SUBJECT=mailto:notify@example.com
-CRON_SECRET=change-me
-```
-
-- Supabase には `supabase/deploy.sql` または `supabase/migration_web_push_notifications.sql` を適用する
-- Web Push の鍵は `npx web-push generate-vapid-keys` で生成する
-- `/api/cron/push-reminders` を 5 分おき程度で叩く cron を設定する
-- Vercel Cron を使う場合は `CRON_SECRET` を設定すると、Vercel が自動で `Authorization: Bearer ...` を付ける
-- Vercel の 2026-01-28 時点の公式仕様では Hobby は日次 cron のみ。5 分おきで送るなら Pro 以上か外部 scheduler が必要
 
 ## ドキュメント
 
