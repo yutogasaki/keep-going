@@ -124,7 +124,8 @@ function insertAutoRestExercises(exercises: Exercise[]): Exercise[] {
         }
     }
 
-    if (withRests.at(-1)?.placement === 'rest') {
+    const lastWithRest = withRests[withRests.length - 1];
+    if (lastWithRest?.placement === 'rest') {
         withRests.pop();
     }
 
@@ -308,7 +309,8 @@ export function buildAutoSessionExercises({
     ];
     const endingExercise = resolveExplicitSessionExercises(['S09'], allAvailableExercises)[0];
 
-    if (endingExercise && combined.at(-1)?.id !== endingExercise.id) {
+    const lastCombinedExercise = combined[combined.length - 1];
+    if (endingExercise && lastCombinedExercise?.id !== endingExercise.id) {
         combined.push(endingExercise);
     }
 
