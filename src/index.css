@@ -29,12 +29,12 @@
     --theme-bg-4: var(--color-mint-200);
     --safe-area-top: env(safe-area-inset-top, 0px);
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-    --footer-safe-area-bottom: max(calc(var(--safe-area-bottom) - 14px), 0px);
-    --bottom-nav-height: 46px;
+    --footer-safe-area-bottom: max(calc(var(--safe-area-bottom) - 10px), 0px);
+    --bottom-nav-height: 48px;
     --screen-padding-x: 20px;
     --screen-header-top: calc(var(--safe-area-top) + 16px);
     --screen-bottom-padding: calc(var(--safe-area-bottom) + 24px);
-    --screen-bottom-with-footer: calc(var(--footer-safe-area-bottom) + var(--bottom-nav-height) + 16px);
+    --screen-bottom-with-footer: calc(var(--footer-safe-area-bottom) + var(--bottom-nav-height) + 18px);
 }
 
 [data-theme="day"] {
@@ -235,8 +235,8 @@ body {
 
 /* FAB styles */
 .fab {
-    width: 60px;
-    height: 60px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--color-teal-500), var(--color-teal-600));
     box-shadow: var(--shadow-accent-md);
@@ -247,7 +247,7 @@ body {
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
     position: relative;
-    top: -12px;
+    top: -20px;
 }
 
 .fab:active {
@@ -327,9 +327,9 @@ html {
     }
 
     .fab {
-        width: 52px;
-        height: 52px;
-        top: -10px;
+        width: 56px;
+        height: 56px;
+        top: -16px;
     }
 }
 
@@ -377,13 +377,13 @@ html {
     }
 
     .footer-nav {
-        height: calc(38px + var(--footer-safe-area-bottom)) !important;
+        height: calc(40px + var(--footer-safe-area-bottom)) !important;
     }
 
     .fab {
-        width: 44px;
-        height: 44px;
-        top: -8px;
+        width: 48px;
+        height: 48px;
+        top: -12px;
     }
 }
 

@@ -110,7 +110,7 @@ export const SCREEN_BOTTOM_WITH_FOOTER = 'var(--screen-bottom-with-footer)';
 export const SCREEN_BOTTOM_WITH_FAB = `calc(${SCREEN_BOTTOM_WITH_FOOTER} + 18px)`;
 export const HEADER_ICON_BUTTON_SIZE = 44;
 
-export const BOTTOM_NAV_HEIGHT = 46;
+export const BOTTOM_NAV_HEIGHT = 48;
 export const FLOATING_UI_BOTTOM = `calc(${BOTTOM_NAV_HEIGHT}px + ${FOOTER_SAFE_AREA_BOTTOM} + 16px)`;
 export const FLOATING_UI_TOP = `calc(${SAFE_AREA_TOP} + 16px)`;
 
