@@ -7,6 +7,7 @@ import { subscribeTeacherContentUpdated } from '../lib/teacherContentEvents';
 import type { ClassLevel } from '../data/exercises';
 import type { MenuOverrideMap } from '../pages/menu/menu-page/shared';
 import { isTeacherContentNew, isTeacherContentVisible } from '../lib/teacherExerciseMetadata';
+import type { TeacherMenuSetting } from '../lib/teacherMenuSettings';
 
 interface UseTeacherContentParams {
     classLevel: ClassLevel;
@@ -19,6 +20,7 @@ export function useTeacherContent({
 }: UseTeacherContentParams) {
     const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
     const [teacherMenus, setTeacherMenus] = useState<TeacherMenu[]>([]);
+    const [teacherSettings, setTeacherSettings] = useState<TeacherMenuSetting[]>([]);
     const [teacherExcludedExerciseIds, setTeacherExcludedExerciseIds] = useState<Set<string>>(new Set());
     const [teacherRequiredExerciseIds, setTeacherRequiredExerciseIds] = useState<Set<string>>(new Set());
     const [teacherHiddenExerciseIds, setTeacherHiddenExerciseIds] = useState<Set<string>>(new Set());
@@ -44,6 +46,7 @@ export function useTeacherContent({
                     (menu) => isTeacherContentVisible(menu.visibility, menu.classLevels, classLevel),
                 ),
             );
+            setTeacherSettings(settings);
 
             setTeacherExcludedExerciseIds(new Set(
                 settings
@@ -83,6 +86,7 @@ export function useTeacherContent({
             console.warn('[menu] Failed to load teacher content:', error);
             setTeacherExercises([]);
             setTeacherMenus([]);
+            setTeacherSettings([]);
             setTeacherExcludedExerciseIds(new Set());
             setTeacherRequiredExerciseIds(new Set());
             setTeacherHiddenExerciseIds(new Set());
@@ -129,6 +133,7 @@ export function useTeacherContent({
     return {
         teacherExercises,
         teacherMenus,
+        teacherSettings,
         teacherExcludedExerciseIds,
         teacherRequiredExerciseIds,
         teacherHiddenExerciseIds,

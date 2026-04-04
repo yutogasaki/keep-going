@@ -71,6 +71,7 @@ export const MenuPage: React.FC = () => {
         canPublish,
         effectiveRequiredCount,
         effectiveExcludedCount,
+        effectiveRequiredExerciseIds,
         sessionUserCount,
         getCreatorName,
         loadCustomData,
@@ -92,6 +93,7 @@ export const MenuPage: React.FC = () => {
         handleStartHybridSession,
         teacherExercises,
         teacherMenus,
+        teacherSettings,
         teacherExerciseIds,
         teacherMenuIds,
         teacherExcludedExerciseIds,
@@ -238,7 +240,7 @@ export const MenuPage: React.FC = () => {
                     <MenuIndividualTab
                         usageStats={usageStats}
                         exercises={exercises}
-                        requiredExercises={requiredExercises}
+                        requiredExercises={effectiveRequiredExerciseIds}
                         customExercises={customExercises}
                         isTogetherMode={isTogetherMode}
                         getCreatorName={getCreatorName}
@@ -269,7 +271,9 @@ export const MenuPage: React.FC = () => {
                 requiredExercises={requiredExercises}
                 excludedExercises={excludedExercises}
                 customExercises={customExercises}
+                classLevel={classLevel}
                 teacherExercises={teacherExercises.filter((te) => !teacherHiddenExerciseIds.has(te.id))}
+                teacherSettings={teacherSettings}
                 teacherExcludedExerciseIds={teacherExcludedExerciseIds}
                 teacherRequiredExerciseIds={teacherRequiredExerciseIds}
                 teacherHiddenExerciseIds={teacherHiddenExerciseIds}

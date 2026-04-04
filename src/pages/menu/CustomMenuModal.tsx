@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import type { ClassLevel } from '../../data/exercises';
 import type { CustomExercise } from '../../lib/db';
 import { COLOR, FONT, FONT_SIZE, RADIUS, Z } from '../../lib/styles';
 import type { TeacherExercise } from '../../lib/teacherContent';
+import type { TeacherMenuSetting } from '../../lib/teacherMenuSettings';
 import { CustomMenuDailyTargetCard } from './custom-menu-modal/CustomMenuDailyTargetCard';
 import { CustomMenuExerciseCard } from './custom-menu-modal/CustomMenuExerciseCard';
 import { CustomMenuTogetherModeNotice } from './custom-menu-modal/CustomMenuTogetherModeNotice';
@@ -17,11 +19,13 @@ import {
 interface CustomMenuModalProps {
     show: boolean;
     isTogetherMode: boolean;
+    classLevel: ClassLevel;
     dailyTargetMinutes: number;
     requiredExercises: string[];
     excludedExercises: string[];
     customExercises: CustomExercise[];
     teacherExercises?: TeacherExercise[];
+    teacherSettings?: TeacherMenuSetting[];
     teacherExcludedExerciseIds?: Set<string>;
     teacherRequiredExerciseIds?: Set<string>;
     teacherHiddenExerciseIds?: Set<string>;
@@ -34,11 +38,13 @@ interface CustomMenuModalProps {
 export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
     show,
     isTogetherMode,
+    classLevel,
     dailyTargetMinutes,
     requiredExercises,
     excludedExercises,
     customExercises,
     teacherExercises,
+    teacherSettings,
     teacherExcludedExerciseIds,
     teacherRequiredExerciseIds,
     teacherHiddenExerciseIds,
@@ -54,12 +60,14 @@ export const CustomMenuModal: React.FC<CustomMenuModalProps> = ({
     if (!show) return null;
 
     const exerciseItems = buildMenuExerciseItems({
+        classLevel,
         customExercises,
         excludedExercises,
         filter,
         query,
         requiredExercises,
         teacherExercises,
+        teacherSettings,
         teacherExcludedExerciseIds,
         teacherHiddenExerciseIds,
         teacherRequiredExerciseIds,

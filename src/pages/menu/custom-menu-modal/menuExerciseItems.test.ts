@@ -7,6 +7,7 @@ import {
     cycleMenuExerciseSelection,
     summarizeMenuExerciseItems,
 } from './menuExerciseItems';
+import type { TeacherMenuSetting } from '../../../lib/teacherMenuSettings';
 
 function createTeacherExercise(overrides: Partial<TeacherExercise> & Pick<TeacherExercise, 'id' | 'name'>): TeacherExercise {
     return {
@@ -41,18 +42,31 @@ function createCustomExercise(overrides: Partial<CustomExercise> & Pick<CustomEx
     };
 }
 
+function createTeacherSetting(itemId: string, status: TeacherMenuSetting['status']): TeacherMenuSetting {
+    return {
+        id: `${itemId}-${status}`,
+        itemId,
+        itemType: 'exercise',
+        classLevel: '初級',
+        status,
+        createdBy: 'teacher-1',
+    };
+}
+
 describe('menuExerciseItems', () => {
     it('builds filtered exercise items with teacher and custom labels', () => {
         const teacherExercise = createTeacherExercise({ id: 'teacher-1', name: '先生の種目' });
         const customExercise = createCustomExercise({ id: 'custom-1', name: 'じぶん種目' });
 
         const items = buildMenuExerciseItems({
+            classLevel: '初級',
             customExercises: [customExercise],
             excludedExercises: [],
             filter: 'teacher',
             query: '先生',
             requiredExercises: [],
             teacherExercises: [teacherExercise],
+            teacherSettings: [createTeacherSetting('teacher-1', 'required')],
             teacherRequiredExerciseIds: new Set(['teacher-1']),
         });
 
@@ -75,12 +89,14 @@ describe('menuExerciseItems', () => {
         }
 
         const items = buildMenuExerciseItems({
+            classLevel: '初級',
             customExercises: [],
             excludedExercises: [restExercise.id],
             filter: 'changed',
             query: '',
             requiredExercises: [],
             teacherExercises: [createTeacherExercise({ id: 'teacher-hidden', name: '非表示の先生種目' })],
+            teacherSettings: [],
             teacherHiddenExerciseIds: new Set(['teacher-hidden']),
         });
 
@@ -92,11 +108,13 @@ describe('menuExerciseItems', () => {
 
     it('cycles user and teacher overrides in the same order as the modal', () => {
         const baseItem = buildMenuExerciseItems({
+            classLevel: '初級',
             customExercises: [],
             excludedExercises: [],
             filter: 'all',
             query: '',
             requiredExercises: [],
+            teacherSettings: [],
         }).find((item) => !item.isRest);
 
         if (!baseItem) {
@@ -108,13 +126,14 @@ describe('menuExerciseItems', () => {
             item: {
                 ...baseItem,
                 isTeacherRequired: true,
+                inheritedStatus: 'required',
             },
             requiredExercises: [],
         });
 
         expect(fromTeacherRequired).toEqual({
             excludedExercises: [baseItem.exercise.id],
-            requiredExercises: [],
+            requiredExercises: [baseItem.exercise.id],
         });
 
         const fromUserExcluded = cycleMenuExerciseSelection({
@@ -122,6 +141,7 @@ describe('menuExerciseItems', () => {
             item: {
                 ...baseItem,
                 isUserExcluded: true,
+                inheritedStatus: 'optional',
             },
             requiredExercises: [],
         });
@@ -129,6 +149,35 @@ describe('menuExerciseItems', () => {
         expect(fromUserExcluded).toEqual({
             excludedExercises: [],
             requiredExercises: [baseItem.exercise.id],
+        });
+    });
+
+    it('shows class defaults and lets users override them back to optional', () => {
+        const item = buildMenuExerciseItems({
+            classLevel: 'プレ',
+            customExercises: [],
+            excludedExercises: [],
+            filter: 'changed',
+            query: 'ポイント',
+            requiredExercises: [],
+            teacherSettings: [],
+        })[0];
+
+        expect(item).toMatchObject({
+            classBadge: 'クラス: 必須',
+            isRequired: true,
+            inheritedStatus: 'required',
+        });
+
+        const next = cycleMenuExerciseSelection({
+            excludedExercises: [],
+            item,
+            requiredExercises: [],
+        });
+
+        expect(next).toEqual({
+            excludedExercises: [item.exercise.id],
+            requiredExercises: [item.exercise.id],
         });
     });
 });

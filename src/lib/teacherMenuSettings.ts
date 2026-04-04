@@ -63,28 +63,17 @@ export async function upsertTeacherMenuSetting(
 ): Promise<void> {
     if (!supabase) return;
 
-    if (status === 'optional') {
-        // Delete the row to revert to default
-        const { error } = await supabase
-            .from('teacher_menu_settings')
-            .delete()
-            .eq('item_id', itemId)
-            .eq('item_type', itemType)
-            .eq('class_level', classLevel);
-        if (error) throw error;
-    } else {
-        const { error } = await supabase
-            .from('teacher_menu_settings')
-            .upsert({
-                item_id: itemId,
-                item_type: itemType,
-                class_level: classLevel,
-                status,
-                created_by: createdBy,
-            }, { onConflict: 'item_id,item_type,class_level' });
+    const { error } = await supabase
+        .from('teacher_menu_settings')
+        .upsert({
+            item_id: itemId,
+            item_type: itemType,
+            class_level: classLevel,
+            status,
+            created_by: createdBy,
+        }, { onConflict: 'item_id,item_type,class_level' });
 
-        if (error) throw error;
-    }
+    if (error) throw error;
 
     invalidateSettingsCache();
 }

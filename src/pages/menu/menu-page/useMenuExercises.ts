@@ -11,8 +11,13 @@ import type { CustomExercise } from '../../../lib/db';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
 import type { ClassLevel } from '../../../data/exercises';
 import type { TeacherContentDisplayMode } from '../../../lib/teacherExerciseMetadata';
+import {
+    buildEffectiveExerciseSettings,
+    getOrderedEffectiveRequiredExerciseIds,
+} from '../../../lib/menuExerciseSettings';
 import type { MenuOverrideMap } from './shared';
 import { sortTeacherContentByRecommendation } from '../../../lib/teacherExerciseMetadata';
+import type { TeacherMenuSetting } from '../../../lib/teacherMenuSettings';
 
 interface UseMenuExercisesParams {
     classLevel: ClassLevel;
@@ -20,6 +25,7 @@ interface UseMenuExercisesParams {
     customExercises: CustomExercise[];
     teacherExercises: TeacherExercise[];
     teacherMenus: TeacherMenu[];
+    teacherSettings: TeacherMenuSetting[];
     teacherExcludedExerciseIds: Set<string>;
     teacherRequiredExerciseIds: Set<string>;
     teacherHiddenExerciseIds: Set<string>;
@@ -72,6 +78,7 @@ export function useMenuExercises({
     customExercises,
     teacherExercises,
     teacherMenus,
+    teacherSettings,
     teacherExcludedExerciseIds,
     teacherRequiredExerciseIds,
     teacherHiddenExerciseIds,
@@ -197,11 +204,6 @@ export function useMenuExercises({
     }, [overrideMap, presets, teacherHiddenMenuIds, teacherMenus]);
 
     const effectiveCounts = useMemo(() => {
-        const userRequiredSet = new Set(requiredExercises);
-        const userExcludedSet = new Set(excludedExercises);
-        let requiredCount = 0;
-        let excludedCount = 0;
-
         const builtInIds = getExercisesByClass(classLevel)
             .filter((exercise) => !teacherHiddenExerciseIds.has(exercise.id))
             .map((exercise) => exercise.id);
@@ -209,25 +211,29 @@ export function useMenuExercises({
             .filter((exercise) => !teacherHiddenExerciseIds.has(exercise.id) && exercise.placement !== 'rest')
             .map((exercise) => exercise.id);
         const allVisibleIds = [...builtInIds, ...teacherIds];
+        const effectiveSettings = buildEffectiveExerciseSettings({
+            classLevel,
+            exerciseIds: allVisibleIds,
+            teacherSettings,
+            userRequiredExerciseIds: requiredExercises,
+            userExcludedExerciseIds: excludedExercises,
+        });
+        const requiredCount = effectiveSettings.filter((setting) => setting.effectiveStatus === 'required').length;
+        const excludedCount = effectiveSettings.filter((setting) => setting.effectiveStatus === 'excluded').length;
+        const effectiveRequiredExerciseIds = getOrderedEffectiveRequiredExerciseIds({
+            classLevel,
+            exerciseIds: allVisibleIds,
+            teacherSettings,
+            userRequiredExerciseIds: requiredExercises,
+            userExcludedExerciseIds: excludedExercises,
+        });
 
-        for (const id of allVisibleIds) {
-            const isTeacherRequired = teacherRequiredExerciseIds.has(id);
-            const isTeacherExcluded = teacherExcludedExerciseIds.has(id);
-            const isUserRequired = userRequiredSet.has(id);
-            const isUserExcluded = userExcludedSet.has(id);
-
-            const isRequired = isUserRequired || (isTeacherRequired && !isUserExcluded);
-            const isExcluded = !isRequired && (isUserExcluded || (isTeacherExcluded && !isUserRequired));
-
-            if (isRequired) requiredCount++;
-            if (isExcluded) excludedCount++;
-        }
-
-        return { requiredCount, excludedCount };
+        return { requiredCount, excludedCount, effectiveRequiredExerciseIds };
     }, [
         classLevel,
         excludedExercises,
         requiredExercises,
+        teacherSettings,
         teacherExcludedExerciseIds,
         teacherExercises,
         teacherHiddenExerciseIds,
@@ -241,5 +247,6 @@ export function useMenuExercises({
         autoMenuMinutes: Math.ceil(DEFAULT_SESSION_TARGET_SECONDS / 60),
         effectiveRequiredCount: effectiveCounts.requiredCount,
         effectiveExcludedCount: effectiveCounts.excludedCount,
+        effectiveRequiredExerciseIds: effectiveCounts.effectiveRequiredExerciseIds,
     };
 }

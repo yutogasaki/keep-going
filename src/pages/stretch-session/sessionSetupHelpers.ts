@@ -1,6 +1,10 @@
 import { EXERCISES, generateSession, type ClassLevel, type Exercise } from '../../data/exercises';
-import { getAutoStartRequiredExerciseIds } from '../../data/autoStartProfiles';
 import type { CustomExercise, SessionRecord } from '../../lib/db';
+import {
+    getClassDefaultRequiredExerciseIds,
+    getEffectiveExcludedExerciseIds,
+    getOrderedEffectiveRequiredExerciseIds,
+} from '../../lib/menuExerciseSettings';
 import { sessionPlannedItemToExercise, type SessionPlannedItem } from '../../lib/sessionPlan';
 import type { TeacherExercise } from '../../lib/teacherContent';
 import type { TeacherItemOverride } from '../../lib/teacherItemOverrides';
@@ -17,9 +21,11 @@ const CLASS_LEVEL_WEIGHTS: Record<ClassLevel, number> = {
 };
 
 interface EffectiveSessionSelectionParams {
+    classLevel: ClassLevel;
     globalRequiredIds: string[];
     globalExcludedIds: string[];
     teacherSettings: TeacherMenuSetting[];
+    orderedExerciseIds: string[];
     sessionExerciseIds: string[] | null;
     sessionHybridMode?: boolean;
     todayExerciseIds: string[];
@@ -129,10 +135,16 @@ export function buildOrderedRequiredExerciseIds(
     classLevel: ClassLevel,
     dynamicRequiredIds: string[],
 ): string[] {
-    return dedupeExerciseIds([
-        ...getAutoStartRequiredExerciseIds(classLevel),
-        ...dynamicRequiredIds,
-    ]);
+    return getOrderedEffectiveRequiredExerciseIds({
+        classLevel,
+        exerciseIds: [
+            ...getClassDefaultRequiredExerciseIds(classLevel),
+            ...dynamicRequiredIds,
+        ],
+        teacherSettings: [],
+        userRequiredExerciseIds: dynamicRequiredIds,
+        userExcludedExerciseIds: [],
+    });
 }
 
 export function applyTeacherExerciseOverrides(
@@ -194,36 +206,35 @@ export function buildHistoricalCounts(
 }
 
 export function buildEffectiveSessionSelections({
+    classLevel,
     globalRequiredIds,
     globalExcludedIds,
     teacherSettings,
+    orderedExerciseIds,
     sessionExerciseIds,
     sessionHybridMode,
     todayExerciseIds,
 }: EffectiveSessionSelectionParams): { requiredIds: string[]; excludedIds: string[] } {
-    const teacherExcludedIds = teacherSettings
-        .filter((setting) => setting.itemType === 'exercise' && (setting.status === 'excluded' || setting.status === 'hidden'))
-        .map((setting) => setting.itemId);
-    const teacherRequiredIds = teacherSettings
-        .filter((setting) => setting.itemType === 'exercise' && setting.status === 'required')
-        .map((setting) => setting.itemId);
-
-    const userSetIds = new Set([...globalRequiredIds, ...globalExcludedIds]);
-    const effectiveRequired = [
-        ...globalRequiredIds,
-        ...teacherRequiredIds.filter((id) => !userSetIds.has(id)),
-    ];
-    const effectiveExcluded = [
-        ...globalExcludedIds,
-        ...teacherExcludedIds.filter((id) => !userSetIds.has(id)),
-    ];
-
-    const hybridRequired = sessionHybridMode && sessionExerciseIds
-        ? [...effectiveRequired, ...sessionExerciseIds]
-        : effectiveRequired;
-    const requiredIds = Array.from(new Set(hybridRequired));
-    const excludedIds = Array.from(new Set([...todayExerciseIds, ...effectiveExcluded]))
-        .filter((id) => !requiredIds.includes(id));
+    const requiredIds = dedupeExerciseIds([
+        ...getOrderedEffectiveRequiredExerciseIds({
+            classLevel,
+            exerciseIds: orderedExerciseIds,
+            teacherSettings,
+            userRequiredExerciseIds: globalRequiredIds,
+            userExcludedExerciseIds: globalExcludedIds,
+        }),
+        ...(sessionHybridMode && sessionExerciseIds ? sessionExerciseIds : []),
+    ]);
+    const excludedIds = dedupeExerciseIds([
+        ...todayExerciseIds,
+        ...getEffectiveExcludedExerciseIds({
+            classLevel,
+            exerciseIds: orderedExerciseIds,
+            teacherSettings,
+            userRequiredExerciseIds: globalRequiredIds,
+            userExcludedExerciseIds: globalExcludedIds,
+        }),
+    ]).filter((id) => !requiredIds.includes(id));
 
     return { requiredIds, excludedIds };
 }
@@ -259,17 +270,19 @@ export function buildAutoSessionExercises({
     const todayExerciseIds = allSessions
         .filter((session) => session.date === todayKey)
         .flatMap((session) => [...session.exerciseIds, ...session.skippedIds]);
+    const allAvailableExercises = [...builtInOverrides, ...allCustomPool];
+    const orderedExerciseIds = allAvailableExercises.map((exercise) => exercise.id);
     const { requiredIds, excludedIds } = buildEffectiveSessionSelections({
+        classLevel,
         globalRequiredIds,
         globalExcludedIds,
         teacherSettings,
+        orderedExerciseIds,
         sessionExerciseIds,
         sessionHybridMode,
         todayExerciseIds,
     });
-    const orderedRequiredIds = buildOrderedRequiredExerciseIds(classLevel, requiredIds);
-    const allAvailableExercises = [...builtInOverrides, ...allCustomPool];
-    const requiredExercises = resolveExplicitSessionExercises(orderedRequiredIds, allAvailableExercises);
+    const requiredExercises = resolveExplicitSessionExercises(requiredIds, allAvailableExercises);
     const requiredExerciseIds = requiredExercises.map((exercise) => exercise.id);
     const requiredSeconds = requiredExercises.reduce((sum, exercise) => sum + exercise.sec, 0);
     const remainingTargetSeconds = Math.max(0, dailyTargetMinutes * 60 - requiredSeconds);

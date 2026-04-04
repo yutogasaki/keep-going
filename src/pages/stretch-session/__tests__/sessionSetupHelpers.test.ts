@@ -72,6 +72,7 @@ describe('sessionSetupHelpers', () => {
 
     it('lets user settings override teacher defaults while keeping hybrid required ids', () => {
         const selection = buildEffectiveSessionSelections({
+            classLevel: '初級',
             globalRequiredIds: ['S05'],
             globalExcludedIds: ['S03'],
             teacherSettings: [
@@ -79,13 +80,14 @@ describe('sessionSetupHelpers', () => {
                 createTeacherSetting('S03', 'required'),
                 createTeacherSetting('S02', 'excluded'),
             ],
+            orderedExerciseIds: EXERCISES.map((exercise) => exercise.id),
             sessionExerciseIds: ['custom-1'],
             sessionHybridMode: true,
             todayExerciseIds: ['S06', 'S05'],
         });
 
-        expect(selection.requiredIds).toEqual(['S05', 'S01', 'custom-1']);
-        expect(selection.excludedIds).toEqual(['S06', 'S03', 'S02']);
+        expect(selection.requiredIds).toEqual(['S07', 'S01', 'S05', 'S10', 'custom-1']);
+        expect(selection.excludedIds).toEqual(['S06', 'S02', 'S03']);
     });
 
     it('puts class defaults before dynamic required ids', () => {
@@ -125,6 +127,22 @@ describe('sessionSetupHelpers', () => {
             'S08',
         ]);
         expect(session.at(-1)?.id).toBe('S09');
+    });
+
+    it('treats overlapping user arrays as an optional override', () => {
+        const selection = buildEffectiveSessionSelections({
+            classLevel: 'プレ',
+            globalRequiredIds: ['S07'],
+            globalExcludedIds: ['S07'],
+            teacherSettings: [],
+            orderedExerciseIds: EXERCISES.map((exercise) => exercise.id),
+            sessionExerciseIds: null,
+            sessionHybridMode: false,
+            todayExerciseIds: [],
+        });
+
+        expect(selection.requiredIds).not.toContain('S07');
+        expect(selection.excludedIds).not.toContain('S07');
     });
 
     it('resolves custom exercises into full session exercise objects', () => {

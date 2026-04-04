@@ -70,8 +70,12 @@ function CustomMenuExerciseRow({
                     ? 'rgba(43, 186, 160, 0.04)'
                     : item.isUserExcluded
                         ? 'rgba(225, 112, 85, 0.04)'
-                        : item.isTeacherRequired || item.isTeacherExcluded
+                        : item.isUserOptional
+                            ? 'rgba(99, 110, 114, 0.05)'
+                        : item.isTeacherRequired || item.isTeacherExcluded || item.isTeacherOptional
                             ? 'rgba(9, 132, 227, 0.035)'
+                            : item.isClassDefaultRequired
+                                ? 'rgba(99, 110, 114, 0.04)'
                             : 'transparent',
             }}
         >
@@ -129,8 +133,23 @@ function CustomMenuExerciseRow({
                     </div>
 
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        {(item.teacherBadge || item.userBadge) ? (
+                        {(item.classBadge || item.teacherBadge || item.userBadge) ? (
                             <>
+                                {item.classBadge && (
+                                    <span
+                                        style={{
+                                            padding: '3px 8px',
+                                            borderRadius: RADIUS.full,
+                                            background: 'rgba(99, 110, 114, 0.1)',
+                                            color: COLOR.muted,
+                                            fontFamily: FONT.body,
+                                            fontSize: 11,
+                                            fontWeight: 700,
+                                        }}
+                                    >
+                                        {item.classBadge}
+                                    </span>
+                                )}
                                 {item.teacherBadge && (
                                     <span
                                         style={{
@@ -267,7 +286,7 @@ export const CustomMenuExerciseCard: React.FC<CustomMenuExerciseCardProps> = ({
                         lineHeight: 1.6,
                     }}
                 >
-                    ★ 必須 / ⚪ おまかせ / 🔴 除外。青いヒントは先生の指定です。
+                    ★ 必須 / ⚪ おまかせ / 🔴 除外。グレーはクラスの標準、青は先生の指定です。
                 </div>
             </div>
 
@@ -309,7 +328,7 @@ export const CustomMenuExerciseCard: React.FC<CustomMenuExerciseCardProps> = ({
                         fontWeight: 700,
                     }}
                 >
-                    変更あり {changedCount}
+                    設定あり {changedCount}
                 </div>
             </div>
 
