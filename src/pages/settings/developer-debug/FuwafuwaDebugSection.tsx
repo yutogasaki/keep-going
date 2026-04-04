@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { getDateKeyOffset, getTodayKey } from '../../../lib/db';
+import { FUWAFUWA_TYPES } from '../../../lib/fuwafuwa';
 import { useAppStore } from '../../../store/useAppStore';
 
 const buttonStyle: React.CSSProperties = {
@@ -24,6 +25,8 @@ const selectStyle: React.CSSProperties = {
     flex: 1,
     border: '1px solid #ccc',
 };
+
+const FUWAFUWA_TYPE_DATALIST_ID = 'developer-debug-fuwafuwa-type-options';
 
 export const FuwafuwaDebugSection: React.FC = () => {
     const users = useAppStore((state) => state.users);
@@ -77,16 +80,31 @@ export const FuwafuwaDebugSection: React.FC = () => {
                 <div style={{ display: 'flex', gap: 8, flexDirection: 'column' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={selectRowLabelStyle}>種類:</span>
-                        <select
+                        <input
+                            type="number"
+                            min={0}
+                            step={1}
+                            inputMode="numeric"
+                            list={FUWAFUWA_TYPE_DATALIST_ID}
                             value={debugFuwafuwaType ?? ''}
-                            onChange={(event) => setDebugFuwafuwaType(event.target.value !== '' ? Number(event.target.value) : null)}
+                            onChange={(event) => {
+                                const nextValue = event.target.value;
+                                if (nextValue === '') {
+                                    setDebugFuwafuwaType(null);
+                                    return;
+                                }
+
+                                const parsed = Number(nextValue);
+                                setDebugFuwafuwaType(Number.isFinite(parsed) ? Math.max(0, Math.trunc(parsed)) : null);
+                            }}
                             style={selectStyle}
-                        >
-                            <option value="">(デフォルト)</option>
-                            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((value) => (
-                                <option key={value} value={value}>タイプ {value}</option>
+                            placeholder="(デフォルト)"
+                        />
+                        <datalist id={FUWAFUWA_TYPE_DATALIST_ID}>
+                            {FUWAFUWA_TYPES.map((value) => (
+                                <option key={value} value={value}>{`タイプ ${value}`}</option>
                             ))}
-                        </select>
+                        </datalist>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={selectRowLabelStyle}>段階:</span>

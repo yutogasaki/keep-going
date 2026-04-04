@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
+    computeFuwafuwaTypeStats,
     fetchAllAccountsForAdmin,
     suspendAccount,
     deleteAccountData,
@@ -12,6 +13,7 @@ import { AccountCard } from './developer-dashboard/AccountCard';
 import { DeveloperBulkActions } from './developer-dashboard/DeveloperBulkActions';
 import { ConfirmActionDialog } from './developer-dashboard/ConfirmActionDialog';
 import { DeveloperHeader } from './developer-dashboard/DeveloperHeader';
+import { DeveloperFuwafuwaStats } from './developer-dashboard/DeveloperFuwafuwaStats';
 import { DeveloperStatsAndFilters } from './developer-dashboard/DeveloperStatsAndFilters';
 import {
     analyzeAccount,
@@ -25,7 +27,7 @@ import type { ConfirmAction, FilterType } from './developer-dashboard/types';
 import { ScreenScaffold } from '../components/ScreenScaffold';
 import { SCREEN_PADDING_X } from '../lib/styles';
 
-type DeveloperTab = 'accounts' | 'debug';
+type DeveloperTab = 'accounts' | 'stats' | 'debug';
 
 interface DeveloperDashboardProps {
     onBack: () => void;
@@ -75,6 +77,7 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
     );
 
     const stats = useMemo(() => computeStats(accounts), [accounts]);
+    const fuwafuwaTypeStats = useMemo(() => computeFuwafuwaTypeStats(accounts), [accounts]);
 
     useEffect(() => {
         setSelectedAccountIds((current) => current.filter((accountId) => filteredAccountIdSet.has(accountId)));
@@ -244,7 +247,7 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                     background: '#16213e',
                     padding: `0 ${SCREEN_PADDING_X}px`,
                 }}>
-                    {(['accounts', 'debug'] as const).map((t) => (
+                    {(['accounts', 'stats', 'debug'] as const).map((t) => (
                         <button
                             key={t}
                             onClick={() => setTab(t)}
@@ -261,7 +264,7 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                                 transition: 'color 0.2s, border-color 0.2s',
                             }}
                         >
-                            {t === 'accounts' ? 'Accounts' : 'Debug'}
+                            {t === 'accounts' ? 'Accounts' : t === 'stats' ? 'Stats' : 'Debug'}
                         </button>
                     ))}
                 </div>
@@ -397,6 +400,10 @@ export const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({ onBack }
                             </div>
                         )}
                     </>
+                ) : tab === 'stats' ? (
+                    <div style={{ padding: `12px ${SCREEN_PADDING_X}px 16px` }}>
+                        <DeveloperFuwafuwaStats stats={fuwafuwaTypeStats} />
+                    </div>
                 ) : (
                     <div style={{ padding: `12px ${SCREEN_PADDING_X}px 0` }}>
                         <DeveloperDebugPanel />

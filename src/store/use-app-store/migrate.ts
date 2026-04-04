@@ -1,5 +1,6 @@
 import { getTodayKey } from '../../lib/db';
 import { DEFAULT_BGM_TRACK_ID } from '../../lib/bgmTracks';
+import { FUWAFUWA_TYPE_COUNT } from '../../lib/fuwafuwa';
 import type { AppState } from './types';
 import { sanitizePersistedState, sanitizeSessionDraft } from './migrateHelpers';
 
@@ -153,7 +154,7 @@ export function migrateAppState(persistedState: unknown, version: number): AppSt
                 name: getNonEmptyString(state.fuwafuwaName, 'ゲスト'),
                 classLevel: getNonEmptyString(state.classLevel, '初級'),
                 fuwafuwaBirthDate: getNonEmptyString(state.fuwafuwaBirthDate, getTodayKey()),
-                fuwafuwaType: getFiniteNumber(state.fuwafuwaType, Math.floor(Math.random() * 10)),
+                fuwafuwaType: getFiniteNumber(state.fuwafuwaType, Math.floor(Math.random() * FUWAFUWA_TYPE_COUNT)),
                 fuwafuwaCycleCount: getFiniteNumber(state.fuwafuwaCycleCount, 1),
                 fuwafuwaName: getNullableString(state.fuwafuwaName),
                 pastFuwafuwas: Array.isArray(state.pastFuwafuwas) ? state.pastFuwafuwas : [],

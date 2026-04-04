@@ -1,5 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { calculateFuwafuwaStatus, pickNextFuwafuwaType, FUWAFUWA_CYCLE_DAYS } from '../fuwafuwa';
+import {
+    calculateFuwafuwaStatus,
+    pickNextFuwafuwaType,
+    FUWAFUWA_CYCLE_DAYS,
+    FUWAFUWA_TYPE_COUNT,
+} from '../fuwafuwa';
 import type { SessionRecord } from '../db';
 
 // Mock getTodayKey to control "today" in tests
@@ -146,7 +151,7 @@ describe('pickNextFuwafuwaType', () => {
         expect(result).not.toBe(0);
         expect(result).not.toBe(1);
         expect(result).toBeGreaterThanOrEqual(0);
-        expect(result).toBeLessThan(10);
+        expect(result).toBeLessThan(FUWAFUWA_TYPE_COUNT);
     });
 
     it('excludes current type', () => {
@@ -158,7 +163,7 @@ describe('pickNextFuwafuwaType', () => {
     });
 
     it('when all types used, allows duplicates including the current type', () => {
-        const past = Array.from({ length: 10 }, (_, i) => ({
+        const past = Array.from({ length: FUWAFUWA_TYPE_COUNT }, (_, i) => ({
             id: `${i}`,
             type: i,
             name: null,

@@ -8,6 +8,7 @@ import type { SessionMenuSource } from '../store/use-app-store/types';
 
 export interface AdminMemberSummary extends StudentMember {
     createdAt: string | null;
+    fuwafuwaType: number | null;
 }
 
 export interface AdminAccountSummary {
@@ -19,6 +20,31 @@ export interface AdminAccountSummary {
     lastActiveDate: string | null;
     registeredAt: string | null; // earliest family_member created_at
     suspended: boolean;
+}
+
+export interface AdminFuwafuwaTypeMemberSummary {
+    memberId: string;
+    accountId: string;
+    name: string;
+    classLevel: string;
+}
+
+export interface AdminFuwafuwaTypeStat {
+    type: number | null;
+    memberCount: number;
+    accountCount: number;
+    share: number;
+    members: AdminFuwafuwaTypeMemberSummary[];
+}
+
+export interface AdminFuwafuwaTypeStatsSummary {
+    totalMembers: number;
+    typesInUse: number;
+    topType: number | null;
+    topTypeMemberCount: number;
+    topTypeShare: number;
+    unassignedMembers: number;
+    stats: AdminFuwafuwaTypeStat[];
 }
 
 function normalizeSessionMenuSource(value: string | null | undefined): SessionMenuSource | null {
@@ -33,7 +59,7 @@ export async function fetchAllAccountsForAdmin(): Promise<AdminAccountSummary[]>
     if (!supabase) return [];
 
     const [membersRes, sessionsRes, settingsRes] = await Promise.all([
-        supabase.from('family_members').select('id, account_id, name, class_level, avatar_url, created_at'),
+        supabase.from('family_members').select('id, account_id, name, class_level, avatar_url, created_at, fuwafuwa_type'),
         supabase
             .from('sessions')
             .select('id, account_id, date, started_at, total_seconds, exercise_ids, planned_exercise_ids, skipped_ids, user_ids, source_menu_id, source_menu_source')
@@ -78,6 +104,9 @@ export async function fetchAllAccountsForAdmin(): Promise<AdminAccountSummary[]>
                 classLevel: m.class_level,
                 avatarUrl: m.avatar_url || undefined,
                 createdAt: m.created_at ?? null,
+                fuwafuwaType: typeof m.fuwafuwa_type === 'number' && Number.isFinite(m.fuwafuwa_type)
+                    ? m.fuwafuwa_type
+                    : null,
             })),
             sessions: acctSessions.slice(0, 50).map(s => ({
                 id: s.id,
@@ -168,4 +197,72 @@ export function computeStats(accounts: AdminAccountSummary[]) {
     );
 
     return { totalAccounts, activeAccounts, totalMembers, suspendedAccounts, weekSessions };
+}
+
+export function computeFuwafuwaTypeStats(accounts: AdminAccountSummary[]): AdminFuwafuwaTypeStatsSummary {
+    const groups = new Map<string, {
+        type: number | null;
+        members: AdminFuwafuwaTypeMemberSummary[];
+        accountIds: Set<string>;
+    }>();
+
+    for (const account of accounts) {
+        for (const member of account.members) {
+            const normalizedType = typeof member.fuwafuwaType === 'number' && Number.isFinite(member.fuwafuwaType)
+                ? member.fuwafuwaType
+                : null;
+            const key = normalizedType === null ? 'unassigned' : String(normalizedType);
+            const existing = groups.get(key) ?? {
+                type: normalizedType,
+                members: [],
+                accountIds: new Set<string>(),
+            };
+
+            existing.members.push({
+                memberId: member.id,
+                accountId: account.accountId,
+                name: member.name,
+                classLevel: member.classLevel,
+            });
+            existing.accountIds.add(account.accountId);
+            groups.set(key, existing);
+        }
+    }
+
+    const totalMembers = accounts.reduce((sum, account) => sum + account.members.length, 0);
+    const stats = [...groups.values()]
+        .map<AdminFuwafuwaTypeStat>((group) => ({
+            type: group.type,
+            memberCount: group.members.length,
+            accountCount: group.accountIds.size,
+            share: totalMembers > 0 ? group.members.length / totalMembers : 0,
+            members: group.members,
+        }))
+        .sort((left, right) => {
+            if (right.memberCount !== left.memberCount) {
+                return right.memberCount - left.memberCount;
+            }
+
+            if (left.type === null && right.type !== null) {
+                return 1;
+            }
+            if (left.type !== null && right.type === null) {
+                return -1;
+            }
+
+            return (left.type ?? Number.MAX_SAFE_INTEGER) - (right.type ?? Number.MAX_SAFE_INTEGER);
+        });
+
+    const topStat = stats[0] ?? null;
+    const unassignedMembers = stats.find((stat) => stat.type === null)?.memberCount ?? 0;
+
+    return {
+        totalMembers,
+        typesInUse: stats.filter((stat) => stat.type !== null).length,
+        topType: topStat?.type ?? null,
+        topTypeMemberCount: topStat?.memberCount ?? 0,
+        topTypeShare: totalMembers > 0 ? (topStat?.memberCount ?? 0) / totalMembers : 0,
+        unassignedMembers,
+        stats,
+    };
 }

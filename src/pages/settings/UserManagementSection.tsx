@@ -11,6 +11,7 @@ import { AddUserButton } from './user-management/AddUserButton';
 import { UserEditorForm } from './user-management/UserEditorForm';
 import { DeleteUserModal } from './user-management/DeleteUserModal';
 import type { NewUserInput } from './user-management/types';
+import { FUWAFUWA_TYPE_COUNT } from '../../lib/fuwafuwa';
 
 interface UserManagementSectionProps {
     users: UserProfileStore[];
@@ -91,7 +92,7 @@ export const UserManagementSection: React.FC<UserManagementSectionProps> = ({
             name,
             classLevel: editClass,
             fuwafuwaBirthDate: getTodayKey(),
-            fuwafuwaType: Math.floor(Math.random() * 10),
+            fuwafuwaType: Math.floor(Math.random() * FUWAFUWA_TYPE_COUNT),
             fuwafuwaCycleCount: 1,
             fuwafuwaName: null,
             pastFuwafuwas: [],

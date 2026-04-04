@@ -15,6 +15,7 @@ function createAccount(overrides: Partial<AdminAccountSummary> = {}): AdminAccou
                 classLevel: '初級',
                 avatarUrl: undefined,
                 createdAt: '2026-01-01T00:00:00Z',
+                fuwafuwaType: 1,
             },
         ],
         sessions: [],
@@ -108,6 +109,7 @@ describe('accountSegmentation', () => {
                     classLevel: '初級',
                     avatarUrl: undefined,
                     createdAt: '2026-01-01T00:00:00Z',
+                    fuwafuwaType: 1,
                 },
                 {
                     id: 'member-b',
@@ -115,6 +117,7 @@ describe('accountSegmentation', () => {
                     classLevel: '初級',
                     avatarUrl: undefined,
                     createdAt: '2026-01-02T00:00:00Z',
+                    fuwafuwaType: 2,
                 },
             ],
             totalSessions: 0,
@@ -139,6 +142,7 @@ describe('accountSegmentation', () => {
                     classLevel: '初級',
                     avatarUrl: undefined,
                     createdAt: '2026-01-01T00:00:00Z',
+                    fuwafuwaType: 1,
                 },
                 {
                     id: 'member-b',
@@ -146,6 +150,7 @@ describe('accountSegmentation', () => {
                     classLevel: '初級',
                     avatarUrl: undefined,
                     createdAt: '2026-01-05T00:00:00Z',
+                    fuwafuwaType: 2,
                 },
             ],
             sessions: [
@@ -225,6 +230,7 @@ describe('accountSegmentation', () => {
                     classLevel: '初級',
                     avatarUrl: undefined,
                     createdAt: '2026-01-01T00:00:00Z',
+                    fuwafuwaType: 3,
                 },
                 {
                     id: 'member-d',
@@ -232,6 +238,7 @@ describe('accountSegmentation', () => {
                     classLevel: '初級',
                     avatarUrl: undefined,
                     createdAt: '2026-01-02T00:00:00Z',
+                    fuwafuwaType: 4,
                 },
             ],
         });

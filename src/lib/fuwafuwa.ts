@@ -5,6 +5,8 @@ import type { PastFuwafuwaRecord } from '../store/useAppStore';
 
 // 28 days cycle
 export const FUWAFUWA_CYCLE_DAYS = 28;
+export const FUWAFUWA_TYPE_COUNT = 10;
+export const FUWAFUWA_TYPES = Array.from({ length: FUWAFUWA_TYPE_COUNT }, (_, index) => index);
 
 // Thresholds
 export const EVOLVE_TO_FAIRY_THRESHOLD = 2;   // Requires 2 active days to evolve to fairy
@@ -96,7 +98,7 @@ export function pickNextFuwafuwaType(
     pastFuwafuwas: PastFuwafuwaRecord[],
     currentType: number,
 ): number {
-    const allTypes = Array.from({ length: 10 }, (_, i) => i);
+    const allTypes = FUWAFUWA_TYPES;
     const usedTypes = new Set([
         currentType,
         ...pastFuwafuwas.map(fw => fw.type),
