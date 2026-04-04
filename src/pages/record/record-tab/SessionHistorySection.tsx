@@ -13,6 +13,12 @@ function formatDuration(totalSeconds: number): string {
     return `${toDisplayMinutes(totalSeconds)}分`;
 }
 
+function formatCompactDay(dateStr: string): string {
+    const date = new Date(`${dateStr}T00:00:00`);
+    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
+    return `${date.getMonth() + 1}/${date.getDate()}(${weekdays[date.getDay()]})`;
+}
+
 function getSessionBadgeLabel(item: RecordHistoryMonthSection['days'][number]['items'][number]): string | null {
     if (item.sessionLabel === 'みんなで') return 'みんなで！';
     if (item.userNames.length > 1) return item.userNames.join('・');
@@ -114,13 +120,45 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({ lo
                                     </div>
                                 ))}
                             </div>
+
+                            {selectedMonth.days.length > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    <div style={{ fontFamily: FONT.body, fontSize: FONT_SIZE.xs + 1, fontWeight: 800, color: COLOR.muted }}>できた日</div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                        {selectedMonth.days.map((day, index) => (
+                                            <button
+                                                key={day.date}
+                                                type="button"
+                                                onClick={() => document.getElementById(`record-day-${selectedMonth.id}-${day.date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                                                style={{
+                                                    border: '1px solid rgba(43,186,160,0.18)',
+                                                    cursor: 'pointer',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    padding: '7px 10px',
+                                                    borderRadius: RADIUS.full,
+                                                    background: index === 0 ? 'rgba(43,186,160,0.14)' : 'rgba(255,255,255,0.78)',
+                                                    color: index === 0 ? COLOR.primaryDark : COLOR.dark,
+                                                    fontFamily: FONT.body,
+                                                    fontSize: FONT_SIZE.sm,
+                                                    fontWeight: 800,
+                                                    boxShadow: index === 0 ? '0 6px 16px rgba(43,186,160,0.12)' : 'none',
+                                                }}
+                                            >
+                                                {formatCompactDay(day.date)}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null}
                         </div>
 
                         <div style={{ padding: '16px 18px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                             {selectedMonth.days.length === 0 ? (
                                 <div style={{ padding: '14px 16px', borderRadius: RADIUS.xl, background: 'rgba(255,255,255,0.78)', border: '1px dashed rgba(178,190,195,0.8)', fontFamily: FONT.body, fontSize: FONT_SIZE.sm, color: COLOR.muted }}>{selectedMonth.emptyLine}</div>
                             ) : selectedMonth.days.map((day) => (
-                                <div key={day.date} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '14px', borderRadius: RADIUS['2xl'], background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(233,239,244,0.9)' }}>
+                                <div id={`record-day-${selectedMonth.id}-${day.date}`} key={day.date} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '14px', borderRadius: RADIUS['2xl'], background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(233,239,244,0.9)', scrollMarginTop: 16 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
                                         <span style={{ fontFamily: FONT.heading, fontSize: FONT_SIZE.lg, fontWeight: 700, color: COLOR.dark }}>{formatDate(day.date)}</span>
                                         <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '5px 9px', borderRadius: RADIUS.full, background: 'rgba(255,255,255,0.82)', fontFamily: FONT.body, fontSize: FONT_SIZE.xs + 1, fontWeight: 800, color: COLOR.muted, whiteSpace: 'nowrap' }}>{day.sessionCount}回 / {formatDuration(day.totalSeconds)}</span>
