@@ -172,6 +172,19 @@ describe('recordOverviewSummary', () => {
         expect(sections[0].summaryLine).toBe('2日 / 2回 / 12分');
         expect(sections[1].summaryLine).toBe('1日 / 1回 / 6分');
         expect(sections[0].defaultExpanded).toBe(true);
+        expect(sections[0].calendarCells).toHaveLength(35);
+        expect(sections[0].calendarCells.find((cell) => cell.date === '2026-03-14')).toMatchObject({
+            label: '14',
+            hasRecord: true,
+            minutes: 6,
+            sessionCount: 1,
+            isToday: true,
+            isCurrentMonth: true,
+        });
+        expect(sections[0].calendarCells.find((cell) => cell.date === '2026-03-01')).toMatchObject({
+            hasRecord: false,
+            isCurrentMonth: true,
+        });
     });
 
     it('uses a softer suggestion copy before any recent record exists', () => {

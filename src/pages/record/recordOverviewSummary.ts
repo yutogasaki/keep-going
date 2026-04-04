@@ -68,8 +68,21 @@ export interface RecordHistoryMonthSection {
     totalMinutes: number;
     summaryLine: string;
     emptyLine: string;
+    calendarCells: RecordHistoryMonthCalendarCell[];
     days: RecordSessionHistoryDay[];
     defaultExpanded: boolean;
+}
+
+export interface RecordHistoryMonthCalendarCell {
+    id: string;
+    date: string;
+    label: string;
+    minutes: number;
+    sessionCount: number;
+    level: 0 | 1 | 2 | 3;
+    isCurrentMonth: boolean;
+    isToday: boolean;
+    hasRecord: boolean;
 }
 
 const WEEKDAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'];
@@ -189,6 +202,13 @@ function formatMonthKey(date: Date): string {
     return `${year}-${month}`;
 }
 
+function formatDateKey(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 function shiftMonthKey(monthKey: string, offsetMonths: number): string {
     const parsed = parseMonthKey(monthKey);
     if (!parsed) {
@@ -228,6 +248,56 @@ function buildMonthShortLabel(monthKey: string, currentMonthKey: string): string
     }
 
     return `${parsed.getFullYear()}年${parsed.getMonth() + 1}月`;
+}
+
+function buildRecordHistoryMonthCalendarCells({
+    monthKey,
+    days,
+    todayKey,
+}: {
+    monthKey: string;
+    days: RecordSessionHistoryDay[];
+    todayKey: string;
+}): RecordHistoryMonthCalendarCell[] {
+    const monthStart = parseMonthKey(monthKey);
+    if (!monthStart) {
+        return [];
+    }
+
+    const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+    const daysByDate = new Map(days.map((day) => [day.date, day]));
+    const leadingOffset = monthStart.getDay();
+    const trailingOffset = 6 - monthEnd.getDay();
+    const gridStart = new Date(monthStart);
+    gridStart.setDate(gridStart.getDate() - leadingOffset);
+    const gridEnd = new Date(monthEnd);
+    gridEnd.setDate(gridEnd.getDate() + trailingOffset);
+
+    const cells: RecordHistoryMonthCalendarCell[] = [];
+    const current = new Date(gridStart);
+
+    while (current <= gridEnd) {
+        const dateKey = formatDateKey(current);
+        const day = daysByDate.get(dateKey);
+        const isCurrentMonth = dateKey.startsWith(monthKey);
+        const totalSeconds = day?.totalSeconds ?? 0;
+
+        cells.push({
+            id: `${monthKey}:${dateKey}`,
+            date: dateKey,
+            label: String(current.getDate()),
+            minutes: toDisplayMinutes(totalSeconds),
+            sessionCount: day?.sessionCount ?? 0,
+            level: getDotLevel(totalSeconds),
+            isCurrentMonth,
+            isToday: dateKey === todayKey,
+            hasRecord: Boolean(day),
+        });
+
+        current.setDate(current.getDate() + 1);
+    }
+
+    return cells;
 }
 
 export function buildTodayRecordSummary({
@@ -497,6 +567,11 @@ export function buildRecordHistoryMonthSections({
                 ? 'まだありません'
                 : `${dayCount}日 / ${sessionCount}回 / ${totalMinutes}分`,
             emptyLine: `${monthLabel}のきろくは ありません`,
+            calendarCells: buildRecordHistoryMonthCalendarCells({
+                monthKey,
+                days,
+                todayKey,
+            }),
             days,
             defaultExpanded: monthKey === currentMonthKey,
         };

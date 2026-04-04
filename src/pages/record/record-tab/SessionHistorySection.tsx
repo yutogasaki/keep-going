@@ -13,10 +13,32 @@ function formatDuration(totalSeconds: number): string {
     return `${toDisplayMinutes(totalSeconds)}分`;
 }
 
-function formatCompactDay(dateStr: string): string {
-    const date = new Date(`${dateStr}T00:00:00`);
-    const weekdays = ['日', '月', '火', '水', '木', '金', '土'];
-    return `${date.getMonth() + 1}/${date.getDate()}(${weekdays[date.getDay()]})`;
+const WEEKDAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'];
+
+function getCalendarCellBackground(
+    cell: RecordHistoryMonthSection['calendarCells'][number],
+): string {
+    if (!cell.isCurrentMonth) return 'rgba(131,149,167,0.08)';
+    switch (cell.level) {
+    case 1:
+        return 'rgba(43,186,160,0.24)';
+    case 2:
+        return 'rgba(43,186,160,0.48)';
+    case 3:
+        return 'rgba(43,186,160,0.88)';
+    case 0:
+    default:
+        return 'rgba(131,149,167,0.14)';
+    }
+}
+
+function getCalendarCellTextColor(
+    cell: RecordHistoryMonthSection['calendarCells'][number],
+): string {
+    if (!cell.isCurrentMonth) return COLOR.light;
+    if (cell.level >= 2) return COLOR.white;
+    if (cell.level === 1) return COLOR.primaryDark;
+    return COLOR.text;
 }
 
 function getSessionBadgeLabel(item: RecordHistoryMonthSection['days'][number]['items'][number]): string | null {
@@ -121,32 +143,85 @@ export const SessionHistorySection: React.FC<SessionHistorySectionProps> = ({ lo
                                 ))}
                             </div>
 
-                            {selectedMonth.days.length > 0 ? (
+                            {selectedMonth.calendarCells.length > 0 ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                    <div style={{ fontFamily: FONT.body, fontSize: FONT_SIZE.xs + 1, fontWeight: 800, color: COLOR.muted }}>できた日</div>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                        {selectedMonth.days.map((day, index) => (
-                                            <button
-                                                key={day.date}
-                                                type="button"
-                                                onClick={() => document.getElementById(`record-day-${selectedMonth.id}-${day.date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                                        <div style={{ fontFamily: FONT.body, fontSize: FONT_SIZE.xs + 1, fontWeight: 800, color: COLOR.muted }}>1か月カレンダー</div>
+                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontFamily: FONT.body, fontSize: FONT_SIZE.xs + 1, color: COLOR.muted }}>
+                                            <span>うすい</span>
+                                            <span style={{ display: 'inline-flex', gap: 4 }}>
+                                                {[0, 1, 2, 3].map((level) => (
+                                                    <span
+                                                        key={level}
+                                                        style={{
+                                                            width: 10,
+                                                            height: 10,
+                                                            borderRadius: RADIUS.circle,
+                                                            background: getCalendarCellBackground({
+                                                                id: String(level),
+                                                                date: '',
+                                                                label: '',
+                                                                minutes: 0,
+                                                                sessionCount: 0,
+                                                                level: level as 0 | 1 | 2 | 3,
+                                                                isCurrentMonth: true,
+                                                                isToday: false,
+                                                                hasRecord: level > 0,
+                                                            }),
+                                                        }}
+                                                    />
+                                                ))}
+                                            </span>
+                                            <span>こい</span>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 6 }}>
+                                        {WEEKDAY_LABELS.map((label) => (
+                                            <div
+                                                key={label}
                                                 style={{
-                                                    border: '1px solid rgba(43,186,160,0.18)',
-                                                    cursor: 'pointer',
-                                                    display: 'inline-flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    padding: '7px 10px',
-                                                    borderRadius: RADIUS.full,
-                                                    background: index === 0 ? 'rgba(43,186,160,0.14)' : 'rgba(255,255,255,0.78)',
-                                                    color: index === 0 ? COLOR.primaryDark : COLOR.dark,
+                                                    textAlign: 'center',
                                                     fontFamily: FONT.body,
-                                                    fontSize: FONT_SIZE.sm,
+                                                    fontSize: 10,
                                                     fontWeight: 800,
-                                                    boxShadow: index === 0 ? '0 6px 16px rgba(43,186,160,0.12)' : 'none',
+                                                    color: COLOR.light,
+                                                    paddingBottom: 2,
                                                 }}
                                             >
-                                                {formatCompactDay(day.date)}
+                                                {label}
+                                            </div>
+                                        ))}
+                                        {selectedMonth.calendarCells.map((cell) => (
+                                            <button
+                                                key={cell.id}
+                                                type="button"
+                                                disabled={!cell.hasRecord}
+                                                onClick={() => document.getElementById(`record-day-${selectedMonth.id}-${cell.date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                                                title={cell.hasRecord ? `${cell.date}: ${cell.minutes}分` : cell.date}
+                                                style={{
+                                                    aspectRatio: '1 / 1',
+                                                    minHeight: 38,
+                                                    borderRadius: RADIUS.lg,
+                                                    border: cell.isToday ? `2px solid ${COLOR.info}` : '1px solid rgba(223,230,233,0.76)',
+                                                    background: getCalendarCellBackground(cell),
+                                                    color: getCalendarCellTextColor(cell),
+                                                    cursor: cell.hasRecord ? 'pointer' : 'default',
+                                                    padding: '4px 2px',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: 2,
+                                                    boxShadow: cell.isToday ? '0 0 0 4px rgba(9,132,227,0.12)' : 'none',
+                                                    opacity: cell.isCurrentMonth ? 1 : 0.55,
+                                                }}
+                                            >
+                                                <span style={{ fontFamily: FONT.heading, fontSize: FONT_SIZE.sm, fontWeight: 700, lineHeight: 1 }}>
+                                                    {cell.label}
+                                                </span>
+                                                <span style={{ fontFamily: FONT.body, fontSize: 9, fontWeight: 800, lineHeight: 1 }}>
+                                                    {cell.hasRecord ? `${cell.minutes}分` : ''}
+                                                </span>
                                             </button>
                                         ))}
                                     </div>
