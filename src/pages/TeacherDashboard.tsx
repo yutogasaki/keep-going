@@ -197,7 +197,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
 
     const weeklyStats = useMemo<WeeklyStats | null>(() => {
         if (individualStudents.length === 0) return null;
-        const weekDates = new Set(Array.from({ length: 7 }, (_, i) => getDateKeyOffset(-i)));
+        const weekDateKeys = Array.from({ length: 7 }, (_, i) => getDateKeyOffset(-(6 - i)));
+        const weekDates = new Set(weekDateKeys);
 
         let activeCount = 0;
         let totalMinutes = 0;
@@ -210,13 +211,27 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
             totalMinutes += weekSessions.reduce((sum, session) => sum + session.totalSeconds, 0);
         }
 
+        const dailyActivity = weekDateKeys.map((dateKey) => {
+            const activeStudentCount = individualStudents.filter((student) => (
+                student.sessions.some((session) => session.date === dateKey)
+            )).length;
+
+            return {
+                dateKey,
+                label: formatWeeklyActivityLabel(dateKey),
+                count: activeStudentCount,
+                isToday: dateKey === today,
+            };
+        });
+
         return {
             activeCount,
             totalMinutes: Math.floor(totalMinutes / 60),
             totalSessions,
             rate: Math.round((activeCount / individualStudents.length) * 100),
+            dailyActivity,
         };
-    }, [individualStudents]);
+    }, [individualStudents, today]);
 
     useEffect(() => {
         if (loading) {
@@ -382,3 +397,11 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ onBack }) =>
         </ScreenScaffold>
     );
 };
+
+function formatWeeklyActivityLabel(dateKey: string): string {
+    const [year, month, day] = dateKey.split('-').map(Number);
+    const date = new Date(year, (month ?? 1) - 1, day ?? 1);
+    const weekday = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()] ?? '';
+
+    return `${month}/${day} ${weekday}`;
+}

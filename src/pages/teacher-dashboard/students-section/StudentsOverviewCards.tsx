@@ -83,6 +83,7 @@ export const StudentsOverviewCards: React.FC<StudentsOverviewCardsProps> = ({
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
                         gap: 10,
+                        marginBottom: 16,
                     }}>
                         <WeeklyStat
                             label="練習率"
@@ -101,6 +102,40 @@ export const StudentsOverviewCards: React.FC<StudentsOverviewCardsProps> = ({
                             value={`${weeklyStats.totalMinutes}`}
                             sub="分"
                             color="#0984E3"
+                        />
+                    </div>
+
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 10,
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 8,
+                            flexWrap: 'wrap',
+                        }}>
+                            <span style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 12,
+                                fontWeight: 700,
+                                color: '#2D3436',
+                            }}>
+                                直近1週間の活動人数
+                            </span>
+                            <span style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 11,
+                                color: '#8395A7',
+                            }}>
+                                各日で1回でも活動した人数
+                            </span>
+                        </div>
+                        <WeeklyActivityChart
+                            dailyActivity={weeklyStats.dailyActivity}
+                            studentCount={individualStudents.length}
                         />
                     </div>
                 </div>
@@ -154,6 +189,101 @@ const StatCard: React.FC<{
         </div>
     </div>
 );
+
+const WeeklyActivityChart: React.FC<{
+    dailyActivity: WeeklyStats['dailyActivity'];
+    studentCount: number;
+}> = ({ dailyActivity, studentCount }) => {
+    const maxCount = Math.max(1, ...dailyActivity.map((item) => item.count));
+
+    return (
+        <div style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${dailyActivity.length}, minmax(0, 1fr))`,
+            gap: 8,
+            alignItems: 'end',
+            minHeight: 148,
+        }}>
+            {dailyActivity.map((item) => {
+                const heightPercent = Math.max(10, Math.round((item.count / maxCount) * 100));
+
+                return (
+                    <div
+                        key={item.dateKey}
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 6,
+                            minWidth: 0,
+                        }}
+                    >
+                        <span style={{
+                            fontFamily: "'JetBrains Mono', monospace",
+                            fontSize: 11,
+                            fontWeight: 700,
+                            color: item.isToday ? '#2BBAA0' : '#636E72',
+                            lineHeight: 1,
+                        }}>
+                            {item.count}
+                        </span>
+                        <div style={{
+                            width: '100%',
+                            minHeight: 88,
+                            borderRadius: 12,
+                            background: 'linear-gradient(180deg, rgba(232, 245, 233, 0.4), rgba(240, 243, 245, 0.85))',
+                            display: 'flex',
+                            alignItems: 'flex-end',
+                            justifyContent: 'center',
+                            padding: '6px 4px',
+                        }}>
+                            <div style={{
+                                width: '100%',
+                                maxWidth: 28,
+                                height: `${heightPercent}%`,
+                                minHeight: item.count === 0 ? 8 : 16,
+                                borderRadius: 10,
+                                background: item.isToday
+                                    ? 'linear-gradient(180deg, #55E6C1, #2BBAA0)'
+                                    : 'linear-gradient(180deg, #74B9FF, #0984E3)',
+                                boxShadow: item.isToday
+                                    ? '0 6px 14px rgba(43, 186, 160, 0.28)'
+                                    : '0 6px 14px rgba(9, 132, 227, 0.18)',
+                                transition: 'height 0.2s ease',
+                            }} />
+                        </div>
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 1,
+                            minWidth: 0,
+                        }}>
+                            <span style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 10,
+                                fontWeight: 700,
+                                color: item.isToday ? '#2BBAA0' : '#2D3436',
+                                lineHeight: 1.2,
+                                whiteSpace: 'nowrap',
+                            }}>
+                                {item.label}
+                            </span>
+                            <span style={{
+                                fontFamily: "'Noto Sans JP', sans-serif",
+                                fontSize: 10,
+                                color: '#8395A7',
+                                lineHeight: 1,
+                            }}>
+                                / {studentCount}人
+                            </span>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
 
 const WeeklyStat: React.FC<{
     label: string;

@@ -17,4 +17,10 @@ export interface WeeklyStats {
     totalMinutes: number;
     totalSessions: number;
     rate: number;
+    dailyActivity: Array<{
+        dateKey: string;
+        label: string;
+        count: number;
+        isToday: boolean;
+    }>;
 }
