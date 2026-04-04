@@ -39,6 +39,7 @@ export function useHomeChallenges({ users, sessionUserIds, enabled = true, sessi
     const [teacherExercises, setTeacherExercises] = useState<TeacherExercise[]>([]);
     const [pastExpanded, setPastExpanded] = useState(false);
     const [sessionRevision, setSessionRevision] = useState(0);
+    const [todayKey, setTodayKey] = useState(() => getTodayKey());
     const hydrateChallengeEnrollmentState = useAppStore((state) => state.hydrateChallengeEnrollmentState);
     const joinedChallengeIds = useAppStore((state) => state.joinedChallengeIds);
     const challengeEnrollmentWindows = useAppStore((state) => state.challengeEnrollmentWindows);
@@ -82,6 +83,43 @@ export function useHomeChallenges({ users, sessionUserIds, enabled = true, sessi
         };
     }, [enabled, sessions]);
 
+    useEffect(() => {
+        if (!enabled) {
+            return;
+        }
+
+        let timerId: number | null = null;
+        const syncTodayKey = () => {
+            setTodayKey((current) => {
+                const next = getTodayKey();
+                return current === next ? current : next;
+            });
+        };
+        const scheduleNextRefresh = () => {
+            const delayMs = getMsUntilNextHomeChallengeDayBoundary(new Date());
+            timerId = window.setTimeout(() => {
+                syncTodayKey();
+                scheduleNextRefresh();
+            }, delayMs);
+        };
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                syncTodayKey();
+            }
+        };
+
+        syncTodayKey();
+        scheduleNextRefresh();
+        document.addEventListener('visibilitychange', handleVisibility);
+
+        return () => {
+            if (timerId !== null) {
+                window.clearTimeout(timerId);
+            }
+            document.removeEventListener('visibilitychange', handleVisibility);
+        };
+    }, [enabled]);
+
     const classMatchedChallenges = useMemo(() => {
         const activeClassLevels = new Set<string>();
 
@@ -109,7 +147,7 @@ export function useHomeChallenges({ users, sessionUserIds, enabled = true, sessi
         }
 
         let cancelled = false;
-        const today = getTodayKey();
+        const today = todayKey;
 
         const computeBuckets = async () => {
             const nextAvailable: Challenge[] = [];
@@ -215,6 +253,7 @@ export function useHomeChallenges({ users, sessionUserIds, enabled = true, sessi
         joinedChallengeIds,
         enabled,
         sessionRevision,
+        todayKey,
     ]);
 
     return {
@@ -228,4 +267,15 @@ export function useHomeChallenges({ users, sessionUserIds, enabled = true, sessi
         setPastExpanded,
         loadChallenges,
     };
+}
+
+export function getMsUntilNextHomeChallengeDayBoundary(now: Date): number {
+    const nextBoundary = new Date(now);
+
+    if (now.getHours() >= 3) {
+        nextBoundary.setDate(nextBoundary.getDate() + 1);
+    }
+
+    nextBoundary.setHours(3, 0, 0, 0);
+    return Math.max(1000, nextBoundary.getTime() - now.getTime());
 }
