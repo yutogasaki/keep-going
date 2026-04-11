@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { getDateKeyOffset, getTodayKey } from '../../../lib/db';
-import { FUWAFUWA_TYPES, SPRING_SAKURA_FUWAFUWA_TYPES } from '../../../lib/fuwafuwa';
+import { APRIL_FUWAFUWA_TYPES, FUWAFUWA_TYPES } from '../../../lib/fuwafuwa';
 import { useAppStore } from '../../../store/useAppStore';
 
 const buttonStyle: React.CSSProperties = {
@@ -27,7 +27,7 @@ const selectStyle: React.CSSProperties = {
 };
 
 const FUWAFUWA_TYPE_DATALIST_ID = 'developer-debug-fuwafuwa-type-options';
-const sakuraTypeSet = new Set<number>(SPRING_SAKURA_FUWAFUWA_TYPES);
+const sakuraTypeSet = new Set<number>(APRIL_FUWAFUWA_TYPES);
 
 export const FuwafuwaDebugSection: React.FC = () => {
     const users = useAppStore((state) => state.users);
