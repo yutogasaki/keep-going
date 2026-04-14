@@ -13,7 +13,7 @@
 | CI verify | push / PR で回る共通検証導線 | `.github/workflows/verify.yml` |
 | Active task queue | 今回の実行対象だけを持つ | `.agents/tasks/TASKS.md` |
 | Done log | 完了した仕事の短い履歴 | `.agents/tasks/DONE.md` |
-| Durable memory | 再利用価値が高い決定・罠 | `.agents/MEMORY.md` |
+| Durable memory | 再利用価値が高い決定・罠 | `.agents/memory/durable.md` |
 | Product backlog | 中長期タスク、仕様差分、ロードマップ | `docs/tasks.md` |
 | Product terminology | 用語定義の正本 | `docs/terminology.md` |
 | 詳細仕様 | UI / ロジック /運用仕様 | `docs/*.md` |
@@ -41,7 +41,7 @@
 - typo 修正や小さな見た目修正を粒度細かく残しすぎない。
 - 50 行を超えたら `.agents/tasks/archive/YYYY-MM.md` へ詳細を移し、`DONE.md` は要約と archive 導線だけを残す。
 
-### `.agents/MEMORY.md`
+### `.agents/memory/durable.md`
 
 - 次回以降も効くことだけを書く。
 - 例: 設計判断、移行時の罠、Sync の危険点、UX の非交渉ルール。
@@ -65,7 +65,7 @@
 1. 仕様差分や大きな課題は `docs/tasks.md` に置く。
 2. 今回着手するものだけを `.agents/tasks/TASKS.md` に移す。
 3. 完了後は `.agents/tasks/DONE.md` に短く残す。
-4. 次回も効く判断だけ `.agents/MEMORY.md` に残す。
+4. 次回も効く判断だけ `.agents/memory/durable.md` に残す。
 
 ## Required Skill And Verification Matrix
 
@@ -107,7 +107,7 @@
 - `.agents/skills/*/SKILL.md` を正本にし、`.claude/skills/*` は redirect 以外を置かない
 - `TASKS.md`: 30 行超なら整理
 - `DONE.md`: 50 行超なら圧縮
-- `MEMORY.md`: 40 行超なら整理
+- `durable.md`: 40 行超なら整理
 
 ## Skill Policy
 
@@ -131,4 +131,3 @@
 - UI 変更を型チェックだけで完了扱いにする
 - state migrate をテストなしで出す
 - 既存の canonical path を直さず、別の path を増やして逃げる
-

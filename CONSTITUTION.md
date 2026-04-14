@@ -12,7 +12,7 @@
   - 開発運用: `docs/development-governance.md`
   - Active task queue: `.agents/tasks/TASKS.md`
   - Done log: `.agents/tasks/DONE.md`
-  - Durable memory: `.agents/MEMORY.md`
+  - Durable memory: `.agents/memory/durable.md`
   - Product backlog / spec gap: `docs/tasks.md`
 
 ## 2. Durable Context First

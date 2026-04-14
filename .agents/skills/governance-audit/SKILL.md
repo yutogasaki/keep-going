@@ -9,7 +9,7 @@
 3. 自動チェックで拾えない以下を目視確認する:
    - `DONE.md` / `MEMORY.md` / `TASKS.md` の内容の鮮度（古い情報が残っていないか）
    - backlog（`docs/tasks.md`）と active queue（`TASKS.md`）の混在
-   - auto-memory と `.agents/MEMORY.md` の重複
+   - auto-memory と `.agents/memory/durable.md` の重複
 
 ## 閾値（governance:check で自動監査）
 

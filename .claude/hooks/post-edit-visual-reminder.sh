@@ -2,6 +2,5 @@
 
 set -euo pipefail
 
-if echo "${CLAUDE_FILE_PATHS:-}" | grep -q 'src/pages/.*\.tsx\|src/components/.*\.tsx'; then
-  echo '[Visual QA] UI コンポーネントが変更されました。user-visible な変更がある場合は /visual-qa を実行してください。'
-fi
+repo_root="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+exec "${repo_root}/scripts/ai/hooks/post-edit-visual-reminder.sh" "$@"

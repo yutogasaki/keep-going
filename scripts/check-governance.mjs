@@ -6,13 +6,20 @@ const root = process.cwd();
 const governanceChecks = [
   ['AGENTS.md', 30],
   ['CLAUDE.md', 30],
+  ['docs/index.md', 40],
+  ['docs/ai/contributor-guide.md', 80],
+  ['docs/ai/hooks-policy.md', 50],
+  ['docs/ai/verification-matrix.md', 20],
   ['.agents/agent-guide.md', 120],
   ['.agents/tasks/TASKS.md', 30],
   ['.agents/tasks/DONE.md', 50],
-  ['.agents/MEMORY.md', 40],
+  ['.agents/tasks/BLOCKED.md', 20],
+  ['.agents/memory/durable.md', 40],
+  ['.codex/config.toml', 40],
+  ['.codex/hooks.json', 60],
 ];
 
-const stalePatterns = ['.Codex/tasks', '.claude/tasks', '.Codex/launch.json'];
+const stalePatterns = ['.Codex/tasks', '.claude/tasks', '.Codex/launch.json', '.agents/MEMORY.md'];
 const terminologyAllowlist = new Set([
   'docs/terminology.md',
   'scripts/check-governance.mjs',
@@ -237,6 +244,28 @@ async function collectLegacySkillIssues() {
   return issues;
 }
 
+async function collectLegacyRedirectIssues() {
+  const issues = [];
+  const redirects = [
+    ['.agents/MEMORY.md', '.agents/memory/durable.md'],
+    ['.claude/tasks/TASKS.md', '.agents/tasks/TASKS.md'],
+    ['.claude/tasks/DONE.md', '.agents/tasks/DONE.md'],
+  ];
+
+  for (const [relativePath, expected] of redirects) {
+    try {
+      const content = await readUtf8(path.join(root, relativePath));
+      if (!content.includes('# Legacy Redirect') || !content.includes(expected)) {
+        issues.push(`${relativePath} is not a redirect to ${expected}`);
+      }
+    } catch {
+      issues.push(`${relativePath} is missing`);
+    }
+  }
+
+  return issues;
+}
+
 async function main() {
   const files = await walk(root);
   const errors = [];
@@ -278,6 +307,15 @@ async function main() {
   } else {
     legacySkillIssues.forEach((entry) => console.log(`- ${entry}`));
     errors.push(...legacySkillIssues);
+  }
+
+  const legacyRedirectIssues = await collectLegacyRedirectIssues();
+  console.log('\nLegacy file redirects:');
+  if (legacyRedirectIssues.length === 0) {
+    console.log('- ok');
+  } else {
+    legacyRedirectIssues.forEach((entry) => console.log(`- ${entry}`));
+    errors.push(...legacyRedirectIssues);
   }
 
   const sourceWarnings = await collectSourceWarnings(files);

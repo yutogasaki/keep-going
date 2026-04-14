@@ -7,13 +7,14 @@
 
 1. `CONSTITUTION.md`
 2. `.agents/tasks/TASKS.md`
-3. `.agents/MEMORY.md`
+3. `.agents/memory/durable.md`
 
 ## 必要時に参照
 
+- `docs/index.md` — docs 全体の入口
 - `docs/development-governance.md` — 検証マトリックス。UI/DB/persist 変更時に参照
 - `docs/tasks.md` — product backlog。新機能やタスク優先度の議論時に参照
-- `docs/ai-tooling.md` — Claude / Codex の bootstrap、plugin、skill 運用
+- `docs/ai/contributor-guide.md` — Claude / Codex の bootstrap、adapter、skill 運用
 
 ## Product Snapshot
 
@@ -49,7 +50,7 @@ npm run verify
 
 - Active task queue は `.agents/tasks/TASKS.md`
 - 完了履歴は `.agents/tasks/DONE.md`
-- durable memory は `.agents/MEMORY.md`
+- durable memory は `.agents/memory/durable.md`
 - `docs/tasks.md` は backlog であり、実行キューではない
 - UI文言は日本語ハードコードで管理する
 - 子ども向け体験では、強い圧より自然な誘導を優先する
@@ -68,7 +69,7 @@ npm run verify
 - import は `@/` エイリアスを優先する（`../../../lib/styles` → `@/lib/styles`）
 - テストのファクトリ関数は `src/__tests__/fixtures.ts` から import する。新規ファクトリもここに追加する
 - Claude の shared context は `CLAUDE.md` import、project plugin、`.claude/hooks/*` で読み込む
-- `claude-mem` などの assistant-local memory は補助扱いで、 durable な判断の正本は `.agents/MEMORY.md` のままにする
+- `claude-mem` などの assistant-local memory は補助扱いで、 durable な判断の正本は `.agents/memory/durable.md` のままにする
 - 外部 AI skill / plugin の導入と更新は `npm run ai:setup` を正本ルートにする
 
 ## Key Paths

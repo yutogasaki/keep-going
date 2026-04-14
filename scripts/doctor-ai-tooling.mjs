@@ -42,6 +42,25 @@ const claudeSettingsPath = path.join(repoRoot, '.claude', 'settings.json');
 const claudeSettings = JSON.parse(readFileSync(claudeSettingsPath, 'utf8'));
 const enabledPlugins = claudeSettings.enabledPlugins ?? {};
 const marketplaces = claudeSettings.extraKnownMarketplaces ?? {};
+const requiredRepoFiles = [
+  '.agents/agent-guide.md',
+  '.agents/tasks/TASKS.md',
+  '.agents/tasks/DONE.md',
+  '.agents/tasks/BLOCKED.md',
+  '.agents/memory/durable.md',
+  'docs/index.md',
+  'docs/ai/contributor-guide.md',
+  'docs/ai/hooks-policy.md',
+  '.codex/config.toml',
+  '.codex/hooks.json',
+  'scripts/ai/hooks/session-start.sh',
+  'scripts/ai/hooks/pre-tool-use-block-destructive.py',
+];
+
+for (const relativePath of requiredRepoFiles) {
+  const fullPath = path.join(repoRoot, relativePath);
+  assert(existsSync(fullPath), `Required repo file is missing: ${relativePath}`, failures);
+}
 
 assert(Boolean(enabledPlugins['claude-mem@thedotmack']), 'Project settings are missing claude-mem enablement.', failures);
 assert(Boolean(enabledPlugins['ui-ux-pro-max@ui-ux-pro-max-skill']), 'Project settings are missing ui-ux-pro-max enablement.', failures);

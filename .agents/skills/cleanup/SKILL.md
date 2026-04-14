@@ -7,7 +7,7 @@
 | ファイル | 整理基準 |
 |---------|---------|
 | `.agents/tasks/DONE.md` | 重要度。大きな機能追加・設計変更は残す。細かい修正・typo修正は削除候補 |
-| `.agents/MEMORY.md` | 重要度。有用なパターン・アーキテクチャ決定は残す。解決済みの一時メモは削除候補 |
+| `.agents/memory/durable.md` | 重要度。有用なパターン・アーキテクチャ決定は残す。解決済みの一時メモは削除候補 |
 | `AGENTS.md` | 短い入口に保ち、詳細は `.agents/agent-guide.md` に集約する |
 | `CLAUDE.md` | 短い入口に保ち、詳細は `.agents/agent-guide.md` に集約する |
 | `.agents/agent-guide.md` | 入口ファイルが参照する共通の正本。肥大化したら詳細を別の canonical doc へ逃がす |

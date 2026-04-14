@@ -2,6 +2,5 @@
 
 set -u -o pipefail
 
-cd "${CLAUDE_PROJECT_DIR:-$(pwd)}"
-
-npx tsc --noEmit 2>&1 | head -20 || true
+repo_root="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+exec "${repo_root}/scripts/ai/hooks/post-edit-tsc.sh" "$@"

@@ -1,0 +1,37 @@
+# Memory
+
+再利用価値のある決定だけを残す。
+一時メモ、進行中タスク、解決済みの細かい修正は書かない。
+
+## UX / Product
+
+- ホームは「ふわふわに会いに行く画面」を壊さない。強い常設 CTA より、状況に応じた軽い促しを優先する。
+- 重要な文脈切替は hidden gesture より明示 UI を優先する。
+- オンボーディングでは、実利用の主要導線を教える。KeepGoing の初回ガイドはスワイプではなくホーム下部中央の開始ボタンを中心にする。
+- おまかせの同日再開は未完了セッションだけを対象にし、完了後は前回内容を使い回さず新しいおまかせを生成する。
+- StretchSession は overlay 表示を正本にし、セッション中の通常タブ移動は前提にしない。離脱挙動は終了 / 完了 / バックグラウンド復帰で定義する。
+- product terminology の正本は `docs/terminology.md`。deprecated 呼称を concept 名として再導入しない。
+- メニューの 種目 タブはカテゴリで絞れて、えらぶ モードでは選択した種目を優先しておまかせ開始できる。custom exercise も対象に含める。
+- 種目の分類は `準備 -> ストレッチ -> 体幹 -> バー -> おわり -> 休憩` の placement 軸を正本にし、`種目` タブ・custom editor・おまかせ設定・custom/teacher/public exercise 保存で同じ語彙を使う。
+- built-in では `ポイント＆フレックス` を準備、`ゆりかご / どんぐり` をストレッチ、`深呼吸` を 30 秒の `おわり` とし、おまかせは最後を `おわり` で締める。
+- MainLayout は `home / record / menu / settings` を hidden mount で保持するため、teacher dashboard の保存反映は再マウント任せにせず `teacherContentUpdated` event で `メニュー` と `きろく` を再読込する。
+- developer dashboard の運用基準は `新規7日保護`、`非アクティブ7日+`、`休止候補 = 7日以上未利用 + 7日超の未使用整理候補` を正本にする。未開始放置とリセマラ疑いは同じ `未使用整理候補` にまとめ、一覧では複数選択から休止/復活でき、整理候補ユーザーの一括削除は member のみ削除して account は残す。
+- チャレンジは `先生` と `じぶん` を別UIで見せつつ、`calendar / rolling` と `total_count / active_day` を同じ計算基盤で扱う方針を正本にする。
+- 先生 rolling チャレンジは `参加 = 開始`、じぶんチャレンジは `作成 = 開始` を正本にし、じぶんチャレンジの報酬は `ほし1こ固定`、`種目 / メニュー` 両対応、軽すぎる条件は日数型プリセットで防ぐ。
+
+## Engineering
+
+- 永続 state 変更は `types/createState/migrate/test` をセットで扱う。
+- user-visible な変更は desktop/mobile の visual QA を伴い、UI を触る場合は token 利用確認まで含める。
+- `AGENTS.md` / `CLAUDE.md` は短い入口に保ち、共通の詳細は `.agents/agent-guide.md` に集約する。
+- Claude / Codex の外部 addon は `npm run ai:setup` から入れ、shared project context の正本は repo 内の `.agents/*` に残す。
+- `claude-mem` などの assistant-local memory は補助レイヤーであり、次回以降も共有したい判断は `.agents/memory/durable.md` に昇格する。
+- skill の正本は `.agents/skills/*/SKILL.md` とし、`.claude/skills/*` は legacy redirect のみを置く。
+- `docs/tasks.md` は current focus と未完了 backlog を優先し、重い履歴 snapshot は `docs/archive/tasks-*.md` へ逃がす。
+- CI の verify 正本は `.github/workflows/verify.yml` で、`lint -> tsc --noEmit -> test -> build` を `pull_request` と `main` push で回す。
+- teacher / developer 判定は client の hardcoded email ではなく `user_roles` + `is_teacher` / `is_developer` RPC を正本にする。
+
+## Known Traps
+
+- agent 向け task queue と product backlog を同じファイルに混ぜると、精度と検索性が落ちる。
+- `AGENTS.md` と `CLAUDE.md` に長い重複文書を戻すと、shared guide が形骸化してコンテキスト汚染が再発する。
