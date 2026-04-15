@@ -13,7 +13,7 @@
   - Active task queue: `.agents/tasks/TASKS.md`
   - Done log: `.agents/tasks/DONE.md`
   - Durable memory: `.agents/memory/durable.md`
-  - Product backlog / spec gap: `docs/tasks.md`
+  - Product backlog / spec gap: `docs/tasks/backlog.md`
 
 ## 2. Durable Context First
 

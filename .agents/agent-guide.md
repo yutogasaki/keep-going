@@ -13,7 +13,7 @@
 
 - `docs/index.md` — docs 全体の入口
 - `docs/development-governance.md` — 検証マトリックス。UI/DB/persist 変更時に参照
-- `docs/tasks.md` — product backlog。新機能やタスク優先度の議論時に参照
+- `docs/tasks/backlog.md` — product backlog。新機能やタスク優先度の議論時に参照
 - `docs/ai/contributor-guide.md` — Claude / Codex の bootstrap、adapter、skill 運用
 
 ## Product Snapshot
@@ -51,7 +51,7 @@ npm run verify
 - Active task queue は `.agents/tasks/TASKS.md`
 - 完了履歴は `.agents/tasks/DONE.md`
 - durable memory は `.agents/memory/durable.md`
-- `docs/tasks.md` は backlog であり、実行キューではない
+- `docs/tasks/backlog.md` は backlog であり、実行キューではない
 - UI文言は日本語ハードコードで管理する
 - 子ども向け体験では、強い圧より自然な誘導を優先する
 

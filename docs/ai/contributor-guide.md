@@ -39,6 +39,13 @@ shared で保持する正本:
 
 repo-local adapter files (`.claude/*`, `.codex/*`, `scripts/ai/hooks/*`) は versioned で持つため、`ai:setup` は主に外部 plugin / skill の導入を担当する。
 
+## Adoption Rules
+
+- provider-managed memory や session continuity を team standard に入れる時は、便利さだけで決めない
+- 導入前に `ownership`, `exportability`, `recovery`, `exit path` を確認する
+- provider-authored skill / plugin は optional overlay として扱い、repo の canonical docs や shared skills の代替にしない
+- personal setup や plugin の寄せ集めを、そのまま shared standard にしない
+
 ## Why This Shape
 
 - Claude は `CLAUDE.md` import と project hooks の相性が強い

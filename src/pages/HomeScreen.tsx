@@ -1,82 +1,41 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-const lazyConfetti = () => import('canvas-confetti').then((m) => m.default);
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
 import { PageHeader } from '../components/PageHeader';
-import { PublicExerciseBrowser } from '../components/PublicExerciseBrowser';
-import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
 import { ScreenScaffold } from '../components/ScreenScaffold';
-import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
-import { ExerciseDetailSheet } from '../components/ExerciseDetailSheet';
-import { MenuDetailSheet } from '../components/MenuDetailSheet';
-import { PersonalChallengeDetailSheet } from '../components/PersonalChallengeDetailSheet';
-import {
-    PersonalChallengeFormSheet,
-    type PersonalChallengeCreateSeed,
-} from '../components/PersonalChallengeFormSheet';
-import { EXERCISES } from '../data/exercises';
-import type { ExercisePlacement } from '../data/exercisePlacement';
 import type { MenuGroup } from '../data/menuGroups';
 import { getCustomGroups } from '../lib/customGroups';
 import { subscribeCustomContentUpdated } from '../lib/customContentEvents';
 import { getCustomExercises, type CustomExercise } from '../lib/db';
 import { type PublicExercise } from '../lib/publicExercises';
 import { type PublicMenu } from '../lib/publicMenus';
-import {
-    canDeletePersonalChallenge,
-    deletePersonalChallenge,
-    endPersonalChallenge,
-} from '../lib/personalChallenges';
 import type { TeacherExercise, TeacherMenu } from '../lib/teacherContent';
-import { audio } from '../lib/audio';
-import { haptics } from '../lib/haptics';
-import { resolvePublicMenuToSessionPlannedItems } from '../lib/publicMenuUtils';
-import { pickTeacherContentHighlights } from '../lib/teacherExerciseMetadata';
 import { useAppStore } from '../store/useAppStore';
-import type { FuwafuwaMilestoneEvent } from '../store/useAppStore';
-import { useTeacherContent } from '../hooks/useTeacherContent';
-import { HomeMilestoneModal } from './home/HomeMilestoneModal';
 import { HomeAnimatedBackground } from './home/HomeAnimatedBackground';
-import { ChallengeRewardModal } from './home/ChallengeRewardModal';
 import { FuwafuwaHomeCard } from './home/FuwafuwaHomeCard';
-import { ChallengeHubSheet } from './home/ChallengeHubSheet';
 import { HomeChallengesAndMenus } from './home/HomeChallengesAndMenus';
-import { selectHomeTeacherChallenges } from './home/homeChallengeSelection';
-import { TeacherExerciseDetailSheet } from './home/TeacherExerciseDetailSheet';
-import { TeacherMenuDetailSheet } from './home/TeacherMenuDetailSheet';
+import { HomeOverlays } from './home/HomeOverlays';
 import {
     getFamilyHomeContextKey,
     getSoloHomeContextKey,
-    type HomeAfterglow,
 } from './home/homeAfterglow';
-import { pickHomeAnnouncement } from './home/homeAnnouncementUtils';
 import {
     getFamilyVisitMemoryKey,
-    getHomeVisitRecency,
-    type HomeVisitRecency,
 } from './home/homeVisitMemory';
 import { useHomeChallenges } from './home/hooks/useHomeChallenges';
 import {
     usePersonalChallenges,
     type PersonalChallengeCompletionNotice,
-    type PersonalChallengeProgressItem,
 } from './home/hooks/usePersonalChallenges';
 import { useHomeSessions } from './home/hooks/useHomeSessions';
 import { useHomePublicDiscovery } from './home/hooks/useHomePublicDiscovery';
-import {
-    getMilestoneStage,
-    useHomeMilestoneWatcher,
-} from './home/hooks/useHomeMilestoneWatcher';
 import { type ChallengeRewardScene } from './home/challengeRewardUtils';
-import { pickTeacherExerciseDiscovery } from './home/homeMenuUtils';
+import { useHomeFuwafuwaState } from './home/useHomeFuwafuwaState';
+import { useHomePersonalChallengeActions } from './home/useHomePersonalChallengeActions';
+import { useHomeRewardQueue } from './home/useHomeRewardQueue';
+import { useHomeTeacherDiscovery } from './home/useHomeTeacherDiscovery';
 import { getMinClassLevel } from './menu/menuPageUtils';
-import {
-    findPersonalChallengePreset,
-    inferPersonalChallengeExerciseSource,
-    inferPersonalChallengeMenuSource,
-} from '../components/personal-challenge/shared';
 import { SCREEN_BOTTOM_WITH_FAB } from '../lib/styles';
-
-const noop = () => {};
+import { resolvePublicMenuToSessionPlannedItems } from '../lib/publicMenuUtils';
 
 export const HomeScreen: React.FC = () => {
     const users = useAppStore((state) => state.users);
@@ -100,30 +59,13 @@ export const HomeScreen: React.FC = () => {
 
     const [menuBrowserOpen, setMenuBrowserOpen] = useState(false);
     const [exerciseBrowserOpen, setExerciseBrowserOpen] = useState(false);
-    const [pendingMilestoneEvents, setPendingMilestoneEvents] = useState<FuwafuwaMilestoneEvent[]>([]);
-    const [recentMilestoneEvent, setRecentMilestoneEvent] = useState<FuwafuwaMilestoneEvent | null>(null);
-    const [recentAfterglow, setRecentAfterglow] = useState<HomeAfterglow | null>(null);
-    const [activeMagicDeliveryContextKey, setActiveMagicDeliveryContextKey] = useState<string | null>(null);
-    const [selectedUserVisitRecency, setSelectedUserVisitRecency] = useState<HomeVisitRecency>('first');
-    const [familyVisitRecency, setFamilyVisitRecency] = useState<HomeVisitRecency>('first');
     const [selectedPublicMenu, setSelectedPublicMenu] = useState<PublicMenu | null>(null);
     const [selectedPublicExercise, setSelectedPublicExercise] = useState<PublicExercise | null>(null);
     const [selectedTeacherMenu, setSelectedTeacherMenu] = useState<TeacherMenu | null>(null);
     const [selectedTeacherExercise, setSelectedTeacherExercise] = useState<TeacherExercise | null>(null);
     const [challengeHubOpen, setChallengeHubOpen] = useState(false);
-    const [selectedPersonalChallenge, setSelectedPersonalChallenge] = useState<PersonalChallengeProgressItem | null>(null);
-    const [editingPersonalChallenge, setEditingPersonalChallenge] = useState<PersonalChallengeProgressItem | null>(null);
-    const [personalChallengeSeed, setPersonalChallengeSeed] = useState<PersonalChallengeCreateSeed | null>(null);
-    const [personalFormOpen, setPersonalFormOpen] = useState(false);
-    const [personalChallengeDeleteOpen, setPersonalChallengeDeleteOpen] = useState(false);
-    const [deletingPersonalChallenge, setDeletingPersonalChallenge] = useState(false);
     const [customChallengeExercises, setCustomChallengeExercises] = useState<CustomExercise[]>([]);
     const [customChallengeMenus, setCustomChallengeMenus] = useState<MenuGroup[]>([]);
-    const [pendingChallengeRewardScenes, setPendingChallengeRewardScenes] = useState<ChallengeRewardScene[]>([]);
-    const [activeChallengeRewardScene, setActiveChallengeRewardScene] = useState<ChallengeRewardScene | null>(null);
-    const lastSoloVisitKeyRef = useRef('');
-    const lastFamilyVisitKeyRef = useRef('');
-    const magicDeliveryTimerRef = useRef<number | null>(null);
 
     const { allSessions, activeUsers, targetSeconds, perUserMagic, displaySeconds } = useHomeSessions({
         users,
@@ -135,14 +77,6 @@ export const HomeScreen: React.FC = () => {
         recommendedExercises,
         ambientCue,
     } = useHomePublicDiscovery(isHomeActive);
-
-    const queueChallengeRewardScene = useCallback((scene: ChallengeRewardScene) => {
-        setPendingChallengeRewardScenes((current) => (
-            current.some((item) => item.id === scene.id) || activeChallengeRewardScene?.id === scene.id
-                ? current
-                : [...current, scene]
-        ));
-    }, [activeChallengeRewardScene]);
 
     useEffect(() => {
         if (users.length === 0) {
@@ -188,58 +122,6 @@ export const HomeScreen: React.FC = () => {
             : getSoloHomeContextKey(selectedUser?.id ?? sessionUserIds[0] ?? '')),
         [currentUsers, isTogetherMode, selectedUser?.id, sessionUserIds],
     );
-    const activeMilestoneUser = useMemo(
-        () => activeMilestoneModal
-            ? users.find((user) => user.id === activeMilestoneModal.userId) ?? null
-            : null,
-        [activeMilestoneModal, users],
-    );
-    const pendingMilestoneEventsByUserId = useMemo(
-        () => new Map(
-            pendingMilestoneEvents.map((event) => [event.userId, event]),
-        ),
-        [pendingMilestoneEvents],
-    );
-    const teacherContent = useTeacherContent({
-        classLevel: currentClassLevel,
-        onLoadError: noop,
-    });
-    const teacherMenuHighlights = useMemo(
-        () => pickTeacherContentHighlights(
-            teacherContent.teacherMenus.filter((menu) => menu.displayMode === 'teacher_section'),
-            2,
-        ),
-        [teacherContent.teacherMenus],
-    );
-    const teacherExerciseHighlight = useMemo(
-        () => pickTeacherExerciseDiscovery(teacherContent.teacherExercises),
-        [teacherContent.teacherExercises],
-    );
-    const teacherMenuExerciseMap = useMemo(() => {
-        const map = new Map<string, {
-            name: string;
-            emoji: string;
-            sec: number;
-            placement: ExercisePlacement;
-        }>();
-        for (const exercise of EXERCISES) {
-            map.set(exercise.id, {
-                name: exercise.name,
-                emoji: exercise.emoji,
-                sec: exercise.sec,
-                placement: exercise.placement,
-            });
-        }
-        for (const exercise of teacherContent.teacherExercises) {
-            map.set(exercise.id, {
-                name: exercise.name,
-                emoji: exercise.emoji,
-                sec: exercise.sec,
-                placement: exercise.placement,
-            });
-        }
-        return map;
-    }, [teacherContent.teacherExercises]);
 
     const {
         filteredChallenges,
@@ -254,6 +136,14 @@ export const HomeScreen: React.FC = () => {
         sessionUserIds,
         enabled: isHomeActive,
         sessions: allSessions,
+    });
+    const {
+        activeChallengeRewardScene,
+        queueChallengeRewardScene,
+        closeActiveChallengeRewardScene,
+    } = useHomeRewardQueue({
+        currentTab,
+        activeMilestoneModal,
     });
     const {
         activeChallenges: personalActiveChallenges,
@@ -298,35 +188,23 @@ export const HomeScreen: React.FC = () => {
         () => (currentUsers.length > 0 ? currentUsers.map((user) => user.id) : sessionUserIds),
         [currentUsers, sessionUserIds],
     );
-    const homeAnnouncement = useMemo(
-        () => pickHomeAnnouncement({
-            activeUserIds: activeAnnouncementUserIds,
-            challenges: filteredChallenges,
-            joinedChallengeIds,
-            dismissedAnnouncementIds: dismissedHomeAnnouncementIds,
-            teacherMenuHighlights,
-            teacherExerciseHighlight,
-            isNewTeacherContent: teacherContent.isNewTeacherContent,
-        }),
-        [
-            activeAnnouncementUserIds,
-            dismissedHomeAnnouncementIds,
-            filteredChallenges,
-            joinedChallengeIds,
-            teacherContent.isNewTeacherContent,
-            teacherExerciseHighlight,
-            teacherMenuHighlights,
-        ],
-    );
-    const { joinedTeacherChallenges, recommendedTeacherChallenge } = useMemo(
-        () => selectHomeTeacherChallenges({
-            activeUserIds: activeHomeUserIds,
-            availableChallenges: filteredChallenges,
-            todayDoneChallenges,
-            joinedChallengeIds,
-        }),
-        [activeHomeUserIds, filteredChallenges, joinedChallengeIds, todayDoneChallenges],
-    );
+    const {
+        teacherContent,
+        teacherMenuHighlights,
+        teacherExerciseHighlight,
+        teacherMenuExerciseMap,
+        homeAnnouncement,
+        joinedTeacherChallenges,
+        recommendedTeacherChallenge,
+    } = useHomeTeacherDiscovery({
+        currentClassLevel,
+        activeAnnouncementUserIds,
+        activeHomeUserIds,
+        filteredChallenges,
+        todayDoneChallenges,
+        joinedChallengeIds,
+        dismissedHomeAnnouncementIds,
+    });
 
     useEffect(() => {
         void loadCustomChallengeTargets();
@@ -338,411 +216,78 @@ export const HomeScreen: React.FC = () => {
         });
     }, [loadCustomChallengeTargets]);
 
-    const queueMilestoneEvent = useCallback((event: FuwafuwaMilestoneEvent) => {
-        setPendingMilestoneEvents((current) => (
-            current.some((item) => item.userId === event.userId && item.kind === event.kind)
-                ? current
-                : [...current, event]
-        ));
-    }, []);
-
-    const hasKnownMilestoneEvent = useCallback((event: FuwafuwaMilestoneEvent) => (
-        pendingMilestoneEvents.some((item) => item.userId === event.userId && item.kind === event.kind)
-        || (activeMilestoneModal?.userId === event.userId && activeMilestoneModal.kind === event.kind)
-    ), [activeMilestoneModal, pendingMilestoneEvents]);
-
-    useHomeMilestoneWatcher({
-        allSessions,
-        hasKnownMilestoneEvent,
-        queueMilestoneEvent,
+    const {
+        activeMilestoneUser,
+        pendingMilestoneEventsByUserId,
+        recentMilestoneEvent,
+        recentAfterglow,
+        setRecentAfterglow,
+        activeMagicDeliveryContextKey,
+        selectedUserVisitRecency,
+        familyVisitRecency,
+        handleMilestoneModalClose,
+        handleTankReset,
+    } = useHomeFuwafuwaState({
         users,
-    });
-
-    useEffect(() => {
-        const validUserIds = new Set(users.map((user) => user.id));
-        setPendingMilestoneEvents((current) => current.filter((event) => validUserIds.has(event.userId)));
-    }, [users]);
-
-    useEffect(() => {
-        if (!recentMilestoneEvent) {
-            return;
-        }
-
-        const timerId = window.setTimeout(() => {
-            setRecentMilestoneEvent((current) => (
-                current?.userId === recentMilestoneEvent.userId && current.kind === recentMilestoneEvent.kind
-                    ? null
-                    : current
-            ));
-        }, 12000);
-
-        return () => window.clearTimeout(timerId);
-    }, [recentMilestoneEvent]);
-
-    useEffect(() => {
-        if (!recentAfterglow) {
-            return;
-        }
-
-        const timerId = window.setTimeout(() => {
-            setRecentAfterglow((current) => (
-                current?.kind === recentAfterglow.kind && current.contextKey === recentAfterglow.contextKey
-                    ? null
-                    : current
-            ));
-        }, 10000);
-
-        return () => window.clearTimeout(timerId);
-    }, [recentAfterglow]);
-
-    useEffect(() => {
-        return () => {
-            if (magicDeliveryTimerRef.current !== null) {
-                window.clearTimeout(magicDeliveryTimerRef.current);
-                magicDeliveryTimerRef.current = null;
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        if (
-            currentTab !== 'home'
-            || activeMilestoneModal
-            || activeChallengeRewardScene
-            || pendingChallengeRewardScenes.length === 0
-        ) {
-            return;
-        }
-
-        setPendingChallengeRewardScenes((current) => {
-            const [nextScene, ...rest] = current;
-            setActiveChallengeRewardScene(nextScene ?? null);
-            return rest;
-        });
-    }, [
-        activeChallengeRewardScene,
-        activeMilestoneModal,
+        allSessions,
+        activeUsers,
+        currentUsers,
+        selectedUser,
+        isTogetherMode,
         currentTab,
-        pendingChallengeRewardScenes.length,
-    ]);
-
-    useEffect(() => {
-        if (!activeChallengeRewardScene) {
-            return;
-        }
-
-        haptics.success();
-        audio.playSuccess();
-        lazyConfetti().then((confetti) => confetti({
-            particleCount: 36,
-            spread: 64,
-            startVelocity: 24,
-            origin: { y: 0.78 },
-            colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'],
-        }));
-    }, [activeChallengeRewardScene]);
-
-    useEffect(() => {
-        if (isTogetherMode || !selectedUser) {
-            lastSoloVisitKeyRef.current = '';
-            setSelectedUserVisitRecency('first');
-            return;
-        }
-
-        const visitKey = selectedUser.id;
-        if (lastSoloVisitKeyRef.current === visitKey) {
-            return;
-        }
-
-        lastSoloVisitKeyRef.current = visitKey;
-        setSelectedUserVisitRecency(
-            getHomeVisitRecency(homeVisitMemory.soloByUserId[visitKey] ?? null),
-        );
-        markSoloHomeVisit(visitKey, new Date().toISOString());
-    }, [homeVisitMemory.soloByUserId, isTogetherMode, markSoloHomeVisit, selectedUser]);
-
-    useEffect(() => {
-        if (!isTogetherMode || familyVisitKey.length === 0) {
-            lastFamilyVisitKeyRef.current = '';
-            setFamilyVisitRecency('first');
-            return;
-        }
-
-        if (lastFamilyVisitKeyRef.current === familyVisitKey) {
-            return;
-        }
-
-        lastFamilyVisitKeyRef.current = familyVisitKey;
-        setFamilyVisitRecency(
-            getHomeVisitRecency(homeVisitMemory.familyByUserSet[familyVisitKey] ?? null),
-        );
-        markFamilyHomeVisit(currentUsers.map((user) => user.id), new Date().toISOString());
-    }, [currentUsers, familyVisitKey, homeVisitMemory.familyByUserSet, isTogetherMode, markFamilyHomeVisit]);
-
-    useEffect(() => {
-        if (isTogetherMode || !selectedUser || activeMilestoneModal) {
-            return;
-        }
-
-        const nextEvent = pendingMilestoneEvents.find((event) => event.userId === selectedUser.id);
-        if (!nextEvent) {
-            return;
-        }
-
-        setPendingMilestoneEvents((current) => current.filter(
-            (event) => !(event.userId === nextEvent.userId && event.kind === nextEvent.kind),
-        ));
-        setActiveMilestoneModal(nextEvent);
-    }, [activeMilestoneModal, isTogetherMode, pendingMilestoneEvents, selectedUser, setActiveMilestoneModal]);
-
-    const handleMilestoneModalClose = useCallback(() => {
-        if (activeMilestoneModal?.source === 'system' && activeMilestoneUser) {
-            const stage = getMilestoneStage(activeMilestoneModal.kind);
-            if (!(activeMilestoneUser.notifiedFuwafuwaStages || []).includes(stage)) {
-                updateUser(activeMilestoneUser.id, {
-                    notifiedFuwafuwaStages: [...(activeMilestoneUser.notifiedFuwafuwaStages || []), stage],
-                });
-            }
-        }
-
-        if (activeMilestoneModal) {
-            setRecentMilestoneEvent(activeMilestoneModal);
-        }
-        setActiveMilestoneModal(null);
-    }, [activeMilestoneModal, activeMilestoneUser, setActiveMilestoneModal, updateUser]);
-
-    useEffect(() => {
-        if (
-            currentTab === 'menu'
-            && homeAnnouncement
-            && (homeAnnouncement.kind === 'teacher_menu' || homeAnnouncement.kind === 'teacher_exercise')
-        ) {
-            dismissHomeAnnouncement(homeAnnouncement.id);
-        }
-    }, [currentTab, dismissHomeAnnouncement, homeAnnouncement]);
-
-    const handleTankReset = () => {
-        if (displaySeconds < targetSeconds || magicDeliveryTimerRef.current !== null) {
-            return;
-        }
-
-        const deliveryContextKey = currentHomeContextKey;
-        const deliveryTargets = activeUsers.map((user) => ({
-            userId: user.id,
-            targetSeconds: (user.dailyTargetMinutes || 10) * 60,
-        }));
-
-        if (deliveryContextKey) {
-            setActiveMagicDeliveryContextKey(deliveryContextKey);
-        }
-
-        const duration = 3000;
-        const end = Date.now() + duration;
-
-        lazyConfetti().then((confetti) => {
-            const frame = () => {
-                confetti({
-                    particleCount: 5,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'],
-                });
-                confetti({
-                    particleCount: 5,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
-                    colors: ['#2BBAA0', '#A8E6CF', '#FFEAA7', '#FDCB6E'],
-                });
-
-                if (Date.now() < end) {
-                    requestAnimationFrame(frame);
-                }
-            };
-
-            frame();
-        });
-        audio.playSuccess();
-
-        magicDeliveryTimerRef.current = window.setTimeout(() => {
-            deliveryTargets.forEach((target) => {
-                consumeUserMagicEnergy(target.userId, target.targetSeconds);
-            });
-
-            if (deliveryContextKey) {
-                setRecentAfterglow({
-                    kind: 'magic_delivery',
-                    contextKey: deliveryContextKey,
-                });
-            }
-
-            setActiveMagicDeliveryContextKey((current) => (
-                current === deliveryContextKey ? null : current
-            ));
-            magicDeliveryTimerRef.current = null;
-        }, 900);
-    };
-
-    const canCreatePersonalChallenge = !isTogetherMode && Boolean(selectedUser);
-    const personalChallengeFormMember = editingPersonalChallenge?.owner ?? selectedUser;
-
-    const handleOpenPersonalChallenge = useCallback((item: PersonalChallengeProgressItem) => {
-        setSelectedPersonalChallenge(item);
-    }, []);
-
-    const openPersonalChallengeForm = useCallback((seed: PersonalChallengeCreateSeed | null = null) => {
-        setChallengeHubOpen(false);
-        setSelectedPersonalChallenge(null);
-        setEditingPersonalChallenge(null);
-        setPersonalChallengeSeed(seed);
-        setPersonalFormOpen(true);
-    }, []);
-
-    const handleCreatePersonalChallenge = useCallback(() => {
-        openPersonalChallengeForm(null);
-    }, [openPersonalChallengeForm]);
-
-    const handleCreatePersonalChallengeFromPublicMenu = useCallback(async (seed: PersonalChallengeCreateSeed) => {
-        await loadCustomChallengeTargets();
-        setSelectedPublicMenu(null);
-        openPersonalChallengeForm(seed);
-    }, [loadCustomChallengeTargets, openPersonalChallengeForm]);
-
-    const handleCreatePersonalChallengeFromPublicExercise = useCallback(async (seed: PersonalChallengeCreateSeed) => {
-        await loadCustomChallengeTargets();
-        setSelectedPublicExercise(null);
-        openPersonalChallengeForm(seed);
-    }, [loadCustomChallengeTargets, openPersonalChallengeForm]);
-
-    const handleCreatePersonalChallengeFromTeacherMenu = useCallback((menu: TeacherMenu) => {
-        setSelectedTeacherMenu(null);
-        openPersonalChallengeForm({
-            challengeType: 'menu',
-            menuSource: 'teacher',
-            targetMenuId: menu.id,
-            description: menu.description ?? '',
-            iconEmoji: menu.emoji,
-        });
-    }, [openPersonalChallengeForm]);
-
-    const handleCreatePersonalChallengeFromTeacherExercise = useCallback((exercise: TeacherExercise) => {
-        setSelectedTeacherExercise(null);
-        openPersonalChallengeForm({
-            challengeType: 'exercise',
-            exerciseSource: 'teacher',
-            exerciseId: exercise.id,
-            description: exercise.description ?? '',
-            iconEmoji: exercise.emoji,
-        });
-    }, [openPersonalChallengeForm]);
-
-    const handleEditPersonalChallenge = useCallback(() => {
-        if (!selectedPersonalChallenge) {
-            return;
-        }
-
-        setEditingPersonalChallenge(selectedPersonalChallenge);
-        setSelectedPersonalChallenge(null);
-        setChallengeHubOpen(false);
-        setPersonalChallengeSeed(null);
-        setPersonalFormOpen(true);
-    }, [selectedPersonalChallenge]);
-
-    const handleRetryPersonalChallenge = useCallback(async () => {
-        if (!selectedPersonalChallenge) {
-            return;
-        }
-
-        const { challenge } = selectedPersonalChallenge;
-        const presetId = findPersonalChallengePreset(challenge) ?? 'week';
-        const nextExerciseSource = inferPersonalChallengeExerciseSource(
-            challenge.exerciseId,
-            teacherContent.teacherExercises,
-            customChallengeExercises,
-        );
-        const nextMenuSource = inferPersonalChallengeMenuSource(
-            challenge.menuSource,
-            challenge.targetMenuId,
-            teacherContent.teacherMenus,
-            customChallengeMenus,
-        );
-
-        if (
-            challenge.challengeType === 'menu'
-            || nextExerciseSource === 'custom'
-            || nextMenuSource === 'custom'
-        ) {
-            await loadCustomChallengeTargets();
-        }
-
-        openPersonalChallengeForm({
-            challengeType: challenge.challengeType === 'menu' ? 'menu' : 'exercise',
-            presetId,
-            exerciseSource: challenge.challengeType === 'exercise'
-                ? nextExerciseSource
-                : undefined,
-            menuSource: challenge.challengeType === 'menu'
-                ? nextMenuSource
-                : undefined,
-            exerciseId: challenge.exerciseId,
-            targetMenuId: challenge.targetMenuId,
-            title: challenge.title,
-            description: challenge.description ?? '',
-            iconEmoji: challenge.iconEmoji ?? '',
-        });
-    }, [
+        activeMilestoneModal,
+        setActiveMilestoneModal,
+        updateUser,
+        homeVisitMemory,
+        markSoloHomeVisit,
+        markFamilyHomeVisit,
+        familyVisitKey,
+        currentHomeContextKey,
+        displaySeconds,
+        targetSeconds,
+        consumeUserMagicEnergy,
+        homeAnnouncement,
+        dismissHomeAnnouncement,
+    });
+    const {
+        canCreatePersonalChallenge,
+        selectedPersonalChallenge,
+        editingPersonalChallenge,
+        personalChallengeSeed,
+        personalFormOpen,
+        personalChallengeDeleteOpen,
+        deletingPersonalChallenge,
+        personalChallengeFormMember,
+        handleOpenPersonalChallenge,
+        handleCreatePersonalChallenge,
+        handleCreatePersonalChallengeFromPublicMenu,
+        handleCreatePersonalChallengeFromPublicExercise,
+        handleCreatePersonalChallengeFromTeacherMenu,
+        handleCreatePersonalChallengeFromTeacherExercise,
+        handleEditPersonalChallenge,
+        handleRetryPersonalChallenge,
+        handleEndPersonalChallenge,
+        handlePromptDeletePersonalChallenge,
+        handleDeletePersonalChallenge,
+        closeSelectedPersonalChallenge,
+        closePersonalChallengeDelete,
+        closePersonalChallengeForm,
+        handlePersonalChallengeSaved,
+    } = useHomePersonalChallengeActions({
+        isTogetherMode,
+        selectedUser,
+        teacherMenus: teacherContent.teacherMenus,
+        teacherExercises: teacherContent.teacherExercises,
         customChallengeExercises,
         customChallengeMenus,
         loadCustomChallengeTargets,
-        openPersonalChallengeForm,
-        selectedPersonalChallenge,
-        teacherContent.teacherMenus,
-        teacherContent.teacherExercises,
-    ]);
-
-    const handleEndPersonalChallenge = useCallback(async () => {
-        if (!selectedPersonalChallenge) {
-            return;
-        }
-
-        try {
-            await endPersonalChallenge(selectedPersonalChallenge.challenge.id, 'manual');
-            setSelectedPersonalChallenge(null);
-            reloadPersonalChallenges();
-        } catch (error) {
-            console.warn('[personalChallenges] manual end failed:', error);
-        }
-    }, [reloadPersonalChallenges, selectedPersonalChallenge]);
-
-    const handlePromptDeletePersonalChallenge = useCallback(() => {
-        if (!selectedPersonalChallenge) {
-            return;
-        }
-        setPersonalChallengeDeleteOpen(true);
-    }, [selectedPersonalChallenge]);
-
-    const handleDeletePersonalChallenge = useCallback(async () => {
-        if (!selectedPersonalChallenge) {
-            return;
-        }
-        if (!canDeletePersonalChallenge(selectedPersonalChallenge.challenge, selectedPersonalChallenge.progress)) {
-            setPersonalChallengeDeleteOpen(false);
-            return;
-        }
-
-        setDeletingPersonalChallenge(true);
-        try {
-            await deletePersonalChallenge(selectedPersonalChallenge.challenge.id);
-            setPersonalChallengeDeleteOpen(false);
-            setSelectedPersonalChallenge(null);
-            reloadPersonalChallenges();
-        } catch (error) {
-            console.warn('[personalChallenges] delete failed:', error);
-        } finally {
-            setDeletingPersonalChallenge(false);
-        }
-    }, [reloadPersonalChallenges, selectedPersonalChallenge]);
+        reloadPersonalChallenges,
+        closeChallengeHub: () => setChallengeHubOpen(false),
+        closePublicMenu: () => setSelectedPublicMenu(null),
+        closePublicExercise: () => setSelectedPublicExercise(null),
+        closeTeacherMenu: () => setSelectedTeacherMenu(null),
+        closeTeacherExercise: () => setSelectedTeacherExercise(null),
+    });
 
     return (
         <div
@@ -755,16 +300,6 @@ export const HomeScreen: React.FC = () => {
                 overflow: 'hidden',
             }}
         >
-            <HomeMilestoneModal
-                activeMilestoneModal={activeMilestoneModal}
-                user={activeMilestoneUser}
-                onClose={handleMilestoneModalClose}
-            />
-            <ChallengeRewardModal
-                rewardScene={activeChallengeRewardScene}
-                onClose={() => setActiveChallengeRewardScene(null)}
-            />
-
             <HomeAnimatedBackground />
 
             <ScreenScaffold
@@ -867,122 +402,78 @@ export const HomeScreen: React.FC = () => {
                 />
             </ScreenScaffold>
 
-            <ChallengeHubSheet
-                open={challengeHubOpen}
-                challengeCardsEnabled={isHomeActive}
-                onClose={() => setChallengeHubOpen(false)}
-                teacherActiveChallenges={filteredChallenges}
-                teacherTodayDoneChallenges={todayDoneChallenges}
-                teacherPastChallenges={pastChallenges}
+            <HomeOverlays
+                activeMilestoneModal={activeMilestoneModal}
+                activeMilestoneUser={activeMilestoneUser}
+                onCloseMilestoneModal={handleMilestoneModalClose}
+                activeChallengeRewardScene={activeChallengeRewardScene}
+                onCloseRewardModal={closeActiveChallengeRewardScene}
+                challengeHubOpen={challengeHubOpen}
+                isHomeActive={isHomeActive}
+                filteredChallenges={filteredChallenges}
+                todayDoneChallenges={todayDoneChallenges}
+                pastChallenges={pastChallenges}
                 completions={completions}
                 rewardGrants={rewardGrants}
-                teacherExercises={teacherExercises}
+                teacherExercises={teacherContent.teacherExercises}
                 teacherMenus={teacherContent.teacherMenus}
-                customExercises={customChallengeExercises}
-                customMenus={customChallengeMenus}
+                customChallengeExercises={customChallengeExercises}
+                customChallengeMenus={customChallengeMenus}
                 personalActiveChallenges={personalActiveChallenges}
                 personalTodayDoneChallenges={personalTodayDoneChallenges}
                 personalPastChallenges={personalPastChallenges}
-                personalLoading={personalChallengesLoading}
+                personalChallengesLoading={personalChallengesLoading}
                 canCreatePersonalChallenge={canCreatePersonalChallenge}
+                onCloseChallengeHub={() => setChallengeHubOpen(false)}
                 onCreatePersonalChallenge={handleCreatePersonalChallenge}
                 onOpenPersonalChallenge={handleOpenPersonalChallenge}
                 onTeacherChallengesUpdated={loadChallenges}
                 onTeacherChallengeRewardGranted={queueChallengeRewardScene}
-            />
-
-            <PersonalChallengeDetailSheet
-                open={selectedPersonalChallenge !== null}
-                item={selectedPersonalChallenge}
-                teacherExercises={teacherContent.teacherExercises}
-                teacherMenus={teacherContent.teacherMenus}
-                customExercises={customChallengeExercises}
-                customMenus={customChallengeMenus}
-                onClose={() => setSelectedPersonalChallenge(null)}
-                onEdit={handleEditPersonalChallenge}
-                onEnd={handleEndPersonalChallenge}
-                onDelete={handlePromptDeletePersonalChallenge}
-                onRetry={handleRetryPersonalChallenge}
-            />
-
-            <ConfirmDeleteModal
-                open={personalChallengeDeleteOpen}
-                title="じぶんチャレンジを削除"
-                message={`「${selectedPersonalChallenge?.challenge.title ?? ''}」を削除しますか？まだ進んでいないチャレンジだけ削除できます。`}
-                onCancel={() => {
-                    if (deletingPersonalChallenge) {
-                        return;
-                    }
-                    setPersonalChallengeDeleteOpen(false);
-                }}
-                onConfirm={handleDeletePersonalChallenge}
-                loading={deletingPersonalChallenge}
-            />
-
-            <PersonalChallengeFormSheet
-                open={personalFormOpen}
-                member={personalChallengeFormMember}
-                teacherExercises={teacherContent.teacherExercises}
-                teacherMenus={teacherContent.teacherMenus}
-                customExercises={customChallengeExercises}
-                customMenus={customChallengeMenus}
-                initialItem={editingPersonalChallenge}
-                initialSeed={personalChallengeSeed}
-                onClose={() => {
-                    setPersonalFormOpen(false);
-                    setEditingPersonalChallenge(null);
-                    setPersonalChallengeSeed(null);
-                }}
-                onSaved={() => {
-                    reloadPersonalChallenges();
-                    setEditingPersonalChallenge(null);
-                    setPersonalChallengeSeed(null);
-                }}
-            />
-
-            <PublicMenuBrowser
-                open={menuBrowserOpen}
-                onClose={() => setMenuBrowserOpen(false)}
-            />
-
-            <TeacherMenuDetailSheet
-                menu={selectedTeacherMenu}
-                exerciseMap={teacherMenuExerciseMap}
-                onClose={() => setSelectedTeacherMenu(null)}
+                selectedPersonalChallenge={selectedPersonalChallenge}
+                onClosePersonalChallenge={closeSelectedPersonalChallenge}
+                onEditPersonalChallenge={handleEditPersonalChallenge}
+                onEndPersonalChallenge={handleEndPersonalChallenge}
+                onPromptDeletePersonalChallenge={handlePromptDeletePersonalChallenge}
+                onRetryPersonalChallenge={handleRetryPersonalChallenge}
+                personalChallengeDeleteOpen={personalChallengeDeleteOpen}
+                deletingPersonalChallenge={deletingPersonalChallenge}
+                onClosePersonalChallengeDelete={closePersonalChallengeDelete}
+                onDeletePersonalChallenge={handleDeletePersonalChallenge}
+                personalFormOpen={personalFormOpen}
+                personalChallengeFormMember={personalChallengeFormMember}
+                editingPersonalChallenge={editingPersonalChallenge}
+                personalChallengeSeed={personalChallengeSeed}
+                onClosePersonalChallengeForm={closePersonalChallengeForm}
+                onPersonalChallengeSaved={handlePersonalChallengeSaved}
+                menuBrowserOpen={menuBrowserOpen}
+                onCloseMenuBrowser={() => setMenuBrowserOpen(false)}
+                exerciseBrowserOpen={exerciseBrowserOpen}
+                onCloseExerciseBrowser={() => setExerciseBrowserOpen(false)}
+                selectedTeacherMenu={selectedTeacherMenu}
+                teacherMenuExerciseMap={teacherMenuExerciseMap}
+                onCloseTeacherMenu={() => setSelectedTeacherMenu(null)}
                 onOpenMenuTab={() => setTab('menu')}
-                onCreatePersonalChallenge={canCreatePersonalChallenge ? handleCreatePersonalChallengeFromTeacherMenu : undefined}
-                onStart={(menu) => {
+                onCreatePersonalChallengeFromTeacherMenu={canCreatePersonalChallenge ? handleCreatePersonalChallengeFromTeacherMenu : undefined}
+                onStartTeacherMenu={(menu) => {
                     startSessionWithExercises(menu.exerciseIds, {
                         sourceMenuId: menu.id,
                         sourceMenuSource: 'teacher',
                         sourceMenuName: menu.name,
                     });
                 }}
-            />
-
-            <TeacherExerciseDetailSheet
-                exercise={selectedTeacherExercise}
-                onClose={() => setSelectedTeacherExercise(null)}
-                onOpenMenuTab={() => setTab('menu')}
-                onCreatePersonalChallenge={canCreatePersonalChallenge ? handleCreatePersonalChallengeFromTeacherExercise : undefined}
-                onStart={(exercise) => {
+                selectedTeacherExercise={selectedTeacherExercise}
+                onCloseTeacherExercise={() => setSelectedTeacherExercise(null)}
+                onCreatePersonalChallengeFromTeacherExercise={canCreatePersonalChallenge ? handleCreatePersonalChallengeFromTeacherExercise : undefined}
+                onStartTeacherExercise={(exercise) => {
                     startSessionWithExercises([exercise.id]);
                 }}
-            />
-
-            <PublicExerciseBrowser
-                open={exerciseBrowserOpen}
-                onClose={() => setExerciseBrowserOpen(false)}
-            />
-
-            <MenuDetailSheet
-                menu={selectedPublicMenu}
-                onClose={() => setSelectedPublicMenu(null)}
-                onImported={() => {
+                selectedPublicMenu={selectedPublicMenu}
+                onClosePublicMenu={() => setSelectedPublicMenu(null)}
+                onImportedPublicMenu={() => {
                     void loadCustomChallengeTargets();
                 }}
-                onCreatePersonalChallenge={handleCreatePersonalChallengeFromPublicMenu}
-                onTry={(menu, metadata) => {
+                onCreatePersonalChallengeFromPublicMenu={handleCreatePersonalChallengeFromPublicMenu}
+                onTryPublicMenu={(menu, metadata) => {
                     setSelectedPublicMenu(null);
                     startSessionWithPlan(resolvePublicMenuToSessionPlannedItems(menu), {
                         sourceMenuId: metadata.menuId,
@@ -990,16 +481,13 @@ export const HomeScreen: React.FC = () => {
                         sourceMenuName: metadata.menuName,
                     });
                 }}
-            />
-
-            <ExerciseDetailSheet
-                exercise={selectedPublicExercise}
-                onClose={() => setSelectedPublicExercise(null)}
-                onImported={() => {
+                selectedPublicExercise={selectedPublicExercise}
+                onClosePublicExercise={() => setSelectedPublicExercise(null)}
+                onImportedPublicExercise={() => {
                     void loadCustomChallengeTargets();
                 }}
-                onCreatePersonalChallenge={handleCreatePersonalChallengeFromPublicExercise}
-                onTry={(exerciseId) => {
+                onCreatePersonalChallengeFromPublicExercise={handleCreatePersonalChallengeFromPublicExercise}
+                onTryPublicExercise={(exerciseId) => {
                     setSelectedPublicExercise(null);
                     startSessionWithExercises([exerciseId]);
                 }}

@@ -13,6 +13,7 @@ hook は shared implementation と client-specific registration を分ける。
 - `.claude/hooks/*` と `.codex/hooks/*` には薄い wrapper だけを置く
 - hook 本体の修正は `scripts/ai/hooks/*` を正本にする
 - hook が無効でも repo の docs / tasks / memory だけで運用できる構成を保つ
+- scheduler や recurring automation を入れる時は、human review / verification / durable record の置き場を先に決める
 
 ## Current Scope
 

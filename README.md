@@ -52,6 +52,6 @@ npm run dev                # 開発サーバー起動
 
 - `CONSTITUTION.md` — 開発原則
 - `docs/development-governance.md` — 開発運用ルール
-- `docs/core-experience-spec.md` — UX 仕様
-- `docs/logic-data-spec.md` — 技術仕様
-- `docs/ui-spec.md` — UI 仕様
+- `docs/product/core-experience-spec.md` — UX 仕様
+- `docs/architecture/logic-data-spec.md` — 技術仕様
+- `docs/product/ui-spec.md` — UI 仕様

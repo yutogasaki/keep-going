@@ -21,7 +21,7 @@ const governanceChecks = [
 
 const stalePatterns = ['.Codex/tasks', '.claude/tasks', '.Codex/launch.json', '.agents/MEMORY.md'];
 const terminologyAllowlist = new Set([
-  'docs/terminology.md',
+  'docs/wiki/terminology.md',
   'scripts/check-governance.mjs',
 ]);
 const terminologyPatterns = [

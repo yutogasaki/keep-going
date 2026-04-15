@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
 import { EXERCISES, getExercisesByClass, type ClassLevel } from '../../data/exercises';
 import {
     getMenuGroupItems,
@@ -10,50 +9,29 @@ import { saveCustomExercise, type CustomExercise } from '../../lib/db';
 import { saveCustomGroup } from '../../lib/customGroups';
 import {
     linkPublishedMenuToSource,
-    PUBLIC_MENU_UNSUPPORTED_EXERCISE_ERROR,
     publishMenu,
 } from '../../lib/publicMenus';
 import { getAccountId } from '../../lib/sync';
 import type { TeacherExercise } from '../../lib/teacherContent';
-import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal';
-import { EditorShell, getEditorSubmitButtonStyle } from '../../components/editor/EditorShell';
+import { EditorShell } from '../../components/editor/EditorShell';
 import { SingleExerciseEditor } from './SingleExerciseEditor';
+import { CreateGroupSaveSection } from './create-group/CreateGroupSaveSection';
 import { EmojiSelectorCard } from './create-group/EmojiSelectorCard';
 import { ExercisePickerList, type ExercisePickerSection, type PickerExercise, type PickerOrigin } from './create-group/ExercisePickerList';
 import { MenuItemsCard } from './create-group/MenuItemsCard';
 import { MenuMetaCards } from './create-group/MenuMetaCards';
 import { PublishToggleCard } from './create-group/PublishToggleCard';
+import {
+    DEFAULT_INLINE_EMOJI,
+    DEFAULT_INLINE_INTERNAL,
+    DEFAULT_INLINE_PLACEMENT,
+    DEFAULT_QUICK_ADD_DRAFT,
+    EMOJI_OPTIONS,
+    getMenuPublishErrorMessage,
+    type QuickAddDraft,
+    toPickerExercise,
+} from './create-group/createGroupViewShared';
 import { moveMenuItems } from './create-group/menuItemOrder';
-
-const EMOJI_OPTIONS = ['🌸', '💪', '🦵', '🩰', '⭐', '🌈', '🔥', '💃', '🧘', '🎯', '✨', '🌙'];
-const DEFAULT_INLINE_EMOJI = '✨';
-const DEFAULT_INLINE_PLACEMENT = 'stretch';
-const DEFAULT_INLINE_INTERNAL = 'single';
-
-function getMenuPublishErrorMessage(error: unknown): string {
-    if (error instanceof Error && error.message === PUBLIC_MENU_UNSUPPORTED_EXERCISE_ERROR) {
-        return '先生の種目が入っているメニューは公開できないよ';
-    }
-
-    return '公開の更新に失敗しました。もう一度ためしてみてね。';
-}
-
-interface QuickAddDraft {
-    name: string;
-    sec: number;
-    saveAsCustom: boolean;
-}
-
-function toPickerExercise(ex: CustomExercise | TeacherExercise): PickerExercise {
-    return {
-        id: ex.id,
-        name: ex.name,
-        sec: ex.sec,
-        emoji: ex.emoji,
-        splitLabel: ex.hasSplit ? 'みぎ→ひだり' : undefined,
-        placement: ex.placement,
-    };
-}
 
 interface CreateGroupViewProps {
     classLevel: string;
@@ -90,11 +68,7 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
     const [editingInlineItemId, setEditingInlineItemId] = useState<string | null>(null);
     const [editingPendingExerciseId, setEditingPendingExerciseId] = useState<string | null>(null);
     const [saveError, setSaveError] = useState<string | null>(null);
-    const [quickAddDraft, setQuickAddDraft] = useState<QuickAddDraft>({
-        name: '',
-        sec: 30,
-        saveAsCustom: false,
-    });
+    const [quickAddDraft, setQuickAddDraft] = useState<QuickAddDraft>(DEFAULT_QUICK_ADD_DRAFT);
     const [pendingCustomExercises, setPendingCustomExercises] = useState<CustomExercise[]>([]);
 
     const isLoggedIn = !!getAccountId();
@@ -477,40 +451,15 @@ export const CreateGroupView: React.FC<CreateGroupViewProps> = ({
                 />
             )}
 
-            {saveError ? (
-                <div style={{
-                    padding: '12px 16px',
-                    borderRadius: 12,
-                    background: 'rgba(255,71,87,0.08)',
-                    color: '#E17055',
-                    fontFamily: "'Noto Sans JP', sans-serif",
-                    fontSize: 12,
-                }}
-                >
-                    {saveError}
-                </div>
-            ) : null}
-
-            <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={handleSave}
-                disabled={!canSave}
-                style={{
-                    ...getEditorSubmitButtonStyle(canSave),
-                    zIndex: 1,
-                }}
-            >
-                {saving ? 'ほぞん中...' : isEditing ? 'ほぞん' : 'つくる！'}
-            </motion.button>
-
-            <ConfirmDeleteModal
-                open={showRepublishConfirm}
-                title="公開版も更新する？"
-                message="保存しました。公開版のメニューも一緒に更新しますか？"
-                onCancel={handleRepublishCancel}
-                onConfirm={handleRepublishConfirm}
-                confirmLabel="更新する"
-                confirmColor="#2BBAA0"
+            <CreateGroupSaveSection
+                saveError={saveError}
+                canSave={canSave}
+                saving={saving}
+                isEditing={isEditing}
+                showRepublishConfirm={showRepublishConfirm}
+                onSave={handleSave}
+                onRepublishCancel={handleRepublishCancel}
+                onRepublishConfirm={handleRepublishConfirm}
             />
         </EditorShell>
     );

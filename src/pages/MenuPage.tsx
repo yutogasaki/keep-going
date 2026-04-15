@@ -1,23 +1,19 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { PublicMenuBrowser } from '../components/PublicMenuBrowser';
-import { PublicExerciseBrowser } from '../components/PublicExerciseBrowser';
-import { PersonalChallengeFormSheet, type PersonalChallengeCreateSeed } from '../components/PersonalChallengeFormSheet';
+import { type PersonalChallengeCreateSeed } from '../components/PersonalChallengeFormSheet';
 import { PageHeader } from '../components/PageHeader';
 import { CurrentContextBadge } from '../components/CurrentContextBadge';
-import { ConfirmDeleteModal } from '../components/ConfirmDeleteModal';
 import { ScreenScaffold } from '../components/ScreenScaffold';
-import { Toast } from '../components/Toast';
 import type { ExercisePlacement } from '../data/exercisePlacement';
 import {
     buildCustomExerciseDeletePlan,
     buildCustomGroupDeletePlan,
 } from '../lib/customContentDeletePlan';
 import { useAppStore } from '../store/useAppStore';
-import { CustomMenuModal } from './menu/CustomMenuModal';
 import { CreateGroupView } from './menu/CreateGroupView';
 import { SingleExerciseEditor } from './menu/SingleExerciseEditor';
 import { MenuGroupTab } from './menu/MenuGroupTab';
 import { MenuIndividualTab } from './menu/MenuIndividualTab';
+import { MenuPageOverlays } from './menu/menu-page/MenuPageOverlays';
 import { MenuTabs } from './menu/menu-page/MenuTabs';
 import { useMenuPageData } from './menu/menu-page/useMenuPageData';
 import { useMenuUsageStats } from './menu/menu-page/useMenuUsageStats';
@@ -264,107 +260,69 @@ export const MenuPage: React.FC = () => {
                 )}
             </ScreenScaffold>
 
-            <CustomMenuModal
-                show={showCustomMenu}
+            <MenuPageOverlays
+                showCustomMenu={showCustomMenu}
                 isTogetherMode={isTogetherMode}
                 dailyTargetMinutes={dailyTargetMinutes}
                 requiredExercises={requiredExercises}
                 excludedExercises={excludedExercises}
                 customExercises={customExercises}
                 classLevel={classLevel}
-                teacherExercises={teacherExercises.filter((te) => !teacherHiddenExerciseIds.has(te.id))}
+                teacherExercises={teacherExercises}
+                teacherMenus={teacherMenus}
                 teacherSettings={teacherSettings}
                 teacherExcludedExerciseIds={teacherExcludedExerciseIds}
                 teacherRequiredExerciseIds={teacherRequiredExerciseIds}
                 teacherHiddenExerciseIds={teacherHiddenExerciseIds}
-                onClose={() => setShowCustomMenu(false)}
+                onCloseCustomMenu={() => setShowCustomMenu(false)}
                 onSetDailyTargetMinutes={setDailyTargetMinutes}
                 onSetExcludedExercises={setExcludedExercises}
                 onSetRequiredExercises={setRequiredExercises}
-            />
-
-            <PublicMenuBrowser
-                open={showPublicBrowser}
-                onClose={() => setShowPublicBrowser(false)}
-                onImported={loadCustomData}
-                onCreatePersonalChallenge={
+                showPublicBrowser={showPublicBrowser}
+                onClosePublicBrowser={() => setShowPublicBrowser(false)}
+                onImportedPublicMenu={loadCustomData}
+                onCreatePersonalChallengeFromPublicMenu={
                     canCreatePersonalChallenge
                         ? async (seed) => {
-                              await loadCustomData();
-                              setShowPublicBrowser(false);
-                              openPersonalChallengeForm(seed);
-                          }
+                            await loadCustomData();
+                            setShowPublicBrowser(false);
+                            openPersonalChallengeForm(seed);
+                        }
                         : undefined
                 }
-            />
-
-            <PublicExerciseBrowser
-                open={showPublicExerciseBrowser}
-                onClose={() => setShowPublicExerciseBrowser(false)}
-                onImported={loadCustomData}
-                onCreatePersonalChallenge={
+                showPublicExerciseBrowser={showPublicExerciseBrowser}
+                onClosePublicExerciseBrowser={() => setShowPublicExerciseBrowser(false)}
+                onImportedPublicExercise={loadCustomData}
+                onCreatePersonalChallengeFromPublicExercise={
                     canCreatePersonalChallenge
                         ? async (seed) => {
-                              await loadCustomData();
-                              setShowPublicExerciseBrowser(false);
-                              openPersonalChallengeForm(seed);
-                          }
+                            await loadCustomData();
+                            setShowPublicExerciseBrowser(false);
+                            openPersonalChallengeForm(seed);
+                        }
                         : undefined
                 }
-            />
-
-            <PersonalChallengeFormSheet
-                open={personalChallengeFormOpen}
-                member={personalChallengeMember}
-                teacherExercises={teacherExercises}
-                teacherMenus={teacherMenus}
-                customExercises={customExercises}
-                customMenus={customGroups}
-                initialSeed={personalChallengeSeed}
-                onClose={() => {
+                personalChallengeFormOpen={personalChallengeFormOpen}
+                personalChallengeMember={personalChallengeMember}
+                customGroups={customGroups}
+                personalChallengeSeed={personalChallengeSeed}
+                onClosePersonalChallengeForm={() => {
                     setPersonalChallengeFormOpen(false);
                     setPersonalChallengeSeed(null);
                 }}
-                onSaved={() => {
+                onPersonalChallengeSaved={() => {
                     setPersonalChallengeSeed(null);
                 }}
-            />
-
-            <ConfirmDeleteModal
-                open={deleteGroupId !== null}
-                title="メニューをさくじょ"
-                message={
-                    customGroupDeleteImpact.isPublished
-                        ? 'このメニューは公開中です。先に非公開にしてから削除します。'
-                        : 'このメニューをさくじょしますか？この操作は取り消せません。'
-                }
-                details={
-                    customGroupDeleteImpact.isPublished ? (
-                        <div
-                            style={{
-                                padding: '10px 12px',
-                                borderRadius: 12,
-                                background: 'rgba(9, 132, 227, 0.08)',
-                                fontFamily: "'Noto Sans JP', sans-serif",
-                                fontSize: 12,
-                                lineHeight: 1.6,
-                                color: '#0984E3',
-                            }}
-                        >
-                            公開中のまま削除すると公開版だけ残るため、削除前に自動で非公開にします。
-                        </div>
-                    ) : null
-                }
-                loading={deleteGroupLoading}
-                confirmLabel={customGroupDeleteImpact.isPublished ? '非公開にして削除する' : '削除する'}
-                loadingLabel={customGroupDeleteImpact.isPublished ? '非公開にしています...' : '削除中...'}
-                onCancel={() => {
+                deleteGroupId={deleteGroupId}
+                deleteGroupLoading={deleteGroupLoading}
+                customGroupDeleteImpact={customGroupDeleteImpact}
+                onCancelDeleteGroup={() => {
                     if (deleteGroupLoading) {
                         return;
                     }
                     setDeleteGroupId(null);
                 }}
-                onConfirm={() => {
+                onConfirmDeleteGroup={() => {
                     if (!deleteGroupId || deleteGroupLoading) {
                         return;
                     }
@@ -379,163 +337,16 @@ export const MenuPage: React.FC = () => {
                         }
                     })();
                 }}
-            />
-
-            <ConfirmDeleteModal
-                open={deleteExId !== null}
-                title="種目をさくじょ"
-                message={
-                    customExerciseDeleteImpact.isPublished ||
-                    customExerciseDeleteImpact.publishedMenuNames.length > 0
-                        ? 'このじぶん種目は公開に関係しています。公開中の種目やメニューを先に非公開にしてから削除します。'
-                        : customExerciseDeleteImpact.updatedMenuNames.length > 0 ||
-                            customExerciseDeleteImpact.removedMenuNames.length > 0
-                          ? 'このじぶん種目をさくじょします。使っているメニューからは自動で外し、空になったメニューは自動でさくじょします。'
-                        : 'このじぶん種目をさくじょしますか？この操作は取り消せません。'
-                }
-                details={
-                    customExerciseDeleteImpact.isPublished ||
-                    customExerciseDeleteImpact.publishedMenuNames.length > 0 ||
-                    customExerciseDeleteImpact.updatedMenuNames.length > 0 ||
-                    customExerciseDeleteImpact.removedMenuNames.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {customExerciseDeleteImpact.isPublished ? (
-                                <div
-                                    style={{
-                                        padding: '10px 12px',
-                                        borderRadius: 12,
-                                        background: 'rgba(9, 132, 227, 0.08)',
-                                        fontFamily: "'Noto Sans JP', sans-serif",
-                                        fontSize: 12,
-                                        lineHeight: 1.6,
-                                        color: '#0984E3',
-                                    }}
-                                >
-                                    この種目は公開中なので、削除前に自動で非公開にします。
-                                </div>
-                            ) : null}
-                            {customExerciseDeleteImpact.publishedMenuNames.length > 0 ? (
-                                <div>
-                                    <div
-                                        style={{
-                                            marginBottom: 6,
-                                            fontFamily: "'Noto Sans JP', sans-serif",
-                                            fontSize: 12,
-                                            fontWeight: 700,
-                                            color: '#0984E3',
-                                        }}
-                                    >
-                                        先に非公開になるメニュー
-                                    </div>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                        {customExerciseDeleteImpact.publishedMenuNames.map((name) => (
-                                            <span
-                                                key={`published-${name}`}
-                                                style={{
-                                                    padding: '4px 10px',
-                                                    borderRadius: 999,
-                                                    background: 'rgba(9, 132, 227, 0.1)',
-                                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                                    fontSize: 12,
-                                                    color: '#0984E3',
-                                                }}
-                                            >
-                                                {name}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            ) : null}
-                            {customExerciseDeleteImpact.updatedMenuNames.length > 0 ? (
-                                <div>
-                                    <div
-                                        style={{
-                                            marginBottom: 6,
-                                            fontFamily: "'Noto Sans JP', sans-serif",
-                                            fontSize: 12,
-                                            fontWeight: 700,
-                                            color: '#2BBAA0',
-                                        }}
-                                    >
-                                        自動で外れるメニュー
-                                    </div>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                        {customExerciseDeleteImpact.updatedMenuNames.map((name) => (
-                                            <span
-                                                key={`update-${name}`}
-                                                style={{
-                                                    padding: '4px 10px',
-                                                    borderRadius: 999,
-                                                    background: 'rgba(43, 186, 160, 0.1)',
-                                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                                    fontSize: 12,
-                                                    color: '#00796B',
-                                                }}
-                                            >
-                                                {name}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            ) : null}
-                            {customExerciseDeleteImpact.removedMenuNames.length > 0 ? (
-                                <div>
-                                    <div
-                                        style={{
-                                            marginBottom: 6,
-                                            fontFamily: "'Noto Sans JP', sans-serif",
-                                            fontSize: 12,
-                                            fontWeight: 700,
-                                            color: '#E17055',
-                                        }}
-                                    >
-                                        空になるので削除されるメニュー
-                                    </div>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                        {customExerciseDeleteImpact.removedMenuNames.map((name) => (
-                                            <span
-                                                key={`remove-${name}`}
-                                                style={{
-                                                    padding: '4px 10px',
-                                                    borderRadius: 999,
-                                                    background: 'rgba(225, 112, 85, 0.1)',
-                                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                                    fontSize: 12,
-                                                    color: '#E17055',
-                                                }}
-                                            >
-                                                {name}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            ) : null}
-                        </div>
-                    ) : null
-                }
-                loading={deleteExLoading}
-                confirmLabel={
-                    customExerciseDeleteImpact.isPublished ||
-                    customExerciseDeleteImpact.publishedMenuNames.length > 0
-                        ? '非公開にして削除する'
-                        : customExerciseDeleteImpact.updatedMenuNames.length > 0 ||
-                            customExerciseDeleteImpact.removedMenuNames.length > 0
-                          ? '外して削除する'
-                        : '削除する'
-                }
-                loadingLabel={
-                    customExerciseDeleteImpact.isPublished ||
-                    customExerciseDeleteImpact.publishedMenuNames.length > 0
-                        ? '非公開にしています...'
-                        : '更新中...'
-                }
-                onCancel={() => {
+                deleteExId={deleteExId}
+                deleteExLoading={deleteExLoading}
+                customExerciseDeleteImpact={customExerciseDeleteImpact}
+                onCancelDeleteExercise={() => {
                     if (deleteExLoading) {
                         return;
                     }
                     setDeleteExId(null);
                 }}
-                onConfirm={() => {
+                onConfirmDeleteExercise={() => {
                     if (!deleteExId || deleteExLoading) {
                         return;
                     }
@@ -550,9 +361,9 @@ export const MenuPage: React.FC = () => {
                         }
                     })();
                 }}
+                toastMessage={toastMessage}
+                onCloseToast={clearToast}
             />
-
-            <Toast message={toastMessage?.text ?? null} type={toastMessage?.type ?? 'success'} onClose={clearToast} />
         </>
     );
 };

@@ -14,9 +14,9 @@
 | Active task queue | 今回の実行対象だけを持つ | `.agents/tasks/TASKS.md` |
 | Done log | 完了した仕事の短い履歴 | `.agents/tasks/DONE.md` |
 | Durable memory | 再利用価値が高い決定・罠 | `.agents/memory/durable.md` |
-| Product backlog | 中長期タスク、仕様差分、ロードマップ | `docs/tasks.md` |
-| Product terminology | 用語定義の正本 | `docs/terminology.md` |
-| 詳細仕様 | UI / ロジック /運用仕様 | `docs/*.md` |
+| Product backlog | 中長期タスク、仕様差分、ロードマップ | `docs/tasks/backlog.md` |
+| Product terminology | 用語定義の正本 | `docs/wiki/terminology.md` |
+| 詳細仕様 | UI / ロジック /運用仕様 | `docs/product/*`, `docs/architecture/*`, `docs/runbooks/*`, `docs/wiki/*` |
 | Skill | 定型ワークフロー | `.agents/skills/*/SKILL.md` |
 | Governance check | canonical path / stale path / size / terminology drift の監査 | `scripts/check-governance.mjs` |
 
@@ -47,12 +47,12 @@
 - 例: 設計判断、移行時の罠、Sync の危険点、UX の非交渉ルール。
 - 書かないもの: 一時的なデバッグ、進行中タスク、解決済みの細かい修正。
 
-### `docs/tasks.md`
+### `docs/tasks/backlog.md`
 
 - Product backlog と spec gap の置き場。
 - 実行キューではない。
 - 長期課題、後回し項目、仕様との差分整理に使う。
-- 重くなったら、完了済みの snapshot は `docs/archive/tasks-*.md` へ逃がし、`docs/tasks.md` は current focus と未完了項目を優先する。
+- 重くなったら、完了済みの snapshot は `docs/tasks/archive/*.md` へ逃がし、`docs/tasks/backlog.md` は current focus と未完了項目を優先する。
 
 ### `.github/workflows/verify.yml`
 
@@ -62,7 +62,7 @@
 
 ## Task Lifecycle
 
-1. 仕様差分や大きな課題は `docs/tasks.md` に置く。
+1. 仕様差分や大きな課題は `docs/tasks/backlog.md` に置く。
 2. 今回着手するものだけを `.agents/tasks/TASKS.md` に移す。
 3. 完了後は `.agents/tasks/DONE.md` に短く残す。
 4. 次回も効く判断だけ `.agents/memory/durable.md` に残す。
@@ -92,7 +92,7 @@
 ## Suggested Working Rules
 
 - 変更前に、関連する single source を確認する。
-- product concept の名前を触る変更では `docs/terminology.md` を先に確認し、deprecated 用語を増やさない。
+- product concept の名前を触る変更では `docs/wiki/terminology.md` を先に確認し、deprecated 用語を増やさない。
 - 変更種別に対応する required skill / verify を最初に宣言してから作業する。
 - 最終回答で主張する内容は、検証結果と一致させる。
 - Help 文言や設定説明が古くなる変更では、関連文言も同時に更新する。
