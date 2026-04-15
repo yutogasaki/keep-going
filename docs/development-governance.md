@@ -12,11 +12,12 @@
 | 共通 agent guide | 入口ファイルが参照する詳細の正本 | `.agents/agent-guide.md` |
 | CI verify | push / PR で回る共通検証導線 | `.github/workflows/verify.yml` |
 | Active task queue | 今回の実行対象だけを持つ | `.agents/tasks/TASKS.md` |
+| Active task detail | 実行中タスクの詳細メモ | `docs/tasks/active/*.md` |
 | Done log | 完了した仕事の短い履歴 | `.agents/tasks/DONE.md` |
 | Durable memory | 再利用価値が高い決定・罠 | `.agents/memory/durable.md` |
 | Product backlog | 中長期タスク、仕様差分、ロードマップ | `docs/tasks/backlog.md` |
 | Product terminology | 用語定義の正本 | `docs/wiki/terminology.md` |
-| 詳細仕様 | UI / ロジック /運用仕様 | `docs/product/*`, `docs/architecture/*`, `docs/runbooks/*`, `docs/wiki/*` |
+| 詳細仕様 | UI / ロジック /運用仕様 | `docs/product/*`, `docs/architecture/*`, `docs/runbooks/*`, `docs/wiki/*`, `docs/adr/*` |
 | Skill | 定型ワークフロー | `.agents/skills/*/SKILL.md` |
 | Governance check | canonical path / stale path / size / terminology drift の監査 | `scripts/check-governance.mjs` |
 
@@ -54,6 +55,12 @@
 - 長期課題、後回し項目、仕様との差分整理に使う。
 - 重くなったら、完了済みの snapshot は `docs/tasks/archive/*.md` へ逃がし、`docs/tasks/backlog.md` は current focus と未完了項目を優先する。
 
+### `docs/tasks/active/*.md`
+
+- 大きい active task の詳細メモ置き場。
+- 目的、SSOT、plan、verification、進捗を task ごとに切り出す。
+- `.agents/tasks/TASKS.md` の短い実行キューを肥大化させないために使う。
+
 ### `.github/workflows/verify.yml`
 
 - `pull_request` と `main` への push で共通 verify を回す。
@@ -63,9 +70,10 @@
 ## Task Lifecycle
 
 1. 仕様差分や大きな課題は `docs/tasks/backlog.md` に置く。
-2. 今回着手するものだけを `.agents/tasks/TASKS.md` に移す。
-3. 完了後は `.agents/tasks/DONE.md` に短く残す。
-4. 次回も効く判断だけ `.agents/memory/durable.md` に残す。
+2. 大きい active task は必要に応じて `docs/tasks/active/*.md` に詳細を切る。
+3. 今回着手するものだけを `.agents/tasks/TASKS.md` に移す。
+4. 完了後は `.agents/tasks/DONE.md` に短く残す。
+5. 次回も効く判断だけ `.agents/memory/durable.md` に残す。
 
 ## Required Skill And Verification Matrix
 

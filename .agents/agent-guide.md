@@ -2,6 +2,7 @@
 
 このファイルは `AGENTS.md` と `CLAUDE.md` が参照する共通の正本。
 入口ファイルは短く保ち、詳細はここだけを更新する。
+cross-project standard は `/Users/yutogasaki/Projects/_common-ai/PROJECTS_COMMON_AI_GUIDE.md` を参照する。
 
 ## Read Order（毎セッション読む）
 

@@ -2,6 +2,7 @@
 
 > このファイルは product backlog と仕様差分の整理用。
 > Active execution queue は `.agents/tasks/TASKS.md` を使う。
+> 大きい active task の詳細は `docs/tasks/active/*.md` に切り出す。
 
 > セッション間で進捗を共有するために `docs/` に保管。
 > 4仕様書（Core v1.4 / UI v8 / Logic v3.0 / Operation v2.0）と照合済み。
