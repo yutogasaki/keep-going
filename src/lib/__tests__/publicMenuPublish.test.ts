@@ -1,8 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildMenuGroupItemsFromExerciseIds, type MenuGroup } from '../../data/menuGroups';
-import type { CustomExercise } from '../db';
-import type { PublicExercise } from '../publicExercises';
-import type { PublicMenu } from '../publicMenuTypes';
 import { publishMenu } from '../publicMenuPublish';
 import { getCustomExercises } from '../db';
 import { fetchMyPublishedMenus } from '../publicMenuBrowse';
@@ -11,6 +7,13 @@ import {
     publishExercise,
     unpublishExercise,
 } from '../publicExercises';
+import {
+    createCustomExercise,
+    createMenuGroup,
+    createPublicExercise,
+    createPublicMenu,
+    createPublicMenusSupabaseMock,
+} from './publicMenuPublish.fixtures';
 
 const { supabaseFromMock } = vi.hoisted(() => ({
     supabaseFromMock: vi.fn(),
@@ -46,117 +49,6 @@ const mockedFetchMyPublishedExercises = vi.mocked(fetchMyPublishedExercises);
 const mockedPublishExercise = vi.mocked(publishExercise);
 const mockedUnpublishExercise = vi.mocked(unpublishExercise);
 
-function createCustomExercise(overrides: Partial<CustomExercise> = {}): CustomExercise {
-    return {
-        id: overrides.id ?? 'custom-ex-1',
-        name: overrides.name ?? 'おひるやすみ',
-        sec: overrides.sec ?? 45,
-        emoji: overrides.emoji ?? '🛋️',
-        placement: overrides.placement ?? 'rest',
-        hasSplit: overrides.hasSplit ?? false,
-        description: overrides.description,
-        creatorId: overrides.creatorId,
-    };
-}
-
-function createMenuGroup(overrides: Partial<MenuGroup> & Pick<MenuGroup, 'id' | 'name' | 'exerciseIds'>): MenuGroup {
-    return {
-        id: overrides.id,
-        name: overrides.name,
-        emoji: overrides.emoji ?? '🌸',
-        description: overrides.description ?? '',
-        exerciseIds: overrides.exerciseIds,
-        items: overrides.items ?? buildMenuGroupItemsFromExerciseIds(overrides.exerciseIds),
-        isPreset: overrides.isPreset ?? false,
-        creatorId: overrides.creatorId,
-        origin: overrides.origin,
-        visibility: overrides.visibility,
-        focusTags: overrides.focusTags,
-        recommended: overrides.recommended,
-        recommendedOrder: overrides.recommendedOrder,
-        displayMode: overrides.displayMode,
-    };
-}
-
-function createPublicMenu(overrides: Partial<PublicMenu> & Pick<PublicMenu, 'id' | 'name' | 'exerciseIds'>): PublicMenu {
-    const exerciseIds = overrides.exerciseIds;
-
-    return {
-        id: overrides.id,
-        name: overrides.name,
-        emoji: overrides.emoji ?? '🌸',
-        description: overrides.description ?? '',
-        exerciseIds,
-        items: overrides.items ?? buildMenuGroupItemsFromExerciseIds(exerciseIds),
-        customExerciseData: overrides.customExerciseData ?? [],
-        authorName: overrides.authorName ?? 'teacher',
-        accountId: overrides.accountId ?? 'account-1',
-        downloadCount: overrides.downloadCount ?? 0,
-        sourceMenuGroupId: overrides.sourceMenuGroupId ?? null,
-        createdAt: overrides.createdAt ?? '2026-03-17T00:00:00.000Z',
-    };
-}
-
-function createPublicExercise(overrides: Partial<PublicExercise> & Pick<PublicExercise, 'id' | 'name'>): PublicExercise {
-    return {
-        id: overrides.id,
-        name: overrides.name,
-        sec: overrides.sec ?? 45,
-        emoji: overrides.emoji ?? '🛋️',
-        placement: overrides.placement ?? 'rest',
-        hasSplit: overrides.hasSplit ?? false,
-        description: overrides.description ?? null,
-        authorName: overrides.authorName ?? 'teacher',
-        accountId: overrides.accountId ?? 'account-1',
-        downloadCount: overrides.downloadCount ?? 0,
-        sourceCustomExerciseId: overrides.sourceCustomExerciseId ?? null,
-        preserveWithoutMenu: overrides.preserveWithoutMenu ?? false,
-        createdAt: overrides.createdAt ?? '2026-03-17T00:00:00.000Z',
-    };
-}
-
-function createPublicMenusSupabaseMock(previousCustomExerciseData: PublicMenu['customExerciseData']) {
-    const updatePayloads: unknown[] = [];
-
-    supabaseFromMock.mockImplementation((table: string) => {
-        if (table !== 'public_menus') {
-            throw new Error(`Unexpected table: ${table}`);
-        }
-
-        return {
-            select: vi.fn(() => {
-                const selectChain = {
-                    eq: vi.fn(() => selectChain),
-                    single: vi.fn(async () => ({
-                        data: {
-                            custom_exercise_data: previousCustomExerciseData,
-                        },
-                        error: null,
-                    })),
-                };
-                return selectChain;
-            }),
-            update: vi.fn((payload: unknown) => {
-                updatePayloads.push(payload);
-                let eqCount = 0;
-                const updateChain = {
-                    eq: vi.fn(() => {
-                        eqCount += 1;
-                        if (eqCount >= 2) {
-                            return Promise.resolve({ error: null });
-                        }
-                        return updateChain;
-                    }),
-                };
-                return updateChain;
-            }),
-            insert: vi.fn(async () => ({ error: null })),
-        };
-    });
-
-    return { updatePayloads };
-}
-
 beforeEach(() => {
     vi.clearAllMocks();
     mockedGetCustomExercises.mockResolvedValue([]);
@@ -182,10 +74,7 @@ describe('publicMenuPublish', () => {
             emoji: '🛋️',
             placement: 'rest',
         });
-        const { updatePayloads } = createPublicMenusSupabaseMock([
-            keptExercise,
-            removedExercise,
-        ]);
+        const { updatePayloads } = createPublicMenusSupabaseMock([keptExercise, removedExercise], supabaseFromMock);
         mockedGetCustomExercises.mockResolvedValue([keptExercise]);
         mockedFetchMyPublishedMenus.mockResolvedValue([
             createPublicMenu({
@@ -254,7 +143,7 @@ describe('publicMenuPublish', () => {
             placement: 'rest',
         });
 
-        createPublicMenusSupabaseMock([removedExercise]);
+        createPublicMenusSupabaseMock([removedExercise], supabaseFromMock);
         mockedFetchMyPublishedMenus.mockResolvedValue([
             createPublicMenu({
                 id: 'public-menu-1',
@@ -309,7 +198,7 @@ describe('publicMenuPublish', () => {
             placement: 'rest',
         });
 
-        createPublicMenusSupabaseMock([removedExercise]);
+        createPublicMenusSupabaseMock([removedExercise], supabaseFromMock);
         mockedFetchMyPublishedMenus.mockRejectedValue(new Error('published menus unavailable'));
         mockedFetchMyPublishedExercises.mockResolvedValue([
             createPublicExercise({

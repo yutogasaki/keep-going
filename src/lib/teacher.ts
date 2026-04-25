@@ -1,101 +1,30 @@
 import { supabase } from './supabase';
-import type { Database } from './supabase-types';
-import { calculateStreak, type SessionRecord } from './db';
-import type { SessionMenuSource } from '../store/use-app-store/types';
+import { calculateStreak } from './db';
+import { buildStudentSummary, mergeRowsById, sortTeacherSessions } from './teacherSummary';
+import type {
+    FetchAllStudentsOptions,
+    StudentSummary,
+    TeacherAppSettingsRow,
+    TeacherFamilyMemberRow,
+    TeacherRemoteSnapshot,
+    TeacherSessionRow,
+} from './teacherTypes';
 
 // Re-export so existing callers (TeacherDashboard, AccountCard) don't need to change imports
 export { calculateStreak };
-
-// ─── Types ───────────────────────────────────────────
-
-export interface StudentMember {
-    id: string;
-    name: string;
-    classLevel: string;
-    avatarUrl?: string;
-}
-
-export interface StudentSession {
-    id: string;
-    date: string;
-    startedAt: string;
-    totalSeconds: number;
-    exerciseIds: string[];
-    plannedExerciseIds?: string[];
-    skippedIds: string[];
-    userIds: string[];
-    sourceMenuId?: string | null;
-    sourceMenuSource?: SessionMenuSource | null;
-}
-
-export interface StudentSummary {
-    accountId: string;
-    members: StudentMember[];
-    sessions: StudentSession[];
-    streak: number;
-    totalSessions: number;
-    lastActiveDate: string | null;
-}
-
-export interface LocalStudentMemberSnapshot {
-    id: string;
-    name: string;
-    classLevel: string;
-    avatarUrl?: string;
-}
-
-export interface LocalStudentSessionSnapshot extends Pick<
-    SessionRecord,
-    'id' | 'date' | 'startedAt' | 'totalSeconds' | 'exerciseIds' | 'plannedExerciseIds' | 'skippedIds'
-> {
-    userIds?: string[];
-    sourceMenuId?: string | null;
-    sourceMenuSource?: SessionMenuSource | null;
-}
+export type {
+    FetchAllStudentsOptions,
+    LocalStudentMemberSnapshot,
+    LocalStudentSessionSnapshot,
+    StudentMember,
+    StudentSession,
+    StudentSummary,
+} from './teacherTypes';
 
 // ─── Fetch all students ──────────────────────────────
 
 const TEACHER_FETCH_PAGE_SIZE = 1000;
 const TEACHER_REMOTE_CACHE_TTL = 60_000;
-
-type TeacherFamilyMemberRow = Pick<
-    Database['public']['Tables']['family_members']['Row'],
-    'id' | 'account_id' | 'name' | 'class_level' | 'avatar_url'
->;
-
-type TeacherSessionRow = Pick<
-    Database['public']['Tables']['sessions']['Row'],
-    | 'id'
-    | 'account_id'
-    | 'date'
-    | 'started_at'
-    | 'total_seconds'
-    | 'exercise_ids'
-    | 'planned_exercise_ids'
-    | 'skipped_ids'
-    | 'user_ids'
-    | 'source_menu_id'
-    | 'source_menu_source'
->;
-
-type TeacherAppSettingsRow = Pick<
-    Database['public']['Tables']['app_settings']['Row'],
-    'account_id' | 'suspended'
->;
-
-interface FetchAllStudentsOptions {
-    currentAccountId?: string | null;
-    localMembers?: LocalStudentMemberSnapshot[];
-    localSessions?: LocalStudentSessionSnapshot[];
-    forceRefresh?: boolean;
-}
-
-interface TeacherRemoteSnapshot {
-    members: TeacherFamilyMemberRow[];
-    sessions: TeacherSessionRow[];
-    settings: TeacherAppSettingsRow[];
-    fetchedAt: number;
-}
 
 let cachedTeacherRemoteSnapshot: TeacherRemoteSnapshot | null = null;
 let teacherRemoteSnapshotPromise: Promise<TeacherRemoteSnapshot> | null = null;
@@ -103,65 +32,6 @@ let teacherRemoteSnapshotPromise: Promise<TeacherRemoteSnapshot> | null = null;
 export function invalidateTeacherRemoteSnapshotCache(): void {
     cachedTeacherRemoteSnapshot = null;
     teacherRemoteSnapshotPromise = null;
-}
-
-function normalizeSessionMenuSource(value: string | null | undefined): SessionMenuSource | null {
-    return value === 'preset' || value === 'teacher' || value === 'custom' || value === 'public'
-        ? value
-        : null;
-}
-
-function sortTeacherSessions<T extends Pick<TeacherSessionRow, 'date' | 'started_at'>>(sessions: T[]): T[] {
-    return [...sessions].sort((left, right) => {
-        const dateCompare = right.date.localeCompare(left.date);
-        if (dateCompare !== 0) {
-            return dateCompare;
-        }
-        return right.started_at.localeCompare(left.started_at);
-    });
-}
-
-function mergeRowsById<T extends { id: string }>(remoteRows: T[], localRows: T[]): T[] {
-    const merged = new Map(remoteRows.map((row) => [row.id, row]));
-    for (const row of localRows) {
-        merged.set(row.id, row);
-    }
-    return [...merged.values()];
-}
-
-function buildStudentSummary(
-    accountId: string,
-    accountMembers: TeacherFamilyMemberRow[],
-    accountSessions: TeacherSessionRow[],
-): StudentSummary {
-    const sortedSessions = sortTeacherSessions(accountSessions);
-    const streak = calculateStreak(sortedSessions);
-    const lastActiveDate = sortedSessions.length > 0 ? sortedSessions[0].date : null;
-
-    return {
-        accountId,
-        members: accountMembers.map((member) => ({
-            id: member.id,
-            name: member.name,
-            classLevel: member.class_level,
-            avatarUrl: member.avatar_url || undefined,
-        })),
-        sessions: sortedSessions.slice(0, 100).map((session) => ({
-            id: session.id,
-            date: session.date,
-            startedAt: session.started_at,
-            totalSeconds: session.total_seconds,
-            exerciseIds: session.exercise_ids ?? [],
-            plannedExerciseIds: session.planned_exercise_ids ?? [],
-            skippedIds: session.skipped_ids ?? [],
-            userIds: session.user_ids ?? [],
-            sourceMenuId: session.source_menu_id ?? null,
-            sourceMenuSource: normalizeSessionMenuSource(session.source_menu_source),
-        })),
-        streak,
-        totalSessions: sortedSessions.length,
-        lastActiveDate,
-    };
 }
 
 async function fetchAllPages<T>(
@@ -193,7 +63,7 @@ async function fetchTeacherMembers(): Promise<TeacherFamilyMemberRow[]> {
             .select('id, account_id, name, class_level, avatar_url')
             .order('account_id', { ascending: true })
             .order('id', { ascending: true })
-            .range(from, to)
+            .range(from, to),
     );
 }
 
@@ -204,10 +74,12 @@ async function fetchTeacherSessions(): Promise<TeacherSessionRow[]> {
     return fetchAllPages((from, to) =>
         client
             .from('sessions')
-            .select('id, account_id, date, started_at, total_seconds, exercise_ids, planned_exercise_ids, skipped_ids, user_ids, source_menu_id, source_menu_source')
+            .select(
+                'id, account_id, date, started_at, total_seconds, exercise_ids, planned_exercise_ids, skipped_ids, user_ids, source_menu_id, source_menu_source',
+            )
             .order('date', { ascending: false })
             .order('started_at', { ascending: false })
-            .range(from, to)
+            .range(from, to),
     );
 }
 
@@ -220,7 +92,7 @@ async function fetchTeacherAppSettings(): Promise<TeacherAppSettingsRow[]> {
             .from('app_settings')
             .select('account_id, suspended')
             .order('account_id', { ascending: true })
-            .range(from, to)
+            .range(from, to),
     );
 }
 
@@ -235,9 +107,9 @@ async function fetchTeacherRemoteSnapshot(forceRefresh = false): Promise<Teacher
     }
 
     if (
-        !forceRefresh
-        && cachedTeacherRemoteSnapshot
-        && Date.now() - cachedTeacherRemoteSnapshot.fetchedAt < TEACHER_REMOTE_CACHE_TTL
+        !forceRefresh &&
+        cachedTeacherRemoteSnapshot &&
+        Date.now() - cachedTeacherRemoteSnapshot.fetchedAt < TEACHER_REMOTE_CACHE_TTL
     ) {
         return cachedTeacherRemoteSnapshot;
     }
@@ -297,9 +169,7 @@ export async function fetchAllStudents(options: FetchAllStudentsOptions = {}): P
     const settings = remoteSnapshot.settings;
 
     // Filter out suspended accounts
-    const suspendedIds = new Set(
-        settings.filter((setting) => setting.suspended).map((setting) => setting.account_id)
-    );
+    const suspendedIds = new Set(settings.filter((setting) => setting.suspended).map((setting) => setting.account_id));
 
     const membersByAccount = new Map<string, TeacherFamilyMemberRow[]>();
     for (const member of members) {

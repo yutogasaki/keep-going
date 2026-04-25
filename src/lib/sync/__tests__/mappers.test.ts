@@ -11,6 +11,7 @@ import {
 import type { SessionRecord } from '../../db';
 import type { MenuGroup } from '../../../data/menuGroups';
 import type { UserProfileStore } from '../../../store/useAppStore';
+import { baseCloudFamily } from './mappers.fixtures';
 
 describe('toSessionUpsertPayload', () => {
     it('maps camelCase to snake_case correctly', () => {
@@ -217,24 +218,6 @@ describe('toLocalCustomExercise', () => {
 });
 
 describe('toLocalUserFromCloudFamily', () => {
-    const baseCloudFamily = {
-        id: 'user-1',
-        name: 'テストちゃん',
-        class_level: '初級',
-        fuwafuwa_birth_date: '2026-03-01',
-        fuwafuwa_type: 3,
-        fuwafuwa_cycle_count: 2,
-        fuwafuwa_name: 'ぽわぽわ',
-        past_fuwafuwas: [],
-        notified_fuwafuwa_stages: [1, 2],
-        daily_target_minutes: 15,
-        excluded_exercises: ['ex-hard'],
-        required_exercises: ['ex-basic'],
-        consumed_magic_seconds: 0,
-        avatar_url: null,
-        chibifuwas: [],
-    };
-
     it('maps cloud family to local user', () => {
         const local = toLocalUserFromCloudFamily(baseCloudFamily);
 

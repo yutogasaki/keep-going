@@ -22,6 +22,7 @@
 - Node 24 LTS / npm 11 をローカル・CI の基準にし、`vite` を直接 devDependency として明示
 - npm audit 0 件化、Actions v6 化、`typecheck` / `verify:ci` 導線、EditorConfig / VS Code 推奨拡張を追加
 - menu reorder key の index 依存を解消し、全体 verify と E2E smoke を通過
+- teacher challenge list / target form / AuthContext / teacher content / db / challenge display/API / public menu publish / personal challenge / store migrate/createState の責務分離を進め、challenge/public menu/sync mapper テストも分割。menu exercise hook の不要依存 warning を解消
 
 ## 2026-03-28: みんなで表示の文脈明確化
 - `だれでみる？` の badge を `個人を表示中 / 家族N人を表示中` の二層表示にして、現在コンテキストをヘッダーで読み取りやすくした

@@ -3,78 +3,17 @@ import { DEFAULT_BGM_TRACK_ID } from '../../lib/bgmTracks';
 import { pickInitialFuwafuwaType } from '../../lib/fuwafuwa';
 import type { AppState } from './types';
 import { sanitizePersistedState, sanitizeSessionDraft } from './migrateHelpers';
-
-type LegacyUserRecord = Record<string, unknown>;
-type MutableMigratingState = Record<string, unknown> & {
-    users?: unknown;
-    sessionUserIds?: unknown;
-    requiredExercises?: unknown;
-    excludedExercises?: unknown;
-    dailyTargetMinutes?: unknown;
-    bgmEnabled?: unknown;
-    bgmVolume?: unknown;
-    bgmTrackId?: unknown;
-    hapticEnabled?: unknown;
-    joinedChallengeIds?: unknown;
-    dismissedHomeAnnouncementIds?: unknown;
-    homeVisitMemory?: unknown;
-    challengeEnrollmentWindows?: unknown;
-    sessionDraft?: unknown;
-    hasSeenSessionControlsHint?: unknown;
-    ttsRate?: unknown;
-    ttsPitch?: unknown;
-    classLevel?: unknown;
-    fuwafuwaBirthDate?: unknown;
-    fuwafuwaType?: unknown;
-    fuwafuwaCycleCount?: unknown;
-    fuwafuwaName?: unknown;
-    pastFuwafuwas?: unknown;
-    notifiedFuwafuwaStages?: unknown;
-};
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
-function getLegacyUsers(value: unknown): LegacyUserRecord[] {
-    if (!Array.isArray(value)) {
-        return [];
-    }
-
-    return value.filter(isRecord);
-}
-
-function mapLegacyUsers(
-    state: MutableMigratingState,
-    mapper: (user: LegacyUserRecord, index: number) => LegacyUserRecord,
-): void {
-    const users = getLegacyUsers(state.users);
-    if (users.length === 0) {
-        return;
-    }
-
-    state.users = users.map(mapper);
-}
-
-function getStringArray(value: unknown): string[] {
-    if (!Array.isArray(value)) {
-        return [];
-    }
-
-    return value.filter((item): item is string => typeof item === 'string');
-}
-
-function getFiniteNumber(value: unknown, fallback: number): number {
-    return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
-}
-
-function getNonEmptyString(value: unknown, fallback: string): string {
-    return typeof value === 'string' && value.length > 0 ? value : fallback;
-}
-
-function getNullableString(value: unknown): string | null {
-    return typeof value === 'string' && value.length > 0 ? value : null;
-}
+import {
+    getFiniteNumber,
+    getLegacyUsers,
+    getNonEmptyString,
+    getNullableString,
+    getStringArray,
+    isRecord,
+    mapLegacyUsers,
+    type LegacyUserRecord,
+    type MutableMigratingState,
+} from './migrateLegacyHelpers';
 
 export const APP_STATE_VERSION = 22;
 

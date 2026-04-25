@@ -1,24 +1,16 @@
-import {
-    useCallback,
-    useContext,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-    type ReactNode,
-} from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { initialSync, isPulling, processQueue, setAccountId, setupOnlineListener } from '../lib/sync';
 import { useAppStore } from '../store/useAppStore';
 import { useSyncStatus } from '../store/useSyncStatus';
 import { SyncConflictModal } from '../components/SyncConflictModal';
-import { fetchCurrentUserRoleFlags } from '../lib/userRoles';
 import { createAuthActions } from './auth/authActions';
 import { getSingletonContext } from './auth/contextSingleton';
 import { LOGIN_CONTEXT_KEY } from './auth/constants';
 import { getAppSettingsSnapshot } from './auth/settingsSnapshot';
 import { runSettingsLoginSync } from './auth/syncFlows';
+import { useUserRoleFlags } from './auth/useUserRoleFlags';
 import type { AuthContextValue, LoginContext } from './auth/types';
 import type { SyncConflictPromptData, SyncConflictResolution } from '../lib/sync';
 
@@ -29,8 +21,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const [isSyncing, setIsSyncing] = useState(false);
     const [isAnonymous, setIsAnonymous] = useState(false);
-    const [isTeacher, setIsTeacher] = useState(false);
-    const [isDeveloper, setIsDeveloper] = useState(false);
     const [loginContext, setLoginContextState] = useState<LoginContext>(() => {
         const saved = sessionStorage.getItem(LOGIN_CONTEXT_KEY);
         return saved === 'onboarding' || saved === 'settings' ? saved : null;
@@ -68,20 +58,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSyncConflictPrompt(null);
     }, []);
 
-    const handleSettingsLogin = useCallback(async (accountId: string) => {
-        await runSettingsLoginSync({
-            accountId,
-            resolveConflict: requestSyncConflictResolution,
-            setIsSyncing,
-            setToastMessage,
-            setLoginContext,
-        });
-    }, [requestSyncConflictResolution, setLoginContext]);
+    const handleSettingsLogin = useCallback(
+        async (accountId: string) => {
+            await runSettingsLoginSync({
+                accountId,
+                resolveConflict: requestSyncConflictResolution,
+                setIsSyncing,
+                setToastMessage,
+                setLoginContext,
+            });
+        },
+        [requestSyncConflictResolution, setLoginContext],
+    );
 
     const { startEmailAuth, verifyEmailAuthCode, signInWithGoogle, signOut } = useMemo(
         () => createAuthActions({ user, setToastMessage }),
         [user],
     );
+    const { isTeacher, isDeveloper } = useUserRoleFlags(user);
 
     useEffect(() => {
         if (!toastMessage) return;
@@ -92,8 +86,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (!user) {
             setAccountId(null);
-            setIsTeacher(false);
-            setIsDeveloper(false);
             setIsAnonymous(false);
             hasSyncedRef.current = false;
             prevUserIdRef.current = null;
@@ -145,46 +137,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (loginContext === 'settings') {
             handleSettingsLogin(user.id);
         } else {
-            processQueue().then(({ failed, dropped }) => {
-                if (dropped > 0) {
-                    useSyncStatus.getState().reportFailure(`${dropped}件のデータ同期に失敗しました`);
-                } else if (failed === 0) {
-                    useSyncStatus.getState().clearFailure();
-                }
-            }).catch((err) => {
-                console.warn('[sync]', err);
-                useSyncStatus.getState().reportFailure(String(err));
-            });
+            processQueue()
+                .then(({ failed, dropped }) => {
+                    if (dropped > 0) {
+                        useSyncStatus.getState().reportFailure(`${dropped}件のデータ同期に失敗しました`);
+                    } else if (failed === 0) {
+                        useSyncStatus.getState().clearFailure();
+                    }
+                })
+                .catch((err) => {
+                    console.warn('[sync]', err);
+                    useSyncStatus.getState().reportFailure(String(err));
+                });
         }
     }, [user, loginContext, handleSettingsLogin, setLoginContext]);
-
-    useEffect(() => {
-        let cancelled = false;
-
-        if (!user || user.is_anonymous) {
-            setIsTeacher(false);
-            setIsDeveloper(false);
-            return;
-        }
-
-        setIsTeacher(false);
-        setIsDeveloper(false);
-
-        fetchCurrentUserRoleFlags().then((roles) => {
-            if (cancelled) return;
-            setIsTeacher(roles.isTeacher);
-            setIsDeveloper(roles.isDeveloper);
-        }).catch((error) => {
-            console.warn('[auth] Failed to fetch role flags:', error);
-            if (cancelled) return;
-            setIsTeacher(false);
-            setIsDeveloper(false);
-        });
-
-        return () => {
-            cancelled = true;
-        };
-    }, [user]);
 
     useEffect(() => {
         const cleanup = setupOnlineListener();
@@ -198,16 +164,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Skip queue processing while a pull/merge is in progress
             // to avoid pushing stale data during account transitions
             if (isPulling()) return;
-            processQueue().then(({ failed, dropped }) => {
-                if (dropped > 0) {
-                    useSyncStatus.getState().reportFailure(`${dropped}件のデータ同期に失敗しました`);
-                } else if (failed === 0) {
-                    useSyncStatus.getState().clearFailure();
-                }
-            }).catch((err) => {
-                console.warn('[sync]', err);
-                useSyncStatus.getState().reportFailure(String(err));
-            });
+            processQueue()
+                .then(({ failed, dropped }) => {
+                    if (dropped > 0) {
+                        useSyncStatus.getState().reportFailure(`${dropped}件のデータ同期に失敗しました`);
+                    } else if (failed === 0) {
+                        useSyncStatus.getState().clearFailure();
+                    }
+                })
+                .catch((err) => {
+                    console.warn('[sync]', err);
+                    useSyncStatus.getState().reportFailure(String(err));
+                });
         }, 60_000);
 
         return () => clearInterval(interval);
@@ -224,24 +192,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const sb = supabase;
 
-        sb.auth.getSession().then(({ data: { session } }) => {
-            if (session?.user) {
-                setUser(session.user);
-                setIsLoading(false);
-            } else {
-                sb.auth.signInAnonymously().then(({ error }) => {
-                    if (error) {
-                        console.warn('[auth] anonymous sign-in failed:', error);
-                        setAuthError('サーバーに接続できませんでした');
-                    }
+        sb.auth
+            .getSession()
+            .then(({ data: { session } }) => {
+                if (session?.user) {
+                    setUser(session.user);
                     setIsLoading(false);
-                });
-            }
-        }).catch((error) => {
-            console.warn('[auth] getSession failed:', error);
-            setAuthError('サーバーに接続できませんでした');
-            setIsLoading(false);
-        });
+                } else {
+                    sb.auth.signInAnonymously().then(({ error }) => {
+                        if (error) {
+                            console.warn('[auth] anonymous sign-in failed:', error);
+                            setAuthError('サーバーに接続できませんでした');
+                        }
+                        setIsLoading(false);
+                    });
+                }
+            })
+            .catch((error) => {
+                console.warn('[auth] getSession failed:', error);
+                setAuthError('サーバーに接続できませんでした');
+                setIsLoading(false);
+            });
     }, []);
 
     useEffect(() => {
@@ -249,7 +220,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (!supabase) return;
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
             const nextUser = session?.user ?? null;
             setUser(nextUser);
             setIsAnonymous(nextUser?.is_anonymous ?? false);

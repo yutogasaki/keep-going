@@ -10,13 +10,13 @@ import {
 import { getTodayKey } from '../db';
 import type { TeacherExercise } from '../teacherContent';
 import { CANONICAL_TERMS } from '../terminology';
-import type { Challenge, ChallengeAttempt, ChallengeEnrollment, ChallengeEnrollmentState } from './types';
+import type { Challenge } from './types';
 
 export function getChallengeExercise(challenge: Challenge, teacherExercises: TeacherExercise[] = []) {
     return challenge.exerciseId
-        ? EXERCISES.find((item) => item.id === challenge.exerciseId)
-            ?? teacherExercises.find((item) => item.id === challenge.exerciseId)
-            ?? null
+        ? (EXERCISES.find((item) => item.id === challenge.exerciseId) ??
+              teacherExercises.find((item) => item.id === challenge.exerciseId) ??
+              null)
         : null;
 }
 
@@ -45,13 +45,14 @@ export function getChallengeTargetLabel(challenge: Challenge, teacherExercises: 
 }
 
 export function getChallengeRewardLabel(challenge: Challenge): string {
-    return challenge.rewardKind === 'star'
-        ? `ほし ${challenge.rewardValue}こ`
-        : 'メダル';
+    return challenge.rewardKind === 'star' ? `ほし ${challenge.rewardValue}こ` : 'メダル';
 }
 
 export function canRetryTeacherChallenge(
-    challenge: Pick<Challenge, 'publishMode' | 'publishStartDate' | 'publishEndDate' | 'startDate' | 'endDate' | 'windowType'>,
+    challenge: Pick<
+        Challenge,
+        'publishMode' | 'publishStartDate' | 'publishEndDate' | 'startDate' | 'endDate' | 'windowType'
+    >,
     date = getTodayKey(),
 ): boolean {
     if (challenge.windowType !== 'rolling') {
@@ -72,9 +73,7 @@ export function getChallengeGoalLabel(
     targetLabel: string,
 ): string {
     const goalTarget = getChallengeGoalTarget(challenge);
-    return challenge.goalType === 'active_day'
-        ? `${targetLabel}を${goalTarget}日`
-        : `${targetLabel}を${goalTarget}回`;
+    return challenge.goalType === 'active_day' ? `${targetLabel}を${goalTarget}日` : `${targetLabel}を${goalTarget}回`;
 }
 
 export function getChallengeProgressLabel(
@@ -82,16 +81,12 @@ export function getChallengeProgressLabel(
     progress: number,
 ): string {
     const goalTarget = getChallengeGoalTarget(challenge);
-    return challenge.goalType === 'active_day'
-        ? `${progress} / ${goalTarget}日`
-        : `${progress} / ${goalTarget}回`;
+    return challenge.goalType === 'active_day' ? `${progress} / ${goalTarget}日` : `${progress} / ${goalTarget}回`;
 }
 
 export function getChallengeDailyCapLabel(challenge: Challenge): string {
     if (challenge.goalType === 'active_day') {
-        return challenge.challengeType === 'duration'
-            ? '休憩をのぞいた時間でカウント'
-            : '1日1回でカウント';
+        return challenge.challengeType === 'duration' ? '休憩をのぞいた時間でカウント' : '1日1回でカウント';
     }
 
     return `1日 ${challenge.dailyCap}回まで`;
@@ -185,9 +180,7 @@ export function getChallengeDeadlineLabel(
 
     const window = getChallengeActiveWindow(challenge, effectiveWindow);
     const daysLeft = getDaysLeftFromWindowEnd(window.endDate, now);
-    return challenge.windowType === 'rolling'
-        ? `あと${daysLeft}日`
-        : getChallengeInviteWindowLabel(challenge);
+    return challenge.windowType === 'rolling' ? `あと${daysLeft}日` : getChallengeInviteWindowLabel(challenge);
 }
 
 export function isChallengePublishedOnDate(
@@ -217,12 +210,8 @@ export function isChallengeDoneForToday(
     return todayProgress >= Math.max(1, challenge.dailyCap);
 }
 
-export function isChallengeFinishedOverall(
-    activeUserIds: string[],
-    completedUserIds: Set<string>,
-): boolean {
-    return activeUserIds.length > 0
-        && activeUserIds.every((userId) => completedUserIds.has(userId));
+export function isChallengeFinishedOverall(activeUserIds: string[], completedUserIds: Set<string>): boolean {
+    return activeUserIds.length > 0 && activeUserIds.every((userId) => completedUserIds.has(userId));
 }
 
 export function isChallengePastForUsers(
@@ -236,100 +225,4 @@ export function isChallengePastForUsers(
 
     const activeWindow = getChallengeActiveWindow(challenge, effectiveWindow);
     return activeWindow.endDate < today;
-}
-
-export function buildChallengeEnrollmentState(
-    enrollments: ChallengeEnrollment[],
-): ChallengeEnrollmentState {
-    const joinedChallengeIds: Record<string, string[]> = {};
-    const challengeEnrollmentWindows: Record<string, Record<string, ChallengeProgressWindow>> = {};
-
-    for (const enrollment of enrollments) {
-        joinedChallengeIds[enrollment.memberId] = [
-            ...(joinedChallengeIds[enrollment.memberId] ?? []),
-            enrollment.challengeId,
-        ];
-            challengeEnrollmentWindows[enrollment.memberId] = {
-                ...(challengeEnrollmentWindows[enrollment.memberId] ?? {}),
-                [enrollment.challengeId]: {
-                    startDate: enrollment.effectiveStartDate,
-                    endDate: enrollment.effectiveEndDate,
-                    joinedAt: enrollment.joinedAt,
-                },
-            };
-        }
-
-    return {
-        joinedChallengeIds,
-        challengeEnrollmentWindows,
-    };
-}
-
-export function getLatestChallengeAttempts(
-    attempts: ChallengeAttempt[],
-): Map<string, ChallengeAttempt> {
-    const latestAttempts = new Map<string, ChallengeAttempt>();
-
-    for (const attempt of attempts) {
-        const current = latestAttempts.get(attempt.memberId);
-        if (!current || attempt.attemptNo > current.attemptNo) {
-            latestAttempts.set(attempt.memberId, attempt);
-        }
-    }
-
-    return latestAttempts;
-}
-
-export function getChallengeRetryStats(attempts: ChallengeAttempt[]) {
-    const latestAttempts = getLatestChallengeAttempts(attempts);
-    const retryingMemberCount = [...latestAttempts.values()].filter(
-        (attempt) => attempt.attemptNo > 1 && attempt.status === 'active',
-    ).length;
-    const repeatCompletionCount = attempts.filter(
-        (attempt) => attempt.attemptNo > 1 && attempt.status === 'completed',
-    ).length;
-
-    return {
-        totalAttempts: attempts.length,
-        retryingMemberCount,
-        repeatCompletionCount,
-        latestAttempts,
-    };
-}
-
-function normalizeChallengeText(value: string | null | undefined): string | null {
-    const normalized = value?.trim();
-    return normalized ? normalized : null;
-}
-
-export function getChallengeCardText(challenge: Pick<Challenge, 'title' | 'summary' | 'description'>): string | null {
-    const summary = normalizeChallengeText(challenge.summary);
-    if (summary && summary !== challenge.title) {
-        return summary;
-    }
-
-    const description = normalizeChallengeText(challenge.description);
-    if (description && description !== challenge.title) {
-        return description;
-    }
-
-    return null;
-}
-
-export function getChallengeHeaderText(challenge: Pick<Challenge, 'title' | 'summary'>): string | null {
-    const summary = normalizeChallengeText(challenge.summary);
-    return summary && summary !== challenge.title ? summary : null;
-}
-
-export function getChallengeDescriptionText(
-    challenge: Pick<Challenge, 'summary' | 'description'>,
-): string | null {
-    const description = normalizeChallengeText(challenge.description);
-    const summary = normalizeChallengeText(challenge.summary);
-
-    if (!description) {
-        return null;
-    }
-
-    return description !== summary ? description : null;
 }

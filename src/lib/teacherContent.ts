@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import type { Database } from './supabase-types';
 import { normalizeExercisePlacement, type ExercisePlacement } from '../data/exercisePlacement';
+import type { TeacherExercise, TeacherMenu } from './teacherContentTypes';
 import {
     normalizeTeacherContentDisplayMode,
     type TeacherContentDisplayMode,
@@ -11,41 +12,7 @@ import {
 type TeacherExerciseRow = Database['public']['Tables']['teacher_exercises']['Row'];
 type TeacherMenuRow = Database['public']['Tables']['teacher_menus']['Row'];
 
-// ─── Types ───────────────────────────────────────────
-
-export interface TeacherExercise {
-    id: string;
-    name: string;
-    sec: number;
-    emoji: string;
-    placement: ExercisePlacement;
-    hasSplit: boolean;
-    description: string;
-    classLevels: string[];
-    visibility: TeacherExerciseVisibility;
-    focusTags: string[];
-    recommended: boolean;
-    recommendedOrder: number | null;
-    displayMode: TeacherContentDisplayMode;
-    createdBy: string;
-    createdAt: string;
-}
-
-export interface TeacherMenu {
-    id: string;
-    name: string;
-    emoji: string;
-    description: string;
-    exerciseIds: string[];
-    classLevels: string[];
-    visibility: TeacherMenuVisibility;
-    focusTags: string[];
-    recommended: boolean;
-    recommendedOrder: number | null;
-    displayMode: TeacherContentDisplayMode;
-    createdBy: string;
-    createdAt: string;
-}
+export type { TeacherExercise, TeacherMenu } from './teacherContentTypes';
 
 // ─── Cache ───────────────────────────────────────────
 
@@ -100,57 +67,67 @@ export async function createTeacherExercise(data: {
 }): Promise<string | null> {
     if (!supabase) return null;
 
-    const { data: result, error } = await supabase.from('teacher_exercises').insert({
-        name: data.name,
-        sec: data.sec,
-        emoji: data.emoji,
-        placement: data.placement,
-        has_split: data.hasSplit,
-        description: data.description,
-        class_levels: data.classLevels,
-        visibility: data.visibility,
-        focus_tags: data.focusTags,
-        recommended: data.recommended,
-        recommended_order: data.recommendedOrder,
-        display_mode: data.displayMode,
-        created_by: data.createdBy,
-    }).select('id').single();
+    const { data: result, error } = await supabase
+        .from('teacher_exercises')
+        .insert({
+            name: data.name,
+            sec: data.sec,
+            emoji: data.emoji,
+            placement: data.placement,
+            has_split: data.hasSplit,
+            description: data.description,
+            class_levels: data.classLevels,
+            visibility: data.visibility,
+            focus_tags: data.focusTags,
+            recommended: data.recommended,
+            recommended_order: data.recommendedOrder,
+            display_mode: data.displayMode,
+            created_by: data.createdBy,
+        })
+        .select('id')
+        .single();
 
     if (error) throw error;
     cachedExercises = null;
     return result?.id ?? null;
 }
 
-export async function updateTeacherExercise(id: string, data: {
-    name: string;
-    sec: number;
-    emoji: string;
-    placement: ExercisePlacement;
-    hasSplit: boolean;
-    description: string;
-    classLevels: string[];
-    visibility: TeacherExerciseVisibility;
-    focusTags: string[];
-    recommended: boolean;
-    recommendedOrder: number | null;
-    displayMode: TeacherContentDisplayMode;
-}): Promise<void> {
+export async function updateTeacherExercise(
+    id: string,
+    data: {
+        name: string;
+        sec: number;
+        emoji: string;
+        placement: ExercisePlacement;
+        hasSplit: boolean;
+        description: string;
+        classLevels: string[];
+        visibility: TeacherExerciseVisibility;
+        focusTags: string[];
+        recommended: boolean;
+        recommendedOrder: number | null;
+        displayMode: TeacherContentDisplayMode;
+    },
+): Promise<void> {
     if (!supabase) return;
 
-    const { error } = await supabase.from('teacher_exercises').update({
-        name: data.name,
-        sec: data.sec,
-        emoji: data.emoji,
-        placement: data.placement,
-        has_split: data.hasSplit,
-        description: data.description,
-        class_levels: data.classLevels,
-        visibility: data.visibility,
-        focus_tags: data.focusTags,
-        recommended: data.recommended,
-        recommended_order: data.recommendedOrder,
-        display_mode: data.displayMode,
-    }).eq('id', id);
+    const { error } = await supabase
+        .from('teacher_exercises')
+        .update({
+            name: data.name,
+            sec: data.sec,
+            emoji: data.emoji,
+            placement: data.placement,
+            has_split: data.hasSplit,
+            description: data.description,
+            class_levels: data.classLevels,
+            visibility: data.visibility,
+            focus_tags: data.focusTags,
+            recommended: data.recommended,
+            recommended_order: data.recommendedOrder,
+            display_mode: data.displayMode,
+        })
+        .eq('id', id);
 
     if (error) throw error;
     cachedExercises = null;
@@ -172,10 +149,7 @@ export async function fetchTeacherMenus(forceRefresh = false): Promise<TeacherMe
         return cachedMenus;
     }
 
-    const { data, error } = await supabase
-        .from('teacher_menus')
-        .select('*')
-        .order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('teacher_menus').select('*').order('created_at', { ascending: false });
 
     if (error) {
         console.warn('[teacherContent] fetchTeacherMenus failed:', error);
@@ -202,51 +176,61 @@ export async function createTeacherMenu(data: {
 }): Promise<string | null> {
     if (!supabase) return null;
 
-    const { data: result, error } = await supabase.from('teacher_menus').insert({
-        name: data.name,
-        emoji: data.emoji,
-        description: data.description,
-        exercise_ids: data.exerciseIds,
-        class_levels: data.classLevels,
-        visibility: data.visibility,
-        focus_tags: data.focusTags,
-        recommended: data.recommended,
-        recommended_order: data.recommendedOrder,
-        display_mode: data.displayMode,
-        created_by: data.createdBy,
-    }).select('id').single();
+    const { data: result, error } = await supabase
+        .from('teacher_menus')
+        .insert({
+            name: data.name,
+            emoji: data.emoji,
+            description: data.description,
+            exercise_ids: data.exerciseIds,
+            class_levels: data.classLevels,
+            visibility: data.visibility,
+            focus_tags: data.focusTags,
+            recommended: data.recommended,
+            recommended_order: data.recommendedOrder,
+            display_mode: data.displayMode,
+            created_by: data.createdBy,
+        })
+        .select('id')
+        .single();
 
     if (error) throw error;
     cachedMenus = null;
     return result?.id ?? null;
 }
 
-export async function updateTeacherMenu(id: string, data: {
-    name: string;
-    emoji: string;
-    description: string;
-    exerciseIds: string[];
-    classLevels: string[];
-    visibility: TeacherMenuVisibility;
-    focusTags: string[];
-    recommended: boolean;
-    recommendedOrder: number | null;
-    displayMode: TeacherContentDisplayMode;
-}): Promise<void> {
+export async function updateTeacherMenu(
+    id: string,
+    data: {
+        name: string;
+        emoji: string;
+        description: string;
+        exerciseIds: string[];
+        classLevels: string[];
+        visibility: TeacherMenuVisibility;
+        focusTags: string[];
+        recommended: boolean;
+        recommendedOrder: number | null;
+        displayMode: TeacherContentDisplayMode;
+    },
+): Promise<void> {
     if (!supabase) return;
 
-    const { error } = await supabase.from('teacher_menus').update({
-        name: data.name,
-        emoji: data.emoji,
-        description: data.description,
-        exercise_ids: data.exerciseIds,
-        class_levels: data.classLevels,
-        visibility: data.visibility,
-        focus_tags: data.focusTags,
-        recommended: data.recommended,
-        recommended_order: data.recommendedOrder,
-        display_mode: data.displayMode,
-    }).eq('id', id);
+    const { error } = await supabase
+        .from('teacher_menus')
+        .update({
+            name: data.name,
+            emoji: data.emoji,
+            description: data.description,
+            exercise_ids: data.exerciseIds,
+            class_levels: data.classLevels,
+            visibility: data.visibility,
+            focus_tags: data.focusTags,
+            recommended: data.recommended,
+            recommended_order: data.recommendedOrder,
+            display_mode: data.displayMode,
+        })
+        .eq('id', id);
 
     if (error) throw error;
     cachedMenus = null;

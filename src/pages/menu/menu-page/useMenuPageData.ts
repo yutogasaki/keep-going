@@ -4,10 +4,7 @@ import { getMenuGroupItems, getPresetsForClass, type MenuGroup } from '../../../
 import { audio } from '../../../lib/audio';
 import { deleteCustomGroup, getCustomGroups, saveCustomGroup } from '../../../lib/customGroups';
 import { subscribeCustomContentUpdated } from '../../../lib/customContentEvents';
-import {
-    buildCustomExerciseDeletePlan,
-    buildCustomGroupDeletePlan,
-} from '../../../lib/customContentDeletePlan';
+import { buildCustomExerciseDeletePlan, buildCustomGroupDeletePlan } from '../../../lib/customContentDeletePlan';
 import { deleteCustomExercise, getCustomExercises, type CustomExercise } from '../../../lib/db';
 import {
     menuGroupReferencesExercise,
@@ -99,11 +96,7 @@ export function useMenuPageData({
         authorName: userContext.authorName,
         onToast: showToast,
     });
-    const {
-        myPublishedExercises,
-        myPublishedMenus,
-        refreshPublishedData,
-    } = publishActions;
+    const { myPublishedExercises, myPublishedMenus, refreshPublishedData } = publishActions;
 
     const presets = useMemo(() => getPresetsForClass(userContext.classLevel), [userContext.classLevel]);
 
@@ -114,8 +107,6 @@ export function useMenuPageData({
         teacherExercises: teacherContent.teacherExercises,
         teacherMenus: teacherContent.teacherMenus,
         teacherSettings: teacherContent.teacherSettings,
-        teacherExcludedExerciseIds: teacherContent.teacherExcludedExerciseIds,
-        teacherRequiredExerciseIds: teacherContent.teacherRequiredExerciseIds,
         teacherHiddenExerciseIds: teacherContent.teacherHiddenExerciseIds,
         teacherHiddenMenuIds: teacherContent.teacherHiddenMenuIds,
         overrideMap: teacherContent.overrideMap,
@@ -143,28 +134,15 @@ export function useMenuPageData({
     const loadCustomData = useCallback(async () => {
         const loadVersion = customDataLoadVersionRef.current + 1;
         customDataLoadVersionRef.current = loadVersion;
-        const [allGroups, allExercises] = await Promise.all([
-            getCustomGroups(),
-            getCustomExercises(),
-        ]);
+        const [allGroups, allExercises] = await Promise.all([getCustomGroups(), getCustomExercises()]);
 
         if (customDataLoadVersionRef.current !== loadVersion) {
             return;
         }
 
-        setCustomGroups(
-            filterVisibleCustomGroups(
-                allGroups,
-                userContext.currentUserId,
-                userContext.isTogetherMode,
-            ),
-        );
+        setCustomGroups(filterVisibleCustomGroups(allGroups, userContext.currentUserId, userContext.isTogetherMode));
         setCustomExercises(
-            filterVisibleCustomExercises(
-                allExercises,
-                userContext.currentUserId,
-                userContext.isTogetherMode,
-            ),
+            filterVisibleCustomExercises(allExercises, userContext.currentUserId, userContext.isTogetherMode),
         );
 
         const [allTeacherExercises, publishedMenus] = await Promise.all([
@@ -209,19 +187,11 @@ export function useMenuPageData({
         }
 
         setCustomGroups(
-            filterVisibleCustomGroups(
-                sanitizedGroups,
-                userContext.currentUserId,
-                userContext.isTogetherMode,
-            ),
+            filterVisibleCustomGroups(sanitizedGroups, userContext.currentUserId, userContext.isTogetherMode),
         );
 
         setCustomExercises(
-            filterVisibleCustomExercises(
-                allExercises,
-                userContext.currentUserId,
-                userContext.isTogetherMode,
-            ),
+            filterVisibleCustomExercises(allExercises, userContext.currentUserId, userContext.isTogetherMode),
         );
 
         await refreshPublishedData();

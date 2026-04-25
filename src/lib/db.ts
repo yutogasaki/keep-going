@@ -1,46 +1,21 @@
 import localforage from 'localforage';
 import { getAccountId } from './sync/authState';
-import { deleteCustomExerciseRemote, pushCustomExercise as syncPushCustomExercise, pushSession as syncPushSession } from './sync/push';
-import { normalizeSessionRecord, type SessionCountMap } from './sessionRecords';
+import {
+    deleteCustomExerciseRemote,
+    pushCustomExercise as syncPushCustomExercise,
+    pushSession as syncPushSession,
+} from './sync/push';
+import { normalizeSessionRecord } from './sessionRecords';
 import { useSyncStatus } from '../store/useSyncStatus';
 import { normalizeExercisePlacement, type ExercisePlacement } from '../data/exercisePlacement';
-import type { SessionPlannedItem } from './sessionPlan';
-import type { SessionMenuSource } from '../store/use-app-store/types';
 import { dispatchCustomContentUpdated } from './customContentEvents';
+import type { CustomExercise, SessionRecord } from './dbTypes';
+
+export type { CustomExercise, SessionRecord } from './dbTypes';
 
 function onSyncError(error: unknown): void {
     console.warn('[sync]', error);
     useSyncStatus.getState().reportFailure(String(error));
-}
-
-// Session history record
-export interface SessionRecord {
-    id: string;
-    date: string;        // YYYY-MM-DD
-    startedAt: string;   // ISO timestamp
-    totalSeconds: number;
-    exerciseIds: string[];
-    plannedExerciseIds?: string[];
-    plannedItems?: SessionPlannedItem[];
-    skippedIds: string[]; // internal only
-    exerciseCounts?: SessionCountMap;
-    skippedCounts?: SessionCountMap;
-    userIds?: string[];   // For multi-user support
-    sourceMenuId?: string | null;
-    sourceMenuSource?: SessionMenuSource | null;
-    sourceMenuName?: string | null;
-}
-
-// Custom Exercises
-export interface CustomExercise {
-    id: string;      // typically starts with 'custom-ex-'
-    name: string;
-    sec: number;     // e.g. 30, 60
-    emoji: string;
-    placement: ExercisePlacement;
-    hasSplit?: boolean;
-    description?: string;
-    creatorId?: string; // If undefined, it's a family shared exercise
 }
 
 // DB instances
@@ -68,7 +43,9 @@ export function parseDateKey(dateKey: string): Date | null {
     return new Date(year, month, day);
 }
 
-function normalizeCustomExercise(exercise: CustomExercise | (Omit<CustomExercise, 'placement'> & { placement?: ExercisePlacement })): CustomExercise {
+function normalizeCustomExercise(
+    exercise: CustomExercise | (Omit<CustomExercise, 'placement'> & { placement?: ExercisePlacement }),
+): CustomExercise {
     return {
         ...exercise,
         placement: normalizeExercisePlacement(exercise.placement),
@@ -102,7 +79,9 @@ export function calculateStreak(sessions: { date: string }[]): number {
     if (sessions.length === 0) return 0;
 
     // Get unique dates sorted descending
-    const dates = Array.from(new Set(sessions.map(s => s.date))).sort().reverse();
+    const dates = Array.from(new Set(sessions.map((s) => s.date)))
+        .sort()
+        .reverse();
 
     const today = getTodayKey();
     const yesterday = getDateKeyOffset(-1);

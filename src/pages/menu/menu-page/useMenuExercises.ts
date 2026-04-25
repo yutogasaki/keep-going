@@ -1,10 +1,5 @@
 import { useMemo } from 'react';
-import {
-    DEFAULT_SESSION_TARGET_SECONDS,
-    EXERCISES,
-    getExercisesByClass,
-    type Exercise,
-} from '../../../data/exercises';
+import { DEFAULT_SESSION_TARGET_SECONDS, EXERCISES, getExercisesByClass, type Exercise } from '../../../data/exercises';
 import { EXERCISE_PLACEMENTS } from '../../../data/exercisePlacement';
 import type { MenuGroup } from '../../../data/menuGroups';
 import type { CustomExercise } from '../../../lib/db';
@@ -26,8 +21,6 @@ interface UseMenuExercisesParams {
     teacherExercises: TeacherExercise[];
     teacherMenus: TeacherMenu[];
     teacherSettings: TeacherMenuSetting[];
-    teacherExcludedExerciseIds: Set<string>;
-    teacherRequiredExerciseIds: Set<string>;
     teacherHiddenExerciseIds: Set<string>;
     teacherHiddenMenuIds: Set<string>;
     overrideMap: MenuOverrideMap;
@@ -42,7 +35,7 @@ export function orderMenuExercisesForDisplay(
 ): Exercise[] {
     const inlineTeacherExercises = teacherExercises.filter((exercise) => exercise.displayMode === 'standard_inline');
     const teacherSectionExercises = sortTeacherContentByRecommendation(
-        teacherExercises.filter((exercise) => exercise.displayMode !== 'standard_inline')
+        teacherExercises.filter((exercise) => exercise.displayMode !== 'standard_inline'),
     );
     const standardBuiltInExercises = [...builtInExercises, ...restExercises];
 
@@ -57,18 +50,11 @@ export function orderMenuExercisesForDisplay(
     ];
 }
 
-export function orderMenuGroupsForDisplay(
-    presetGroups: MenuGroup[],
-    teacherGroups: MenuGroup[],
-): MenuGroup[] {
+export function orderMenuGroupsForDisplay(presetGroups: MenuGroup[], teacherGroups: MenuGroup[]): MenuGroup[] {
     return [
         ...presetGroups,
-        ...sortTeacherContentByRecommendation(
-            teacherGroups.filter((group) => group.displayMode === 'standard_inline'),
-        ),
-        ...sortTeacherContentByRecommendation(
-            teacherGroups.filter((group) => group.displayMode !== 'standard_inline'),
-        ),
+        ...sortTeacherContentByRecommendation(teacherGroups.filter((group) => group.displayMode === 'standard_inline')),
+        ...sortTeacherContentByRecommendation(teacherGroups.filter((group) => group.displayMode !== 'standard_inline')),
     ];
 }
 
@@ -79,8 +65,6 @@ export function useMenuExercises({
     teacherExercises,
     teacherMenus,
     teacherSettings,
-    teacherExcludedExerciseIds,
-    teacherRequiredExerciseIds,
     teacherHiddenExerciseIds,
     teacherHiddenMenuIds,
     overrideMap,
@@ -115,9 +99,9 @@ export function useMenuExercises({
         const builtInStandard = builtIn.filter((exercise) => exercise.displayMode !== 'teacher_section');
         const builtInPromoted = builtIn.filter((exercise) => exercise.displayMode === 'teacher_section');
 
-        const restExercises = EXERCISES
-            .filter((exercise) => exercise.placement === 'rest' && !teacherHiddenExerciseIds.has(exercise.id))
-            .map((exercise) => ({ ...exercise, origin: 'builtin' as const }));
+        const restExercises = EXERCISES.filter(
+            (exercise) => exercise.placement === 'rest' && !teacherHiddenExerciseIds.has(exercise.id),
+        ).map((exercise) => ({ ...exercise, origin: 'builtin' as const }));
 
         const teacherAsExercise: Exercise[] = teacherExercises
             .filter((exercise) => !teacherHiddenExerciseIds.has(exercise.id))
@@ -229,16 +213,7 @@ export function useMenuExercises({
         });
 
         return { requiredCount, excludedCount, effectiveRequiredExerciseIds };
-    }, [
-        classLevel,
-        excludedExercises,
-        requiredExercises,
-        teacherSettings,
-        teacherExcludedExerciseIds,
-        teacherExercises,
-        teacherHiddenExerciseIds,
-        teacherRequiredExerciseIds,
-    ]);
+    }, [classLevel, excludedExercises, requiredExercises, teacherSettings, teacherExercises, teacherHiddenExerciseIds]);
 
     return {
         exercises,
