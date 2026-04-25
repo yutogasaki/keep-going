@@ -77,7 +77,7 @@
 
 - 次のふわふわは、未登場タイプが残っている間は過去に来たことのないタイプからランダム選出（`pickNextFuwafuwaType`）
 - 全タイプを制覇した場合は、全タイプからランダム（同じ子の再登場も可）
-- 通常タイプに加えて季節タイプを持つ。月別バイアスを外した通常抽選では別月の季節タイプを混ぜず、通常タイプを優先する。2026-04 時点で4月タイプ2種、2026-05 時点で5月タイプ2種を追加済み
+- 通常タイプは13種（type `0-9`, `14-16`）、季節タイプは4種（type `10-13`）。季節タイプは月別に出やすくでき、月別バイアスを外した通常抽選では別月の季節タイプを混ぜず、通常タイプを優先する。2026-04 時点で4月タイプ2種、2026-05 時点で5月タイプ2種を追加済み
 
 ### 2.4 お部屋（ギャラリー）✅ 実装済み
 
@@ -112,7 +112,7 @@
 #### データモデル
 - **Challenge**: `id`, `title`, `exerciseId`, `targetCount`, `startDate`, `endDate`, `createdBy`, `rewardFuwafuwaType`
 - **ChallengeCompletion**: `challengeId`, `accountId`, `memberId`, `completedAt`
-- **ChibifuwaRecord**: `id`, `type`（ふわふわタイプ番号 0-9）, `challengeTitle`, `earnedDate`
+- **ChibifuwaRecord**: `id`, `type`（バッジ番号 0-11）, `challengeTitle`, `earnedDate`
 - ストレージ：Supabase（`challenges`, `challenge_completions` テーブル）
 - ちびふわはユーザーの Zustand ストアに `chibifuwas: ChibifuwaRecord[]` として永続化
 
@@ -123,7 +123,7 @@
 
 #### 先生側（TeacherDashboard）
 - 「生徒」「チャレンジ」のタブ切替
-- チャレンジ作成フォーム：タイトル、種目（ドロップダウン）、目標回数、開始日・終了日、ちびふわタイプ（0-9選択）
+- チャレンジ作成フォーム：タイトル、種目（ドロップダウン）、目標回数、開始日・終了日、ちびふわバッジ（0-11選択）
 - チャレンジ一覧表示・削除
 
 #### 次期拡張のUI方針

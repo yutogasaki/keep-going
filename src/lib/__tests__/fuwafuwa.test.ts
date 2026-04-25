@@ -177,7 +177,7 @@ describe('pickNextFuwafuwaType', () => {
             finalStage: 3,
             sayonaraDate: '2026-02-01',
         }));
-        const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.35);
+        const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.25);
 
         const result = pickNextFuwafuwaType(past, 3);
 
@@ -238,7 +238,7 @@ describe('pickNextFuwafuwaType', () => {
 
         const result = pickNextFuwafuwaType([], 0, '2026-05-05');
 
-        expect(result).toBe(9);
+        expect(result).toBe(16);
         expect(APRIL_FUWAFUWA_TYPES).not.toContain(result as typeof APRIL_FUWAFUWA_TYPES[number]);
         randomSpy.mockRestore();
     });
@@ -248,6 +248,14 @@ describe('pickNextFuwafuwaType', () => {
             ...Array.from({ length: 10 }, (_, i) => ({
                 id: `base-${i}`,
                 type: i,
+                name: null,
+                activeDays: 5,
+                finalStage: 3,
+                sayonaraDate: '2026-02-01',
+            })),
+            ...[14, 15, 16].map((type) => ({
+                id: `regular-${type}`,
+                type,
                 name: null,
                 activeDays: 5,
                 finalStage: 3,
@@ -269,7 +277,7 @@ describe('pickInitialFuwafuwaType', () => {
 
         const result = pickInitialFuwafuwaType('2026-03-10');
 
-        expect(result).toBe(9);
+        expect(result).toBe(16);
         randomSpy.mockRestore();
     });
 });
@@ -287,6 +295,8 @@ describe('fuwafuwa helpers', () => {
         expect(getFuwafuwaImagePath(11, 3)).toBe('/ikimono/april-cloud-3.webp');
         expect(getFuwafuwaImagePath(12, 2)).toBe('/ikimono/may-koinobori-2.webp');
         expect(getFuwafuwaImagePath(13, 3)).toBe('/ikimono/may-gw-3.webp');
+        expect(getFuwafuwaImagePath(14, 1)).toBe('/ikimono/14-1.webp');
+        expect(getFuwafuwaImagePath(16, 3)).toBe('/ikimono/16-3.webp');
         expect(getFuwafuwaImagePath(5, 1)).toBe('/ikimono/5-1.webp');
     });
 });

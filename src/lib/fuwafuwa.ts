@@ -5,7 +5,7 @@ import type { PastFuwafuwaRecord } from '../store/useAppStore';
 
 // 28 days cycle
 export const FUWAFUWA_CYCLE_DAYS = 28;
-export const FUWAFUWA_TYPE_COUNT = 14;
+export const FUWAFUWA_TYPE_COUNT = 17;
 export const FUWAFUWA_TYPES = Array.from({ length: FUWAFUWA_TYPE_COUNT }, (_, index) => index);
 export const APRIL_FUWAFUWA_TYPES = [10, 11] as const;
 export const APRIL_FUWAFUWA_SHARE = 0.5;
