@@ -4,6 +4,8 @@ import {
     calculateFuwafuwaStatus,
     getFuwafuwaImagePath,
     isAprilDateKey,
+    isMayDateKey,
+    MAY_FUWAFUWA_TYPES,
     pickInitialFuwafuwaType,
     pickNextFuwafuwaType,
     FUWAFUWA_CYCLE_DAYS,
@@ -175,7 +177,7 @@ describe('pickNextFuwafuwaType', () => {
             finalStage: 3,
             sayonaraDate: '2026-02-01',
         }));
-        const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.29);
+        const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.35);
 
         const result = pickNextFuwafuwaType(past, 3);
 
@@ -205,28 +207,86 @@ describe('pickNextFuwafuwaType', () => {
         expect(result).toBe(0);
         randomSpy.mockRestore();
     });
+
+    it('biases May births toward the May types', () => {
+        const randomSpy = vi.spyOn(Math, 'random')
+            .mockReturnValueOnce(0.2)
+            .mockReturnValueOnce(0.99);
+
+        const result = pickNextFuwafuwaType([], 0, '2026-05-05');
+
+        expect(MAY_FUWAFUWA_TYPES).toContain(result as typeof MAY_FUWAFUWA_TYPES[number]);
+        expect(result).toBe(13);
+        randomSpy.mockRestore();
+    });
+
+    it('falls back to non-May types when the May roll misses', () => {
+        const randomSpy = vi.spyOn(Math, 'random')
+            .mockReturnValueOnce(0.95)
+            .mockReturnValueOnce(0);
+
+        const result = pickNextFuwafuwaType([], 12, '2026-05-05');
+
+        expect(result).toBe(0);
+        randomSpy.mockRestore();
+    });
+
+    it('keeps other seasonal types out of a seasonal month fallback', () => {
+        const randomSpy = vi.spyOn(Math, 'random')
+            .mockReturnValueOnce(0.95)
+            .mockReturnValueOnce(0.99);
+
+        const result = pickNextFuwafuwaType([], 0, '2026-05-05');
+
+        expect(result).toBe(9);
+        expect(APRIL_FUWAFUWA_TYPES).not.toContain(result as typeof APRIL_FUWAFUWA_TYPES[number]);
+        randomSpy.mockRestore();
+    });
+
+    it('allows seasonal types when only seasonal types remain unused', () => {
+        const past = [
+            ...Array.from({ length: 10 }, (_, i) => ({
+                id: `base-${i}`,
+                type: i,
+                name: null,
+                activeDays: 5,
+                finalStage: 3,
+                sayonaraDate: '2026-02-01',
+            })),
+            { id: 'april-cloud', type: 11, name: null, activeDays: 5, finalStage: 3, sayonaraDate: '2026-02-01' },
+            { id: 'may-gw', type: 13, name: null, activeDays: 5, finalStage: 3, sayonaraDate: '2026-02-01' },
+        ];
+
+        const result = pickNextFuwafuwaType(past, 10, '2026-03-10');
+
+        expect(result).toBe(12);
+    });
 });
 
 describe('pickInitialFuwafuwaType', () => {
-    it('includes type 10 and 11 in the overall pool', () => {
+    it('uses regular types first outside seasonal months', () => {
         const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.95);
 
         const result = pickInitialFuwafuwaType('2026-03-10');
 
-        expect(result).toBe(11);
+        expect(result).toBe(9);
         randomSpy.mockRestore();
     });
 });
 
 describe('fuwafuwa helpers', () => {
-    it('detects April from date keys', () => {
+    it('detects April and May from date keys', () => {
         expect(isAprilDateKey('2026-04-01')).toBe(true);
         expect(isAprilDateKey('2026-03-31')).toBe(false);
+        expect(isMayDateKey('2026-05-01')).toBe(true);
+        expect(isMayDateKey('2026-04-30')).toBe(false);
     });
 
-    it('uses April-themed filenames for type 10 and 11', () => {
+    it('uses seasonal filenames for special types', () => {
         expect(getFuwafuwaImagePath(10, 2)).toBe('/ikimono/april-petal-2.webp');
         expect(getFuwafuwaImagePath(11, 3)).toBe('/ikimono/april-cloud-3.webp');
+        expect(getFuwafuwaImagePath(12, 2)).toBe('/ikimono/may-koinobori-2.webp');
+        expect(getFuwafuwaImagePath(13, 3)).toBe('/ikimono/may-gw-3.webp');
         expect(getFuwafuwaImagePath(5, 1)).toBe('/ikimono/5-1.webp');
     });
 });

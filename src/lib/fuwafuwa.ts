@@ -5,15 +5,52 @@ import type { PastFuwafuwaRecord } from '../store/useAppStore';
 
 // 28 days cycle
 export const FUWAFUWA_CYCLE_DAYS = 28;
-export const FUWAFUWA_TYPE_COUNT = 12;
+export const FUWAFUWA_TYPE_COUNT = 14;
 export const FUWAFUWA_TYPES = Array.from({ length: FUWAFUWA_TYPE_COUNT }, (_, index) => index);
 export const APRIL_FUWAFUWA_TYPES = [10, 11] as const;
 export const APRIL_FUWAFUWA_SHARE = 0.5;
+export const MAY_FUWAFUWA_TYPES = [12, 13] as const;
+export const MAY_FUWAFUWA_SHARE = 0.5;
+const SEASONAL_FUWAFUWA_TYPES = [
+    ...APRIL_FUWAFUWA_TYPES,
+    ...MAY_FUWAFUWA_TYPES,
+] as const;
 
 const SPECIAL_FUWAFUWA_IMAGE_ASSETS: Partial<Record<number, { baseName: string; extension: 'webp' }>> = {
     10: { baseName: 'april-petal', extension: 'webp' },
     11: { baseName: 'april-cloud', extension: 'webp' },
+    12: { baseName: 'may-koinobori', extension: 'webp' },
+    13: { baseName: 'may-gw', extension: 'webp' },
 };
+
+export function isAprilDateKey(dateKey: string): boolean {
+    const [, month] = dateKey.split('-');
+    return Number(month) === 4;
+}
+
+export function isMayDateKey(dateKey: string): boolean {
+    const [, month] = dateKey.split('-');
+    return Number(month) === 5;
+}
+
+interface SeasonalFuwafuwaRule {
+    isActiveDate: (dateKey: string) => boolean;
+    share: number;
+    types: readonly number[];
+}
+
+const SEASONAL_FUWAFUWA_RULES: SeasonalFuwafuwaRule[] = [
+    {
+        isActiveDate: isAprilDateKey,
+        share: APRIL_FUWAFUWA_SHARE,
+        types: APRIL_FUWAFUWA_TYPES,
+    },
+    {
+        isActiveDate: isMayDateKey,
+        share: MAY_FUWAFUWA_SHARE,
+        types: MAY_FUWAFUWA_TYPES,
+    },
+];
 
 // Thresholds
 export const EVOLVE_TO_FAIRY_THRESHOLD = 2;   // Requires 2 active days to evolve to fairy
@@ -36,13 +73,20 @@ export function getFuwafuwaImagePath(type: number, stage: number): string {
     return `/ikimono/${type}-${stage}.webp`;
 }
 
-export function isAprilDateKey(dateKey: string): boolean {
-    const [, month] = dateKey.split('-');
-    return Number(month) === 4;
-}
-
 function pickRandomType(candidates: readonly number[]): number {
     return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+function getSeasonalFuwafuwaRule(dateKey: string): SeasonalFuwafuwaRule | null {
+    return SEASONAL_FUWAFUWA_RULES.find((rule) => rule.isActiveDate(dateKey)) ?? null;
+}
+
+function isSeasonalFuwafuwaType(type: number): boolean {
+    return SEASONAL_FUWAFUWA_TYPES.includes(type as typeof SEASONAL_FUWAFUWA_TYPES[number]);
+}
+
+function getRegularFuwafuwaCandidates(candidates: readonly number[]): number[] {
+    return candidates.filter((type) => !isSeasonalFuwafuwaType(type));
 }
 
 function pickBiasedFuwafuwaType(candidates: readonly number[], dateKey: string): number {
@@ -50,22 +94,25 @@ function pickBiasedFuwafuwaType(candidates: readonly number[], dateKey: string):
         throw new Error('No fuwafuwa types available');
     }
 
-    if (!isAprilDateKey(dateKey)) {
-        return pickRandomType(candidates);
+    const seasonalRule = getSeasonalFuwafuwaRule(dateKey);
+    if (!seasonalRule) {
+        const regularCandidates = getRegularFuwafuwaCandidates(candidates);
+        return pickRandomType(regularCandidates.length > 0 ? regularCandidates : candidates);
     }
 
-    const aprilCandidates = candidates.filter((type) => APRIL_FUWAFUWA_TYPES.includes(type as typeof APRIL_FUWAFUWA_TYPES[number]));
-    if (aprilCandidates.length === 0) {
-        return pickRandomType(candidates);
+    const seasonalCandidates = candidates.filter((type) => seasonalRule.types.includes(type));
+    if (seasonalCandidates.length === 0) {
+        const regularCandidates = getRegularFuwafuwaCandidates(candidates);
+        return pickRandomType(regularCandidates.length > 0 ? regularCandidates : candidates);
     }
 
-    const regularCandidates = candidates.filter((type) => !APRIL_FUWAFUWA_TYPES.includes(type as typeof APRIL_FUWAFUWA_TYPES[number]));
+    const regularCandidates = getRegularFuwafuwaCandidates(candidates);
     if (regularCandidates.length === 0) {
-        return pickRandomType(aprilCandidates);
+        return pickRandomType(seasonalCandidates);
     }
 
-    return Math.random() < APRIL_FUWAFUWA_SHARE
-        ? pickRandomType(aprilCandidates)
+    return Math.random() < seasonalRule.share
+        ? pickRandomType(seasonalCandidates)
         : pickRandomType(regularCandidates);
 }
 
