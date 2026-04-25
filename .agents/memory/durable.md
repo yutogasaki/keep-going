@@ -28,7 +28,7 @@
 - `claude-mem` などの assistant-local memory は補助レイヤーであり、次回以降も共有したい判断は `.agents/memory/durable.md` に昇格する。
 - skill の正本は `.agents/skills/*/SKILL.md` とし、`.claude/skills/*` は legacy redirect のみを置く。
 - `docs/tasks/backlog.md` は current focus と未完了 backlog を優先し、重い履歴 snapshot は `docs/tasks/archive/*.md` へ逃がす。
-- CI の verify 正本は `.github/workflows/verify.yml` で、`lint -> tsc --noEmit -> test -> build` を `pull_request` と `main` push で回す。
+- CI の verify 正本は `.github/workflows/verify.yml` で、`lint -> npm run typecheck -> test -> build` を `pull_request` と `main` push で回す。
 - teacher / developer 判定は client の hardcoded email ではなく `user_roles` + `is_teacher` / `is_developer` RPC を正本にする。
 
 ## Known Traps

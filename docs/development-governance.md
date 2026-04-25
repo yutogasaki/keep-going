@@ -64,7 +64,7 @@
 ### `.github/workflows/verify.yml`
 
 - `pull_request` と `main` への push で共通 verify を回す。
-- 実行順は `lint -> tsc --noEmit -> test -> build` に固定する。
+- 実行順は `lint -> npm run typecheck -> test -> build` に固定する。
 - ローカルの検証導線を変える時は、この workflow とのズレを作らない。
 
 ## Task Lifecycle
@@ -84,9 +84,9 @@
 |---------|-----------------------|---------|
 | doc only | 必須 skill なし。governance / task / memory を触るなら `governance-audit` | リンク整合性、参照先の重複確認 |
 | governance / task / memory / guide 更新 | `governance-audit` | `npm run governance:check`, canonical path / terminology drift 確認 |
-| 型・ロジック変更 | `test` | `npx tsc --noEmit`, 対象テスト |
-| Zustand persist 変更 | `persist-migration-check` | `types/createState/migrate/test` 更新、必要なら `APP_STATE_VERSION` 更新、migrate テスト、`npx tsc --noEmit` |
-| UI/UX 変更 | `visual-qa` | `npx tsc --noEmit`, 対象テスト、desktop/mobile の画面確認、token 利用確認 |
+| 型・ロジック変更 | `test` | `npm run typecheck`, 対象テスト |
+| Zustand persist 変更 | `persist-migration-check` | `types/createState/migrate/test` 更新、必要なら `APP_STATE_VERSION` 更新、migrate テスト、`npm run typecheck` |
+| UI/UX 変更 | `visual-qa` | `npm run typecheck`, 対象テスト、desktop/mobile の画面確認、token 利用確認 |
 | sync / db 変更 | `test`。スキーマや SQL を触るなら `db` / `sql` も検討 | 単体テスト or mapper テスト、既存データ影響確認 |
 | リリース前 | `push` 相当の verify 手順 | `npm run verify` と主要導線の smoke check |
 | CI 変更 | `governance-audit` | workflow の対象 branch、実行順、依存 install、既存 script との整合確認 |

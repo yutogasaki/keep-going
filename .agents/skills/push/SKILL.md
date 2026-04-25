@@ -4,7 +4,7 @@
 
 ## 手順
 
-1. `npx tsc --noEmit` でTypeScriptエラーチェック
+1. `npm run typecheck` でTypeScriptエラーチェック
    - エラーがあれば修正してからやり直す
 2. `npm run build` でビルド確認
    - エラーがあれば修正してからやり直す

@@ -61,8 +61,8 @@ function resolveMenuItemExercise(item: MenuGroupItem, allExercises?: PickerExerc
     } : null;
 }
 
-export function getMenuItemRenderKey(item: MenuGroupItem, index: number): string {
-    return `${item.id}:${index}`;
+export function getMenuItemRenderKey(item: MenuGroupItem, _index: number): string {
+    return item.id;
 }
 
 const reorderGroupStyle = {

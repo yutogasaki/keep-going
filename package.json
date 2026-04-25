@@ -1,14 +1,28 @@
 {
-  "name": "keep-goiing2",
+  "name": "keep-going",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "description": "バレエ教室向けストレッチ・トレーニング管理 PWA",
   "directories": {
     "doc": "docs"
   },
   "type": "module",
+  "packageManager": "npm@11.9.0",
   "engines": {
-    "node": ">=22"
+    "node": "24.x",
+    "npm": ">=11 <12"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=24 <25",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11 <12",
+      "onFail": "error"
+    }
   },
   "scripts": {
     "dev": "vite",
@@ -20,44 +34,50 @@
     "e2e:smoke": "node tools/e2e-smoke.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "verify:quick": "npx tsc --noEmit && npm test",
-    "verify": "npm run lint && npx tsc --noEmit && npm test && npm run build",
+    "verify:quick": "npm run typecheck && npm test",
+    "verify": "npm run governance:check && npm run lint && npm run typecheck && npm test && npm run build",
+    "verify:ci": "npm run verify && npm run e2e:smoke",
     "format": "prettier --write src",
     "format:check": "prettier --check src"
   },
+  "overrides": {
+    "serialize-javascript": "^7.0.5"
+  },
   "devDependencies": {
-    "@eslint/js": "^9.39.3",
-    "@tailwindcss/vite": "^4.2.0",
+    "@eslint/js": "^9.39.4",
+    "@tailwindcss/vite": "^4.2.4",
     "@types/canvas-confetti": "^1.9.0",
-    "@types/node": "^25.3.0",
+    "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.4",
-    "autoprefixer": "^10.4.24",
-    "eslint": "^9.39.3",
-    "eslint-plugin-react-hooks": "^7.0.1",
+    "@vitejs/plugin-react": "^5.2.0",
+    "autoprefixer": "^10.5.0",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "localforage": "^1.10.0",
-    "playwright": "^1.58.2",
-    "postcss": "^8.5.6",
-    "prettier": "^3.8.1",
+    "playwright": "^1.59.1",
+    "postcss": "^8.5.10",
+    "prettier": "^3.8.3",
     "sharp": "^0.34.5",
-    "tailwindcss": "^4.2.0",
+    "tailwindcss": "^4.2.4",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.56.1",
+    "typescript-eslint": "^8.59.0",
+    "vite": "^7.3.2",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.5"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.97.0",
+    "@supabase/supabase-js": "^2.104.1",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
-    "framer-motion": "^12.34.3",
+    "framer-motion": "^12.38.0",
     "lucide-react": "^0.575.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-router-dom": "^7.13.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "react-router-dom": "^7.14.2",
     "tailwind-merge": "^3.5.0",
-    "zustand": "^5.0.11"
+    "zustand": "^5.0.12"
   }
 }

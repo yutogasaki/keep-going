@@ -18,7 +18,7 @@
 
 ## Minimum Verification
 
-- `npx tsc --noEmit`
+- `npm run typecheck`
 - 対象 migrate テスト
 - 既存データ想定の 1 ケース
 - 空 state の 1 ケース

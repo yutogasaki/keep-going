@@ -40,11 +40,12 @@ npm run ai:setup
 npm run ai:doctor
 npm run dev
 npm run build
-npx tsc --noEmit
+npm run typecheck
 npm test
 npm run lint
 npm run verify:quick
 npm run verify
+npm run verify:ci
 ```
 
 ## Repo Rules
@@ -63,7 +64,7 @@ npm run verify
 - skill の正本は `.agents/skills/*/SKILL.md` とし、`.claude/skills/*` は redirect のみを置く
 - `src/lib/styles.ts` の token を優先し、直書きを増やさない
 - UI / UX 変更では `visual-qa` を必須にし、desktop/mobile 確認と token 利用確認を行う
-- CI の正本は `.github/workflows/verify.yml` とし、`lint -> tsc --noEmit -> test -> build` を回す
+- CI の正本は `.github/workflows/verify.yml` とし、`lint -> npm run typecheck -> test -> build` を回す
 - モーダルは既存の `src/components/Modal.tsx` を優先する
 - user-visible な変更は、必要に応じて desktop/mobile の visual QA を行う
 - 巨大ファイルは早めに分割する。詳細閾値は `CONSTITUTION.md` を参照

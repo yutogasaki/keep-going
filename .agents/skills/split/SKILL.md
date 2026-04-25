@@ -18,7 +18,7 @@ governance:check でサイズ警告が出たファイルを、安全に分割す
    - 元ファイルから re-export するか、import 元を一括更新
    - テストファイルがあれば対応するテストも移動
 6. 検証する:
-   - `npx tsc --noEmit`
+   - `npm run typecheck`
    - 対象テストを実行
    - `npm run governance:check` でサイズ閾値を確認
 

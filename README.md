@@ -4,14 +4,14 @@
 
 ## 必要環境
 
-- Node.js 22+（`nvm use` で自動切替）
-- npm
+- Node.js 24 LTS（`nvm use` で自動切替）
+- npm 11
 
 ## セットアップ
 
 ```bash
-nvm use                    # Node 22 を使用
-npm install                # 依存パッケージのインストール
+nvm use                    # Node 24 を使用
+npm ci                     # lockfile に基づいて依存パッケージをインストール
 cp .env.example .env.local # 環境変数テンプレートをコピー
 ```
 
@@ -37,8 +37,10 @@ npm run dev                # 開発サーバー起動
 | `npm run dev` | 開発サーバー |
 | `npm run build` | 本番ビルド（tsc + vite build） |
 | `npm test` | テスト実行（vitest） |
-| `npm run verify` | lint + tsc + test + build（CI と同等） |
-| `npm run verify:quick` | tsc + test |
+| `npm run typecheck` | TypeScript 型チェック |
+| `npm run verify` | governance + lint + typecheck + test + build |
+| `npm run verify:quick` | typecheck + test |
+| `npm run verify:ci` | verify + E2E スモークテスト |
 | `npm run lint` | ESLint |
 | `npm run format` | Prettier フォーマット |
 | `npm run e2e:smoke` | E2E スモークテスト（要: `npx playwright install chromium`） |
