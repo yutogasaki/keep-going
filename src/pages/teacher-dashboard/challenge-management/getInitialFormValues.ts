@@ -62,3 +62,10 @@ export function createChallengeFormValuesFromChallenge(challenge: Challenge): Ch
         classLevels: challenge.classLevels,
     };
 }
+
+export function createChallengeCopyFormValues(challenge: Challenge): ChallengeFormValues {
+    return {
+        ...createChallengeFormValuesFromChallenge(challenge),
+        title: `${challenge.title}（コピー）`,
+    };
+}

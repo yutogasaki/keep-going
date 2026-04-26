@@ -16,6 +16,7 @@ import { CreateChallengeButton } from './challenge-management/CreateChallengeBut
 import { fetchTeacherExercises, fetchTeacherMenus, type TeacherExercise, type TeacherMenu } from '../../lib/teacherContent';
 import type { StudentSession } from '../../lib/teacher';
 import {
+    createChallengeCopyFormValues,
     createChallengeFormValuesFromChallenge,
     createDefaultChallengeFormValues,
 } from './challenge-management/getInitialFormValues';
@@ -83,6 +84,13 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
     const startEdit = (challenge: Challenge) => {
         setFormValues(createChallengeFormValuesFromChallenge(challenge));
         setEditingId(challenge.id);
+        setSaveError(null);
+        setShowCreateForm(true);
+    };
+
+    const startCopy = (challenge: Challenge) => {
+        setFormValues(createChallengeCopyFormValues(challenge));
+        setEditingId(null);
         setSaveError(null);
         setShowCreateForm(true);
     };
@@ -230,6 +238,7 @@ export const ChallengeManagement: React.FC<ChallengeManagementProps> = ({
                 teacherExercises={teacherExercises}
                 onOpenStudentRecord={onOpenStudentRecord}
                 onEdit={startEdit}
+                onDuplicate={startCopy}
                 onDelete={(id) => setDeleteTargetId(id)}
             />
 

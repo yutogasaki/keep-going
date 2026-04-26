@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronRight, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { ChevronRight, Copy, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { countChallengeProgressFromSessions } from '../../../lib/challenge-engine';
 import { getTodayKey } from '../../../lib/db';
 import { CLASS_EMOJI, EXERCISES } from '../../../data/exercises';
@@ -25,11 +25,13 @@ import {
 import type { StudentSession } from '../../../lib/teacher';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
 import { getTeacherVisibilityLabel } from '../../../lib/teacherExerciseMetadata';
+import { COLOR, FONT, FONT_SIZE, RADIUS } from '../../../lib/styles';
 import {
     ChallengeParticipantDetailSheet,
     type ChallengeParticipantAttemptDetail,
     type ChallengeParticipantDetailData,
 } from './ChallengeParticipantDetailSheet';
+import { buildChallengeListBuckets } from './challengeListUtils';
 
 interface ChallengeListProps {
     loading: boolean;
@@ -43,6 +45,7 @@ interface ChallengeListProps {
     teacherExercises: TeacherExercise[];
     onOpenStudentRecord: (memberId: string) => void;
     onEdit: (challenge: Challenge) => void;
+    onDuplicate: (challenge: Challenge) => void;
     onDelete: (challengeId: string) => void;
 }
 
@@ -267,12 +270,14 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
     teacherExercises,
     onOpenStudentRecord,
     onEdit,
+    onDuplicate,
     onDelete,
 }) => {
     const today = getTodayKey();
     const teacherMenuMap = new Map(teacherMenus.map((menu) => [menu.id, menu]));
     const teacherExerciseMap = new Map(teacherExercises.map((exercise) => [exercise.id, exercise]));
     const [expandedParticipantLists, setExpandedParticipantLists] = useState<Record<string, boolean>>({});
+    const [showAllPastChallenges, setShowAllPastChallenges] = useState(false);
     const [selectedParticipant, setSelectedParticipant] = useState<ChallengeParticipantDetailData | null>(null);
     const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
 
@@ -297,9 +302,45 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
         );
     }
 
+    const {
+        currentChallenges,
+        visiblePastChallenges,
+        hiddenPastCount,
+    } = buildChallengeListBuckets(challenges, today, showAllPastChallenges);
+    const displayChallenges = [...currentChallenges, ...visiblePastChallenges];
+
+    const renderPastToggle = () => {
+        if (hiddenPastCount <= 0 && !showAllPastChallenges) {
+            return null;
+        }
+
+        return (
+            <button
+                type="button"
+                onClick={() => setShowAllPastChallenges((current) => !current)}
+                style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: RADIUS.lg,
+                    border: `1px solid ${COLOR.border}`,
+                    background: COLOR.bgMuted,
+                    color: COLOR.muted,
+                    fontFamily: FONT.body,
+                    fontSize: FONT_SIZE.sm,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                }}
+            >
+                {showAllPastChallenges
+                    ? 'おわったチャレンジをたたむ'
+                    : `おわったチャレンジをさらに ${hiddenPastCount}件 表示`}
+            </button>
+        );
+    };
+
     return (
         <>
-            {challenges.map((challenge) => {
+            {displayChallenges.map((challenge) => {
                 const exercise = challenge.exerciseId
                     ? EXERCISES.find((item) => item.id === challenge.exerciseId)
                         ?? teacherExerciseMap.get(challenge.exerciseId)
@@ -657,46 +698,75 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                     </div>
                                 ) : null}
                             </div>
-                            <button
-                                onClick={() => onEdit(challenge)}
-                                style={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: 8,
-                                    border: 'none',
-                                    background: '#F0F3F5',
-                                    color: '#8395A7',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    flexShrink: 0,
-                                }}
-                            >
-                                <Pencil size={14} />
-                            </button>
-                            <button
-                                onClick={() => onDelete(challenge.id)}
-                                style={{
-                                    width: 32,
-                                    height: 32,
-                                    borderRadius: 8,
-                                    border: 'none',
-                                    background: '#FFF0F0',
-                                    color: '#E17055',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    cursor: 'pointer',
-                                    flexShrink: 0,
-                                }}
-                            >
-                                <Trash2 size={14} />
-                            </button>
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 6,
+                                flexShrink: 0,
+                            }}>
+                                <button
+                                    type="button"
+                                    onClick={() => onEdit(challenge)}
+                                    aria-label={`${challenge.title}を編集`}
+                                    style={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: 8,
+                                        border: 'none',
+                                        background: '#F0F3F5',
+                                        color: '#8395A7',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    <Pencil size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => onDuplicate(challenge)}
+                                    aria-label={`${challenge.title}をコピーして作成`}
+                                    style={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: 8,
+                                        border: 'none',
+                                        background: '#F0F3F5',
+                                        color: '#8395A7',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    <Copy size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => onDelete(challenge.id)}
+                                    aria-label={`${challenge.title}を削除`}
+                                    style={{
+                                        width: 32,
+                                        height: 32,
+                                        borderRadius: 8,
+                                        border: 'none',
+                                        background: '#FFF0F0',
+                                        color: '#E17055',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 );
             })}
+            {renderPastToggle()}
             <ChallengeParticipantDetailSheet
                 open={selectedParticipant !== null}
                 challenge={selectedChallenge}
