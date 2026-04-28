@@ -155,14 +155,20 @@ async function runProjectCommand(command) {
 }
 
 function startPreviewServer() {
-    const command = process.platform === 'win32'
-        ? `${process.env.ComSpec ?? 'cmd.exe'} /d /s /c "npm run preview -- --host 127.0.0.1 --port ${previewPort} --strictPort"`
-        : `npm run preview -- --host 127.0.0.1 --port ${previewPort} --strictPort`;
-    const child = spawn(command, {
+    const child = spawn(process.platform === 'win32' ? 'npm.cmd' : 'npm', [
+        'run',
+        'preview',
+        '--',
+        '--host',
+        '127.0.0.1',
+        '--port',
+        String(previewPort),
+        '--strictPort',
+    ], {
         cwd: rootDir,
         env: smokeEnv,
         stdio: 'pipe',
-        shell: true,
+        detached: process.platform !== 'win32',
         windowsHide: true,
     });
 
@@ -189,14 +195,32 @@ async function stopPreviewServer(child) {
         return;
     }
 
-    child.kill('SIGTERM');
-    await new Promise((resolve) => {
-        child.once('exit', () => resolve());
-        setTimeout(() => {
-            if (!child.killed) {
-                child.kill('SIGKILL');
+    const killGroup = (signal) => {
+        try {
+            process.kill(-child.pid, signal);
+        } catch {
+            try {
+                child.kill(signal);
+            } catch {
+                // The preview process may already be gone.
             }
+        }
+    };
+
+    killGroup('SIGTERM');
+    await new Promise((resolve) => {
+        let resolved = false;
+        const finish = () => {
+            if (resolved) {
+                return;
+            }
+            resolved = true;
             resolve();
+        };
+        child.once('exit', finish);
+        setTimeout(() => {
+            killGroup('SIGKILL');
+            finish();
         }, 3000);
     });
 }
