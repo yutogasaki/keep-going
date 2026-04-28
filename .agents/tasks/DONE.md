@@ -46,3 +46,4 @@
 - `ScreenScaffold` と `HomeScreen` の下端余白調整後、`390x844` のモバイル幅で first view を確認し、`ふわふわ -> チャレンジ導入` の視線誘導が崩れていないことを確認した
 - Playwright で scroll container / footer / FAB の幾何を確認し、終端時の最下部 CTA (`種目も見る`) が FAB top より約 32px、footer top より約 55px 上に収まることを確認した
 - 開発中の HMR で出ていた `useAuth must be used within AuthProvider` は context singleton 化で再現しなくなり、ホーム QA の継続を妨げる不安定さを解消した
+- 2026-04-27: Sync restore 文言・チャレンジ表示解決・account guide を補強し、ChallengeList / PersonalChallengeFormSheet / record summary / audio / home copy を安全に分割して verify と E2E smoke を通した

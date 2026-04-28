@@ -118,6 +118,30 @@ describe('sync flow messages', () => {
         })).toBe('両方のデータをまとめました（きろく3回 / おこさま1人）');
         expect(getLoginSyncFailureMessage({ action: 'restore_from_cloud' })).toBe('クラウドのデータ復元に失敗しました。この端末のデータはそのままです。');
     });
+
+    it('keeps conflict-resolution toast copy tied to the chosen action', () => {
+        expect(getLoginSyncSuccessMessage({
+            action: 'push_local',
+            resolution: 'cloud',
+            cloudSummary: createSummary({ users: 2, sessions: 4, hasSettings: true }),
+            localSummary: createSummary({ users: 1, sessions: 1 }),
+        })).toBe('クラウドのデータを復元しました（きろく4回 / おこさま2人 / せってい）');
+        expect(getLoginSyncFailureMessage({
+            action: 'push_local',
+            resolution: 'cloud',
+        })).toBe('クラウドのデータ復元に失敗しました。この端末のデータはそのままです。');
+
+        expect(getLoginSyncSuccessMessage({
+            action: 'restore_from_cloud',
+            resolution: 'merge',
+            localSummary: createSummary({ users: 1, customExercises: 2, customGroups: 1 }),
+            cloudSummary: createSummary({ sessions: 5 }),
+        })).toBe('両方のデータをまとめました（おこさま1人 / カスタム3件）');
+        expect(getLoginSyncFailureMessage({
+            action: 'restore_from_cloud',
+            resolution: 'merge',
+        })).toBe('両方のデータのまとめに失敗しました。この端末のデータはそのままです。');
+    });
 });
 
 describe('runPostLoginSync', () => {

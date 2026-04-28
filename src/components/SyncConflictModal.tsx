@@ -285,14 +285,14 @@ export const SyncConflictModal: React.FC<SyncConflictModalProps> = ({
                     <ChoiceCard
                         icon={<Cloud size={18} />}
                         title="クラウドを使う"
-                        description="この端末の未同期データは使わず、クラウドの内容をそのまま開きます。"
+                        description="クラウドの内容でこの端末を復元します。この端末だけにある未同期データは引き継がれません。"
                         onClick={onChooseCloud}
                         emphasized={recommendedResolution === 'cloud'}
                     />
                     <ChoiceCard
                         icon={<ArrowRightLeft size={18} />}
                         title="両方をまとめる"
-                        description="この端末の内容を残しながら、クラウドの記録やカスタム項目も重複を避けて追加します。"
+                        description="この端末とクラウドの内容を、残せるものは両方残すようにまとめます。重複しそうな記録やカスタム項目は整理します。"
                         onClick={onChooseMerge}
                         emphasized={recommendedResolution === 'merge'}
                     />

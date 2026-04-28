@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import type { MenuGroup } from '@/data/menuGroups';
 import { buildGroupCardSummary, resolveGroupExercise } from '../groupCardUtils';
-import type { MenuGroup } from '../../../../data/menuGroups';
 
 describe('groupCardUtils', () => {
     it('prefers built-in exercises and falls back to the custom exercise map', () => {

@@ -1,45 +1,20 @@
 import { useAppStore } from '../store/useAppStore';
+import { AUDIO_CUES } from './audioCues';
 import { findBgmTrack } from './bgmTracks';
+import {
+    getBgmDuckMultiplier,
+    getBgmMixVolume,
+    getEffectsVolume,
+    getSpeechVolume,
+    normalizeSpeechText,
+} from './audioMix';
 
-export const normalizeSpeechText = (text: string) =>
-    // Some browser voices misread `次は` as `じは`, so normalize only the spoken form.
-    text.replace(/次は/gu, 'つぎは');
-
-export const getSpeechVolume = (soundVolume: number) => {
-    const clamped = Math.max(0, Math.min(1, soundVolume));
-    if (clamped === 0) return 0;
-
-    // Speech synthesis is quieter than Web Audio on many mobile devices,
-    // so keep a small boost while still letting the slider behave predictably.
-    return Math.min(1, 0.2 + clamped * 0.8);
-};
-
-export const getEffectsVolume = (soundVolume: number) => {
-    const clamped = Math.max(0, Math.min(1, soundVolume));
-    if (clamped === 0) return 0;
-
-    // Let short cues punch through more clearly, especially on small mobile speakers.
-    return Math.min(1.15, 0.4 + clamped * 0.75);
-};
-
-export const getBgmMixVolume = (bgmVolume: number) => {
-    const clamped = Math.max(0, Math.min(1, bgmVolume));
-    if (clamped === 0) return 0;
-
-    // Give the lower half of the slider more usable range so BGM sits behind guidance more easily.
-    return Math.pow(clamped, 1.45) * 0.225;
-};
-
-export const getBgmDuckMultiplier = ({
-    speechActive,
-    effectActive,
-}: {
-    speechActive: boolean;
-    effectActive: boolean;
-}) => {
-    const speechMultiplier = speechActive ? 0.08 : 1;
-    const effectMultiplier = effectActive ? 0.1 : 1;
-    return Math.min(speechMultiplier, effectMultiplier);
+export {
+    getBgmDuckMultiplier,
+    getBgmMixVolume,
+    getEffectsVolume,
+    getSpeechVolume,
+    normalizeSpeechText,
 };
 
 class AudioEngine {
@@ -459,15 +434,15 @@ class AudioEngine {
     }
 
     public playTick() {
-        this.playTone(880, 'sine', 0.1, 0.7);
+        this.playTone(AUDIO_CUES.tick.frequency, AUDIO_CUES.tick.type, AUDIO_CUES.tick.duration, AUDIO_CUES.tick.volume);
     }
 
     public playGo() {
-        this.playTone(1760, 'sine', 0.3, 0.9);
+        this.playTone(AUDIO_CUES.go.frequency, AUDIO_CUES.go.type, AUDIO_CUES.go.duration, AUDIO_CUES.go.volume);
     }
 
     public playProgressTone() {
-        const vol = this.getEffectGain(0.52);
+        const vol = this.getEffectGain(AUDIO_CUES.progress.volume);
         if (vol === 0) return;
 
         this.init();
@@ -480,24 +455,20 @@ class AudioEngine {
         gain.gain.linearRampToValueAtTime(vol, now + 0.06);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
 
-        this.beginEffectDucking(600);
-        const osc1 = this.ctx.createOscillator();
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(392, now);
-        osc1.connect(gain);
-        osc1.start(now);
-        osc1.stop(now + 0.6);
-
-        const osc2 = this.ctx.createOscillator();
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(493.88, now + 0.1);
-        osc2.connect(gain);
-        osc2.start(now + 0.1);
-        osc2.stop(now + 0.6);
+        this.beginEffectDucking(AUDIO_CUES.progress.durationMs);
+        AUDIO_CUES.progress.frequencies.forEach((freq, index) => {
+            const offset = AUDIO_CUES.progress.startOffsets[index] ?? 0;
+            const osc = this.ctx!.createOscillator();
+            osc.type = AUDIO_CUES.progress.type;
+            osc.frequency.setValueAtTime(freq, now + offset);
+            osc.connect(gain);
+            osc.start(now + offset);
+            osc.stop(now + AUDIO_CUES.progress.duration);
+        });
     }
 
     public playExerciseStart() {
-        const vol = this.getEffectGain(0.68);
+        const vol = this.getEffectGain(AUDIO_CUES.exerciseStart.volume);
         if (vol === 0) return;
 
         this.init();
@@ -510,24 +481,23 @@ class AudioEngine {
         gain.gain.linearRampToValueAtTime(vol, now + 0.05);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
 
-        this.beginEffectDucking(800);
-        const osc1 = this.ctx.createOscillator();
-        osc1.type = 'triangle';
-        osc1.frequency.setValueAtTime(523.25, now);
-        osc1.connect(gain);
-        osc1.start(now);
-        osc1.stop(now + 0.4);
-
-        const osc2 = this.ctx.createOscillator();
-        osc2.type = 'triangle';
-        osc2.frequency.setValueAtTime(659.25, now + 0.15);
-        osc2.connect(gain);
-        osc2.start(now + 0.15);
-        osc2.stop(now + 0.8);
+        this.beginEffectDucking(AUDIO_CUES.exerciseStart.durationMs);
+        AUDIO_CUES.exerciseStart.frequencies.forEach((freq, index) => {
+            const offset = AUDIO_CUES.exerciseStart.startOffsets[index] ?? 0;
+            const stopTime =
+                AUDIO_CUES.exerciseStart.stopTimes[index] ??
+                AUDIO_CUES.exerciseStart.stopTimes[AUDIO_CUES.exerciseStart.stopTimes.length - 1];
+            const osc = this.ctx!.createOscillator();
+            osc.type = AUDIO_CUES.exerciseStart.type;
+            osc.frequency.setValueAtTime(freq, now + offset);
+            osc.connect(gain);
+            osc.start(now + offset);
+            osc.stop(now + stopTime);
+        });
     }
 
     public playTransition() {
-        const vol = this.getEffectGain(0.58);
+        const vol = this.getEffectGain(AUDIO_CUES.transition.volume);
         if (vol === 0) return;
 
         this.init();
@@ -540,20 +510,20 @@ class AudioEngine {
         gain.gain.linearRampToValueAtTime(vol, now + 0.08);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
 
-        this.beginEffectDucking(1500);
-        const freqs = [523.25, 659.25, 783.99];
-        freqs.forEach((freq, index) => {
+        this.beginEffectDucking(AUDIO_CUES.transition.durationMs);
+        AUDIO_CUES.transition.frequencies.forEach((freq, index) => {
+            const offset = index * AUDIO_CUES.transition.stagger;
             const osc = this.ctx!.createOscillator();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, now + index * 0.05);
+            osc.type = AUDIO_CUES.transition.type;
+            osc.frequency.setValueAtTime(freq, now + offset);
             osc.connect(gain);
-            osc.start(now + index * 0.05);
-            osc.stop(now + 1.5);
+            osc.start(now + offset);
+            osc.stop(now + AUDIO_CUES.transition.duration);
         });
     }
 
     public playSuccess() {
-        const vol = this.getEffectGain(0.68);
+        const vol = this.getEffectGain(AUDIO_CUES.success.volume);
         if (vol === 0) return;
 
         this.init();
@@ -566,15 +536,15 @@ class AudioEngine {
         gain.gain.linearRampToValueAtTime(vol, now + 0.08);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
 
-        this.beginEffectDucking(2000);
-        const freqs = [523.25, 783.99, 1046.5, 1318.51];
-        freqs.forEach((freq, index) => {
+        this.beginEffectDucking(AUDIO_CUES.success.durationMs);
+        AUDIO_CUES.success.frequencies.forEach((freq, index) => {
+            const offset = index * AUDIO_CUES.success.stagger;
             const osc = this.ctx!.createOscillator();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, now + index * 0.1);
+            osc.type = AUDIO_CUES.success.type;
+            osc.frequency.setValueAtTime(freq, now + offset);
             osc.connect(gain);
-            osc.start(now + index * 0.1);
-            osc.stop(now + 2.0);
+            osc.start(now + offset);
+            osc.stop(now + AUDIO_CUES.success.duration);
         });
     }
 }

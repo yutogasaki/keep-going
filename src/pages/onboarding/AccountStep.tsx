@@ -68,7 +68,7 @@ export const AccountStep: React.FC<AccountStepProps> = ({
                 >
                     先にログインやアカウント作成をしておくと、
                     <br />
-                    あとで名前やクラスが消えません。
+                    機種変更のあとも続きから戻しやすくなります。
                 </p>
 
                 <SyncAccountGuideCard />
@@ -150,7 +150,7 @@ export const AccountStep: React.FC<AccountStepProps> = ({
                         marginTop: -8,
                     }}
                 >
-                    アカウントはあとからでもつなげられます
+                    この端末だけでも始められます。アカウントはあとからでもつなげられます
                 </p>
             </OnboardingStepScaffold>
         </motion.div>

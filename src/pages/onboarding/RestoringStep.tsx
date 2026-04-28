@@ -34,6 +34,8 @@ export const RestoringStep: React.FC = () => {
                 }}
             >
                 データを復元しています...
+                <br />
+                この端末で続きから使えるようにしています。
             </p>
         </motion.div>
     );

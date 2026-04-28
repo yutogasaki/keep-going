@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { MenuGroupItem } from '../../../data/menuGroups';
-import { getMenuItemRenderKey } from './MenuItemsCard';
+import type { MenuGroupItem } from '@/data/menuGroups';
+import { getMenuItemRenderKey, resolveMenuItemExercise } from './MenuItemsCard';
 
 describe('MenuItemsCard', () => {
     it('creates unique render keys using item.id (not index-dependent)', () => {
@@ -32,5 +32,24 @@ describe('MenuItemsCard', () => {
         expect(keysAfter).toEqual(['ref-bbb', 'ref-aaa']);
         expect(keysAfter[0]).toBe(keysBefore[1]);
         expect(keysAfter[1]).toBe(keysBefore[0]);
+    });
+
+    it('resolves custom exercises passed into the card', () => {
+        expect(resolveMenuItemExercise(
+            { id: 'ref-custom', kind: 'exercise_ref', exerciseId: 'custom-1' },
+            [{
+                id: 'custom-1',
+                name: 'カスタムバー',
+                sec: 45,
+                emoji: '🩰',
+                placement: 'barre',
+            }],
+        )).toEqual({
+            id: 'custom-1',
+            name: 'カスタムバー',
+            sec: 45,
+            emoji: '🩰',
+            placement: 'barre',
+        });
     });
 });

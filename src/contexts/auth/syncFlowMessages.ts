@@ -8,7 +8,8 @@ interface LoginSyncMessageContext {
 }
 
 function prefersCloudMessage(context: LoginSyncMessageContext): boolean {
-    return context.resolution === 'cloud' || context.action === 'restore_from_cloud';
+    return context.resolution === 'cloud' ||
+        (!context.resolution && context.action === 'restore_from_cloud');
 }
 
 function prefersMergeMessage(context: LoginSyncMessageContext): boolean {

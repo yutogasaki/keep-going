@@ -1,8 +1,8 @@
 import React from 'react';
 import { Reorder } from 'framer-motion';
-import { DurationSecondsPicker } from '../../../components/DurationSecondsPicker';
-import { getExerciseById } from '../../../data/exercises';
-import type { MenuGroupItem } from '../../../data/menuGroups';
+import { DurationSecondsPicker } from '@/components/DurationSecondsPicker';
+import { getExerciseById } from '@/data/exercises';
+import type { MenuGroupItem } from '@/data/menuGroups';
 import type { QuickAddDraft } from './createGroupViewShared';
 import type { PickerExercise } from './ExercisePickerList';
 import { MenuItemRow, type DisplayMenuExercise } from './MenuItemRow';
@@ -41,7 +41,10 @@ function fieldStyle() {
     };
 }
 
-function resolveMenuItemExercise(item: MenuGroupItem, allExercises?: PickerExercise[]): DisplayMenuExercise | null {
+export function resolveMenuItemExercise(
+    item: MenuGroupItem,
+    allExercises?: PickerExercise[],
+): DisplayMenuExercise | null {
     if (item.kind === 'inline_only') {
         return item;
     }

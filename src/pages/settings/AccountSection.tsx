@@ -164,7 +164,7 @@ export const AccountSection: React.FC = () => {
                         </div>
                         {isAnonymous && (
                             <p style={{ fontSize: 11, color: '#B2BEC3', margin: 0, lineHeight: 1.4 }}>
-                                先に作成しておくと、機種変更やホーム画面追加でも引きつぎしやすくなります
+                                アカウントを作るとクラウドにも保存され、機種変更や別の端末で復元しやすくなります
                             </p>
                         )}
                     </div>
