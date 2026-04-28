@@ -27,6 +27,17 @@ const smokeEnv = {
     VITE_SUPABASE_ANON_KEY: '',
 };
 
+function logSmokeStep(message) {
+    console.log(`[e2e-smoke] ${message}`);
+}
+
+function createLaunchOptions() {
+    return {
+        headless: true,
+        timeout: 30000,
+    };
+}
+
 function createUser() {
     return {
         id: 'qa-user-1',
@@ -234,6 +245,7 @@ async function switchVisibility(page, state) {
 }
 
 async function runDesktopScenario(browser) {
+    logSmokeStep('desktop scenario: start');
     const context = await browser.newContext({ viewport: { width: 1440, height: 960 } });
     const page = await context.newPage();
     const desktopExercises = ['S01', 'S02', 'S03'];
@@ -260,6 +272,7 @@ async function runDesktopScenario(browser) {
     await page.screenshot({ path: path.join(artifactsDir, 'session-desktop-started.png') });
 
     await context.close();
+    logSmokeStep('desktop scenario: complete');
 
     return {
         device: 'desktop',
@@ -268,6 +281,7 @@ async function runDesktopScenario(browser) {
 }
 
 async function runMobileScenario(browser) {
+    logSmokeStep('mobile scenario: start');
     const context = await browser.newContext({
         ...devices['Pixel 7'],
         locale: 'ja-JP',
@@ -301,6 +315,7 @@ async function runMobileScenario(browser) {
     await page.screenshot({ path: path.join(artifactsDir, 'session-mobile-after-break-continue.png') });
 
     await context.close();
+    logSmokeStep('mobile scenario: complete');
 
     return {
         device: 'mobile',
@@ -309,8 +324,11 @@ async function runMobileScenario(browser) {
 }
 
 async function main() {
+    logSmokeStep('preparing artifacts');
     await ensureArtifactsDir();
+    logSmokeStep('building app');
     await runProjectCommand('npm run build');
+    logSmokeStep('starting preview server');
     const previewServer = startPreviewServer();
     const report = {
         ranAt: new Date().toISOString(),
@@ -320,29 +338,37 @@ async function main() {
     };
 
     try {
+        logSmokeStep(`waiting for preview server at ${baseUrl}`);
         await waitForServer(baseUrl);
-        const desktopBrowser = await chromium.launch({ headless: true });
+        logSmokeStep('launching desktop browser');
+        const desktopBrowser = await chromium.launch(createLaunchOptions());
         try {
             report.results.push(await runDesktopScenario(desktopBrowser));
         } finally {
+            logSmokeStep('closing desktop browser');
             await desktopBrowser.close();
         }
 
-        const mobileBrowser = await chromium.launch({ headless: true });
+        logSmokeStep('launching mobile browser');
+        const mobileBrowser = await chromium.launch(createLaunchOptions());
         try {
             report.results.push(await runMobileScenario(mobileBrowser));
         } finally {
+            logSmokeStep('closing mobile browser');
             await mobileBrowser.close();
         }
 
+        logSmokeStep('writing smoke report');
         await fs.writeFile(
             path.join(artifactsDir, 'session-smoke-report.json'),
             JSON.stringify(report, null, 2),
             'utf8',
         );
     } finally {
+        logSmokeStep('stopping preview server');
         await stopPreviewServer(previewServer);
     }
+    logSmokeStep('complete');
 }
 
 main().catch((error) => {
