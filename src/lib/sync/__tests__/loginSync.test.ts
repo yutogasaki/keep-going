@@ -82,6 +82,36 @@ describe('decideLoginSyncPlan', () => {
 
         expect(plan.kind).toBe('restore_from_cloud');
     });
+
+    it('restores from cloud when only cloud settings exist', () => {
+        const plan = decideLoginSyncPlan({
+            localSummary: createSummary(),
+            cloudSummary: createSummary({ hasSettings: true }),
+            alreadySynced: false,
+        });
+
+        expect(plan.kind).toBe('restore_from_cloud');
+    });
+
+    it('pushes local settings when only local settings exist', () => {
+        const plan = decideLoginSyncPlan({
+            localSummary: createSummary({ hasSettings: true }),
+            cloudSummary: createSummary(),
+            alreadySynced: false,
+        });
+
+        expect(plan.kind).toBe('push_local');
+    });
+
+    it('prompts for conflict when both sides only have settings on a new device', () => {
+        const plan = decideLoginSyncPlan({
+            localSummary: createSummary({ hasSettings: true }),
+            cloudSummary: createSummary({ hasSettings: true }),
+            alreadySynced: false,
+        });
+
+        expect(plan.kind).toBe('conflict');
+    });
 });
 
 describe('buildSyncConflictPrompt', () => {
@@ -115,5 +145,41 @@ describe('buildSyncConflictPrompt', () => {
 
         expect(prompt.recommendedResolution).toBeNull();
         expect(prompt.recommendationReason).toBeNull();
+    });
+
+    it('describes empty and settings-only summaries without recommending a side for equal settings-only data', () => {
+        const prompt = buildSyncConflictPrompt({
+            localSummary: createSummary({ hasSettings: true }),
+            cloudSummary: createSummary({ hasSettings: true }),
+        });
+
+        expect(prompt.localDetail).toBe('せっていだけがあります');
+        expect(prompt.cloudDetail).toBe('せっていだけがあります');
+        expect(prompt.recommendedResolution).toBeNull();
+        expect(prompt.recommendationReason).toBeNull();
+    });
+
+    it('recommends cloud when only the cloud summary has saved settings', () => {
+        const prompt = buildSyncConflictPrompt({
+            localSummary: createSummary(),
+            cloudSummary: createSummary({ hasSettings: true }),
+        });
+
+        expect(prompt.localDetail).toBe('まだデータはありません');
+        expect(prompt.cloudDetail).toBe('せっていだけがあります');
+        expect(prompt.recommendedResolution).toBe('cloud');
+        expect(prompt.recommendationReason).toBe('クラウド側には保存済みのせっていがあります。');
+    });
+
+    it('recommends merge when local has more custom summary data and explains that reason', () => {
+        const prompt = buildSyncConflictPrompt({
+            localSummary: createSummary({ customExercises: 2, customGroups: 1 }),
+            cloudSummary: createSummary({ customExercises: 1 }),
+        });
+
+        expect(prompt.localDetail).toContain('カスタム 3件');
+        expect(prompt.cloudDetail).toContain('カスタム 1件');
+        expect(prompt.recommendedResolution).toBe('merge');
+        expect(prompt.recommendationReason).toBe('この端末のほうにカスタム項目が多いので、両方をまとめるのがおすすめです。');
     });
 });

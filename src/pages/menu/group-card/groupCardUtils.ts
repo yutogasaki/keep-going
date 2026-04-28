@@ -1,6 +1,6 @@
-import { getExerciseById } from '../../../data/exercises';
-import type { ExercisePlacement } from '../../../data/exercisePlacement';
-import { getMenuGroupItems, type MenuGroup, type MenuGroupItem } from '../../../data/menuGroups';
+import { getExerciseById } from '@/data/exercises';
+import type { ExercisePlacement } from '@/data/exercisePlacement';
+import { getMenuGroupItems, type MenuGroup, type MenuGroupItem } from '@/data/menuGroups';
 
 export interface GroupCardExerciseSummary {
     id: string;

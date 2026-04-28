@@ -12,12 +12,48 @@ import type { TeacherExercise } from '../teacherContent';
 import { CANONICAL_TERMS } from '../terminology';
 import type { Challenge, ChallengeAttempt, ChallengeEnrollment, ChallengeEnrollmentState } from './types';
 
-export function getChallengeExercise(challenge: Challenge, teacherExercises: TeacherExercise[] = []) {
-    return challenge.exerciseId
-        ? EXERCISES.find((item) => item.id === challenge.exerciseId)
-            ?? teacherExercises.find((item) => item.id === challenge.exerciseId)
-            ?? null
-        : null;
+type ChallengeExerciseDisplaySource = Pick<TeacherExercise, 'id' | 'name' | 'emoji'>;
+
+interface ChallengeExerciseDisplayTarget {
+    exercise: ChallengeExerciseDisplaySource | null;
+    missingLabel: string;
+}
+
+function resolveChallengeExerciseDisplayTarget(
+    challenge: Pick<Challenge, 'exerciseId'>,
+    teacherExercises: ChallengeExerciseDisplaySource[] = [],
+): ChallengeExerciseDisplayTarget {
+    if (!challenge.exerciseId) {
+        return {
+            exercise: null,
+            missingLabel: CANONICAL_TERMS.exercise,
+        };
+    }
+
+    const exercise = EXERCISES.find((item) => item.id === challenge.exerciseId)
+        ?? teacherExercises.find((item) => item.id === challenge.exerciseId)
+        ?? null;
+
+    if (exercise) {
+        return {
+            exercise,
+            missingLabel: exercise.name,
+        };
+    }
+
+    return {
+        exercise: null,
+        missingLabel: challenge.exerciseId.startsWith('teacher-')
+            ? '見つからない先生の種目'
+            : '見つからない種目',
+    };
+}
+
+export function getChallengeExercise(
+    challenge: Pick<Challenge, 'exerciseId'>,
+    teacherExercises: ChallengeExerciseDisplaySource[] = [],
+): ChallengeExerciseDisplaySource | null {
+    return resolveChallengeExerciseDisplayTarget(challenge, teacherExercises).exercise;
 }
 
 export function getChallengeEmoji(challenge: Challenge, teacherExercises: TeacherExercise[] = []): string {
@@ -25,7 +61,7 @@ export function getChallengeEmoji(challenge: Challenge, teacherExercises: Teache
         return challenge.iconEmoji ?? '⏱️';
     }
 
-    return challenge.iconEmoji ?? getChallengeExercise(challenge, teacherExercises)?.emoji ?? '🎯';
+    return challenge.iconEmoji ?? resolveChallengeExerciseDisplayTarget(challenge, teacherExercises).exercise?.emoji ?? '🎯';
 }
 
 export function getChallengeTargetLabel(challenge: Challenge, teacherExercises: TeacherExercise[] = []): string {
@@ -41,7 +77,7 @@ export function getChallengeTargetLabel(challenge: Challenge, teacherExercises: 
         return challenge.menuSource === 'teacher' ? CANONICAL_TERMS.teacherMenu : CANONICAL_TERMS.menu;
     }
 
-    return getChallengeExercise(challenge, teacherExercises)?.name ?? challenge.exerciseId ?? CANONICAL_TERMS.exercise;
+    return resolveChallengeExerciseDisplayTarget(challenge, teacherExercises).missingLabel;
 }
 
 export function getChallengeRewardLabel(challenge: Challenge): string {

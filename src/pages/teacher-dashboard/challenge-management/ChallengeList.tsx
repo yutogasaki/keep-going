@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
-import { ChevronRight, Copy, Loader2, Pencil, Trash2 } from 'lucide-react';
-import { countChallengeProgressFromSessions } from '../../../lib/challenge-engine';
+import { Copy, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { getTodayKey } from '../../../lib/db';
 import { CLASS_EMOJI, EXERCISES } from '../../../data/exercises';
 import { PRESET_GROUPS } from '../../../data/menuGroups';
 import {
-    getChallengeActiveWindow,
     getChallengeCardText,
     getChallengeDailyCapLabel,
     getChallengeGoalLabel,
     getChallengeInviteWindowLabel,
-    getChallengeProgressLabel,
     getChallengePublishLabel,
     getChallengeRetryStats,
     getChallengeRewardLabel,
@@ -19,8 +16,6 @@ import {
     type ChallengeAttempt,
     type ChallengeCompletion,
     type ChallengeEnrollment,
-    getLatestChallengeAttempts,
-    toChallengeEngineInput,
 } from '../../../lib/challenges';
 import type { StudentSession } from '../../../lib/teacher';
 import type { TeacherExercise, TeacherMenu } from '../../../lib/teacherContent';
@@ -28,10 +23,11 @@ import { getTeacherVisibilityLabel } from '../../../lib/teacherExerciseMetadata'
 import { COLOR, FONT, FONT_SIZE, RADIUS } from '../../../lib/styles';
 import {
     ChallengeParticipantDetailSheet,
-    type ChallengeParticipantAttemptDetail,
     type ChallengeParticipantDetailData,
 } from './ChallengeParticipantDetailSheet';
 import { buildChallengeListBuckets } from './challengeListUtils';
+import { ChallengeParticipantStatusList } from './ChallengeParticipantStatusList';
+import { buildParticipantDetail, buildParticipantStatusItems } from './challengeParticipantStatus';
 
 interface ChallengeListProps {
     loading: boolean;
@@ -47,215 +43,6 @@ interface ChallengeListProps {
     onEdit: (challenge: Challenge) => void;
     onDuplicate: (challenge: Challenge) => void;
     onDelete: (challengeId: string) => void;
-}
-
-interface ParticipantStatusItem {
-    memberId: string;
-    name: string;
-    progressLabel: string;
-    subLabel: string;
-    attemptLabel: string;
-    windowLabel: string;
-    completed: boolean;
-    progress: number;
-    completedAt: string | null;
-    attemptNo: number;
-}
-
-function formatDateRangeLabel(startDate: string | null | undefined, endDate: string | null | undefined): string {
-    if (!startDate || !endDate) {
-        return '期間を確認中';
-    }
-
-    const [, startMonth, startDay] = startDate.split('-');
-    const [, endMonth, endDay] = endDate.split('-');
-    if (!startMonth || !startDay || !endMonth || !endDay) {
-        return `${startDate} 〜 ${endDate}`;
-    }
-
-    return startMonth === endMonth
-        ? `${Number(startMonth)}/${Number(startDay)}〜${Number(endDay)}`
-        : `${Number(startMonth)}/${Number(startDay)}〜${Number(endMonth)}/${Number(endDay)}`;
-}
-
-function formatCompletedAtLabel(completedAt: string | null): string | null {
-    if (!completedAt) {
-        return null;
-    }
-
-    const [datePart] = completedAt.split('T');
-    return formatDateLabel(datePart, 'にクリア');
-}
-
-function formatDateLabel(date: string | null | undefined, suffix: string): string {
-    if (!date) {
-        return suffix;
-    }
-
-    const [year, month, day] = date.split('-');
-    void year;
-    if (!month || !day) {
-        return `${date}${suffix}`;
-    }
-
-    return `${Number(month)}/${Number(day)}${suffix}`;
-}
-
-function buildParticipantStatusItems(
-    challenge: Challenge,
-    completions: ChallengeCompletion[],
-    enrollments: ChallengeEnrollment[],
-    attempts: ChallengeAttempt[],
-    memberNameMap: ReadonlyMap<string, string>,
-    sessionsByMemberId: ReadonlyMap<string, StudentSession[]>,
-): ParticipantStatusItem[] {
-    const completionMap = new Map(
-        completions
-            .filter((completion) => completion.challengeId === challenge.id)
-            .map((completion) => [completion.memberId, completion]),
-    );
-    const enrollmentMap = new Map(
-        enrollments
-            .filter((enrollment) => enrollment.challengeId === challenge.id)
-            .map((enrollment) => [enrollment.memberId, enrollment]),
-    );
-    const latestAttemptMap = getLatestChallengeAttempts(
-        attempts.filter((attempt) => attempt.challengeId === challenge.id),
-    );
-    const participantIds = new Set<string>([
-        ...completionMap.keys(),
-        ...enrollmentMap.keys(),
-        ...latestAttemptMap.keys(),
-    ]);
-
-    const items = [...participantIds].map((memberId) => {
-        const completion = completionMap.get(memberId) ?? null;
-        const enrollment = enrollmentMap.get(memberId) ?? null;
-        const latestAttempt = latestAttemptMap.get(memberId) ?? null;
-        const effectiveWindow = enrollment
-            ? {
-                startDate: enrollment.effectiveStartDate,
-                endDate: enrollment.effectiveEndDate,
-            }
-            : latestAttempt
-                ? {
-                    startDate: latestAttempt.effectiveStartDate,
-                    endDate: latestAttempt.effectiveEndDate,
-                }
-            : null;
-        const sessions = sessionsByMemberId.get(memberId) ?? [];
-        const progress = countChallengeProgressFromSessions(
-            toChallengeEngineInput(challenge),
-            sessions,
-            [memberId],
-            getChallengeActiveWindow(challenge, effectiveWindow),
-        );
-        const completed = completion !== null;
-        const attemptNo = latestAttempt?.attemptNo ?? 1;
-        const baseProgressLabel = completed ? 'クリア' : getChallengeProgressLabel(challenge, progress);
-        const progressLabel = attemptNo > 1 ? `${attemptNo}回目・${baseProgressLabel}` : baseProgressLabel;
-        const attemptLabel = attemptNo > 1 ? `${attemptNo}回目` : '1回目';
-        const subLabel = completed
-            ? (attemptNo > 1 ? 'もう一回クリア' : 'ごほうびゲット')
-            : latestAttempt?.status === 'expired'
-                ? '期間が終わった'
-            : attemptNo > 1
-                ? '再挑戦中'
-                : progress > 0
-                    ? '参加中'
-                    : '参加したよ';
-        const windowLabel = completed
-            ? formatDateLabel((completion?.completedAt ?? latestAttempt?.completedAt ?? null)?.split('T')[0] ?? null, 'にクリア')
-            : formatDateLabel(effectiveWindow?.endDate ?? null, 'まで');
-
-        return {
-            memberId,
-            name: memberNameMap.get(memberId) ?? '生徒',
-            progressLabel,
-            subLabel,
-            attemptLabel,
-            windowLabel,
-            completed,
-            progress,
-            completedAt: completion?.completedAt ?? null,
-            attemptNo,
-        };
-    });
-
-    items.sort((left, right) => {
-        if (left.completed !== right.completed) {
-            return Number(left.completed) - Number(right.completed);
-        }
-        if (!left.completed && left.progress !== right.progress) {
-            return right.progress - left.progress;
-        }
-        if (left.completed && right.completed && left.completedAt !== right.completedAt) {
-            return (right.completedAt ?? '').localeCompare(left.completedAt ?? '');
-        }
-        return left.name.localeCompare(right.name, 'ja');
-    });
-
-    return items;
-}
-
-function buildParticipantDetail(
-    challenge: Challenge,
-    memberId: string,
-    participantStatuses: ParticipantStatusItem[],
-    challengeAttempts: ChallengeAttempt[],
-): ChallengeParticipantDetailData | null {
-    const participant = participantStatuses.find((item) => item.memberId === memberId) ?? null;
-    if (!participant) {
-        return null;
-    }
-
-    const attempts = challengeAttempts
-        .filter((attempt) => attempt.challengeId === challenge.id && attempt.memberId === memberId)
-        .sort((left, right) => right.attemptNo - left.attemptNo);
-
-    const attemptDetails: ChallengeParticipantAttemptDetail[] = attempts.map((attempt, index) => {
-        const statusLabel = attempt.status === 'completed'
-            ? 'クリア'
-            : attempt.status === 'expired'
-                ? '期間が終わった'
-                : '進めているよ';
-        const progressLabel = index === 0 ? participant.progressLabel : statusLabel;
-        return {
-            id: attempt.id,
-            attemptLabel: attempt.attemptNo > 1 ? `${attempt.attemptNo}回目の挑戦` : '1回目の挑戦',
-            statusLabel,
-            progressLabel,
-            periodLabel: `${formatDateRangeLabel(attempt.effectiveStartDate, attempt.effectiveEndDate)} の期間`,
-            completedLabel: formatCompletedAtLabel(attempt.completedAt),
-            isLatest: index === 0,
-        };
-    });
-
-    const previousCompletedAttempt = attempts.find((attempt) => attempt.status === 'completed');
-
-    return {
-        memberId: participant.memberId,
-        name: participant.name,
-        challengeTitle: challenge.title,
-        latestAttemptLabel: participant.attemptLabel,
-        latestStatusLabel: participant.subLabel,
-        latestProgressLabel: participant.progressLabel,
-        latestWindowLabel: participant.windowLabel,
-        previousClearLabel: previousCompletedAttempt?.completedAt
-            ? formatCompletedAtLabel(previousCompletedAttempt.completedAt)
-            : null,
-        attempts: attemptDetails.length > 0
-            ? attemptDetails
-            : [{
-                id: `${challenge.id}-${memberId}-legacy`,
-                attemptLabel: participant.attemptLabel,
-                statusLabel: participant.subLabel,
-                progressLabel: participant.progressLabel,
-                periodLabel: participant.windowLabel,
-                completedLabel: participant.completedAt ? formatCompletedAtLabel(participant.completedAt) : null,
-                isLatest: true,
-            }],
-    };
 }
 
 export const ChallengeList: React.FC<ChallengeListProps> = ({
@@ -377,12 +164,6 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                 );
                 const completedCount = participantStatuses.filter((item) => item.completed).length;
                 const isParticipantListExpanded = expandedParticipantLists[challenge.id] === true;
-                const visibleParticipants = isParticipantListExpanded
-                    ? participantStatuses
-                    : participantStatuses.slice(0, 6);
-                const hiddenParticipantCount = isParticipantListExpanded
-                    ? 0
-                    : Math.max(0, participantStatuses.length - visibleParticipants.length);
                 const participantDetailsByMemberId = new Map(
                     participantStatuses.map((item) => [
                         item.memberId,
@@ -478,144 +259,23 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                                         {cardText}
                                     </div>
                                 )}
-                                {participantStatuses.length > 0 ? (
-                                    <div style={{
-                                        display: 'grid',
-                                        gap: 6,
-                                        marginTop: 6,
-                                    }}>
-                                        {visibleParticipants.map((item) => (
-                                            <button
-                                                type="button"
-                                                key={`${challenge.id}-${item.memberId}`}
-                                                onClick={() => {
-                                                    setSelectedChallenge(challenge);
-                                                    setSelectedParticipant(participantDetailsByMemberId.get(item.memberId) ?? null);
-                                                }}
-                                                style={{
-                                                    display: 'grid',
-                                                    gridTemplateColumns: 'minmax(0, 1fr) auto auto',
-                                                    gap: 6,
-                                                    alignItems: 'center',
-                                                    padding: '7px 9px',
-                                                    borderRadius: 10,
-                                                    background: item.completed
-                                                        ? '#E8F8F0'
-                                                        : item.subLabel === '期間が終わった'
-                                                            ? '#F5F5F5'
-                                                                : item.progress > 0
-                                                                    ? 'rgba(9, 132, 227, 0.08)'
-                                                                    : '#F8FAFC',
-                                                    border: 'none',
-                                                    width: '100%',
-                                                    textAlign: 'left',
-                                                    cursor: 'pointer',
-                                                }}
-                                            >
-                                                <div style={{ minWidth: 0 }}>
-                                                    <div style={{
-                                                        fontFamily: "'Noto Sans JP', sans-serif",
-                                                        fontSize: 11,
-                                                        fontWeight: 700,
-                                                        color: '#2D3436',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 6,
-                                                        flexWrap: 'wrap',
-                                                    }}>
-                                                        <span>{item.name}</span>
-                                                        <span style={{
-                                                            fontSize: 10,
-                                                            padding: '1px 6px',
-                                                            borderRadius: 999,
-                                                            background: '#FFFFFF',
-                                                            color: '#52606D',
-                                                            border: '1px solid rgba(0,0,0,0.05)',
-                                                        }}>
-                                                            {item.attemptLabel}
-                                                        </span>
-                                                    </div>
-                                                    <div style={{
-                                                        fontFamily: "'Noto Sans JP', sans-serif",
-                                                        fontSize: 10,
-                                                        color: '#6B7280',
-                                                        marginTop: 2,
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 6,
-                                                        flexWrap: 'wrap',
-                                                    }}>
-                                                        <span>{item.subLabel}</span>
-                                                        <span style={{ color: '#CBD5E1' }}>•</span>
-                                                        <span>{item.windowLabel}</span>
-                                                    </div>
-                                                </div>
-                                                <div style={{
-                                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                                    fontSize: 11,
-                                                    fontWeight: 700,
-                                                    color: item.completed
-                                                        ? '#1E7F6D'
-                                                        : item.subLabel === '期間が終わった'
-                                                            ? '#94A3B8'
-                                                            : item.progress > 0
-                                                                ? '#0984E3'
-                                                                : '#636E72',
-                                                    whiteSpace: 'nowrap',
-                                                }}>
-                                                    {item.progressLabel}
-                                                </div>
-                                                <ChevronRight size={14} color="#94A3B8" />
-                                            </button>
-                                        ))}
-                                        {hiddenParticipantCount > 0 ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => setExpandedParticipantLists((current) => ({
-                                                    ...current,
-                                                    [challenge.id]: true,
-                                                }))}
-                                                style={{
-                                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                                    fontSize: 10,
-                                                    fontWeight: 700,
-                                                    color: '#8395A7',
-                                                    background: '#F0F3F5',
-                                                    borderRadius: 999,
-                                                    padding: '4px 8px',
-                                                    border: 'none',
-                                                    cursor: 'pointer',
-                                                    justifySelf: 'start',
-                                                }}
-                                            >
-                                                +{hiddenParticipantCount}人 つづきを見る
-                                            </button>
-                                        ) : null}
-                                        {isParticipantListExpanded && participantStatuses.length > 6 ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => setExpandedParticipantLists((current) => ({
-                                                    ...current,
-                                                    [challenge.id]: false,
-                                                }))}
-                                                style={{
-                                                    fontFamily: "'Noto Sans JP', sans-serif",
-                                                    fontSize: 10,
-                                                    fontWeight: 700,
-                                                    color: '#64748B',
-                                                    background: '#FFFFFF',
-                                                    borderRadius: 999,
-                                                    padding: '4px 8px',
-                                                    border: '1px solid rgba(148, 163, 184, 0.2)',
-                                                    cursor: 'pointer',
-                                                    justifySelf: 'start',
-                                                }}
-                                            >
-                                                参加者をたたむ
-                                            </button>
-                                        ) : null}
-                                    </div>
-                                ) : null}
+                                <ChallengeParticipantStatusList
+                                    challengeId={challenge.id}
+                                    participants={participantStatuses}
+                                    isExpanded={isParticipantListExpanded}
+                                    onOpenParticipant={(memberId) => {
+                                        setSelectedChallenge(challenge);
+                                        setSelectedParticipant(participantDetailsByMemberId.get(memberId) ?? null);
+                                    }}
+                                    onExpand={() => setExpandedParticipantLists((current) => ({
+                                        ...current,
+                                        [challenge.id]: true,
+                                    }))}
+                                    onCollapse={() => setExpandedParticipantLists((current) => ({
+                                        ...current,
+                                        [challenge.id]: false,
+                                    }))}
+                                />
                                 <div style={{
                                     display: 'flex',
                                     gap: 4,

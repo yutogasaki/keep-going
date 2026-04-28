@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { getExerciseById } from '../../../data/exercises';
+import { getExerciseById } from '@/data/exercises';
 import type { PickerExercise } from './ExercisePickerList';
 
 interface SelectedExercisesCardProps {

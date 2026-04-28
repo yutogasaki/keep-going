@@ -6,12 +6,14 @@ import {
     getChallengeRetryStats,
     getChallengeCardText,
     getChallengeDescriptionText,
+    getChallengeEmoji,
     getChallengeGoalLabel,
     getChallengeHeaderText,
     getChallengeInviteWindowLabel,
     getLatestChallengeAttempts,
     getChallengeProgressLabel,
     getChallengeRewardLabel,
+    getChallengeTargetLabel,
     normalizeChallengeWriteInput,
     type Challenge,
     toChallengeEngineInput,
@@ -19,6 +21,7 @@ import {
     toChallengeUpdateRow,
 } from '../challenges';
 import { getAllSessions, type SessionRecord } from '../db';
+import type { TeacherExercise } from '../teacherContent';
 
 vi.mock('../db', () => ({
     getAllSessions: vi.fn(),
@@ -95,6 +98,27 @@ function makeChallengeWriteInput(
         tier: 'small',
         iconEmoji: null,
         classLevels: [],
+        ...overrides,
+    };
+}
+
+function makeTeacherExercise(overrides: Partial<TeacherExercise> = {}): TeacherExercise {
+    return {
+        id: 'teacher-exercise-1',
+        name: '先生のつま先',
+        sec: 45,
+        emoji: '🩰',
+        placement: 'stretch',
+        hasSplit: false,
+        description: '先生が作った種目',
+        classLevels: ['初級'],
+        visibility: 'class_limited',
+        focusTags: [],
+        recommended: false,
+        recommendedOrder: null,
+        displayMode: 'teacher_section',
+        createdBy: 'teacher@example.com',
+        createdAt: '2026-03-01T00:00:00Z',
         ...overrides,
     };
 }
@@ -687,6 +711,33 @@ describe('challenge text helpers', () => {
         });
 
         expect(getChallengeGoalLabel(challenge, '1日3分以上')).toBe('1日3分以上を5日');
+    });
+
+    it('resolves exercise target labels and emoji from teacher exercises', () => {
+        const teacherExercise = makeTeacherExercise({
+            id: 'teacher-plie',
+            name: '先生プリエ',
+            emoji: '🌷',
+        });
+        const challenge = makeChallenge({
+            exerciseId: 'teacher-plie',
+            iconEmoji: null,
+        });
+
+        expect(getChallengeTargetLabel(challenge, [teacherExercise])).toBe('先生プリエ');
+        expect(getChallengeEmoji(challenge, [teacherExercise])).toBe('🌷');
+    });
+
+    it('uses readable missing labels instead of raw exercise ids', () => {
+        expect(getChallengeTargetLabel(makeChallenge({
+            exerciseId: 'teacher-missing',
+            iconEmoji: null,
+        }))).toBe('見つからない先生の種目');
+
+        expect(getChallengeTargetLabel(makeChallenge({
+            exerciseId: 'custom-ex-missing',
+            iconEmoji: null,
+        }))).toBe('見つからない種目');
     });
 });
 

@@ -1,0 +1,46 @@
+export const AUDIO_CUES = {
+    tick: {
+        frequency: 880,
+        type: 'sine' as OscillatorType,
+        duration: 0.1,
+        volume: 0.7,
+    },
+    go: {
+        frequency: 1760,
+        type: 'sine' as OscillatorType,
+        duration: 0.3,
+        volume: 0.9,
+    },
+    progress: {
+        volume: 0.52,
+        durationMs: 600,
+        frequencies: [392, 493.88],
+        startOffsets: [0, 0.1],
+        duration: 0.6,
+        type: 'sine' as OscillatorType,
+    },
+    exerciseStart: {
+        volume: 0.68,
+        durationMs: 800,
+        frequencies: [523.25, 659.25],
+        startOffsets: [0, 0.15],
+        stopTimes: [0.4, 0.8],
+        type: 'triangle' as OscillatorType,
+    },
+    transition: {
+        volume: 0.58,
+        durationMs: 1500,
+        frequencies: [523.25, 659.25, 783.99],
+        stagger: 0.05,
+        duration: 1.5,
+        type: 'sine' as OscillatorType,
+    },
+    success: {
+        volume: 0.68,
+        durationMs: 2000,
+        frequencies: [523.25, 783.99, 1046.5, 1318.51],
+        stagger: 0.1,
+        duration: 2.0,
+        type: 'triangle' as OscillatorType,
+    },
+} as const;

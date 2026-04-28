@@ -29,6 +29,17 @@ import {
     type PersonalChallengeMenuSourceOption,
     type PersonalChallengePresetId,
 } from './personal-challenge/shared';
+import {
+    AppearanceFields,
+    ChallengeLimitSummary,
+    DurationPresetGrid,
+    HintText,
+    inputStyle,
+    PreviewRow,
+    Section,
+    SegmentButton,
+    SegmentedRow,
+} from './personal-challenge/FormParts';
 
 interface PersonalChallengeFormSheetProps {
     open: boolean;
@@ -558,74 +569,32 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
                 </Section>
 
                 <Section title="どれくらいやる？">
-                    <div style={presetGridStyle}>
-                        {PERSONAL_CHALLENGE_PRESET_OPTIONS.map((option) => (
-                            <button
-                                key={option.id}
-                                type="button"
-                                disabled={isEditing && !canEditSetup}
-                                onClick={() => setPresetId(option.id)}
-                                style={{
-                                    ...optionButtonStyle,
-                                    ...(presetId === option.id ? selectedOptionButtonStyle : {}),
-                                    ...((isEditing && !canEditSetup) ? disabledOptionButtonStyle : {}),
-                                }}
-                            >
-                                <div style={optionTitleStyle}>{option.label}</div>
-                                <div style={optionDescriptionStyle}>{option.description}</div>
-                            </button>
-                        ))}
-                    </div>
+                    <DurationPresetGrid
+                        presetId={presetId}
+                        disabled={isEditing && !canEditSetup}
+                        onSelectPreset={setPresetId}
+                    />
                 </Section>
 
                 <Section title="見た目">
-                    <label style={fieldStyle}>
-                        <span style={fieldLabelStyle}>タイトル</span>
-                        <input
-                            type="text"
-                            value={title}
-                            onChange={(event) => setTitle(event.target.value)}
-                            placeholder="空のままなら自動でつくるよ"
-                            style={inputStyle}
-                        />
-                    </label>
-                    <label style={fieldStyle}>
-                        <span style={fieldLabelStyle}>ひとこと</span>
-                        <textarea
-                            value={description}
-                            onChange={(event) => setDescription(event.target.value)}
-                            placeholder="がんばることを一言だけ"
-                            style={{ ...inputStyle, minHeight: 92, resize: 'vertical' }}
-                        />
-                    </label>
-                    <label style={fieldStyle}>
-                        <span style={fieldLabelStyle}>カードの絵文字</span>
-                        <input
-                            type="text"
-                            value={iconEmoji}
-                            onChange={(event) => setIconEmoji(event.target.value)}
-                            placeholder="空なら種目やメニューの絵文字を使うよ"
-                            style={inputStyle}
-                        />
-                    </label>
+                    <AppearanceFields
+                        title={title}
+                        description={description}
+                        iconEmoji={iconEmoji}
+                        onTitleChange={setTitle}
+                        onDescriptionChange={setDescription}
+                        onIconEmojiChange={setIconEmoji}
+                    />
                 </Section>
 
-                <div style={summaryCardStyle}>
-                    <div style={{ fontWeight: 800, color: COLOR.dark }}>ほし 1こ</div>
-                    <div style={{ marginTop: 4 }}>
-                        {!hasChallengeAccount
-                            ? 'じぶんチャレンジは アカウントをつなぐと保存して続きから使えるよ。'
-                            : isEditing
-                            ? '軽い目標だけど、1日では終わらないように 7日以上から選べるよ。'
-                            : activeCountLoading
-                                ? 'いま進めているチャレンジ数を確認しているよ。'
-                                : limitReached
-                                    ? `いまは${PERSONAL_CHALLENGE_ACTIVE_LIMIT}つ進めているよ。どれか終わったら新しくつくれるよ。`
-                                    : remainingSlots === PERSONAL_CHALLENGE_ACTIVE_LIMIT
-                                        ? `軽い目標だけど、1日では終わらないように 7日以上から選べるよ。${PERSONAL_CHALLENGE_ACTIVE_LIMIT}つまで進められるよ。`
-                                        : `いま進められるのは あと${remainingSlots}つ。${PERSONAL_CHALLENGE_ACTIVE_LIMIT}つまで同時に進められるよ。`}
-                    </div>
-                </div>
+                <ChallengeLimitSummary
+                    hasChallengeAccount={hasChallengeAccount}
+                    isEditing={isEditing}
+                    activeCountLoading={activeCountLoading}
+                    limitReached={limitReached}
+                    remainingSlots={remainingSlots}
+                    activeLimit={PERSONAL_CHALLENGE_ACTIVE_LIMIT}
+                />
 
                 {saveError ? (
                     <div style={errorCardStyle}>
@@ -662,82 +631,6 @@ export const PersonalChallengeFormSheet: React.FC<PersonalChallengeFormSheetProp
     );
 };
 
-function Section({
-    title,
-    children,
-}: {
-    title: string;
-    children: React.ReactNode;
-}) {
-    return (
-        <section style={sectionStyle}>
-            <div style={sectionTitleStyle}>{title}</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: SPACE.sm }}>
-                {children}
-            </div>
-        </section>
-    );
-}
-
-function PreviewRow({
-    icon,
-    title,
-    description,
-}: {
-    icon: string;
-    title: string;
-    description: string;
-}) {
-    return (
-        <div style={previewRowStyle}>
-            <div style={previewIconStyle}>{icon}</div>
-            <div>
-                <div style={{ fontFamily: FONT.body, fontSize: FONT_SIZE.sm, fontWeight: 800, color: COLOR.dark }}>{title}</div>
-                <div style={{ fontFamily: FONT.body, fontSize: FONT_SIZE.xs + 1, color: COLOR.muted }}>{description}</div>
-            </div>
-        </div>
-    );
-}
-
-function SegmentedRow({ children }: { children: React.ReactNode }) {
-    return <div style={{ display: 'flex', gap: SPACE.sm, flexWrap: 'wrap' }}>{children}</div>;
-}
-
-function SegmentButton({
-    active,
-    disabled,
-    onClick,
-    children,
-}: {
-    active: boolean;
-    disabled?: boolean;
-    onClick: () => void;
-    children: React.ReactNode;
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            disabled={disabled}
-            style={{
-                ...segmentedButtonStyle,
-                ...(active ? selectedSegmentButtonStyle : {}),
-                ...(disabled ? disabledButtonStyle : {}),
-            }}
-        >
-            {children}
-        </button>
-    );
-}
-
-function HintText({ children }: { children: React.ReactNode }) {
-    return (
-        <div style={{ fontFamily: FONT.body, fontSize: FONT_SIZE.xs + 1, color: COLOR.muted, lineHeight: 1.6 }}>
-            {children}
-        </div>
-    );
-}
-
 const titleStyle: React.CSSProperties = {
     fontFamily: FONT.body,
     fontSize: FONT_SIZE.xl,
@@ -751,129 +644,6 @@ const subtitleStyle: React.CSSProperties = {
     fontSize: FONT_SIZE.sm,
     color: COLOR.muted,
     lineHeight: 1.7,
-};
-
-const sectionStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: SPACE.sm,
-    padding: '16px',
-    borderRadius: RADIUS.xl,
-    background: 'rgba(255,255,255,0.74)',
-    border: '1px solid rgba(0,0,0,0.05)',
-};
-
-const sectionTitleStyle: React.CSSProperties = {
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: 800,
-    color: COLOR.dark,
-};
-
-const fieldStyle: React.CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 6,
-};
-
-const fieldLabelStyle: React.CSSProperties = {
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: 700,
-    color: COLOR.dark,
-};
-
-const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '14px 16px',
-    borderRadius: RADIUS.lg,
-    border: '1px solid rgba(0,0,0,0.08)',
-    background: COLOR.white,
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.md,
-    outline: 'none',
-    boxSizing: 'border-box',
-};
-
-const previewRowStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: SPACE.md,
-    padding: '12px 14px',
-    borderRadius: RADIUS.lg,
-    background: 'rgba(43,186,160,0.08)',
-};
-
-const previewIconStyle: React.CSSProperties = {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    display: 'grid',
-    placeItems: 'center',
-    background: 'rgba(255,255,255,0.85)',
-    fontSize: 22,
-};
-
-const segmentedButtonStyle: React.CSSProperties = {
-    padding: '9px 12px',
-    borderRadius: RADIUS.full,
-    border: '1px solid rgba(0,0,0,0.08)',
-    background: COLOR.white,
-    cursor: 'pointer',
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: 700,
-    color: COLOR.text,
-};
-
-const selectedSegmentButtonStyle: React.CSSProperties = {
-    border: '2px solid #2BBAA0',
-    background: '#E8F8F0',
-    color: COLOR.primaryDark,
-};
-
-const presetGridStyle: React.CSSProperties = {
-    display: 'grid',
-    gap: SPACE.sm,
-};
-
-const optionButtonStyle: React.CSSProperties = {
-    padding: '12px 14px',
-    borderRadius: RADIUS.lg,
-    border: '1px solid rgba(0,0,0,0.08)',
-    background: COLOR.white,
-    cursor: 'pointer',
-    textAlign: 'left',
-};
-
-const selectedOptionButtonStyle: React.CSSProperties = {
-    border: '2px solid #2BBAA0',
-    background: '#E8F8F0',
-};
-
-const optionTitleStyle: React.CSSProperties = {
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.sm,
-    fontWeight: 800,
-    color: COLOR.dark,
-};
-
-const optionDescriptionStyle: React.CSSProperties = {
-    marginTop: 4,
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.xs + 1,
-    color: COLOR.muted,
-    lineHeight: 1.5,
-};
-
-const summaryCardStyle: React.CSSProperties = {
-    padding: SPACE.md,
-    borderRadius: RADIUS.lg,
-    background: 'rgba(255, 243, 204, 0.56)',
-    border: '1px solid rgba(255, 184, 0, 0.18)',
-    fontFamily: FONT.body,
-    fontSize: FONT_SIZE.sm,
-    color: COLOR.text,
 };
 
 const errorCardStyle: React.CSSProperties = {
@@ -916,10 +686,5 @@ const secondaryButtonStyle: React.CSSProperties = {
 
 const disabledButtonStyle: React.CSSProperties = {
     opacity: 0.5,
-    cursor: 'not-allowed',
-};
-
-const disabledOptionButtonStyle: React.CSSProperties = {
-    opacity: 0.55,
     cursor: 'not-allowed',
 };

@@ -5,7 +5,7 @@ import type { FuwafuwaSpeechAccent } from './fuwafuwaHomeCardCopy';
 import type { FuwafuwaReactionStyle } from './fuwafuwaSpeechReaction';
 
 interface FuwafuwaSpeechBubbleProps {
-    lines: string[];
+    lines: readonly string[];
     accent: FuwafuwaSpeechAccent;
     reactionStyle: FuwafuwaReactionStyle;
     actionLabel?: string;
