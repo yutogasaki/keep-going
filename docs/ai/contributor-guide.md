@@ -58,10 +58,12 @@ repo-local adapter files (`.claude/*`, `.codex/*`, `scripts/ai/hooks/*`) は ver
 ```bash
 npm run ai:setup
 npm run ai:doctor
+npm run ai:codex-maintenance
 npm run governance:check
 ```
 
 関連資料:
 
+- `docs/ai/codex-maintenance.md`
 - `docs/ai/hooks-policy.md`
 - `docs/development-governance.md`

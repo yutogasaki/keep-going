@@ -9,6 +9,7 @@ KeepGoing の人間向け / AI 向けドキュメント入口。
 
 ## AI
 - `docs/ai/contributor-guide.md` — Claude / Codex / shared layer の運用全体像
+- `docs/ai/codex-maintenance.md` — Codex app の session / log 肥大化を安全に点検・archive する手順
 - `docs/ai/hooks-policy.md` — hook registration と shared implementation の方針
 - `docs/ai/verification-matrix.md` — 検証導線の標準入口
 
@@ -19,18 +20,15 @@ KeepGoing の人間向け / AI 向けドキュメント入口。
 - `docs/product/operation-extension-guide.md`
 
 ## Architecture
-
 - `docs/architecture/logic-data-spec.md`
 
 ## Runbooks
 - `docs/runbooks/sync-restore-qa.md`
 
 ## ADR
-
 - `docs/adr/index.md` — 強い設計判断の置き場
 
 ## Wiki
-
 - `docs/wiki/index.md` — glossary / tone / recurring knowledge の入口
 
 ## Tasks

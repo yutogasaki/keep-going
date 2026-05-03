@@ -13,6 +13,24 @@
 | `.agents/agent-guide.md` | 入口ファイルが参照する共通の正本。肥大化したら詳細を別の canonical doc へ逃がす |
 | `.agents/tasks/TASKS.md` | 完了済みタスクが残っていれば DONE.md に移動 |
 
+## Codex app が重い時
+
+repo governance cleanup と Codex app の local profile cleanup は別物として扱う。
+Codex app の active session / log DB / cache 肥大化を疑う時は、まず読み取り専用で確認する。
+
+```bash
+npm run ai:codex-maintenance
+```
+
+実行結果で巨大な active session や `logs_*.sqlite` が見つかった場合も、Codex app が起動中なら archive / rotate はしない。
+重要な thread は handoff doc に要点を逃がし、Codex を終了してから apply する。
+
+```bash
+npm run ai:codex-maintenance:apply
+```
+
+詳細は `docs/ai/codex-maintenance.md` を参照する。
+
 ## 閾値ガイドライン
 
 | ファイル | 警告行数 | アクション |
