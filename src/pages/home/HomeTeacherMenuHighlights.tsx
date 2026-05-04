@@ -17,6 +17,7 @@ interface HomeTeacherMenuHighlightsProps {
     onExercisePreview: (exercise: TeacherExercise) => void;
     onStart: (menu: TeacherMenu) => void;
     onOpenMenuTab: () => void;
+    onOpenExerciseTab: (placement?: TeacherExercise['placement'] | null) => void;
 }
 
 export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps> = ({
@@ -28,6 +29,7 @@ export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps>
     onExercisePreview,
     onStart,
     onOpenMenuTab,
+    onOpenExerciseTab,
 }) => {
     const displayMenus = useMemo(
         () => menus.map((menu) => ({
@@ -164,7 +166,7 @@ export const HomeTeacherMenuHighlights: React.FC<HomeTeacherMenuHighlightsProps>
                             </div>
                             <button
                                 type="button"
-                                onClick={onOpenMenuTab}
+                                onClick={() => onOpenExerciseTab(featuredExercise.placement)}
                                 style={teacherDiscoveryLinkStyle}
                             >
                                 種目も見る

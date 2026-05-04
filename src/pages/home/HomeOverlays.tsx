@@ -76,6 +76,7 @@ interface HomeOverlaysProps {
     teacherMenuExerciseMap: GroupExerciseMap;
     onCloseTeacherMenu: () => void;
     onOpenMenuTab: () => void;
+    onOpenExerciseTab: (placement?: TeacherExercise['placement'] | null) => void;
     onCreatePersonalChallengeFromTeacherMenu?: (menu: TeacherMenu) => void;
     onStartTeacherMenu: (menu: TeacherMenu) => void;
     selectedTeacherExercise: TeacherExercise | null;
@@ -145,6 +146,7 @@ export const HomeOverlays: React.FC<HomeOverlaysProps> = ({
     teacherMenuExerciseMap,
     onCloseTeacherMenu,
     onOpenMenuTab,
+    onOpenExerciseTab,
     onCreatePersonalChallengeFromTeacherMenu,
     onStartTeacherMenu,
     selectedTeacherExercise,
@@ -256,7 +258,7 @@ export const HomeOverlays: React.FC<HomeOverlaysProps> = ({
             <TeacherExerciseDetailSheet
                 exercise={selectedTeacherExercise}
                 onClose={onCloseTeacherExercise}
-                onOpenMenuTab={onOpenMenuTab}
+                onOpenMenuTab={onOpenExerciseTab}
                 onCreatePersonalChallenge={onCreatePersonalChallengeFromTeacherExercise}
                 onStart={onStartTeacherExercise}
             />

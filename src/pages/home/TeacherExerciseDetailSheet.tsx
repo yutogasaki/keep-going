@@ -11,7 +11,7 @@ import { getTeacherExerciseLead } from './homeMenuUtils';
 interface TeacherExerciseDetailSheetProps {
     exercise: TeacherExercise | null;
     onClose: () => void;
-    onOpenMenuTab: () => void;
+    onOpenMenuTab: (placement?: TeacherExercise['placement'] | null) => void;
     onStart: (exercise: TeacherExercise) => void;
     onCreatePersonalChallenge?: (exercise: TeacherExercise) => void;
 }
@@ -180,7 +180,7 @@ export const TeacherExerciseDetailSheet: React.FC<TeacherExerciseDetailSheetProp
                                     type="button"
                                     onClick={() => {
                                         onClose();
-                                        onOpenMenuTab();
+                                        onOpenMenuTab(exercise.placement);
                                     }}
                                     style={secondaryButtonStyle}
                                 >

@@ -36,12 +36,13 @@ import { useHomeTeacherDiscovery } from './home/useHomeTeacherDiscovery';
 import { getMinClassLevel } from './menu/menuPageUtils';
 import { SCREEN_BOTTOM_WITH_FAB } from '../lib/styles';
 import { resolvePublicMenuToSessionPlannedItems } from '../lib/publicMenuUtils';
+import type { ExercisePlacement } from '../data/exercisePlacement';
 
 export const HomeScreen: React.FC = () => {
     const users = useAppStore((state) => state.users);
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
     const setSessionUserIds = useAppStore((state) => state.setSessionUserIds);
-    const setTab = useAppStore((state) => state.setTab);
+    const openMenuWithIntent = useAppStore((state) => state.openMenuWithIntent);
     const updateUser = useAppStore((state) => state.updateUser);
     const activeMilestoneModal = useAppStore((state) => state.activeMilestoneModal);
     const setActiveMilestoneModal = useAppStore((state) => state.setActiveMilestoneModal);
@@ -56,6 +57,14 @@ export const HomeScreen: React.FC = () => {
     const markFamilyHomeVisit = useAppStore((state) => state.markFamilyHomeVisit);
     const currentTab = useAppStore((state) => state.currentTab);
     const isHomeActive = currentTab === 'home';
+
+    const openMenuGroupTab = useCallback(() => {
+        openMenuWithIntent({ tab: 'group' });
+    }, [openMenuWithIntent]);
+
+    const openMenuIndividualTab = useCallback((placement?: ExercisePlacement | null) => {
+        openMenuWithIntent({ tab: 'individual', placement: placement ?? null });
+    }, [openMenuWithIntent]);
 
     const [menuBrowserOpen, setMenuBrowserOpen] = useState(false);
     const [exerciseBrowserOpen, setExerciseBrowserOpen] = useState(false);
@@ -358,7 +367,7 @@ export const HomeScreen: React.FC = () => {
                             return;
                         }
 
-                        setTab('menu');
+                        openMenuGroupTab();
                     }}
                 />
 
@@ -387,7 +396,8 @@ export const HomeScreen: React.FC = () => {
                     onCreatePersonalChallenge={handleCreatePersonalChallenge}
                     onOpenMenuBrowser={() => setMenuBrowserOpen(true)}
                     onOpenExerciseBrowser={() => setExerciseBrowserOpen(true)}
-                    onOpenMenuTab={() => setTab('menu')}
+                    onOpenMenuTab={openMenuGroupTab}
+                    onOpenExerciseTab={openMenuIndividualTab}
                     onTeacherMenuPreview={setSelectedTeacherMenu}
                     onTeacherExercisePreview={setSelectedTeacherExercise}
                     onTeacherMenuStart={(menu) => {
@@ -452,7 +462,8 @@ export const HomeScreen: React.FC = () => {
                 selectedTeacherMenu={selectedTeacherMenu}
                 teacherMenuExerciseMap={teacherMenuExerciseMap}
                 onCloseTeacherMenu={() => setSelectedTeacherMenu(null)}
-                onOpenMenuTab={() => setTab('menu')}
+                onOpenMenuTab={openMenuGroupTab}
+                onOpenExerciseTab={openMenuIndividualTab}
                 onCreatePersonalChallengeFromTeacherMenu={canCreatePersonalChallenge ? handleCreatePersonalChallengeFromTeacherMenu : undefined}
                 onStartTeacherMenu={(menu) => {
                     startSessionWithExercises(menu.exerciseIds, {

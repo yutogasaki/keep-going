@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { Challenge } from '../../../lib/challenges';
-import { buildChallengeListBuckets } from './challengeListUtils';
+import type { Challenge, ChallengeAttempt, ChallengeEnrollment } from '../../../lib/challenges';
+import { buildChallengeListBuckets, isTeacherChallengeListPast } from './challengeListUtils';
 import { createChallengeCopyFormValues } from './getInitialFormValues';
 
 function makeChallenge(id: string, overrides: Partial<Challenge> = {}): Challenge {
@@ -38,6 +38,38 @@ function makeChallenge(id: string, overrides: Partial<Challenge> = {}): Challeng
     };
 }
 
+function makeChallengeEnrollment(overrides: Partial<ChallengeEnrollment> = {}): ChallengeEnrollment {
+    return {
+        id: 'enrollment-1',
+        challengeId: 'challenge-1',
+        accountId: 'account-1',
+        memberId: 'member-1',
+        joinedAt: '2026-05-31T09:00:00.000Z',
+        effectiveStartDate: '2026-05-31',
+        effectiveEndDate: '2026-06-06',
+        createdAt: '2026-05-31T09:00:00.000Z',
+        ...overrides,
+    };
+}
+
+function makeChallengeAttempt(overrides: Partial<ChallengeAttempt> = {}): ChallengeAttempt {
+    return {
+        id: 'attempt-1',
+        challengeId: 'challenge-1',
+        accountId: 'account-1',
+        memberId: 'member-1',
+        attemptNo: 1,
+        joinedAt: '2026-05-31T09:00:00.000Z',
+        effectiveStartDate: '2026-05-31',
+        effectiveEndDate: '2026-06-06',
+        status: 'active',
+        completedAt: null,
+        createdAt: '2026-05-31T09:00:00.000Z',
+        updatedAt: '2026-05-31T09:00:00.000Z',
+        ...overrides,
+    };
+}
+
 describe('teacher challenge list helpers', () => {
     it('keeps current challenges visible and folds past challenges after four items', () => {
         const challenges = [
@@ -59,6 +91,141 @@ describe('teacher challenge list helpers', () => {
             'past-4',
         ]);
         expect(result.hiddenPastCount).toBe(1);
+    });
+
+    it('keeps seasonal rolling challenges current while the publish window is open', () => {
+        const challenge = makeChallenge('may-week', {
+            windowType: 'rolling',
+            goalType: 'active_day',
+            targetCount: 5,
+            requiredDays: 5,
+            dailyCap: 1,
+            windowDays: 7,
+            startDate: '2026-05-01',
+            endDate: '2026-05-07',
+            publishStartDate: '2026-05-01',
+            publishEndDate: '2026-05-31',
+        });
+
+        expect(isTeacherChallengeListPast(challenge, '2026-05-10')).toBe(false);
+        expect(isTeacherChallengeListPast(challenge, '2026-06-01')).toBe(true);
+    });
+
+    it('keeps seasonal rolling challenges current while a participant attempt is still active', () => {
+        const challenge = makeChallenge('may-week', {
+            windowType: 'rolling',
+            goalType: 'active_day',
+            targetCount: 5,
+            requiredDays: 5,
+            dailyCap: 1,
+            windowDays: 7,
+            startDate: '2026-05-01',
+            endDate: '2026-05-07',
+            publishStartDate: '2026-05-01',
+            publishEndDate: '2026-05-31',
+        });
+        const challengeAttempts = [
+            makeChallengeAttempt({
+                challengeId: challenge.id,
+                effectiveStartDate: '2026-05-31',
+                effectiveEndDate: '2026-06-06',
+                status: 'active',
+            }),
+        ];
+
+        expect(isTeacherChallengeListPast(challenge, '2026-06-01', { challengeAttempts })).toBe(false);
+        expect(isTeacherChallengeListPast(challenge, '2026-06-07', { challengeAttempts })).toBe(true);
+    });
+
+    it('uses enrollment windows as a fallback for rolling challenges without attempts', () => {
+        const challenge = makeChallenge('legacy-may-week', {
+            windowType: 'rolling',
+            goalType: 'active_day',
+            targetCount: 5,
+            requiredDays: 5,
+            dailyCap: 1,
+            windowDays: 7,
+            startDate: '2026-05-01',
+            endDate: '2026-05-07',
+            publishStartDate: '2026-05-01',
+            publishEndDate: '2026-05-31',
+        });
+        const challengeEnrollments = [
+            makeChallengeEnrollment({
+                challengeId: challenge.id,
+                effectiveStartDate: '2026-05-31',
+                effectiveEndDate: '2026-06-06',
+            }),
+        ];
+
+        const result = buildChallengeListBuckets([challenge], '2026-06-01', false, { challengeEnrollments });
+
+        expect(result.currentChallenges.map((item) => item.id)).toEqual([challenge.id]);
+        expect(result.visiblePastChallenges).toEqual([]);
+    });
+
+    it('moves rolling challenges past after publish and participant windows are both closed', () => {
+        const challenge = makeChallenge('closed-may-week', {
+            windowType: 'rolling',
+            goalType: 'active_day',
+            targetCount: 5,
+            requiredDays: 5,
+            dailyCap: 1,
+            windowDays: 7,
+            startDate: '2026-05-01',
+            endDate: '2026-05-07',
+            publishStartDate: '2026-05-01',
+            publishEndDate: '2026-05-31',
+        });
+        const challengeAttempts = [
+            makeChallengeAttempt({
+                challengeId: challenge.id,
+                effectiveStartDate: '2026-05-20',
+                effectiveEndDate: '2026-05-26',
+                status: 'completed',
+            }),
+        ];
+        const challengeEnrollments = [
+            makeChallengeEnrollment({
+                challengeId: challenge.id,
+                effectiveStartDate: '2026-05-20',
+                effectiveEndDate: '2026-06-06',
+            }),
+        ];
+
+        expect(isTeacherChallengeListPast(challenge, '2026-06-01', {
+            challengeAttempts,
+            challengeEnrollments,
+        })).toBe(true);
+    });
+
+    it('keeps always-on rolling challenges current even when their base date range is old', () => {
+        const challenge = makeChallenge('always-on-week', {
+            windowType: 'rolling',
+            goalType: 'active_day',
+            targetCount: 5,
+            requiredDays: 5,
+            dailyCap: 1,
+            windowDays: 7,
+            startDate: '2026-04-01',
+            endDate: '2026-04-07',
+            publishMode: 'always_on',
+            publishStartDate: null,
+            publishEndDate: null,
+        });
+
+        expect(isTeacherChallengeListPast(challenge, '2026-05-10')).toBe(false);
+    });
+
+    it('uses the challenge date range for calendar challenge past state', () => {
+        const challenge = makeChallenge('calendar', {
+            startDate: '2026-05-01',
+            endDate: '2026-05-07',
+            publishStartDate: '2026-05-01',
+            publishEndDate: '2026-05-31',
+        });
+
+        expect(isTeacherChallengeListPast(challenge, '2026-05-10')).toBe(true);
     });
 
     it('copies challenge settings into a new-form draft without reusing the original title exactly', () => {

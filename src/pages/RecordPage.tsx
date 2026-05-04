@@ -65,7 +65,6 @@ export const RecordPage: React.FC = () => {
     const users = useAppStore((state) => state.users);
     const currentTab = useAppStore((state) => state.currentTab);
     const sessionUserIds = useAppStore((state) => state.sessionUserIds);
-    const setTab = useAppStore((state) => state.setTab);
     const openMenuWithIntent = useAppStore((state) => state.openMenuWithIntent);
     const sessionUserIdSet = useMemo(() => new Set(sessionUserIds), [sessionUserIds]);
     const isPageActive = currentTab === 'record';
@@ -382,7 +381,6 @@ export const RecordPage: React.FC = () => {
                                     openMenuWithIntent({
                                         tab: suggestion.targetTab,
                                     });
-                                    setTab('menu');
                                 }}
                             />
                         ) : (

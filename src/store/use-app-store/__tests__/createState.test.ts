@@ -21,6 +21,28 @@ beforeEach(() => {
 });
 
 describe('session resume state', () => {
+    it('openMenuWithIntent switches to menu and stores the requested inner tab', () => {
+        const store = makeStore();
+
+        store.setState({
+            currentTab: 'record',
+            previousTab: 'home',
+        });
+
+        store.getState().openMenuWithIntent({
+            tab: 'individual',
+            placement: 'core',
+        });
+
+        expect(store.getState().currentTab).toBe('menu');
+        expect(store.getState().previousTab).toBe('record');
+        expect(store.getState().menuOpenIntent).toMatchObject({
+            tab: 'individual',
+            placement: 'core',
+        });
+        expect(store.getState().menuOpenIntent?.requestId).toEqual(expect.any(Number));
+    });
+
     it('startSession resumes the same-day draft for the same users', () => {
         const store = makeStore();
 

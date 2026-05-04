@@ -25,7 +25,7 @@ import {
     ChallengeParticipantDetailSheet,
     type ChallengeParticipantDetailData,
 } from './ChallengeParticipantDetailSheet';
-import { buildChallengeListBuckets } from './challengeListUtils';
+import { buildChallengeListBuckets, isTeacherChallengeListPast } from './challengeListUtils';
 import { ChallengeParticipantStatusList } from './ChallengeParticipantStatusList';
 import { buildParticipantDetail, buildParticipantStatusItems } from './challengeParticipantStatus';
 
@@ -93,7 +93,10 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
         currentChallenges,
         visiblePastChallenges,
         hiddenPastCount,
-    } = buildChallengeListBuckets(challenges, today, showAllPastChallenges);
+    } = buildChallengeListBuckets(challenges, today, showAllPastChallenges, {
+        challengeEnrollments,
+        challengeAttempts,
+    });
     const displayChallenges = [...currentChallenges, ...visiblePastChallenges];
 
     const renderPastToggle = () => {
@@ -147,7 +150,10 @@ export const ChallengeList: React.FC<ChallengeListProps> = ({
                         ? teacherExerciseMap.get(challenge.exerciseId ?? '')
                         : null;
                 const isActive = challenge.startDate <= today && challenge.endDate >= today;
-                const isPast = challenge.endDate < today;
+                const isPast = isTeacherChallengeListPast(challenge, today, {
+                    challengeEnrollments,
+                    challengeAttempts,
+                });
                 const cardText = getChallengeCardText(challenge);
                 const goalLabel = getChallengeGoalLabel(challenge, targetLabel);
                 const windowLabel = getChallengeInviteWindowLabel(challenge);

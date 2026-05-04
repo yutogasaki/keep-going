@@ -1,6 +1,7 @@
 import React from 'react';
 import { Calendar, Flame, Users } from 'lucide-react';
 import type { IndividualStudent, WeeklyStats } from '../types';
+import { buildWeeklyActivityScale, type WeeklyActivityScale } from './weeklyActivityChartScale';
 
 interface StudentsOverviewCardsProps {
     individualStudents: IndividualStudent[];
@@ -22,6 +23,9 @@ export const StudentsOverviewCards: React.FC<StudentsOverviewCardsProps> = ({
     const averageStreak = Math.round(
         (individualStudents.reduce((sum, student) => sum + student.streak, 0) / individualStudents.length) * 10
     ) / 10;
+    const weeklyActivityScale = weeklyStats
+        ? buildWeeklyActivityScale(weeklyStats.dailyActivity.map((item) => item.count))
+        : null;
 
     return (
         <>
@@ -58,7 +62,7 @@ export const StudentsOverviewCards: React.FC<StudentsOverviewCardsProps> = ({
                 />
             </div>
 
-            {weeklyStats && (
+            {weeklyStats && weeklyActivityScale && (
                 <div className="card" style={{
                     margin: '0 20px 16px',
                     padding: '16px 20px',
@@ -130,12 +134,12 @@ export const StudentsOverviewCards: React.FC<StudentsOverviewCardsProps> = ({
                                 fontSize: 11,
                                 color: '#8395A7',
                             }}>
-                                各日で1回でも活動した人数
+                                棒の目盛: 活動日の{weeklyActivityScale.label}
                             </span>
                         </div>
                         <WeeklyActivityChart
                             dailyActivity={weeklyStats.dailyActivity}
-                            studentCount={individualStudents.length}
+                            activityScale={weeklyActivityScale}
                         />
                     </div>
                 </div>
@@ -192,13 +196,8 @@ const StatCard: React.FC<{
 
 const WeeklyActivityChart: React.FC<{
     dailyActivity: WeeklyStats['dailyActivity'];
-    studentCount: number;
-}> = ({ dailyActivity, studentCount }) => {
-    const counts = dailyActivity.map((item) => item.count);
-    const maxCount = Math.max(1, ...dailyActivity.map((item) => item.count));
-    const minCount = Math.min(...counts);
-    const countRange = maxCount - minCount;
-
+    activityScale: WeeklyActivityScale;
+}> = ({ dailyActivity, activityScale }) => {
     return (
         <div style={{
             display: 'grid',
@@ -208,9 +207,7 @@ const WeeklyActivityChart: React.FC<{
             minHeight: 148,
         }}>
             {dailyActivity.map((item) => {
-                const heightPercent = countRange === 0
-                    ? (item.count === 0 ? 10 : 72)
-                    : Math.max(16, Math.round(((item.count - minCount) / countRange) * 84) + 12);
+                const heightPercent = activityScale.getHeightPercent(item.count);
 
                 return (
                     <div
@@ -234,7 +231,7 @@ const WeeklyActivityChart: React.FC<{
                         </span>
                         <div style={{
                             width: '100%',
-                            minHeight: 88,
+                            height: 88,
                             borderRadius: 12,
                             background: 'linear-gradient(180deg, rgba(232, 245, 233, 0.4), rgba(240, 243, 245, 0.85))',
                             display: 'flex',
@@ -281,7 +278,7 @@ const WeeklyActivityChart: React.FC<{
                                 color: '#8395A7',
                                 lineHeight: 1,
                             }}>
-                                / {studentCount}人
+                                {item.count === 0 ? '0人' : '活動日'}
                             </span>
                         </div>
                     </div>

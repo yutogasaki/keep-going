@@ -27,6 +27,21 @@ type ExerciseItem =
     | { kind: 'standard'; exercise: Exercise }
     | { kind: 'custom'; exercise: CustomExercise };
 
+export function filterRestExercisesByOrigin(
+    restExercises: Exercise[],
+    origin: OriginFilterId,
+): Exercise[] {
+    if (origin === 'all') {
+        return restExercises;
+    }
+
+    if (origin === 'teacher') {
+        return restExercises.filter((exercise) => exercise.origin === 'teacher');
+    }
+
+    return [];
+}
+
 export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
     onStartHybridSession?: (requiredIds: string[]) => void;
 }> = ({
@@ -143,7 +158,7 @@ export const MenuIndividualTab: React.FC<MenuIndividualTabProps & {
         return allItems.filter((item) => item.kind === 'custom');
     }, [allItems, origin]);
 
-    const originFilteredRest = origin === 'all' || origin === 'teacher' ? restExercises : [];
+    const originFilteredRest = filterRestExercisesByOrigin(restExercises, origin);
 
     const visibleItems = showAll ? originFiltered : originFiltered.slice(0, INITIAL_VISIBLE);
     const remaining = originFiltered.length - INITIAL_VISIBLE;

@@ -39,6 +39,7 @@ interface HomeChallengesAndMenusProps {
     onOpenMenuBrowser: () => void;
     onOpenExerciseBrowser: () => void;
     onOpenMenuTab: () => void;
+    onOpenExerciseTab: (placement?: ExercisePlacement | null) => void;
     onTeacherMenuPreview: (menu: TeacherMenu) => void;
     onTeacherExercisePreview: (exercise: TeacherExercise) => void;
     onTeacherMenuStart: (menu: TeacherMenu) => void;
@@ -72,6 +73,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
     onOpenMenuBrowser,
     onOpenExerciseBrowser,
     onOpenMenuTab,
+    onOpenExerciseTab,
     onTeacherMenuPreview,
     onTeacherExercisePreview,
     onTeacherMenuStart,
@@ -189,6 +191,7 @@ export const HomeChallengesAndMenus: React.FC<HomeChallengesAndMenusProps> = ({
                         onExercisePreview={onTeacherExercisePreview}
                         onStart={onTeacherMenuStart}
                         onOpenMenuTab={onOpenMenuTab}
+                        onOpenExerciseTab={onOpenExerciseTab}
                     />
 
                     <div
